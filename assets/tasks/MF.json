@@ -1,0 +1,274 @@
+{
+  "id": "mf",
+  "title": "Math Fluency",
+  "questions": [
+    {
+      "id": "MF_Cover",
+      "type": "instruction",
+      "label": {
+        "zh":"確認進入測試請按右下方箭頭（➜）",
+        "attention": "右下方箭頭（➜）"
+      }
+    },
+    {
+      "id": "MF_ins1",
+      "type": "instruction",
+      "label": {
+        "zh":"請盡快計算以下加法，輸入答案後按 Enter 或空白鍵進入下一題。\nAdd the numbers as fast as you can. Press Enter or Space after typing the answer to continue.",
+        "orange-text": "Add the numbers as fast as you can. Press Enter or Space after typing the answer to continue.",
+        "emphasize": ["Enter","Space"]
+      }
+    },
+    {
+      "id": "MF_1",
+      "type": "math-fluency",
+      "problem": "   8\n+  7\n-----"
+    },
+    {
+      "id": "MF_2",
+      "type": "math-fluency",
+      "problem": "  12\n+  5\n-----"
+    },
+    {
+      "id": "MF_3",
+      "type": "math-fluency",
+      "problem": "   3\n+  9\n-----"
+    },
+    {
+      "id": "MF_4",
+      "type": "math-fluency",
+      "problem": "   4\n+  4\n-----"
+    },
+    {
+      "id": "MF_5",
+      "type": "math-fluency",
+      "problem": "  15\n+  6\n-----"
+    },
+    {
+      "id": "MF_6",
+      "type": "math-fluency",
+      "problem": "   9\n+  8\n-----"
+    },
+    {
+      "id": "MF_7",
+      "type": "math-fluency",
+      "problem": "   7\n+  2\n-----"
+    },
+    {
+      "id": "MF_8",
+      "type": "math-fluency",
+      "problem": "  11\n+  4\n-----"
+    },
+    {
+      "id": "MF_9",
+      "type": "math-fluency",
+      "problem": "   6\n+  5\n-----"
+    },
+    {
+      "id": "MF_10",
+      "type": "math-fluency",
+      "problem": "  13\n+  7\n-----"
+    },
+    {
+      "id": "MF_11",
+      "type": "math-fluency",
+      "problem": "   1\n+  5\n-----"
+    },
+    {
+      "id": "MF_12",
+      "type": "math-fluency",
+      "problem": "   5\n+  3\n-----"
+    },
+    {
+      "id": "MF_13",
+      "type": "math-fluency",
+      "problem": "   6\n+  3\n-----"
+    },
+    {
+      "id": "MF_14",
+      "type": "math-fluency",
+      "problem": "   8\n+  1\n-----"
+    },
+    {
+      "id": "MF_15",
+      "type": "math-fluency",
+      "problem": "   7\n+  0\n-----"
+    },
+    {
+      "id": "MF_16",
+      "type": "math-fluency",
+      "problem": "   4\n+  1\n-----"
+    },
+    {
+      "id": "MF_17",
+      "type": "math-fluency",
+      "problem": "   1\n+  7\n-----"
+    },
+    {
+      "id": "MF_18",
+      "type": "math-fluency",
+      "problem": "   0\n+  6\n-----"
+    },
+    {
+      "id": "MF_19",
+      "type": "math-fluency",
+      "problem": "   3\n+  4\n-----"
+    },
+    {
+      "id": "MF_20",
+      "type": "math-fluency",
+      "problem": "   4\n+  4\n-----"
+    },
+    {
+      "id": "MF_21",
+      "type": "math-fluency",
+      "problem": "   3\n+  3\n-----"
+    },
+    {
+      "id": "MF_22",
+      "type": "math-fluency",
+      "problem": "   9\n+  1\n-----"
+    },
+    {
+      "id": "MF_23",
+      "type": "math-fluency",
+      "problem": "   5\n+  4\n-----"
+    },
+    {
+      "id": "MF_24",
+      "type": "math-fluency",
+      "problem": "   7\n+  2\n-----"
+    },
+    {
+      "id": "MF_25",
+      "type": "math-fluency",
+      "problem": "   0\n+ 11\n-----"
+    },
+    {
+      "id": "MF_26",
+      "type": "math-fluency",
+      "problem": "   3\n+  9\n-----"
+    },
+    {
+      "id": "MF_27",
+      "type": "math-fluency",
+      "problem": "   3\n+  7\n-----"
+    },
+    {
+      "id": "MF_28",
+      "type": "math-fluency",
+      "problem": "   5\n+  5\n-----"
+    },
+    {
+      "id": "MF_29",
+      "type": "math-fluency",
+      "problem": "   6\n+  9\n-----"
+    },
+    {
+      "id": "MF_30",
+      "type": "math-fluency",
+      "problem": "   2\n+  8\n-----"
+    },
+    {
+      "id": "MF_31",
+      "type": "math-fluency",
+      "problem": "   8\n+  3\n-----"
+    },
+    {
+      "id": "MF_32",
+      "type": "math-fluency",
+      "problem": "   6\n+  6\n-----"
+    },
+    {
+      "id": "MF_33",
+      "type": "math-fluency",
+      "problem": "   8\n+  6\n-----"
+    },
+    {
+      "id": "MF_34",
+      "type": "math-fluency",
+      "problem": "   4\n+  8\n-----"
+    },
+    {
+      "id": "MF_35",
+      "type": "math-fluency",
+      "problem": "   6\n+  7\n-----"
+    },
+    {
+      "id": "MF_36",
+      "type": "math-fluency",
+      "problem": "   7\n+  4\n-----"
+    },
+    {
+      "id": "MF_37",
+      "type": "math-fluency",
+      "problem": "   4\n+  9\n-----"
+    },
+    {
+      "id": "MF_38",
+      "type": "math-fluency",
+      "problem": "   9\n+  5\n-----"
+    },
+    {
+      "id": "MF_39",
+      "type": "math-fluency",
+      "problem": "   8\n+  7\n-----"
+    },
+    {
+      "id": "MF_40",
+      "type": "math-fluency",
+      "problem": "   8\n+  5\n-----"
+    },
+    {
+      "id": "MF_41",
+      "type": "math-fluency",
+      "problem": "   6\n+  4\n-----"
+    },
+    {
+      "id": "MF_42",
+      "type": "math-fluency",
+      "problem": "   9\n+  4\n-----"
+    },
+    {
+      "id": "MF_43",
+      "type": "math-fluency",
+      "problem": "   7\n+  7\n-----"
+    },
+    {
+      "id": "MF_44",
+      "type": "math-fluency",
+      "problem": "   5\n+  6\n-----"
+    },
+    {
+      "id": "MF_45",
+      "type": "math-fluency",
+      "problem": "   7\n+  8\n-----"
+    },
+    {
+      "id": "MF_46",
+      "type": "math-fluency",
+      "problem": "   9\n+  3\n-----"
+    },
+    {
+      "id": "MF_47",
+      "type": "math-fluency",
+      "problem": "   8\n+  5\n-----"
+    },
+    {
+      "id": "MF_48",
+      "type": "math-fluency",
+      "problem": "   8\n+  8\n-----"
+    },
+    {
+      "id": "MF_Com",
+      "type": "completion",
+      "dateId": "MF_Date",
+      "label": {
+        "zh": "數學速算 (Math Fluency) 測試已完成.\n\n請按右下方箭頭（➜），並填寫checklist内容.",
+        "word_compound": "測試已完成",
+        "super_emphasize": ["請按右下方箭頭（➜）", "填寫checklist"]
+      },
+      "buttonLabel": "已完成"
+    }
+  ]
+}

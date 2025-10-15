@@ -1,0 +1,55 @@
+{
+  "_comment": "Jotform API configuration for both Python and PowerShell processors",
+  
+  "python": {
+    "maxConcurrent": 1,
+    "batchSize": 10,
+    "perMinuteQuota": 60,
+    "retryScheduleSeconds": [15, 45, 120, 300],
+    "burstCooldownSeconds": 60
+  },
+  
+  "powershell": {
+    "maxConcurrentPdfs": 2,
+    "maxFieldsPerChunk": 100,
+    "maxConcurrentChunks": 1,
+    "maxRetries": 4,
+    "searchTimeoutSec": 20,
+    "updateTimeoutSec": 25,
+    "createTimeoutSec": 15,
+    "rateLimitMs": 200,
+    "maxPagesToScan": 5,
+    "paginationLimit": 1000,
+    "retryDelayBaseSec": 3,
+    "retryDelayMaxSec": 10,
+    "comment": "Optimized for 87-field balanced chunks, tested stable at ~51s per upsert. maxConcurrentPdfs=2 processes multiple PDFs in parallel. maxConcurrentChunks=1 (sequential) required - Jotform API rejects concurrent UPDATEs to same submission"
+  },
+  
+  "logging": {
+    "_comment": "Log level configuration - set each level to true (log) or false (skip)",
+    
+    "REJECT": true,
+    "_REJECT_comment": "Validation failures: sessionkey mismatch, core ID mismatch, school ID mismatch, filename format errors",
+    
+    "UPLOAD": true,
+    "_UPLOAD_comment": "Jotform operations: created/updated submissions with field counts and chunk info",
+    
+    "FILED": true,
+    "_FILED_comment": "Successfully archived files with destination folder",
+    
+    "CLEANUP": true,
+    "_CLEANUP_comment": "Maintenance operations: orphaned JSON cleanup, housekeeping tasks",
+    
+    "RENAME": true,
+    "_RENAME_comment": "Filename normalization: shows original → canonical name transformation",
+    
+    "WARN": true,
+    "_WARN_comment": "Non-critical issues: missing mappings, upload failures routed to Unsorted, file stability timeouts",
+    
+    "ERROR": true,
+    "_ERROR_comment": "Critical failures: parser errors, processing exceptions, permanent Jotform failures",
+    
+    "INFO": true,
+    "_INFO_comment": "Verbose details: queued, moved to staging, parsing started/succeeded, validating, enriching, searching Jotform, scanning pages, filtering fields, chunking, processed, etc."
+  }
+}

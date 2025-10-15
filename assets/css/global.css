@@ -1,0 +1,262 @@
+/* Shared Styles for 4Set-Server */
+/* Used across multiple pages */
+
+/* Badge States */
+.badge-success {
+    background: rgba(34, 197, 94, 0.1) !important;
+    border: 1px solid rgba(34, 197, 94, 0.25) !important;
+}
+
+.badge-success #status-indicator,
+.badge-success .status-indicator {
+    background: rgb(34, 197, 94) !important;
+}
+
+.badge-success #status-text,
+.badge-success .status-value {
+    color: rgb(34, 197, 94) !important;
+}
+
+.badge-warning {
+    background: rgba(249, 157, 51, 0.15) !important;
+    border: 1px solid rgba(249, 157, 51, 0.3) !important;
+}
+
+.badge-warning #status-indicator,
+.badge-warning .status-indicator {
+    background: rgb(249, 157, 51) !important;
+}
+
+.badge-warning #status-text,
+.badge-warning .status-value {
+    color: rgb(249, 157, 51) !important;
+}
+
+.badge-valid {
+    background: rgba(34, 197, 94, 0.1) !important;
+    border-color: rgba(34, 197, 94, 0.25) !important;
+}
+
+.badge-valid .lucide {
+    color: rgb(34, 197, 94) !important;
+}
+
+.badge-valid .status-value {
+    color: rgb(34, 197, 94) !important;
+}
+
+.badge-error {
+    background: rgba(240, 78, 105, 0.15) !important;
+    border-color: rgba(240, 78, 105, 0.4) !important;
+}
+
+.badge-error .lucide {
+    color: rgb(240, 78, 105) !important;
+}
+
+.badge-error .status-value {
+    color: rgb(240, 78, 105) !important;
+}
+
+/* PC Number Error State */
+.pc-number-not-set {
+    background: rgba(240, 78, 105, 0.15) !important;
+    border-color: rgba(240, 78, 105, 0.4) !important;
+}
+
+.pc-number-not-set #pc-number {
+    color: rgb(240, 78, 105) !important;
+}
+
+.pc-number-not-set .lucide-monitor {
+    color: rgb(240, 78, 105) !important;
+}
+
+/* Spotlight Animation */
+@keyframes spotlight {
+    0%, 100% { 
+        transform: scale(1); 
+        box-shadow: 0 0 0 0 rgba(240, 78, 105, 0.7); 
+    }
+    50% { 
+        transform: scale(1.05); 
+        box-shadow: 0 0 0 10px rgba(240, 78, 105, 0); 
+    }
+}
+
+.spotlight-attention {
+    animation: spotlight 0.6s ease-in-out 3;
+}
+
+/* Global Page Styles */
+:root {
+    font-family: var(--font-sans);
+}
+
+body {
+    background: var(--muted) !important;
+    color: var(--foreground) !important;
+    font-family: var(--font-sans);
+}
+
+/* Hero Background */
+.hero-background {
+    background:
+        radial-gradient(circle at 0% 0%, rgba(43, 57, 144, 0.18), transparent 55%),
+        radial-gradient(circle at 100% 0%, rgba(249, 157, 51, 0.18), transparent 55%),
+        radial-gradient(circle at 50% 100%, rgba(240, 78, 105, 0.16), transparent 50%),
+        linear-gradient(160deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.8));
+}
+
+/* Glow Ring Animations */
+.glow-ring {
+    animation: pulseRing 4s ease-in-out infinite;
+    box-shadow: 0 0 0 0 rgba(43, 57, 144, 0.28) !important;
+}
+
+.glow-ring-secondary {
+    animation: pulseRingSecondary 4s ease-in-out infinite;
+    animation-delay: 1.6s;
+    box-shadow: 0 0 0 0 rgba(249, 157, 51, 0.24) !important;
+}
+
+@keyframes pulseRing {
+    0% {
+        box-shadow: 0 0 0 0 rgba(43, 57, 144, 0.25);
+    }
+    70% {
+        box-shadow: 0 0 0 22px rgba(43, 57, 144, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(43, 57, 144, 0);
+    }
+}
+
+@keyframes pulseRingSecondary {
+    0% {
+        box-shadow: 0 0 0 0 rgba(249, 157, 51, 0.22);
+    }
+    70% {
+        box-shadow: 0 0 0 18px rgba(249, 157, 51, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(249, 157, 51, 0);
+    }
+}
+
+/* Entry Cards */
+.entry-card {
+    animation: fadeInCard 0.8s ease-out forwards;
+    opacity: 0;
+    transform: translateY(15px);
+    border-radius: var(--radius) !important;
+    background: linear-gradient(140deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.88));
+    border: 1px solid rgba(43, 57, 144, 0.08) !important;
+    box-shadow: var(--shadow-lg) !important;
+}
+
+@keyframes fadeInCard {
+    0% {
+        opacity: 0;
+        transform: translateY(18px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Buttons */
+.hero-button {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+    border-radius: calc(var(--radius) + 0.5rem) !important;
+}
+
+.hero-button:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 32px -12px rgba(43, 57, 144, 0.48) !important;
+}
+
+.secondary-button:hover {
+    box-shadow: 0 16px 32px -12px rgba(249, 157, 51, 0.48) !important;
+}
+
+/* Modal Styles */
+.modal-backdrop {
+    position: fixed !important;
+    inset: 0 !important;
+    background: rgba(12, 14, 35, 0.55) !important;
+    -webkit-backdrop-filter: blur(6px) !important;
+    backdrop-filter: blur(6px) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 1.5rem !important;
+    z-index: 60 !important;
+}
+
+.modal-backdrop.hidden {
+    display: none !important;
+}
+
+.modal-panel {
+    width: min(100%, 30rem) !important;
+    background: #ffffff !important;
+    border-radius: calc(var(--radius) + 0.25rem) !important;
+    padding: 2rem !important;
+    box-shadow: var(--shadow-xl) !important;
+    border: 1px solid rgba(43, 57, 144, 0.12) !important;
+    position: relative !important;
+}
+
+.modal-input {
+    width: 100% !important;
+    border-radius: calc(var(--radius) + 0.25rem) !important;
+    border: 1px solid rgba(43, 57, 144, 0.22) !important;
+    padding: 0.75rem 1rem !important;
+    font-size: 1rem !important;
+    background: rgba(255, 255, 255, 0.95) !important;
+    color: var(--foreground) !important;
+}
+
+.modal-input:focus {
+    outline: 2px solid rgba(43, 57, 144, 0.35) !important;
+    outline-offset: 2px !important;
+}
+
+.modal-close {
+    position: absolute !important;
+    top: 1rem !important;
+    right: 1rem !important;
+    color: rgba(43, 57, 144, 0.6) !important;
+}
+
+.modal-error {
+    min-height: 1.25rem !important;
+    font-size: 0.85rem !important;
+    font-weight: 500 !important;
+    color: var(--accent) !important;
+}
+
+/* Common Page Animations */
+@keyframes fadeSlideDown {
+    0% {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeSlideUp {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

@@ -1,0 +1,913 @@
+{
+  "id": "mathpattern",
+  "title": "Math Pattern",
+  "questions": [
+    {
+      "id": "MPTr_Cover",
+      "type": "instruction",
+      "label": {
+        "zh": "Math Pattern\n\n確認進入測試請按右下方箭頭（➜）",
+        "attention": "右下方箭頭（➜）"
+      }
+    },
+    {
+      "id": "MPT_1_r_Q1",
+      "type": "radio-largechar",
+      "label": {
+        "zh": "「呢串數字有規律，我哋一齊望下。呢個，呢個，呢個…」\nLook at the pattern in this series of numbers.\n\n（評估員逐個數字指住俾小朋友睇）\n（需要確保學童專注於觀察題目的數字，不可以向小朋友解釋任何有關數字的規律。\n\n7 6 7 8 5 7 6 7 8 5 7 6 7 ？\n\n第一題可當作練習題: 如果學童唔明白數字嘅規律，讓學童讀出每一個數字。\n\n「問號呢度應該擺邊個數字呀？」\nWhich number should we put in the question mark?\n\n\n（評估員逐個選項指住，然後講：）\n\n「呢個，呢個，呢個，定係呢個？」(不需要說ABCD) \nThis, this, this or this?",
+        "instruction":["呢串數字有規律，我哋一齊望下。呢個，呢個，呢個…","問號呢度應該擺邊個數字呀？","呢個，呢個，呢個，定係呢個？"],
+        "orange_text": ["Look at the pattern in this series of numbers.", "Which number should we put in the question mark?", "This, this, this or this?"],
+        "emphasize": ["不可以", "不需要說ABCD"],
+        "math_seq": "7 6 7 8 5 7 6 7 8 5 7 6 7 ？"
+      },
+      "options": [
+        {
+          "value": "5",
+          "label": "5"
+        },
+        {
+          "value": "6",
+          "label": "6"
+        },
+        {
+          "value": "8",
+          "label": "8"
+        },
+        {
+          "value": "9",
+          "label": "9"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "8"
+      }
+    },
+    {
+      "id": "MPT_1_r_Q2",
+      "type": "radio-largechar",
+      "label": {
+        "zh": "「問號呢度應該擺邊個數字呀？」\nWhich number should we put in the question mark?\n\n2 2 1 0 2 2 1 0 2 2 1 ?\n\n「呢個，呢個，呢個，定係呢個？」\nThis, this, this or this?",
+        "instruction":["問號呢度應該擺邊個數字呀？","呢個，呢個，呢個，定係呢個？"],
+        "orange_text": ["Which number should we put in the question mark?","This, this, this or this?"],
+        "attention": "？",
+        "math_seq": "2 2 1 0 2 2 1 0 2 2 1 ?"
+      },
+      "options": [
+        {
+          "value": "0",
+          "label": "0"
+        },
+        {
+          "value": "1",
+          "label": "1"
+        },
+        {
+          "value": "2",
+          "label": "2"
+        },
+        {
+          "value": "3",
+          "label": "3"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "0"
+      }
+    },
+    {
+      "id": "MPT_1_r_Q3",
+      "type": "radio-largechar",
+      "label": {
+        "zh":"「問號呢度應該擺邊個數字呀？」\nWhich number should we put in the question mark?\n\n4 7 5 4 4 7 5 4 4 7 5 ?\n\n「呢個，呢個，呢個，定係呢個？」\nThis, this, this or this?",
+        "instruction":["問號呢度應該擺邊個數字呀？","呢個，呢個，呢個，定係呢個？"],
+        "orange_text": ["Which number should we put in the question mark?","This, this, this or this?"],
+        "attention": "？",
+        "math_seq": "4 7 5 4 4 7 5 4 4 7 5 ?"
+      },
+      "options": [
+        {
+          "value": "4",
+          "label": "4"
+        },
+        {
+          "value": "5",
+          "label": "5"
+        },
+        {
+          "value": "6",
+          "label": "6"
+        },
+        {
+          "value": "7",
+          "label": "7"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "4"
+      }
+    },
+    {
+      "id": "MPT_1_r_Q4",
+      "type": "radio-largechar",
+      "label": {
+        "zh": "「問號呢度應該擺邊個數字呀？」\nWhich number should we put in the question mark?\n\n8 6 8 5 7 8 6 8 5 7 8 6 8 ?\n\n「呢個，呢個，呢個，定係呢個？」\nThis, this, this or this?",
+        "instruction":["問號呢度應該擺邊個數字呀？","呢個，呢個，呢個，定係呢個？"],
+        "orange_text": ["Which number should we put in the question mark?","This, this, this or this?"],
+        "attention": "？",
+        "math_seq": "8 6 8 5 7 8 6 8 5 7 8 6 8 ?"
+      },
+      "options": [
+        {
+          "value": "5",
+          "label": "5"
+        },
+        {
+          "value": "6",
+          "label": "6"
+        },
+        {
+          "value": "7",
+          "label": "7"
+        },
+        {
+          "value": "9",
+          "label": "9"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "5"
+      }
+    },
+    {
+      "id": "MPT_1_r_Q5",
+      "type": "radio-largechar",
+      "label": {
+        "zh": "「問號呢度應該擺邊個數字呀？」\nWhich number should we put in the question mark?\n\n8 6 2 4 2 8 6 2 4 2 8 6 2 ?\n\n「呢個，呢個，呢個，定係呢個？」\nThis, this, this or this?",
+        "instruction":["問號呢度應該擺邊個數字呀？","呢個，呢個，呢個，定係呢個？"],
+        "orange_text": ["Which number should we put in the question mark?","This, this, this or this?"],
+        "attention": "？",
+        "math_seq": "8 6 2 4 2 8 6 2 4 2 8 6 2 ?"
+      },
+      "options": [
+        {
+          "value": "3",
+          "label": "3"
+        },
+        {
+          "value": "4",
+          "label": "4"
+        },
+        {
+          "value": "6",
+          "label": "6"
+        },
+        {
+          "value": "8",
+          "label": "8"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "4"
+      }
+    },
+    {
+      "id": "MPT_1_r_Q6",
+      "type": "radio-largechar",
+      "label": {
+        "zh": "「問號呢度應該擺邊個數字呀？」\nWhich number should we put in the question mark?\n\n3 5 3 9 3 3 5 3 9 3 3 5 3 ?\n\n「呢個，呢個，呢個，定係呢個？」\nThis, this, this or this?",
+        "instruction":["問號呢度應該擺邊個數字呀？","呢個，呢個，呢個，定係呢個？"],
+        "orange_text": ["Which number should we put in the question mark?","This, this, this or this?"],
+        "attention": "？",
+        "math_seq": "3 5 3 9 3 3 5 3 9 3 3 5 3 ?"
+      },
+      "options": [
+        {
+          "value": "3",
+          "label": "3"
+        },
+        {
+          "value": "4",
+          "label": "4"
+        },
+        {
+          "value": "5",
+          "label": "5"
+        },
+        {
+          "value": "9",
+          "label": "9"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "9"
+      }
+    },
+    {
+      "id": "MPT_2_gr_ins1",
+      "type": "instruction",
+      "label": {
+        "zh": "而家玩第二關，都會俾你睇一串有規律嘅數字.\nLook at the pattern in this series of numbers, and tell me which number should we put in the question mark?",
+        "instruction": ["而家玩第二關，都會俾你睇一串有規律嘅數字。"],
+        "orange_text": ["Look at the pattern in this series of numbers, and tell me which number should we put in the question mark?"]
+      }
+    },
+    {
+      "id": "MPT_2_gr_Q1",
+      "type": "radio",
+      "label": {
+        "zh": "邊個數字唔見咗？\n\n2 3 4 5 ？ 7\n",
+        "instruction": [
+          "邊個數字唔見咗？"
+        ],
+        "math_seq": "2 3 4 5 ？ 7"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "MPT_2_gr_Q2",
+      "type": "radio",
+      "label": {
+        "zh": "邊個數字唔見咗？\n\n13 14 15 ？ 17\n",
+        "instruction": [
+          "邊個數字唔見咗？"
+        ],
+        "math_seq": "13 14 15 ？ 17"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "MPT_2_gr_Q3",
+      "type": "radio",
+      "label": {
+        "zh": "邊個數字唔見咗？\n\n9 8 ？ 6 5 4\n",
+        "instruction": [
+          "邊個數字唔見咗？"
+        ],
+        "math_seq": "9 8 ？ 6 5 4"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "MPT_2_gr_Q4",
+      "type": "radio",
+      "label": {
+        "zh": "邊個數字唔見咗？\n\n13 12 11 ？ 9\n",
+        "instruction": [
+          "邊個數字唔見咗？"
+        ],
+        "math_seq": "13 12 11 ？ 9"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "MPT_2_gr_Q5",
+      "type": "radio",
+      "label": {
+        "zh": "邊個數字唔見咗？\n\n18 17 ？ 15 14 13\n",
+        "instruction": [
+          "邊個數字唔見咗？"
+        ],
+        "math_seq": "18 17 ？ 15 14 13"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "MPT_2_gr_Q6",
+      "type": "radio",
+      "label": {
+        "zh": "邊個數字唔見咗？\n\n15 14 ？ 12 11 10\n",
+        "instruction": [
+          "邊個數字唔見咗？"
+        ],
+        "math_seq": "15 14 ？ 12 11 10"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "MPT_3_m_ins1",
+      "type": "instruction",
+      "label": {
+        "zh": "而家玩第三關，我會俾你睇一個神奇嘅糖果機。唔同嘅圖形放入去糖果機，就會變成新嘅圖形。\nHere is a magical candy machine. When you put a shape into the machine, a new shape will be produced. Look carefully, and tell me which shape should we put in the question mark?",
+        "instruction": [
+          "而家玩第三關，我會俾你睇一個神奇嘅糖果機。唔同嘅圖形放入去糖果機，就會變成新嘅圖形。"
+        ],
+        "orange_text": [
+          "Here is a magical candy machine. When you put a shape into the machine, a new shape will be produced. Look carefully, and tell me which shape should we put in the question mark?"
+        ]
+      },
+      "media": {
+        "image": "images/MP/MPT_3_m_ins1.jpeg"
+      }
+    },
+    {
+      "id": "MPT_3_m_P1",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個圖形擺入去會變邊個圖形？」",
+        "instruction": [
+          "呢個圖形擺入去會變邊個圖形？"
+        ]
+      },
+      "media": {
+        "image": "images/MP/MPT_3_m_P1.jpeg"
+      },
+      "options": [
+        {
+          "value": "A",
+          "label": "A"
+        },
+        {
+          "value": "B",
+          "label": "B"
+        },
+        {
+          "value": "C",
+          "label": "C"
+        },
+        {
+          "value": "D",
+          "label": "D"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "C"
+      }
+    },
+    {
+      "id": "MPT_3_m_Q1",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個圖形擺入去會變邊個圖形？」",
+        "instruction": [
+          "呢個圖形擺入去會變邊個圖形？"
+        ]
+      },
+      "media": {
+        "image": "images/MP/MPT_3_m_Q1.jpeg"
+      },
+      "options": [
+        {
+          "value": "A",
+          "label": "A"
+        },
+        {
+          "value": "B",
+          "label": "B"
+        },
+        {
+          "value": "C",
+          "label": "C"
+        },
+        {
+          "value": "D",
+          "label": "D"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "D"
+      }
+    },
+    {
+      "id": "MPT_3_m_Q2",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個圖形擺入去會變邊個圖形？」",
+        "instruction": [
+          "呢個圖形擺入去會變邊個圖形？"
+        ]
+      },
+      "media": {
+        "image": "images/MP/MPT_3_m_Q2.jpg"
+      },
+      "options": [
+        {
+          "value": "A",
+          "label": "A"
+        },
+        {
+          "value": "B",
+          "label": "B"
+        },
+        {
+          "value": "C",
+          "label": "C"
+        },
+        {
+          "value": "D",
+          "label": "D"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "A"
+      }
+    },
+    {
+      "id": "MPT_3_m_Q3",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個圖形擺入去會變邊個圖形？」",
+        "instruction": [
+          "呢個圖形擺入去會變邊個圖形？"
+        ]
+      },
+      "media": {
+        "image": "images/MP/MPT_3_m_Q3.jpg"
+      },
+      "options": [
+        {
+          "value": "A",
+          "label": "A"
+        },
+        {
+          "value": "B",
+          "label": "B"
+        },
+        {
+          "value": "C",
+          "label": "C"
+        },
+        {
+          "value": "D",
+          "label": "D"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "C"
+      }
+    },
+    {
+      "id": "MPT_3_m_Q4",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個圖形擺入去會變邊個圖形？」",
+        "instruction": [
+          "呢個圖形擺入去會變邊個圖形？"
+        ]
+      },
+      "media": {
+        "image": "images/MP/MPT_3_m_Q4.jpg"
+      },
+      "options": [
+        {
+          "value": "A",
+          "label": "A"
+        },
+        {
+          "value": "B",
+          "label": "B"
+        },
+        {
+          "value": "C",
+          "label": "C"
+        },
+        {
+          "value": "D",
+          "label": "D"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "B"
+      }
+    },
+    {
+      "id": "MPT_3_m_Q5",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個圖形擺入去會變邊個圖形？」",
+        "instruction": [
+          "呢個圖形擺入去會變邊個圖形？"
+        ]
+      },
+      "media": {
+        "image": "images/MP/MPT_3_m_Q5.jpg"
+      },
+      "options": [
+        {
+          "value": "A",
+          "label": "A"
+        },
+        {
+          "value": "B",
+          "label": "B"
+        },
+        {
+          "value": "C",
+          "label": "C"
+        },
+        {
+          "value": "D",
+          "label": "D"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "D"
+      }
+    },
+    {
+      "id": "MPT_3_m_Q6",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個圖形擺入去會變邊個圖形？」",
+        "instruction": [
+          "呢個圖形擺入去會變邊個圖形？"
+        ]
+      },
+      "media": {
+        "image": "images/MP/MPT_3_m_Q6.jpg"
+      },
+      "options": [
+        {
+          "value": "A",
+          "label": "A"
+        },
+        {
+          "value": "B",
+          "label": "B"
+        },
+        {
+          "value": "C",
+          "label": "C"
+        },
+        {
+          "value": "D",
+          "label": "D"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "B"
+      }
+    },
+    {
+      "id": "MPT_4_ge_ins1",
+      "type": "instruction",
+      "label": {
+        "zh": "而家玩第四關，我會俾你睇一串有規律嘅圖案。\nThis is the last game, and I will show you some shapes.",
+        "instruction": [
+          "而家玩第四關，我會俾你睇一串有規律嘅圖案。"
+        ],
+        "orange_text": [
+          "This is the last game, and I will show you some shapes."
+        ]
+      }
+    },
+    {
+      "id": "MPT_4_ge_Q1",
+      "type": "radio",
+      "imagesPerRow": 4,
+      "label": {
+        "zh": "「請你仔細觀察呢啲圖形，你覺得應該擺邊個圖形喺問號到呢 ？」\nPlease look at these shapes, and tell me which shape should we put in the question mark?\n第一題，「望下啲圖形，（評估員逐個圖形指俾小朋友睇），請你觀察一下應該擺邊個圖形係問號到呢？」\n「呢個，呢個，呢個，定係呢個？」This, this, this or this?",
+        "instruction": ["望下啲圖形","請你觀察一下應該擺邊個圖形係問號到呢？", "呢個，呢個，呢個，定係呢個？"],
+        "orange_text": ["Please look at these shapes, and tell me which shape should we put in the question mark?","This, this, this or this?"]
+      },
+      "media": {
+        "image": "images/MP/MPT_4_ge_Q1.1.jpg"
+      },
+      "options": [
+        {
+          "value": "A",
+          "label": "A",
+          "media": {
+            "image": "images/MP/MPT_4_ge_Q1.2.1.jpg"
+          }
+        },
+        {
+          "value": "B",
+          "label": "B",
+          "media": {
+            "image": "images/MP/MPT_4_ge_Q1.2.2.jpg"
+          }
+        },
+        {
+          "value": "C",
+          "label": "C",
+          "media": {
+            "image": "images/MP/MPT_4_ge_Q1.2.3.jpg"
+          }
+        },
+        {
+          "value": "D",
+          "label": "D",
+          "media": {
+            "image": "images/MP/MPT_4_ge_Q1.2.4.jpg"
+          }
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "A"
+      }
+    },
+    {
+      "id": "MPT_4_ge_Q2",
+      "type": "radio",
+      "imagesPerRow": 4,
+      "label": {
+        "zh": "「望下啲圖形，應該擺邊個圖形喺問號？」Please look at these shapes, and tell me which shape should we put in the question mark?\n「呢個，呢個，呢個，定係呢個？ 」This, this, this or this?",
+        "instruction": ["望下啲圖形，應該擺邊個圖形喺問號？", "呢個，呢個，呢個，定係呢個？"],
+        "orange_text": ["Please look at these shapes, and tell me which shape should we put in the question mark?","This, this, this or this?"]
+      },
+      "media": {
+        "image": "images/MP/MPT_4_ge_Q2.1.jpg"
+      },
+      "options": [
+        {
+          "value": "A",
+          "label": "A",
+          "media": {
+            "image": "images/MP/MPT_4_ge_Q2.2.1.jpg"
+          }
+        },
+        {
+          "value": "B",
+          "label": "B",
+          "media": {
+            "image": "images/MP/MPT_4_ge_Q2.2.2.jpg"
+          }
+        },
+        {
+          "value": "C",
+          "label": "C",
+          "media": {
+            "image": "images/MP/MPT_4_ge_Q2.2.3.jpg"
+          }
+        },
+        {
+          "value": "D",
+          "label": "D",
+          "media": {
+            "image": "images/MP/MPT_4_ge_Q2.2.4.jpg"
+          }
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "B"
+      }
+    },
+    {
+      "id": "MPT_4_ge_Q3",
+      "type": "radio",
+      "imagesPerRow": 4,
+      "label": {
+        "zh": "「望下啲圖形，應該擺邊個圖形喺問號？」Please look at these shapes, and tell me which shape should we put in the question mark?\n「呢個，呢個，呢個，定係呢個？ 」This, this, this or this?",
+        "instruction": ["望下啲圖形，應該擺邊個圖形喺問號？", "呢個，呢個，呢個，定係呢個？"],
+        "orange_text": ["Please look at these shapes, and tell me which shape should we put in the question mark?","This, this, this or this?"]
+      },
+      "media": {
+        "image": "images/MP/MPT_4_ge_Q3.1.png"
+      },
+      "options": [
+        {
+          "value": "A",
+          "label": "A",
+          "media": {
+            "image": "images/MP/MPT_4_ge_Q3.2.1.png"
+          }
+        },
+        {
+          "value": "B",
+          "label": "B",
+          "media": {
+            "image": "images/MP/MPT_4_ge_Q3.2.2.png"
+          }
+        },
+        {
+          "value": "C",
+          "label": "C",
+          "media": {
+            "image": "images/MP/MPT_4_ge_Q3.2.3.png"
+          }
+        },
+        {
+          "value": "D",
+          "label": "D",
+          "media": {
+            "image": "images/MP/MPT_4_ge_Q3.2.4.png"
+          }
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "A"
+      }
+    },
+    {
+      "id": "MPT_4_ge_Q4",
+      "type": "radio",
+      "imagesPerRow": 4,
+      "label": {
+        "zh": "「望下啲圖形，應該擺邊個圖形喺問號？」Please look at these shapes, and tell me which shape should we put in the question mark?\n「呢個，呢個，呢個，定係呢個？ 」This, this, this or this?",
+        "instruction": ["望下啲圖形，應該擺邊個圖形喺問號？", "呢個，呢個，呢個，定係呢個？"],
+        "orange_text": ["Please look at these shapes, and tell me which shape should we put in the question mark?","This, this, this or this?"]
+      },
+      "media": {
+        "image": "images/MP/MPT_4_ge_Q4.1.png"
+      },
+      "options": [
+        {
+          "value": "A",
+          "label": "A",
+          "media": {
+            "image": "images/MP/MPT_4_ge_Q4.2.1.jpg"
+          }
+        },
+        {
+          "value": "B",
+          "label": "B",
+          "media": {
+            "image": "images/MP/MPT_4_ge_Q4.2.2.png"
+          }
+        },
+        {
+          "value": "C",
+          "label": "C",
+          "media": {
+            "image": "images/MP/MPT_4_ge_Q4.2.3.png"
+          }
+        },
+        {
+          "value": "D",
+          "label": "D",
+          "media": {
+            "image": "images/MP/MPT_4_ge_Q4.2.4.png"
+          }
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "A"
+      }
+    },
+    {
+      "id": "MPT_4_ge_Q5",
+      "type": "radio",
+      "imagesPerRow": 4,
+      "label": {
+        "zh": "「望下啲圖形，應該擺邊個圖形喺問號？」Please look at these shapes, and tell me which shape should we put in the question mark?\n「呢個，呢個，呢個，定係呢個？ 」This, this, this or this?",
+        "instruction": ["望下啲圖形，應該擺邊個圖形喺問號？", "呢個，呢個，呢個，定係呢個？"],
+        "orange_text": ["Please look at these shapes, and tell me which shape should we put in the question mark?","This, this, this or this?"]
+      },
+      "media": {
+        "image": "images/MP/MPT_4_ge_Q5.1.png"
+      },
+      "options": [
+        {
+          "value": "A",
+          "label": "A",
+          "media": {
+            "image": "images/MP/MPT_4_ge_Q5.2.1.jpg"
+          }
+        },
+        {
+          "value": "B",
+          "label": "B",
+          "media": {
+            "image": "images/MP/MPT_4_ge_Q5.2.2.jpg"
+          }
+        },
+        {
+          "value": "C",
+          "label": "C",
+          "media": {
+            "image": "images/MP/MPT_4_ge_Q5.2.3.jpg"
+          }
+        },
+        {
+          "value": "D",
+          "label": "D",
+          "media": {
+            "image": "images/MP/MPT_4_ge_Q5.2.4.jpg"
+          }
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "C"
+      }
+    },
+    {
+      "id": "MPT_4_ge_Q6",
+      "type": "radio",
+      "imagesPerRow": 4,
+      "label": {
+        "zh": "「望下啲圖形，應該擺邊個圖形喺問號？」Please look at these shapes, and tell me which shape should we put in the question mark?\n「呢個，呢個，呢個，定係呢個？ 」This, this, this or this?",
+        "instruction": ["望下啲圖形，應該擺邊個圖形喺問號？", "呢個，呢個，呢個，定係呢個？"],
+        "orange_text": ["Please look at these shapes, and tell me which shape should we put in the question mark?","This, this, this or this?"]
+      },
+      "media": {
+        "image": "images/MP/MPT_4_ge_Q6.1.jpg"
+      },
+      "options": [
+        {
+          "value": "A",
+          "label": "A",
+          "media": {
+            "image": "images/MP/MPT_4_ge_Q6.2.1.jpg"
+          }
+        },
+        {
+          "value": "B",
+          "label": "B",
+          "media": {
+            "image": "images/MP/MPT_4_ge_Q6.2.2.jpg"
+          }
+        },
+        {
+          "value": "C",
+          "label": "C",
+          "media": {
+            "image": "images/MP/MPT_4_ge_Q6.2.3.jpg"
+          }
+        },
+        {
+          "value": "D",
+          "label": "D",
+          "media": {
+            "image": "images/MP/MPT_4_ge_Q6.2.4.jpg"
+          }
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "D"
+      }
+    },
+    {
+      "id": "MPT_Com",
+      "type": "completion",
+      "dateId": "MPT_Date",
+      "label": {
+        "zh": "數學模式識別 (Math Pattern) 測試已完成.\n\n請按右下方箭頭（➜），並填寫checklist内容.",
+        "word_compound": "測試已完成",
+        "super_emphasize": ["請按右下方箭頭（➜）", "填寫checklist"]
+      },
+      "buttonLabel": "已完成"
+    }
+  ]
+}

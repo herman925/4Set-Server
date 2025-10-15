@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>4Set System Entry</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="theme_pantone_light_1.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap"
+    rel="stylesheet"
+  />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <style>
+    :root {
+      font-family: var(--font-sans);
+    }
+
+    body {
+      background: var(--muted) !important;
+      color: var(--foreground) !important;
+      font-family: var(--font-sans);
+    }
+
+    .logo-row {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: clamp(1.5rem, 4vw, 3rem) !important;
+      max-width: 100% !important;
+    }
+
+    .logo-row img {
+      object-fit: contain !important;
+      width: auto !important;
+    }
+
+    .logo-ks {
+      height: clamp(90px, 20vw, 85px) !important;
+    }
+
+    .logo-eduhk {
+      height: clamp(62px, 16vw, 70px) !important;
+    }
+
+    .wrap-long {
+      word-break: break-all !important;
+      overflow-wrap: anywhere !important;
+    }
+
+    .hero-background {
+      background: radial-gradient(circle at 0% 0%, rgba(43, 57, 144, 0.18), transparent 55%),
+        radial-gradient(circle at 100% 0%, rgba(249, 157, 51, 0.18), transparent 55%),
+        radial-gradient(circle at 50% 100%, rgba(240, 78, 105, 0.16), transparent 50%),
+        linear-gradient(160deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.8));
+    }
+
+    .glow-ring {
+      animation: pulseRing 4s ease-in-out infinite;
+      box-shadow: 0 0 0 0 rgba(43, 57, 144, 0.28) !important;
+    }
+
+    .glow-ring-secondary {
+      animation: pulseRingSecondary 4s ease-in-out infinite;
+      animation-delay: 1.6s;
+      box-shadow: 0 0 0 0 rgba(249, 157, 51, 0.24) !important;
+    }
+
+    .hero-title {
+      animation: fadeSlideDown 0.9s ease-out forwards;
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+
+    .hero-subtitle {
+      animation: fadeSlideUp 1.1s ease-out forwards;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+
+    .entry-card {
+      animation: fadeInCard 0.8s ease-out forwards;
+      opacity: 0;
+      transform: translateY(15px);
+      border-radius: var(--radius) !important;
+      background: linear-gradient(140deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.88));
+      border: 1px solid rgba(43, 57, 144, 0.08) !important;
+      box-shadow: var(--shadow-lg) !important;
+    }
+
+    .entry-card:nth-child(1) {
+      animation-delay: 0.4s;
+    }
+
+    .entry-card:nth-child(2) {
+      animation-delay: 0.6s;
+    }
+
+    .hero-button {
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      border-radius: calc(var(--radius) + 0.5rem) !important;
+    }
+
+    .hero-button:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 32px -12px rgba(43, 57, 144, 0.48) !important;
+    }
+
+    .secondary-button:hover {
+      box-shadow: 0 16px 32px -12px rgba(249, 157, 51, 0.48) !important;
+    }
+
+    .hero-badge {
+      background: rgba(43, 57, 144, 0.08) !important;
+      color: var(--primary) !important;
+      border-radius: 9999px !important;
+      font-family: var(--font-mono);
+    }
+
+    @keyframes pulseRing {
+      0% {
+        box-shadow: 0 0 0 0 rgba(43, 57, 144, 0.25);
+      }
+      70% {
+        box-shadow: 0 0 0 22px rgba(43, 57, 144, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(43, 57, 144, 0);
+      }
+    }
+
+    @keyframes pulseRingSecondary {
+      0% {
+        box-shadow: 0 0 0 0 rgba(249, 157, 51, 0.22);
+      }
+      70% {
+        box-shadow: 0 0 0 18px rgba(249, 157, 51, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(249, 157, 51, 0);
+      }
+    }
+
+    @keyframes fadeSlideDown {
+      0% {
+        opacity: 0;
+        transform: translateY(-20px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeSlideUp {
+      0% {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes fadeInCard {
+      0% {
+        opacity: 0;
+        transform: translateY(18px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body class="min-h-screen hero-background">
+  <div class="relative overflow-hidden">
+    <div class="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/70 to-transparent"></div>
+    <div class="absolute inset-0 pointer-events-none">
+      <div class="absolute -left-24 top-24 w-48 h-48 rounded-full border border-primary/20 glow-ring"></div>
+      <div class="absolute right-12 bottom-20 w-40 h-40 rounded-full border border-secondary/30 glow-ring-secondary"></div>
+      <div class="absolute left-1/3 top-1/2 w-20 h-20 rounded-full bg-secondary/20 blur-3xl"></div>
+      <div class="absolute right-1/4 top-1/3 w-24 h-24 rounded-full bg-primary/20 blur-3xl"></div>
+    </div>
+
+    <main class="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 py-16 lg:flex-row lg:items-center lg:justify-between lg:gap-16">
+      <div class="max-w-2xl space-y-6 text-center lg:w-1/2 lg:max-w-none lg:text-left">
+        <div class="logo-row">
+          <a href="https://www.keystepsjc.hk" target="_blank" rel="noreferrer">
+            <img src="../../assets/logos/KS.png" alt="KeySteps@JC Logo" class="logo-ks" loading="lazy" />
+          </a>
+          <a href="https://www.eduhk.hk" target="_blank" rel="noreferrer">
+            <img src="../../assets/logos/EdUHK.png" alt="EdUHK Logo" class="logo-eduhk" loading="lazy" />
+          </a>
+        </div>
+        <span class="hero-badge inline-flex items-center gap-2 px-4 py-2 text-xs uppercase tracking-wide">
+          <span class="inline-block h-2 w-2 rounded-full bg-primary"></span>
+          KeySteps@JC (Phase Two)
+        </span>
+        <h1 class="hero-title text-4xl font-bold text-[color:var(--primary)] sm:text-5xl lg:text-6xl">
+          4Set System (2025/26)
+        </h1>
+        <p class="hero-subtitle text-base text-[color:var(--muted-foreground)] sm:text-lg lg:text-xl">
+          OneDrive uploads trigger the processor agent to validate, parse, and upsert survey PDFs while the web
+          dashboard tracks queue health, rejections, and recent activity for KeySteps@JC maintainers.
+        </p>
+        <div class="flex flex-col items-center gap-4 sm:flex-row sm:justify-center lg:items-stretch lg:justify-start">
+          <a
+            href="pipeline_1_entry_confirmation.html"
+            class="hero-button btn-primary flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold"
+          >
+            <span>Assessment Uploader</span>
+            <span class="text-sm font-medium text-primary-foreground/80">Upload PDFs</span>
+          </a>
+          <a
+            href="checking_system_desktop_entry_1.html"
+            class="hero-button secondary-button btn-secondary flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold"
+          >
+            <span>Checking System</span>
+            <span class="text-sm font-medium text-secondary-foreground/80">See What's Missing</span>
+          </a>
+        </div>
+      </div>
+
+      <section class="mt-12 grid w-full gap-6 lg:mt-0 lg:w-1/2 lg:max-w-none">
+        <article class="entry-card w-full p-6 sm:p-8 lg:p-10 lg:px-12">
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p class="text-sm uppercase tracking-wide text-[color:var(--muted-foreground)]">JotForm Latest</p>
+              <h2 class="mt-1 text-2xl font-semibold text-[color:var(--foreground)]">Most Recent Submission</h2>
+            </div>
+            <div class="badge-success flex items-center gap-2 rounded-full px-4 py-1 text-xs font-medium">
+              <span class="inline-block h-2 w-2 rounded-full bg-[color:var(--success)]"></span>
+              Last Sync: 4 mins ago
+            </div>
+          </div>
+          <div class="mt-6 rounded-xl border border-primary/20 bg-white/75 p-5 shadow-sm">
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <p class="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Submission ID</p>
+                <p class="wrap-long text-sm font-medium text-[color:var(--primary)]">6362362300324596100</p>
+              </div>
+              <div>
+                <p class="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Uploaded</p>
+                <p class="text-sm font-medium text-[color:var(--foreground)]">14 Oct 2025 • 15:30</p>
+              </div>
+              <div>
+                <p class="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Session Key</p>
+                <p class="text-sm font-medium text-[color:var(--primary)]">11100_20250904_15_38</p>
+              </div>
+              <div>
+                <p class="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">School ID</p>
+                <p class="text-sm font-medium text-[color:var(--secondary-foreground)]">S067</p>
+              </div>
+            </div>
+            <div class="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <span class="text-xs text-[color:var(--muted-foreground)]">GET /form/{id}/submissions • Fields mapped via `assets/jotformquestions.json`</span>
+              <button class="hero-button btn-primary inline-flex items-center gap-2 px-4 py-2 text-xs font-semibold">
+                <span>Resync</span>
+              </button>
+            </div>
+          </div>
+        </article>
+
+      </section>
+    </main>
+  </div>
+</body>
+<script>
+  lucide.createIcons();
+</script>
+</html>

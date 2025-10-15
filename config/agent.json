@@ -1,0 +1,31 @@
+{
+  "oneDrive": {
+    "autoDetect": true,
+    "relativePath": "\\The Education University of Hong Kong\\o365grp_KeySteps@JC - General\\98 - IT Support\\04 - Homemade Apps\\4Set-Server",
+    "fallbackRoot": "C:\\Users\\Herman"
+  },
+  "watchPath": "./incoming",
+  "stagingPath": "./processing",
+  "filingRoot": "./filed",
+  "unsortedRoot": "./filed/Unsorted",
+  "logDirectory": "./logs",
+  "queueManifest": "./queue_manifest.json",
+  "hostIdentity": {
+    "computerNameFallback": true,
+    "overrideFile": "./config/host_identity.json"
+  },
+  "telemetry": {
+    "endpoint": "http://localhost:48500",
+    "enableSse": true,
+    "apiKey": ""
+  },
+  "worker": {
+    "maxConcurrent": 2,
+    "perMinuteQuota": 60,
+    "pollIntervalSeconds": 5
+  },
+  "validation": {
+    "debounceWindowSeconds": 15,
+    "sizeDriftBytes": 1024
+  }
+}

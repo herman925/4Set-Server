@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Group Overview · 4Set Checking System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href=".superdesign/design_iterations/theme_pantone_light_1.css" />
+    <link rel="stylesheet" href="assets/css/index.css" />
+    <link rel="stylesheet" href="assets/css/global.css" />
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&family=Noto+Sans+TC&display=swap" rel="stylesheet" />
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body class="min-h-screen hero-background">
+    <div class="relative overflow-hidden">
+        <div class="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/70 to-transparent"></div>
+
+        <header class="relative z-20 bg-white/80 backdrop-blur-md border-b border-[color:var(--border)] shadow-sm sticky top-0">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between h-16">
+                    <div class="flex items-center gap-3">
+                        <a href="index.html" class="p-2 rounded-full hover:bg-[color:var(--muted)] text-[color:var(--muted-foreground)] hover:text-[color:var(--primary)] transition-colors">
+                            <i data-lucide="home" class="w-4 h-4"></i>
+                        </a>
+                        <nav id="breadcrumbs" class="text-sm text-[color:var(--muted-foreground)] flex items-center gap-2"></nav>
+                    </div>
+                    <a href="checking_system_home.html" class="text-sm text-[color:var(--primary)] hover:underline">New Search</a>
+                </div>
+            </div>
+        </header>
+
+        <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4">
+            <!-- Group Overview Card -->
+            <div class="entry-card p-6 lg:p-8">
+                <h1 class="text-2xl font-bold text-[color:var(--foreground)] mb-2">Group <span id="group-number">0</span> Overview</h1>
+                <p class="text-sm text-[color:var(--muted-foreground)]" id="group-context">Schools in this group</p>
+                
+                <!-- Summary Metrics -->
+                <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-gradient-to-br from-white to-blue-50 rounded-lg border border-blue-200 p-4 shadow-sm">
+                        <h3 class="text-xs text-[color:var(--muted-foreground)] font-medium">Total Schools</h3>
+                        <div class="flex items-baseline gap-2 mt-1">
+                            <span class="text-2xl font-semibold text-[color:var(--foreground)]" id="total-schools">0</span>
+                        </div>
+                    </div>
+                    <div class="bg-gradient-to-br from-white to-green-50 rounded-lg border border-green-200 p-4 shadow-sm">
+                        <h3 class="text-xs text-[color:var(--muted-foreground)] font-medium">Total Students</h3>
+                        <div class="flex items-baseline gap-2 mt-1">
+                            <span class="text-2xl font-semibold text-[color:var(--foreground)]" id="total-students">0</span>
+                        </div>
+                    </div>
+                    <div class="bg-gradient-to-br from-white to-purple-50 rounded-lg border border-purple-200 p-4 shadow-sm">
+                        <h3 class="text-xs text-[color:var(--muted-foreground)] font-medium">Avg Completion</h3>
+                        <div class="flex items-baseline gap-2 mt-1">
+                            <span class="text-2xl font-semibold text-[color:var(--foreground)]" id="avg-completion">—%</span>
+                        </div>
+                    </div>
+                    <div class="bg-gradient-to-br from-white to-amber-50 rounded-lg border border-amber-200 p-4 shadow-sm">
+                        <h3 class="text-xs text-[color:var(--muted-foreground)] font-medium">Districts</h3>
+                        <div class="flex items-baseline gap-2 mt-1">
+                            <span class="text-xs font-medium text-[color:var(--foreground)]" id="group-districts">—</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Schools List -->
+            <div class="entry-card p-6">
+                <h2 class="text-lg font-semibold text-[color:var(--foreground)] mb-4 flex items-center gap-2">
+                    <i data-lucide="school" class="w-5 h-5"></i>
+                    Schools in Group
+                </h2>
+                <div id="schools-list" class="space-y-3"></div>
+            </div>
+        </main>
+    </div>
+
+    <script src="assets/js/encryption.js"></script>
+    <script src="assets/js/checking-system-data-loader.js"></script>
+    <script>
+        (async () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const group = parseInt(urlParams.get('group'));
+            const district = urlParams.get('district'); // Optional if both Level 1 filters selected
+            
+            if (!group) {
+                alert('No group specified');
+                window.location.href = 'checking_system_home.html';
+                return;
+            }
+
+            const cachedData = window.CheckingSystemData?.getCachedData();
+            if (!cachedData) {
+                alert('Please go through home page first');
+                window.location.href = 'checking_system_home.html';
+                return;
+            }
+
+            // Filter schools by group (and optionally district)
+            let groupSchools = cachedData.schools.filter(s => s.group === group);
+            if (district) {
+                groupSchools = groupSchools.filter(s => s.district === district);
+                document.getElementById('group-context').textContent = `Schools in Group ${group} within ${district} district`;
+            }
+
+            const groupStudents = cachedData.students.filter(s => s.group === group);
+            const districts = [...new Set(groupSchools.map(s => s.district))].sort();
+
+            // Update UI
+            document.getElementById('group-number').textContent = group;
+            document.getElementById('total-schools').textContent = groupSchools.length;
+            document.getElementById('total-students').textContent = groupStudents.length;
+            document.getElementById('group-districts').textContent = districts.join(', ');
+            document.title = `Group ${group} Overview · 4Set Checking System`;
+
+            // Build breadcrumbs
+            const breadcrumbs = [];
+            if (district) {
+                breadcrumbs.push(`<a href="checking_system_1_district.html?district=${encodeURIComponent(district)}" class="hover:text-[color:var(--primary)] transition-colors">${district}</a>`);
+                breadcrumbs.push(`<span class="text-[color:var(--border)]">/</span>`);
+            }
+            breadcrumbs.push(`<span class="font-medium text-[color:var(--foreground)]">Group ${group}</span>`);
+            document.getElementById('breadcrumbs').innerHTML = breadcrumbs.join(' ');
+
+            // Render schools
+            document.getElementById('schools-list').innerHTML = groupSchools.map(school => `
+                <a href="checking_system_2_school.html?schoolId=${encodeURIComponent(school.schoolId)}" 
+                   class="block p-4 border border-[color:var(--border)] rounded-lg hover:border-[color:var(--primary)] transition-colors">
+                    <div class="flex items-center justify-between">
+                        <div class="font-noto">
+                            <h3 class="font-semibold text-[color:var(--foreground)]">${school.schoolNameChinese}</h3>
+                            <p class="text-sm text-[color:var(--muted-foreground)]">${school.schoolName} · ${school.district}</p>
+                        </div>
+                        <i data-lucide="chevron-right" class="w-5 h-5 text-[color:var(--muted-foreground)]"></i>
+                    </div>
+                </a>
+            `).join('');
+
+            lucide.createIcons();
+        })();
+    </script>
+</body>
+</html>

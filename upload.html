@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Upload - 4Set Pipeline</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href=".superdesign/design_iterations/theme_pantone_light_1.css" />
+    <link rel="stylesheet" href="assets/css/index.css" />
+    <link rel="stylesheet" href="assets/css/global.css" />
+    <link rel="stylesheet" href="assets/css/upload.css" />
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body class="min-h-screen hero-background">
+    <div class="relative overflow-hidden">
+        <!-- Decorative Background Elements (matching index.html) -->
+        <div class="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/70 to-transparent"></div>
+        <div class="absolute inset-0 pointer-events-none">
+            <div class="absolute -left-24 top-24 w-48 h-48 rounded-full border border-primary/20 glow-ring"></div>
+            <div class="absolute right-12 bottom-20 w-40 h-40 rounded-full border border-secondary/30 glow-ring-secondary"></div>
+            <div class="absolute left-1/3 top-1/2 w-20 h-20 rounded-full bg-secondary/20 blur-3xl"></div>
+            <div class="absolute right-1/4 top-1/3 w-24 h-24 rounded-full bg-primary/20 blur-3xl"></div>
+        </div>
+
+        <main class="relative z-10 mx-auto min-h-screen w-full max-w-6xl px-6 py-12 lg:py-16">
+            
+            <!-- Header Section -->
+            <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                    <span class="hero-badge inline-flex items-center gap-2 px-4 py-2 text-xs uppercase tracking-wide mb-3">
+                        <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                        PDF Upload Station
+                    </span>
+                    <h1 class="upload-title text-3xl font-bold text-[color:var(--primary)] sm:text-4xl lg:text-5xl">
+                        Assessment Uploader
+                    </h1>
+                    <p class="upload-subtitle mt-2 text-base text-[color:var(--muted-foreground)] lg:text-lg">
+                        Drag and drop PDF files to add them to the processing queue
+                    </p>
+                </div>
+                <a href="index.html" class="hero-button secondary-button flex items-center gap-2 px-6 py-3 text-sm font-semibold self-start">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    <span>Back to Dashboard</span>
+                </a>
+            </div>
+
+            <!-- System Status Card -->
+            <div class="entry-card mb-6 p-4 lg:p-6">
+                <div class="flex flex-col gap-4 sm:gap-3">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <div class="flex items-center gap-3 flex-shrink-0">
+                            <div id="system-status-badge" class="badge-success flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium min-h-[40px] min-w-[120px]">
+                                <span id="status-indicator" class="inline-block h-2 w-2 rounded-full bg-[color:var(--success)] animate-pulse flex-shrink-0"></span>
+                                <div class="flex flex-col items-start flex-1">
+                                    <span class="text-[color:var(--foreground)] font-semibold leading-tight whitespace-nowrap">System</span>
+                                    <span id="status-text" class="status-value text-[10px] text-[color:var(--muted-foreground)] leading-tight whitespace-nowrap">Ready</span>
+                                </div>
+                            </div>
+                            <button onclick="showPCNumberDialog()" id="pc-number-badge" class="flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium border hover:opacity-80 transition-all cursor-pointer min-h-[40px] min-w-[120px]" title="Click to set PC number">
+                                <i data-lucide="monitor" class="w-3 h-3 flex-shrink-0"></i>
+                                <div class="flex flex-col items-start flex-1">
+                                    <span class="text-[color:var(--foreground)] font-semibold leading-tight whitespace-nowrap">PC Number</span>
+                                    <span id="pc-number" class="status-value font-mono text-[10px] leading-tight whitespace-nowrap">—</span>
+                                </div>
+                            </button>
+                            <button onclick="showUploadDestinationDialog()" id="upload-destination-badge" class="flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium border hover:opacity-80 transition-all cursor-pointer min-h-[40px] min-w-[120px]" title="Click to set upload destination">
+                                <i data-lucide="folder-open" class="w-3 h-3 flex-shrink-0"></i>
+                                <div class="flex flex-col items-start flex-1">
+                                    <span class="text-[color:var(--foreground)] font-semibold leading-tight whitespace-nowrap">Upload Destination</span>
+                                    <span id="destination-status" class="status-value text-[10px] leading-tight whitespace-nowrap">Not Set</span>
+                                </div>
+                            </button>
+                        </div>
+                        <div class="flex items-start gap-2 text-xs text-[color:var(--muted-foreground)] bg-[color:var(--muted)]/20 px-3 py-2 rounded-lg border border-[color:var(--border)] max-w-2xl flex-1 min-w-[300px]">
+                            <i data-lucide="info" class="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-[color:var(--primary)]"></i>
+                            <p class="leading-relaxed">
+                                <span class="font-semibold text-[color:var(--foreground)]">One-time setup required.</span>
+                                Please configure your PC number and upload destination folder once per workstation. Browser permissions will be saved for future use.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid gap-6 lg:grid-cols-2">
+                
+                <!-- Upload Zone -->
+                <div class="lg:col-span-2">
+                    <div class="upload-zone entry-card p-8 sm:p-12 lg:p-16 text-center cursor-pointer" id="upload-zone">
+                        <input type="file" id="file-input" accept=".pdf" multiple class="hidden" aria-label="Select PDF files to upload">
+                        
+                        <div class="flex flex-col items-center gap-4">
+                            <div class="p-6 rounded-full bg-[color:var(--primary)]/10">
+                                <i data-lucide="file-plus" class="w-12 h-12 sm:w-16 sm:h-16 text-[color:var(--primary)]"></i>
+                            </div>
+                            
+                            <div>
+                                <h2 class="text-xl sm:text-2xl lg:text-3xl font-bold text-[color:var(--foreground)] mb-2">Drop PDF Files Here</h2>
+                                <p class="text-sm sm:text-base text-[color:var(--muted-foreground)] mb-4">or click anywhere to browse your computer</p>
+                            </div>
+
+                            <button class="hero-button btn-primary flex items-center gap-2 px-6 sm:px-8 py-3 text-sm sm:text-base font-semibold" id="browse-btn">
+                                <i data-lucide="folder-open" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                                Browse Files
+                            </button>
+
+                            <div class="mt-4 text-xs sm:text-sm text-[color:var(--muted-foreground)]">
+                                <p class="flex items-center gap-2 justify-center">
+                                    <i data-lucide="info" class="w-3 h-3 sm:w-4 sm:h-4"></i>
+                                    Only PDF files are supported
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-3 flex justify-end">
+                        <button
+                            id="upload-panel-trigger"
+                            type="button"
+                            onclick="showUploadPanel()"
+                            class="hidden text-xs sm:text-sm text-[color:var(--primary)] hover:text-[color:var(--primary)]/80 font-medium flex items-center gap-1"
+                        >
+                            <i data-lucide="panel-top-open" class="w-4 h-4"></i>
+                            View upload status
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Upload Summary -->
+                <div id="upload-summary" class="lg:col-span-2 hidden">
+                    <div class="entry-card border-[color:var(--success)]/30 p-4 sm:p-6">
+                        <div class="flex items-start gap-3">
+                            <i data-lucide="check-circle" class="w-5 h-5 sm:w-6 sm:h-6 text-[color:var(--success)] mt-0.5 flex-shrink-0"></i>
+                            <div class="flex-1 min-w-0">
+                                <h4 class="font-semibold text-[color:var(--foreground)] mb-1 text-sm sm:text-base">Upload Complete</h4>
+                                <p class="text-xs sm:text-sm text-[color:var(--muted-foreground)]">
+                                    <span id="success-count">0</span> file(s) uploaded successfully to the incoming folder.
+                                    The processor agent will pick them up automatically.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // State
+        const state = {
+            pcNumber: null,
+            uploadQueue: [],
+            isUploading: false,
+            directoryHandle: null  // File System Access API handle (user-selected folder)
+        };
+
+        // DOM References
+        const uploadZone = document.getElementById('upload-zone');
+        const fileInput = document.getElementById('file-input');
+        const browseBtn = document.getElementById('browse-btn');
+        const fileList = document.getElementById('file-list');
+        const uploadQueue = document.getElementById('upload-queue');
+        const uploadSummary = document.getElementById('upload-summary');
+
+        // Initialize
+        async function init() {
+            await detectSystemPaths();
+            await restoreDirectoryHandle(); // Restore folder access if previously granted
+            updateDestinationDisplay(); // Update upload destination badge
+            updateSystemStatus(); // Update system status badge
+            setupEventListeners();
+            lucide.createIcons();
+        }
+
+        // Detect PC number only (OneDrive detection removed - using File System Access API)
+        async function detectSystemPaths() {
+            try {
+                console.log('[PC Detection] Starting...');
+                
+                // Detect PC number (multi-tier detection)
+                let detectedPCNumber = null;
+                
+                // Priority 1: Manual configuration (localStorage)
+                const manualPC = localStorage.getItem('pc_number');
+                if (manualPC && manualPC !== '000') {
+                    detectedPCNumber = manualPC;
+                    console.log('[PC Detection] Using configured PC number:', detectedPCNumber);
+                } else {
+                    // Priority 2-4: Auto-detection from paths/URL
+                    detectedPCNumber = detectPCNumberFromSystem();
+                    console.log('[PC Detection] Auto-detected:', detectedPCNumber);
+                }
+                
+                state.pcNumber = detectedPCNumber || '000';
+                
+                // Update UI
+                updatePCNumberDisplay(state.pcNumber);
+                lucide.createIcons();
+                
+            } catch (error) {
+                console.error('[PC Detection] Failed:', error);
+                const pcNumEl = document.getElementById('pc-number');
+                if (pcNumEl) pcNumEl.textContent = '???';
+                lucide.createIcons();
+            }
+        }
+        
+        // Legacy function - now no-op (OneDrive badge removed, using Upload Destination)
+        function updateOneDriveStatus() {
+            // No-op: OneDrive badge replaced with Upload Destination badge
+            return;
+            
+            // Check if path is valid (comprehensive validation)
+            const basePath = state.oneDrivePath;
+            const cached = localStorage.getItem('onedrive_base_path');
+            let isValid = false;
+            let statusText = '';
+            let tooltipText = '';
+            
+            // Remove all state classes first
+            badge.classList.remove('badge-valid', 'badge-error');
+            
+            if (!basePath || basePath === '') {
+                // No path
+                statusText = 'Not Detected';
+                tooltipText = 'Path not detected - Click to configure';
+            } else if (basePath.includes('KeySteps') && !cached) {
+                // Fallback path (only if NOT manually saved)
+                statusText = 'Using Fallback';
+                tooltipText = 'Using fallback path from config - Click to set correct path';
+            } else if (!basePath.match(/^[A-Z]:\\/i)) {
+                // Invalid drive letter
+                statusText = 'Invalid Path';
+                tooltipText = 'Path must start with drive letter (e.g., C:\\)';
+            } else if (basePath.length < 5) {
+                // Too short
+                statusText = 'Invalid Path';
+                tooltipText = 'Path is too short to be valid';
+            } else if (basePath.match(/[<>"|?*]/)) {
+                // Invalid characters
+                statusText = 'Invalid Path';
+                tooltipText = 'Path contains invalid characters';
+            } else {
+                // Valid path
+                isValid = true;
+                
+                // Determine detection method
+                if (window.location.protocol === 'file:') {
+                    statusText = 'File Path';
+                    tooltipText = 'Detected from file:// URL';
+                } else if (cached) {
+                    statusText = 'Cached Path';
+                    tooltipText = 'Using saved path from localStorage';
+                } else {
+                    statusText = 'Auto-Detected';
+                    tooltipText = 'Automatically detected path';
+                }
+            }
+            
+            // Apply state
+            if (isValid) {
+                badge.classList.add('badge-valid');
+            } else {
+                badge.classList.add('badge-error');
+            }
+            
+            statusSpan.textContent = statusText;
+            
+            // Build tooltip with actual paths
+            let fullTooltip = tooltipText + '\n\nClick to change path';
+            if (basePath) {
+                fullTooltip += '\n\nBase: ' + basePath;
+                if (state.watchPath) {
+                    fullTooltip += '\nWatch: ' + state.watchPath;
+                }
+            } else {
+                fullTooltip += '\n\nNo path configured';
+            }
+            
+            badge.title = fullTooltip;
+            
+            // Update system status
+            updateSystemStatus();
+        }
+
+        // Detect PC number from multiple sources
+        async function detectPCNumber() {
+            // Strategy 1: Check manually configured PC number
+            const savedPCNumber = localStorage.getItem('pc_number');
+            if (savedPCNumber) {
+                console.log('[PC Detection] Using configured PC number:', savedPCNumber);
+                return savedPCNumber;
+            }
+            
+            // Strategy 2: Check cached OneDrive path
+            const cachedPath = localStorage.getItem('onedrive_base_path');
+            if (cachedPath) {
+                // Look for computer name patterns
+                const pathMatch = cachedPath.match(/(?:KS|LAPTOP|PC|WORKSTATION)(\d+)/i);
+                if (pathMatch) {
+                    console.log('[PC Detection] Found in cached path:', pathMatch[1]);
+                    const pcNum = pathMatch[1].padStart(3, '0');
+                    localStorage.setItem('pc_number', pcNum);
+                    return pcNum;
+                }
+                
+                // Extract from username in cached path
+                const userMatch = cachedPath.match(/Users[\\\/]([^\\\/]+)/i);
+                if (userMatch) {
+                    const username = userMatch[1];
+                    const numMatch = username.match(/(\d+)/);
+                    if (numMatch) {
+                        console.log('[PC Detection] Extracted from username:', numMatch[1]);
+                        const pcNum = numMatch[1].padStart(3, '0');
+                        localStorage.setItem('pc_number', pcNum);
+                        return pcNum;
+                    }
+                }
+            }
+            
+            // Strategy 3: Try to extract from current URL path
+            const path = window.location.pathname;
+            const pathMatch = path.match(/(?:KS|LAPTOP|PC|WORKSTATION)(\d+)/i);
+            if (pathMatch) {
+                console.log('[PC Detection] Found in URL:', pathMatch[1]);
+                const pcNum = pathMatch[1].padStart(3, '0');
+                localStorage.setItem('pc_number', pcNum);
+                return pcNum;
+            }
+            
+            // Strategy 4: Auto-detection failed
+            console.warn('[PC Detection] Could not auto-detect PC number - user needs to set manually');
+            return '000';  // Will show as red badge
+        }
+
+        // OneDrive path detection (browser-compatible only)
+        async function detectOneDrivePath(config) {
+            console.log('[OneDrive Detection] Starting...');
+            
+            // Strategy 1: Check localStorage cache (primary for HTTP deployments)
+            const savedPath = localStorage.getItem('onedrive_base_path');
+            if (savedPath) {
+                console.log('[OneDrive Detection] ✓ Using cached path:', savedPath);
+                return savedPath;
+            }
+            
+            // Strategy 2: Parse from file:// protocol (only works when opened directly)
+            if (window.location.protocol === 'file:') {
+                console.log('[OneDrive Detection] Detecting from file:// protocol...');
+                
+                let fullPath = window.location.href;
+                fullPath = fullPath.replace('file:///', '');
+                fullPath = decodeURIComponent(fullPath);
+                
+                const serverIndex = fullPath.indexOf('4Set-Server');
+                if (serverIndex > 0) {
+                    let basePath = fullPath.substring(0, serverIndex + '4Set-Server'.length);
+                    basePath = basePath.replace(/\//g, '\\');
+                    
+                    // Ensure drive letter format
+                    if (basePath.match(/^[A-Z]\\/i) && !basePath.match(/^[A-Z]:/i)) {
+                        basePath = basePath.charAt(0) + ':' + basePath.substring(1);
+                    }
+                    
+                    console.log('[OneDrive Detection] ✓ Extracted from file path:', basePath);
+                    localStorage.setItem('onedrive_base_path', basePath);
+                    return basePath;
+                }
+            }
+            
+            // Strategy 3: Use config fallback (for HTTP deployments or when file:// fails)
+            console.log('[OneDrive Detection] Using config fallback...');
+            if (config.oneDrive?.fallbackRoot && config.oneDrive?.relativePath) {
+                const fallbackPath = config.oneDrive.fallbackRoot + config.oneDrive.relativePath;
+                console.log('[OneDrive Detection] Config fallback:', fallbackPath);
+                // Don't save to localStorage - let first-run setup handle it
+                return fallbackPath;
+            }
+            
+            // Final fallback
+            const hardcodedFallback = 'C:\\Users\\KeySteps\\The Education University of Hong Kong\\o365grp_KeySteps@JC - General\\98 - IT Support\\04 - Homemade Apps\\4Set-Server';
+            console.warn('[OneDrive Detection] Using hardcoded fallback');
+            return hardcodedFallback;
+        }
+        
+        // Show PC Number Configuration Modal
+        function showPCNumberDialog() {
+            const modal = document.getElementById('pc-number-modal');
+            const input = document.getElementById('pc-number-input');
+            const currentPC = state.pcNumber || localStorage.getItem('pc_number') || '';
+            
+            input.value = currentPC && currentPC !== '000' ? currentPC : '';
+            document.getElementById('pc-modal-error').textContent = '';
+            
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                input.focus();
+                input.select();
+                lucide.createIcons();
+            }, 100);
+        }
+        
+        // Close PC Number Modal
+        function closePCNumberModal() {
+            document.getElementById('pc-number-modal').classList.add('hidden');
+        }
+        
+        // Clear PC Number Cache
+        function clearPCNumberCache() {
+            if (confirm('Clear cached PC number and reload?\n\nYou will need to set it again.')) {
+                localStorage.removeItem('pc_number');
+                location.reload();
+            }
+        }
+        
+        // Save PC Number from Modal
+        function savePCNumber() {
+            const input = document.getElementById('pc-number-input');
+            const errorDiv = document.getElementById('pc-modal-error');
+            const value = input.value.trim();
+            
+            // Validation
+            if (!value) {
+                errorDiv.textContent = 'Please enter a PC number';
+                input.focus();
+                return;
+            }
+            
+            if (!/^\d+$/.test(value)) {
+                errorDiv.textContent = 'PC number must contain only digits';
+                input.focus();
+                return;
+            }
+            
+            if (parseInt(value) === 0) {
+                errorDiv.textContent = 'PC number cannot be 0';
+                input.focus();
+                return;
+            }
+            
+            // Format and save
+            const formatted = value.padStart(3, '0');
+            localStorage.setItem('pc_number', formatted);
+            state.pcNumber = formatted;
+            
+            // Update UI
+            updatePCNumberDisplay(formatted);
+            
+            closePCNumberModal();
+        }
+        
+        // Update PC Number Display
+        function updatePCNumberDisplay(pcNumber) {
+            const pcNumberSpan = document.getElementById('pc-number');
+            const pcBadge = document.getElementById('pc-number-badge');
+            
+            pcNumberSpan.textContent = pcNumber;
+            
+            // Remove all state classes first
+            pcBadge.classList.remove('badge-valid', 'badge-error', 'pc-number-not-set');
+            
+            if (pcNumber === '000' || !pcNumber) {
+                // PC number NOT set - error state
+                pcBadge.classList.add('badge-error');
+                pcBadge.title = 'PC number not set - Click to configure';
+            } else {
+                // PC number IS set - success state (green)
+                pcBadge.classList.add('badge-valid');
+                pcBadge.title = 'PC ' + pcNumber + ' - Click to change';
+            }
+            
+            // Update system status based on both PC and OneDrive
+            updateSystemStatus();
+            lucide.createIcons();
+        }
+        
+        // Update System Status Badge
+        function updateSystemStatus() {
+            const statusBadge = document.getElementById('system-status-badge');
+            const statusText = document.getElementById('status-text');
+            const statusIndicator = document.getElementById('status-indicator');
+            
+            // Clear previous states
+            statusBadge.classList.remove('badge-success', 'badge-error', 'badge-warning');
+            
+            const hasPCNumber = state.pcNumber && state.pcNumber !== '000';
+            const hasDestination = state.directoryHandle !== null;
+            
+            if (hasPCNumber && hasDestination) {
+                // Both configured - success (green)
+                statusBadge.classList.add('badge-success');
+                statusText.textContent = 'Ready';
+                statusIndicator.classList.remove('animate-pulse');
+            } else if (!hasPCNumber && !hasDestination) {
+                // Neither configured - error (red)
+                statusBadge.classList.add('badge-error');
+                statusText.textContent = 'Setup Required';
+                statusIndicator.classList.remove('animate-pulse');
+            } else {
+                // Partial configuration - warning (orange)
+                statusBadge.classList.add('badge-warning');
+                statusText.textContent = 'Partial Setup';
+                statusIndicator.classList.remove('animate-pulse');
+            }
+        }
+        
+        // Show Upload Destination Modal
+        function showUploadDestinationDialog() {
+            const modal = document.getElementById('destination-modal');
+            
+            // Update current destination display
+            if (state.directoryHandle) {
+                document.getElementById('current-destination').textContent = state.directoryHandle.name;
+                document.getElementById('destination-subpath').textContent = state.directoryHandle.name;
+            } else {
+                document.getElementById('current-destination').textContent = 'Not set';
+                document.getElementById('destination-subpath').textContent = '—';
+            }
+            
+            modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+        
+        // Close Upload Destination Modal
+        function closeDestinationModal() {
+            document.getElementById('destination-modal').classList.add('hidden');
+        }
+        
+        // Select Upload Destination (trigger folder picker)
+        async function selectUploadDestination() {
+            closeDestinationModal();
+            try {
+                await requestDirectoryAccess(true); // Show permission info modal first
+            } catch (error) {
+                console.error('[Detection] Failed to detect system paths:', error);
+            }
+            
+            // Final update to UI
+            updatePCNumberDisplay(state.pcNumber);
+            updateDestinationDisplay();
+        }
+        
+        // Update destination badge display
+        function updateDestinationDisplay() {
+            const badge = document.getElementById('upload-destination-badge');
+            const statusSpan = document.getElementById('destination-status');
+            
+            // Remove all state classes
+            badge.classList.remove('badge-valid', 'badge-error');
+            
+            if (state.directoryHandle) {
+                badge.classList.add('badge-valid');
+                statusSpan.textContent = state.directoryHandle.name;
+                badge.title = `Upload destination: ${state.directoryHandle.name}\nClick to change`;
+            } else {
+                badge.classList.add('badge-error');
+                statusSpan.textContent = 'Not Set';
+                badge.title = 'Click to set upload destination folder';
+            }
+        }
+        
+        // Legacy function kept for compatibility
+        async function showPathOverrideDialog() {
+            showUploadDestinationDialog();
+        }
+        
+        // Legacy functions (now no-ops)
+        function closePathModal() {
+            closeDestinationModal();
+        }
+        
+        // No-op - legacy functions removed (now using File System Access API)
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Browse button
+            browseBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                fileInput.click();
+            });
+
+            // Click on upload zone
+            uploadZone.addEventListener('click', () => {
+                fileInput.click();
+            });
+
+            // File input change
+            fileInput.addEventListener('change', (e) => {
+                handleFiles(Array.from(e.target.files));
+                e.target.value = ''; // Reset input
+            });
+
+            // Drag and drop
+            uploadZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadZone.classList.add('drag-over');
+            });
+
+            uploadZone.addEventListener('dragleave', () => {
+                uploadZone.classList.remove('drag-over');
+            });
+
+            uploadZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadZone.classList.remove('drag-over');
+                
+                const files = Array.from(e.dataTransfer.files).filter(f => f.name.toLowerCase().endsWith('.pdf'));
+                if (files.length > 0) {
+                    handleFiles(files);
+                } else {
+                    alert('Please drop only PDF files.');
+                }
+            });
+        }
+
+        // Handle dropped/selected files
+        function handleFiles(files) {
+            if (files.length === 0) return;
+            
+            // Check if PC number is set
+            if (!state.pcNumber || state.pcNumber === '000') {
+                // Spotlight the PC number badge
+                const badge = document.getElementById('pc-number-badge');
+                badge.classList.add('spotlight-attention');
+                
+                setTimeout(() => {
+                    badge.classList.remove('spotlight-attention');
+                }, 2000);
+                
+                // Show message
+                alert('⚠️ PC Number Required\n\nPlease set your PC number before uploading files.\n\nClick the "PC Number" badge to configure.');
+                return;
+            }
+            
+            // Check if upload destination is set
+            if (!state.directoryHandle) {
+                // Spotlight the upload destination badge
+                const badge = document.getElementById('upload-destination-badge');
+                badge.classList.add('spotlight-attention');
+                
+                setTimeout(() => {
+                    badge.classList.remove('spotlight-attention');
+                }, 2000);
+                
+                // Show destination modal
+                showUploadDestinationDialog();
+                return;
+            }
+            
+            // Filter PDF files only
+            const pdfFiles = Array.from(files).filter(file => 
+                file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
+            );
+            
+            if (pdfFiles.length === 0) {
+                alert('Please select PDF files only.');
+                return;
+            }
+            
+            // Add to queue
+            pdfFiles.forEach(file => {
+                const id = Date.now() + Math.random();
+                state.uploadQueue.push({ id, file, status: 'pending' });
+                addUploadItemToPanel(id, file);
+            });
+            
+            // Start processing
+            if (!state.isUploading) {
+                state.isUploading = true;
+                processUploadQueue();
+            }
+        }
+
+        // Add file to UI
+        function addFileToUI(id, file) {
+            const fileItem = document.createElement('div');
+            fileItem.id = `file-${id}`;
+            fileItem.className = 'file-item entry-card p-4 flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4';
+            fileItem.innerHTML = `
+                <div class="p-2 rounded bg-[color:var(--accent)]/10 flex-shrink-0">
+                    <i data-lucide="file-text" class="w-5 h-5 sm:w-6 sm:h-6 text-[color:var(--accent)]"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="font-medium text-[color:var(--foreground)] truncate text-sm sm:text-base">${file.name}</p>
+                    <p class="text-xs sm:text-sm text-[color:var(--muted-foreground)] mt-0.5">${formatFileSize(file.size)}</p>
+                </div>
+                <div class="status flex items-center gap-2 self-end sm:self-auto">
+                    <div class="w-4 h-4 sm:w-5 sm:h-5 border-2 border-[color:var(--muted-foreground)]/30 border-t-[color:var(--primary)] rounded-full animate-spin"></div>
+                    <span class="text-xs sm:text-sm text-[color:var(--muted-foreground)]">Uploading...</span>
+                </div>
+            `;
+            fileList.appendChild(fileItem);
+            lucide.createIcons();
+        }
+
+        // Process upload queue
+        async function processUploadQueue() {
+            let successCount = 0;
+
+            for (const item of state.uploadQueue) {
+                if (item.status !== 'pending') continue;
+
+                try {
+                    await uploadFile(item.id, item.file);
+                    updateUploadItemStatus(item.id, 'success');
+                    item.status = 'success';
+                    successCount++;
+                } catch (error) {
+                    updateUploadItemStatus(item.id, 'error', error.message);
+                    item.status = 'error';
+                }
+            }
+
+            state.isUploading = false;
+            
+            // Update panel title
+            document.getElementById('panel-title').textContent = `${successCount} Uploaded`;
+        }
+
+        // Show folder permission info modal
+        function showFolderPermissionModal() {
+            const modal = document.getElementById('folder-permission-modal');
+            modal.classList.remove('hidden');
+            lucide.createIcons();
+        }
+        
+        // Close folder permission modal
+        function closeFolderPermissionModal() {
+            const modal = document.getElementById('folder-permission-modal');
+            modal.classList.add('hidden');
+        }
+        
+        // Proceed with folder selection after user reads info
+        async function proceedWithFolderSelection() {
+            closeFolderPermissionModal();
+            try {
+                await requestDirectoryAccess();
+            } catch (error) {
+                // User cancelled or error occurred
+                console.log('[File Access] Folder selection cancelled or failed');
+            }
+        }
+
+        // Request directory access (File System Access API)
+        async function requestDirectoryAccess(showModal = false) {
+            try {
+                // Check if API is supported
+                if (!('showDirectoryPicker' in window)) {
+                    throw new Error('File System Access API not supported. Please use Chrome or Edge.');
+                }
+                
+                // Show info modal on first access if requested
+                if (showModal) {
+                    showFolderPermissionModal();
+                    return; // Modal will call this function again without showModal
+                }
+
+                // Build picker options. Reuse previous handle if available so user lands in the same folder.
+                const pickerOptions = { mode: 'readwrite' };
+
+                if (state.directoryHandle) {
+                    pickerOptions.startIn = state.directoryHandle;
+                } else {
+                    pickerOptions.startIn = 'documents';
+                }
+
+                // Request directory picker (for parent folder - 4Set-Server)
+                const dirHandle = await window.showDirectoryPicker(pickerOptions);
+
+                // Verify write permission
+                const permission = await dirHandle.queryPermission({ mode: 'readwrite' });
+                if (permission !== 'granted') {
+                    const request = await dirHandle.requestPermission({ mode: 'readwrite' });
+                    if (request !== 'granted') {
+                        throw new Error('Write permission denied');
+                    }
+                }
+
+                // Store parent folder handle
+                state.directoryHandle = dirHandle;
+
+                // Store in IndexedDB for future use
+                await storeDirectoryHandle(dirHandle);
+
+                console.log('[File Access] ✓ Directory access granted:', dirHandle.name);
+                console.log('[File Access] Parent folder stored. Will use subfolders as needed.');
+                
+                // Update UI
+                updateDestinationDisplay();
+                updateSystemStatus();
+                
+                return dirHandle;
+
+            } catch (error) {
+                console.error('[File Access] Error:', error);
+                throw error;
+            }
+        }
+        
+        // Store directory handle in IndexedDB
+        async function storeDirectoryHandle(handle) {
+            return new Promise((resolve, reject) => {
+                const db = indexedDB.open('4SetUploader', 1);
+                
+                db.onsuccess = () => {
+                    const database = db.result;
+                    const tx = database.transaction('handles', 'readwrite');
+                    const store = tx.objectStore('handles');
+                    const request = store.put(handle, 'incomingFolder');
+                    
+                    request.onsuccess = () => {
+                        console.log('[IndexedDB] ✓ Handle stored');
+                        resolve();
+                    };
+                    
+                    request.onerror = () => reject(request.error);
+                };
+                
+                db.onerror = () => reject(db.error);
+            });
+        }
+        
+        // Restore directory handle from IndexedDB
+        async function restoreDirectoryHandle() {
+            return new Promise((resolve, reject) => {
+                const dbRequest = indexedDB.open('4SetUploader', 1);
+                
+                dbRequest.onsuccess = async () => {
+                    try {
+                        const database = dbRequest.result;
+                        const tx = database.transaction('handles', 'readonly');
+                        const store = tx.objectStore('handles');
+                        const getRequest = store.get('incomingFolder');
+                        
+                        getRequest.onsuccess = async () => {
+                            const handle = getRequest.result;
+                            
+                            if (handle) {
+                                // Verify permission still valid
+                                const permission = await handle.queryPermission({ mode: 'readwrite' });
+                                if (permission === 'granted') {
+                                    state.directoryHandle = handle;
+                                    console.log('[File Access] ✓ Restored directory handle:', handle.name);
+                                    resolve(handle);
+                                    return;
+                                }
+                                console.log('[File Access] Permission no longer granted, will request again');
+                            } else {
+                                console.log('[File Access] No stored handle found');
+                            }
+                            resolve(null);
+                        };
+                        
+                        getRequest.onerror = () => {
+                            console.log('[File Access] Error reading handle:', getRequest.error);
+                            resolve(null);
+                        };
+                    } catch (error) {
+                        console.log('[File Access] Could not restore handle:', error.message);
+                        resolve(null);
+                    }
+                };
+                
+                dbRequest.onerror = () => {
+                    console.log('[File Access] Could not open database:', dbRequest.error);
+                    resolve(null);
+                };
+            });
+        }
+        
+        // Open IndexedDB
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('4SetUploader', 1);
+                
+                request.onupgradeneeded = (event) => {
+                    const db = event.target.result;
+                    if (!db.objectStoreNames.contains('handles')) {
+                        db.createObjectStore('handles');
+                    }
+                };
+                
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        }
+
+        // Upload file (File System Access API)
+        async function uploadFile(id, file) {
+            try {
+                // Ensure we have directory access (parent folder)
+                if (!state.directoryHandle) {
+                    console.log('[Upload] No directory handle, showing destination modal...');
+                    showUploadDestinationDialog(); // Show destination modal first
+                    throw new Error('Please set upload destination first');
+                }
+                
+                // Write directly to the selected folder (don't navigate to subfolder)
+                const targetHandle = state.directoryHandle;
+                
+                // Create metadata (only computer number needed)
+                const metadata = {
+                    uploadedFrom: state.pcNumber
+                };
+                
+                // Write PDF file
+                const pdfHandle = await targetHandle.getFileHandle(file.name, { create: true });
+                const pdfWritable = await pdfHandle.createWritable();
+                await pdfWritable.write(file);
+                await pdfWritable.close();
+                
+                console.log(`[Upload] ✓ PDF written: ${file.name}`);
+                
+                // Write metadata JSON file
+                const metaFilename = file.name.replace('.pdf', '.meta.json');
+                const metaHandle = await targetHandle.getFileHandle(metaFilename, { create: true });
+                const metaWritable = await metaHandle.createWritable();
+                await metaWritable.write(JSON.stringify(metadata, null, 2));
+                await metaWritable.close();
+                
+                console.log(`[Upload] ✓ Metadata written: ${metaFilename}`);
+                console.log(`[Upload] → ${state.directoryHandle.name}/ folder`);
+                console.log('[Upload] Metadata:', metadata);
+                console.log('[Upload] 🎉 Files will sync via OneDrive to server!');
+                
+                return true;
+                
+            } catch (error) {
+                // Handle specific errors
+                if (error.name === 'AbortError') {
+                    throw new Error('User cancelled folder selection');
+                } else if (error.name === 'NotAllowedError') {
+                    throw new Error('Permission denied to write files');
+                } else if (error.message.includes('not supported')) {
+                    throw new Error('Browser does not support file writing. Please use Chrome or Edge.');
+                } else {
+                    throw new Error(`Upload failed: ${error.message}`);
+                }
+            }
+        }
+
+        // Update file status
+        function updateFileStatus(id, status, errorMsg = '') {
+            const fileItem = document.getElementById(`file-${id}`);
+            if (!fileItem) return;
+
+            const statusEl = fileItem.querySelector('.status');
+            
+            if (status === 'success') {
+                statusEl.innerHTML = `
+                    <i data-lucide="check-circle" class="w-4 h-4 sm:w-5 sm:h-5 text-[color:var(--success)]"></i>
+                    <span class="text-xs sm:text-sm text-[color:var(--success)] font-medium">Uploaded</span>
+                `;
+            } else if (status === 'error') {
+                statusEl.innerHTML = `
+                    <i data-lucide="x-circle" class="w-4 h-4 sm:w-5 sm:h-5 text-[color:var(--destructive)]"></i>
+                    <span class="text-xs sm:text-sm text-[color:var(--destructive)] font-medium" title="${errorMsg}">Failed</span>
+                `;
+            }
+            
+            lucide.createIcons();
+        }
+
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+        
+        // Floating Upload Panel Management
+        function toggleUploadPanel() {
+            const panel = document.getElementById('upload-status-panel');
+            const icon = document.getElementById('panel-toggle-icon');
+            
+            panel.classList.toggle('collapsed');
+            
+            if (panel.classList.contains('collapsed')) {
+                icon.setAttribute('data-lucide', 'upload-cloud');
+            } else {
+                icon.setAttribute('data-lucide', 'chevron-down');
+            }
+            
+            lucide.createIcons();
+        }
+        
+        function showUploadPanel() {
+            const panel = document.getElementById('upload-status-panel');
+            const icon = document.getElementById('panel-toggle-icon');
+            
+            panel.classList.remove('hidden');
+            panel.classList.remove('collapsed');  // Remove collapsed state if previously minimized
+            panel.classList.add('show');
+            
+            // Reset icon to chevron-down (expanded state)
+            if (icon) {
+                icon.setAttribute('data-lucide', 'chevron-down');
+            }
+            
+            lucide.createIcons();
+        }
+        
+        function addUploadItemToPanel(id, file) {
+            const panelContent = document.getElementById('upload-panel-content');
+            const uploadItem = document.createElement('div');
+            uploadItem.id = `upload-item-${id}`;
+            uploadItem.className = 'upload-item';
+            uploadItem.innerHTML = `
+                <div class="flex-shrink-0">
+                    <i data-lucide="file-text" class="w-5 h-5 text-[color:var(--primary)]"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <p class="text-sm font-medium text-[color:var(--foreground)] truncate">${file.name}</p>
+                    <p class="text-xs text-[color:var(--muted-foreground)]">${formatFileSize(file.size)}</p>
+                </div>
+                <div class="upload-status flex-shrink-0">
+                    <div class="w-4 h-4 border-2 border-[color:var(--primary)] border-t-transparent rounded-full animate-spin"></div>
+                </div>
+            `;
+            panelContent.appendChild(uploadItem);
+            
+            // Update count
+            document.getElementById('upload-count').textContent = `(${state.uploadQueue.length})`;
+            
+            // Show panel if hidden
+            showUploadPanel();
+            
+            lucide.createIcons();
+        }
+        
+        function updateUploadItemStatus(id, status, errorMsg = '') {
+            const item = document.getElementById(`upload-item-${id}`);
+            if (!item) return;
+            
+            const statusEl = item.querySelector('.upload-status');
+            
+            if (status === 'success') {
+                item.classList.add('success');
+                statusEl.innerHTML = '<i data-lucide="check-circle" class="w-5 h-5 text-[color:var(--success)]"></i>';
+            } else if (status === 'error') {
+                item.classList.add('error');
+                // Escape quotes in error message to prevent HTML injection
+                const safeErrorMsg = errorMsg.replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+                statusEl.innerHTML = `<i data-lucide="x-circle" class="w-5 h-5 text-[color:var(--destructive)]" title="${safeErrorMsg}"></i>`;
+            }
+            
+            lucide.createIcons();
+        }
+
+        // Initialize on load
+        init();
+    </script>
+    
+    <!-- PC Number Configuration Modal -->
+    <div id="pc-number-modal" class="modal-backdrop hidden">
+        <div class="modal-panel">
+            <button onclick="closePCNumberModal()" class="modal-close" title="Close" aria-label="Close modal">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            
+            <h3 class="text-xl font-bold text-[color:var(--primary)] mb-2">🔢 Set PC Number</h3>
+            <p class="text-sm text-[color:var(--muted-foreground)] mb-4">
+                This PC number will be sent to Jotform field 647 (computerno) for all uploads from this workstation.
+            </p>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-[color:var(--foreground)] mb-2">
+                    PC Number
+                </label>
+                <input 
+                    type="text" 
+                    id="pc-number-input" 
+                    class="modal-input" 
+                    placeholder="Enter PC number (e.g., 10, 95, 123)"
+                    maxlength="3"
+                    pattern="[0-9]*"
+                    onkeypress="if(event.key==='Enter') savePCNumber()"
+                />
+                <p class="mt-1 text-xs text-[color:var(--muted-foreground)]">
+                    Will be auto-formatted: 10 → 010, 95 → 095
+                </p>
+            </div>
+            
+            <div id="pc-modal-error" class="modal-error text-[color:var(--destructive)]"></div>
+            
+            <div class="flex gap-2 justify-end">
+                <button 
+                    onclick="clearPCNumberCache()" 
+                    class="px-4 py-2 text-sm bg-[color:var(--muted)] text-[color:var(--foreground)] rounded hover:opacity-80 transition-opacity">
+                    Clear Cache
+                </button>
+                <button 
+                    onclick="closePCNumberModal()" 
+                    class="px-4 py-2 text-sm bg-[color:var(--secondary)] text-[color:var(--secondary-foreground)] rounded hover:opacity-80 transition-opacity">
+                    Cancel
+                </button>
+                <button 
+                    onclick="savePCNumber()" 
+                    class="px-4 py-2 text-sm bg-[color:var(--primary)] text-[color:var(--primary-foreground)] rounded hover:opacity-80 transition-opacity">
+                    Save PC Number
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Upload Destination Modal -->
+    <div id="destination-modal" class="modal-backdrop hidden">
+        <div class="modal-panel">
+            <button onclick="closeDestinationModal()" class="modal-close" title="Close" aria-label="Close modal">
+                <i data-lucide="x" class="w-5 h-5"></i>
+            </button>
+            
+            <h3 class="text-xl font-bold text-[color:var(--primary)] mb-2 flex items-center gap-2">
+                <i data-lucide="folder-open" class="w-6 h-6"></i>
+                Upload Destination
+            </h3>
+            <p class="text-sm text-[color:var(--muted-foreground)] mb-6">
+                Select the folder that the processor agent is monitoring. This should match the configured watch path on your 4Set Server.
+            </p>
+            
+            <div class="mb-6 bg-[color:var(--muted)]/30 p-4 rounded-lg border border-[color:var(--border)]">
+                <p class="text-xs font-semibold text-[color:var(--foreground)] mb-2">Current Destination:</p>
+                <p id="current-destination" class="font-mono text-sm text-[color:var(--foreground)]">Not set</p>
+                <p class="text-xs text-[color:var(--muted-foreground)] mt-1">
+                    Selected folder: <span id="destination-subpath" class="font-mono">—</span>
+                </p>
+            </div>
+            
+            <div class="flex items-start gap-2 text-xs bg-amber-50 border border-amber-200 rounded-lg p-3 mb-6">
+                <i data-lucide="alert-circle" class="w-4 h-4 text-amber-600 mt-0.5 flex-shrink-0"></i>
+                <div class="text-amber-900">
+                    <strong>Important:</strong> Ensure the selected folder matches the processor agent's monitored path. Contact your 4Set Server administrator if you are unsure of the correct location.
+                </div>
+            </div>
+            
+            <div class="flex items-center justify-between gap-3">
+                <button 
+                    onclick="closeDestinationModal()"
+                    class="px-4 py-2 text-sm text-[color:var(--muted-foreground)] hover:text-[color:var(--foreground)] transition-colors">
+                    Close
+                </button>
+                <button 
+                    onclick="selectUploadDestination()" 
+                    class="px-6 py-2 text-sm bg-[color:var(--primary)] text-[color:var(--primary-foreground)] rounded hover:opacity-80 transition-opacity font-semibold flex items-center gap-2">
+                    <i data-lucide="folder-search" class="w-4 h-4"></i>
+                    Set Upload Destination
+                </button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Folder Permission Info Modal -->
+    <div id="folder-permission-modal" class="modal-backdrop hidden">
+        <div class="modal-panel max-w-lg">
+            <div class="mb-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="p-3 rounded-full bg-[color:var(--primary)]/10">
+                        <i data-lucide="folder-lock" class="w-6 h-6 text-[color:var(--primary)]"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-[color:var(--foreground)]">Folder Access Required</h3>
+                </div>
+                
+                <div class="space-y-4 text-sm text-[color:var(--muted-foreground)]">
+                    <p>
+                        To upload files, the browser needs permission to write to your OneDrive folder. 
+                        You'll be asked to select a folder in the next step.
+                    </p>
+                    
+                    <div class="bg-[color:var(--muted)]/30 border border-[color:var(--border)] rounded-lg p-4">
+                        <h4 class="font-semibold text-[color:var(--foreground)] mb-2 flex items-center gap-2">
+                            <i data-lucide="check-circle" class="w-4 h-4 text-[color:var(--success)]"></i>
+                            Recommended: Select Parent Folder
+                        </h4>
+                        <p class="mb-3">
+                            We recommend selecting the <strong class="font-mono text-[color:var(--foreground)]">4Set-Server</strong> folder (parent folder) instead of just the <strong class="font-mono">incoming</strong> subfolder.
+                        </p>
+                        <ul class="space-y-2 ml-4">
+                            <li class="flex items-start gap-2">
+                                <i data-lucide="check" class="w-4 h-4 text-[color:var(--success)] mt-0.5 flex-shrink-0"></i>
+                                <span>One-time setup for entire project</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i data-lucide="check" class="w-4 h-4 text-[color:var(--success)] mt-0.5 flex-shrink-0"></i>
+                                <span>Easier management across workstations</span>
+                            </li>
+                            <li class="flex items-start gap-2">
+                                <i data-lucide="check" class="w-4 h-4 text-[color:var(--success)] mt-0.5 flex-shrink-0"></i>
+                                <span>Future-proof for additional features</span>
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <div class="flex items-start gap-2 text-xs bg-blue-50 border border-blue-200 rounded-lg p-3">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0"></i>
+                        <div>
+                            <strong class="text-blue-900">Privacy Note:</strong>
+                            <span class="text-blue-700">Permission is stored locally in your browser. Files are written directly to your OneDrive folder and sync automatically. No data is sent to external servers.</span>
+                        </div>
+                    </div>
+                    
+                    <p class="text-xs">
+                        <strong>Next step:</strong> Select your <span class="font-mono bg-[color:var(--muted)] px-1.5 py-0.5 rounded">4Set-Server</span> folder when the folder picker appears.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="flex justify-end gap-3">
+                <button 
+                    onclick="closeFolderPermissionModal()"
+                    class="px-4 py-2 text-sm text-[color:var(--muted-foreground)] hover:text-[color:var(--foreground)] transition-colors">
+                    Cancel
+                </button>
+                <button 
+                    onclick="proceedWithFolderSelection()" 
+                    class="px-6 py-2 text-sm bg-[color:var(--primary)] text-[color:var(--primary-foreground)] rounded hover:opacity-80 transition-opacity font-semibold">
+                    Select Folder
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Upload Status Panel -->
+    <div id="upload-status-panel" class="upload-status-panel hidden">
+        <div class="panel-header">
+            <div class="flex items-center gap-2">
+                <i data-lucide="upload-cloud" class="w-5 h-5 text-[color:var(--primary)]"></i>
+                <h3 class="font-semibold text-[color:var(--foreground)]">
+                    <span id="panel-title">Uploads</span>
+                    <span id="upload-count" class="text-xs text-[color:var(--muted-foreground)] ml-2"></span>
+                </h3>
+            </div>
+            <button onclick="toggleUploadPanel()" class="text-[color:var(--muted-foreground)] hover:text-[color:var(--foreground)] transition-colors" title="Toggle panel" aria-label="Toggle upload panel">
+                <i data-lucide="chevron-down" id="panel-toggle-icon" class="w-5 h-5"></i>
+            </button>
+        </div>
+        <div class="panel-content" id="upload-panel-content">
+            <!-- Upload items will be added here -->
+        </div>
+    </div>
+</body>
+</html>

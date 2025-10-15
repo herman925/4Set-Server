@@ -1,0 +1,183 @@
+/* Upload Page Specific Styles */
+
+/* Upload zone animations */
+.upload-zone {
+    transition: all 0.3s ease;
+    border: 3px dashed rgba(43, 57, 144, 0.3);
+}
+
+.upload-zone.drag-over {
+    border-color: var(--primary);
+    background: linear-gradient(135deg, rgba(43, 57, 144, 0.05) 0%, rgba(43, 57, 144, 0.1) 100%);
+    transform: scale(1.01);
+}
+
+.upload-zone:hover:not(.drag-over) {
+    border-color: rgba(43, 57, 144, 0.5);
+}
+
+/* File item animation */
+.file-item {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from { 
+        opacity: 0; 
+        transform: translateY(-10px); 
+    }
+    to { 
+        opacity: 1; 
+        transform: translateY(0); 
+    }
+}
+
+/* Page load animations */
+.upload-title {
+    animation: fadeSlideDown 0.9s ease-out forwards;
+    opacity: 0;
+    transform: translateY(-20px);
+}
+
+.upload-subtitle {
+    animation: fadeSlideUp 1.1s ease-out forwards;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+/* Entry card staggered animations */
+.entry-card:nth-child(1) {
+    animation-delay: 0.4s;
+}
+
+.entry-card:nth-child(2) {
+    animation-delay: 0.5s;
+}
+
+.entry-card:nth-child(3) {
+    animation-delay: 0.6s;
+}
+
+/* Floating Upload Status Panel */
+.upload-status-panel {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 400px;
+    max-width: calc(100vw - 40px);
+    max-height: 500px;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1000;
+}
+
+.upload-status-panel.collapsed {
+    width: 60px;
+    height: 60px;
+    border-radius: 30px;
+    padding: 0;
+    overflow: hidden;
+    opacity: 0;
+    transform: scale(0.8);
+    pointer-events: none;
+}
+
+.upload-status-panel.collapsed .panel-content {
+    display: none;
+}
+
+.upload-status-panel.collapsed .panel-header {
+    border-bottom: none;
+    padding: 0;
+    justify-content: center;
+}
+
+.upload-status-panel.collapsed .panel-header-info {
+    display: none;
+}
+
+.upload-status-panel.collapsed .panel-header button {
+    width: 100%;
+    height: 100%;
+    border-radius: 30px;
+}
+
+.upload-status-panel.hidden {
+    transform: translateY(calc(100% + 40px));
+    opacity: 0;
+    pointer-events: none;
+}
+
+@keyframes slideInUp {
+    from {
+        transform: translateY(calc(100% + 40px));
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.upload-status-panel.show {
+    animation: slideInUp 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.panel-content {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 12px;
+}
+
+.upload-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 8px;
+    background: #f9fafb;
+    margin-bottom: 8px;
+    transition: all 0.2s;
+}
+
+.upload-item:last-child {
+    margin-bottom: 0;
+}
+
+.upload-item.success {
+    background: rgba(34, 197, 94, 0.1);
+}
+
+.upload-item.error {
+    background: rgba(240, 78, 105, 0.1);
+}
+
+.collapse-button {
+    width: 60px;
+    height: 60px;
+    border-radius: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.collapsed .collapse-button {
+    width: 100%;
+    height: 100%;
+}
+
+.collapse-button:hover {
+    transform: scale(1.05);
+}

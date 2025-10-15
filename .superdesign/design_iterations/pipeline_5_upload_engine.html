@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jotform Upload Queue</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="theme_pantone_light_1.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+        body { font-family: var(--font-sans); background-color: #f9fafb; }
+        .timeline-dot { position: absolute; left: -5px; top: 50%; transform: translateY(-50%); width: 10px; height: 10px; border-radius: 50%; }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen">
+
+    <header class="bg-white shadow-sm border-b">
+        <nav class="container mx-auto px-4 sm:px-6 py-3 flex justify-between items-center">
+            <div class="flex items-center text-sm">
+                <a href="#" class="text-gray-500 hover:text-primary">Dashboard</a>
+                <i data-lucide="chevron-right" class="w-4 h-4 mx-1 text-gray-400"></i>
+                <span class="font-semibold text-gray-700">Upload Engine</span>
+            </div>
+            <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold" style="background-color: var(--primary); color: var(--primary-foreground);">Stage: Uploading</span>
+        </nav>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 sm:px-6 py-8">
+        <!-- Metrics Banner -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 text-center bg-gray-100 p-4 rounded-lg border mb-8">
+            <div><span class="font-bold text-gray-800">Max Concurrent:</span> 4</div>
+            <div><span class="font-bold text-gray-800">Quota/Min:</span> 120</div>
+            <div><span class="font-bold text-gray-800">Batch Size:</span> 25</div>
+            <div><span class="font-bold text-gray-800">Burst Cooldown:</span> 60s</div>
+            <div><span class="font-bold text-gray-800">Status:</span> <span class="text-green-600">Nominal</span></div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Left Column: Upload List -->
+            <div class="lg:col-span-2 bg-white p-6 rounded-lg shadow-sm border">
+                <h3 class="font-bold text-lg mb-4">Upload Queue</h3>
+                <div class="space-y-4">
+                    <!-- Completed Upload -->
+                    <div class="flex items-center justify-between p-3 bg-green-50 rounded-md">
+                        <div class="flex items-center space-x-3">
+                            <i data-lucide="check-circle-2" class="w-5 h-5 text-green-600"></i>
+                            <span class="font-medium text-sm">Submission #1234568</span>
+                        </div>
+                        <span class="text-xs text-gray-500">Completed</span>
+                    </div>
+                    <!-- Pending Upload -->
+                    <div class="flex items-center justify-between p-3 bg-blue-50 rounded-md">
+                        <div class="flex items-center space-x-3">
+                            <i data-lucide="loader" class="w-5 h-5 text-blue-600 animate-spin"></i>
+                            <span class="font-medium text-sm">Submission #1234569</span>
+                        </div>
+                        <span class="text-xs text-gray-500">Pending</span>
+                    </div>
+                    <!-- Rate-Limited Upload -->
+                    <div class="flex items-center justify-between p-3 bg-yellow-50 rounded-md">
+                        <div class="flex items-center space-x-3">
+                            <i data-lucide="pause-circle" class="w-5 h-5 text-yellow-600"></i>
+                            <span class="font-medium text-sm">Submission #1234570</span>
+                        </div>
+                        <span class="text-xs text-yellow-700">Rate-limited</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Retry Schedule -->
+            <div class="bg-white p-6 rounded-lg shadow-sm border">
+                <h3 class="font-bold text-lg mb-4">Retry Schedule</h3>
+                <div class="relative pl-4 border-l-2 border-gray-200 space-y-6">
+                    <div class="relative">
+                        <div class="timeline-dot bg-blue-500"></div>
+                        <p class="font-semibold text-sm">Next Retry: In 30s</p>
+                        <p class="text-xs text-gray-500">For 1 rate-limited item.</p>
+                    </div>
+                    <div class="relative">
+                        <div class="timeline-dot bg-gray-300"></div>
+                        <p class="font-semibold text-sm">Burst Cooldown Ends: 2m 15s</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alert Area -->
+        <div class="mt-8 bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-r-lg" role="alert">
+            <div class="flex">
+                <div class="py-1"><i data-lucide="alert-triangle" class="w-6 h-6 text-red-500 mr-4"></i></div>
+                <div>
+                    <p class="font-bold">API Error: 429 Too Many Requests</p>
+                    <p class="text-sm">The agent has automatically entered a cooldown period. No action is required.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="py-4">
+        <div class="text-center text-sm text-gray-500">
+            Refer to the <a href="<!-- TEMP/integrations/jotform-integration.md -->" class="underline text-primary">Jotform Integration Guide</a> for API limit details.
+        </div>
+    </footer>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

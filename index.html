@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>4Set System Entry</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href=".superdesign/design_iterations/theme_pantone_light_1.css" />
+  <link rel="stylesheet" href="assets/css/index.css" />
+  <link rel="stylesheet" href="assets/css/global.css" />
+  <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap"
+    rel="stylesheet"
+  />
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body class="min-h-screen hero-background">
+  <div class="relative overflow-hidden">
+    <div class="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/70 to-transparent"></div>
+    <div class="absolute inset-0 pointer-events-none">
+      <div class="absolute -left-24 top-24 w-48 h-48 rounded-full border border-primary/20 glow-ring"></div>
+      <div class="absolute right-12 bottom-20 w-40 h-40 rounded-full border border-secondary/30 glow-ring-secondary"></div>
+      <div class="absolute left-1/3 top-1/2 w-20 h-20 rounded-full bg-secondary/20 blur-3xl"></div>
+      <div class="absolute right-1/4 top-1/3 w-24 h-24 rounded-full bg-primary/20 blur-3xl"></div>
+    </div>
+
+    <main class="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 py-16 lg:flex-row lg:items-center lg:justify-between lg:gap-16">
+      <div class="max-w-2xl space-y-6 text-center lg:w-1/2 lg:max-w-none lg:text-left">
+        <div class="logo-row">
+          <a href="https://www.keystepsjc.hk" target="_blank" rel="noreferrer">
+            <img src="assets/logos/KS.png" alt="KeySteps@JC Logo" class="logo-ks" loading="lazy" />
+          </a>
+          <a href="https://www.eduhk.hk" target="_blank" rel="noreferrer">
+            <img src="assets/logos/EdUHK.png" alt="EdUHK Logo" class="logo-eduhk" loading="lazy" />
+          </a>
+        </div>
+        <span class="hero-badge inline-flex items-center gap-2 px-4 py-2 text-xs uppercase tracking-wide">
+          <span class="inline-block h-2 w-2 rounded-full bg-primary"></span>
+          KeySteps@JC (Phase Two)
+        </span>
+        <h1 class="hero-title text-4xl font-bold text-[color:var(--primary)] sm:text-5xl lg:text-6xl">
+          4Set System (2025/26)
+        </h1>
+        <p class="hero-subtitle text-base text-[color:var(--muted-foreground)] sm:text-lg lg:text-xl">
+          Web-based PDF uploads trigger the processor agent to validate, parse, and submit survey data to Jotform while the dashboard tracks queue health, rejections, and recent activity for KeySteps@JC maintainers.
+        </p>
+        <div class="flex flex-col items-center gap-4 sm:flex-row sm:justify-center lg:items-stretch lg:justify-start">
+          <a
+            href="upload.html"
+            class="hero-button btn-primary flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold"
+          >
+            <span>Assessment Uploader</span>
+            <span class="text-sm font-medium text-primary-foreground/80">Upload PDFs</span>
+          </a>
+          <a
+            href="checking_system_home.html"
+            class="hero-button secondary-button btn-secondary flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold"
+          >
+            <span>Checking System</span>
+            <span class="text-sm font-medium text-secondary-foreground/80">See What's Missing</span>
+          </a>
+        </div>
+      </div>
+
+      <section class="mt-12 grid w-full gap-6 lg:mt-0 lg:w-1/2 lg:max-w-none">
+        <article class="entry-card w-full p-6 sm:p-8 lg:p-10 lg:px-12">
+          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p class="text-sm uppercase tracking-wide text-[color:var(--muted-foreground)]">JotForm Latest</p>
+              <h2 class="mt-1 text-2xl font-semibold text-[color:var(--foreground)]">Recent Submission</h2>
+            </div>
+            <div class="badge-success flex items-center gap-2 rounded-full px-4 py-1 text-xs font-medium">
+              <span class="inline-block h-2 w-2 rounded-full bg-[color:var(--success)]"></span>
+              <span data-field="last-sync">Last Sync: —</span>
+            </div>
+          </div>
+          <div class="mt-6 rounded-xl border border-primary/20 bg-white/75 p-5 shadow-sm">
+            <div class="grid gap-4 sm:grid-cols-2">
+              <div>
+                <p class="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Submission ID</p>
+                <p class="wrap-long text-sm font-medium text-[color:var(--primary)]" data-field="submission-id">—</p>
+              </div>
+              <div>
+                <p class="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Uploaded</p>
+                <p class="text-sm font-medium text-[color:var(--foreground)]" data-field="uploaded">—</p>
+              </div>
+              <div>
+                <p class="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">Session Key</p>
+                <p class="text-sm font-medium text-[color:var(--primary)]" data-field="session-key">—</p>
+              </div>
+              <div>
+                <p class="text-xs uppercase tracking-wide text-[color:var(--muted-foreground)]">School ID</p>
+                <p class="text-sm font-medium text-[color:var(--secondary-foreground)]" data-field="school-id">—</p>
+              </div>
+            </div>
+            <div class="mt-6 flex flex-col gap-2 sm:flex-row">
+              <button
+                class="hero-button btn-primary inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold"
+                data-action="resync-jotform"
+                type="button"
+              >
+                <span data-label="resync">Resync</span>
+              </button>
+              <button
+                class="hero-button btn-primary inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold"
+                data-action="view-table"
+                type="button"
+              >
+                <span>View Table</span>
+              </button>
+            </div>
+            <div class="mt-3 min-h-[1.5rem] text-xs font-medium text-[color:var(--muted-foreground)]" data-feedback aria-live="polite"></div>
+          </div>
+        </article>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop hidden" data-modal="password" aria-hidden="true">
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title-password">
+      <button class="modal-close" type="button" data-modal-close aria-label="Close password prompt">
+        <i data-lucide="x"></i>
+      </button>
+      <div class="flex flex-col gap-4">
+        <div>
+          <h2 id="modal-title-password" class="text-xl font-semibold text-[color:var(--primary)]">System Password Required</h2>
+          <p class="text-sm text-[color:var(--muted-foreground)]">Unlock `assets/credentials.enc` to authorise a secure JotForm resync.</p>
+        </div>
+        <form class="space-y-4" data-modal-form>
+          <input type="text" name="username" autocomplete="username" class="sr-only" aria-hidden="true" tabindex="-1" />
+          <div class="space-y-2">
+            <label for="system-password" class="text-xs font-semibold uppercase tracking-wide text-[color:var(--muted-foreground)]">System Password</label>
+            <input
+              id="system-password"
+              class="modal-input"
+              type="password"
+              name="systemPassword"
+              autocomplete="current-password"
+              required
+              placeholder="Enter system password"
+            />
+          </div>
+          <p class="modal-error" data-modal-error></p>
+          <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <button type="button" class="hero-button secondary-button px-5 py-2 text-xs font-semibold uppercase tracking-wide" data-modal-cancel>
+              Cancel
+            </button>
+            <button type="submit" class="hero-button btn-primary px-6 py-2 text-xs font-semibold uppercase tracking-wide">
+              Unlock &amp; Resync
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table Access Password Modal -->
+  <div class="modal-backdrop hidden" data-modal="table-password" aria-hidden="true">
+    <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modal-title-table">
+      <button class="modal-close" type="button" data-modal-close aria-label="Close password prompt">
+        <i data-lucide="x"></i>
+      </button>
+      <div class="flex flex-col gap-4">
+        <div>
+          <h2 id="modal-title-table" class="text-xl font-semibold text-[color:var(--primary)]">System Password Required</h2>
+          <p class="text-sm text-[color:var(--muted-foreground)]">Unlock access to view the full raw data table on Jotform.</p>
+        </div>
+        <form class="space-y-4" data-modal-form>
+          <input type="text" name="username" autocomplete="username" class="sr-only" aria-hidden="true" tabindex="-1" />
+          <div class="space-y-2">
+            <label for="table-system-password" class="text-xs font-semibold uppercase tracking-wide text-[color:var(--muted-foreground)]">System Password</label>
+            <input
+              id="table-system-password"
+              class="modal-input"
+              type="password"
+              name="systemPassword"
+              autocomplete="current-password"
+              required
+              placeholder="Enter system password"
+            />
+          </div>
+          <p class="modal-error" data-modal-error></p>
+          <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <button type="button" class="hero-button secondary-button px-5 py-2 text-xs font-semibold uppercase tracking-wide" data-modal-cancel>
+              Cancel
+            </button>
+            <button type="submit" class="hero-button btn-primary px-6 py-2 text-xs font-semibold uppercase tracking-wide">
+              Unlock &amp; View Table
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="assets/js/encryption.js"></script>
+  <script src="assets/js/jotform-resync.js" defer></script>
+</body>
+</html>

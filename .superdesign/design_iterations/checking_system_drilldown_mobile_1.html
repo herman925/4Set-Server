@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checking System Drilldown - Student (Mobile)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="theme_pantone_light_1.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f7f8fc; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+        .status-circle {
+            width: 12px;
+            height: 12px;
+            border-radius: 9999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .status-circle::after {
+            content: '';
+            width: 5px;
+            height: 5px;
+            border-radius: 9999px;
+            background-color: rgba(255,255,255,0.85);
+        }
+        .status-green { background-color: #16a34a; }
+        .status-yellow { background-color: #f59e0b; }
+        .status-red { background-color: #ef4444; }
+        .badge { font-size: 10px; padding: 2px 6px; border-radius: 9999px; display: inline-flex; align-items: center; gap: 3px; }
+        @media (max-width: 640px) {
+            .header-nav {
+                display: none; /* Hide breadcrumbs on mobile */
+            }
+            .hero-metrics {
+                grid-template-columns: 1fr 1fr;
+            }
+            .task-table {
+                display: block;
+                width: 100%;
+            }
+            .task-table thead, .task-table tbody, .task-table tr {
+                display: block;
+            }
+            .task-table thead {
+                display: none; /* Hide table header */
+            }
+            .task-table tr {
+                border-bottom: 1px solid #e2e8f0;
+                padding: 0.75rem 0;
+            }
+            .task-table td {
+                display: flex;
+                justify-content: space-between;
+                padding: 0.25rem 0.5rem;
+                text-align: right;
+            }
+            .task-table td::before {
+                content: attr(data-label);
+                font-weight: 500;
+                text-align: left;
+                color: #64748b;
+            }
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-50">
+    <!-- Persistent Top Nav Bar -->
+    <header class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-20">
+        <div class="max-w-7xl mx-auto px-4">
+            <div class="flex items-center justify-between h-14">
+                <!-- Left Side: Home & Title -->
+                <div class="flex items-center gap-2">
+                    <a href="<!-- Link to Entry Point -->" title="Return to Entry Point" class="p-2 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-800">
+                        <i data-lucide="home" class="w-4 h-4"></i>
+                    </a>
+                    <span class="text-sm text-slate-900 font-medium">Chloe Wong</span>
+                </div>
+                <!-- Right Side: Actions -->
+                <div class="flex items-center gap-2">
+                    <button class="p-2 rounded-full hover:bg-slate-100 text-slate-500 hover:text-slate-800">
+                        <i data-lucide="more-vertical" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 py-4 space-y-4">
+
+        <!-- Hero Metrics -->
+        <div class="hero-metrics grid grid-cols-2 gap-3">
+            <div class="bg-white rounded-lg border border-slate-200 px-3 py-2 shadow-sm">
+                <h3 class="text-xs text-slate-500 font-medium">Completion</h3>
+                <div class="flex items-baseline gap-1 mt-1">
+                    <span class="text-xl font-semibold text-slate-900">97.7%</span>
+                    <span class="text-emerald-600 text-xs font-medium">+3.2%</span>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg border border-slate-200 px-3 py-2 shadow-sm">
+                <h3 class="text-xs text-slate-500 font-medium">Termination</h3>
+                <div class="flex items-center gap-2 mt-1 text-xs">
+                    <span class="badge bg-emerald-100 text-emerald-700"><i data-lucide="check" class="w-3 h-3"></i>No</span>
+                </div>
+            </div>
+            <div class="bg-white rounded-lg border border-slate-200 px-3 py-2 shadow-sm">
+                <h3 class="text-xs text-slate-500 font-medium">Last Submission</h3>
+                <p class="mt-1 text-sm text-slate-700">2025-10-05</p>
+            </div>
+            <div class="bg-white rounded-lg border border-slate-200 px-3 py-2 shadow-sm">
+                <h3 class="text-xs text-slate-500 font-medium">Outstanding</h3>
+                <p class="mt-1 text-sm text-slate-700">Math Pattern</p>
+            </div>
+        </div>
+
+        <!-- Task Matrix -->
+        <div class="bg-white rounded-lg border border-slate-200 shadow-sm">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-slate-200">
+                <h2 class="text-sm font-semibold text-slate-800">Task Progress</h2>
+                <span class="text-xs text-slate-500">196 / 200</span>
+            </div>
+            <div class="task-table overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead>
+                        <tr><th>Task</th><th>Status</th><th>Answered</th><th>Last Updated</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr class="hover:bg-slate-50">
+                            <td data-label="Task" class="font-medium text-slate-800">ERV</td>
+                            <td data-label="Status">
+                                <span class="inline-flex items-center gap-2 text-xs text-slate-700">
+                                    <span class="status-circle status-green"></span>
+                                    Complete
+                                </span>
+                            </td>
+                            <td data-label="Answered" class="text-slate-600">48 / 48</td>
+                            <td data-label="Last Updated" class="text-slate-500 text-xs">Oct 5, 16:05</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50">
+                            <td data-label="Task" class="font-medium text-slate-800">SYM</td>
+                            <td data-label="Status">
+                                <span class="inline-flex items-center gap-2 text-xs text-slate-700">
+                                    <span class="status-circle status-green"></span>
+                                    Complete
+                                </span>
+                            </td>
+                            <td data-label="Answered" class="text-slate-600">36 / 36</td>
+                            <td data-label="Last Updated" class="text-slate-500 text-xs">Oct 5, 15:42</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50">
+                            <td data-label="Task" class="font-medium text-slate-800">Theory of Mind</td>
+                            <td data-label="Status">
+                                <span class="inline-flex items-center gap-2 text-xs text-slate-700">
+                                    <span class="status-circle status-green"></span>
+                                    Complete
+                                </span>
+                            </td>
+                            <td data-label="Answered" class="text-slate-600">42 / 42</td>
+                            <td data-label="Last Updated" class="text-slate-500 text-xs">Oct 5, 14:58</td>
+                        </tr>
+                        <tr class="hover:bg-slate-50">
+                            <td data-label="Task" class="font-medium text-slate-800">Chinese Word Reading</td>
+                            <td data-label="Status">
+                                <span class="inline-flex items-center gap-2 text-xs text-slate-700">
+                                    <span class="status-circle status-yellow"></span>
+                                    In progress
+                                </span>
+                            </td>
+                            <td data-label="Answered" class="text-slate-600">38 / 40</td>
+                            <td data-label="Last Updated" class="text-slate-500 text-xs">Oct 6, 09:12</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Notes and Termination flags -->
+        <div class="grid grid-cols-1 gap-3">
+            <div class="bg-white rounded-lg border border-slate-200 px-3 py-3 shadow-sm">
+                <h3 class="text-sm font-semibold text-slate-800 mb-2">Autosave & Enrichment Notes</h3>
+                <ul class="text-xs text-slate-600 space-y-1.5 list-disc list-inside">
+                    <li>Autosave synced at 09:15 (OneDrive)</li>
+                    <li>Enrichment lookup matched `coreid` 89231</li>
+                    <li>`ERV_Q11` flagged for manual review</li>
+                </ul>
+            </div>
+            <div class="bg-white rounded-lg border border-slate-200 px-3 py-3 shadow-sm">
+                <h3 class="text-sm font-semibold text-slate-800 mb-2">Termination & Alerts</h3>
+                <div class="text-xs text-slate-600 space-y-2">
+                    <div class="flex items-start gap-2">
+                        <span class="badge bg-emerald-100 text-emerald-700"><i data-lucide="shield-check" class="w-3 h-3"></i>Clear</span>
+                        <p>No termination rules triggered.</p>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <span class="badge bg-yellow-100 text-yellow-700"><i data-lucide="alert-circle" class="w-3 h-3"></i>Action</span>
+                        <p>Chinese Word Reading requires follow-up.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Navigation -->
+        <div class="flex items-center justify-between bg-white rounded-lg px-3 py-2 shadow-sm border border-slate-200">
+            <button class="px-2.5 py-1.5 border border-slate-200 rounded-md hover:bg-slate-50 flex items-center gap-1.5 text-xs">
+                <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+                <span>Back</span>
+            </button>
+            <button class="px-2.5 py-1.5 bg-primary text-primary-foreground rounded-md hover:bg-opacity-90 flex items-center gap-1.5 text-xs">
+                <i data-lucide="home" class="w-3.5 h-3.5"></i>
+                <span>Home</span>
+            </button>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

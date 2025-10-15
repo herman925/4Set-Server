@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Checking System - 4Set Pipeline</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href=".superdesign/design_iterations/theme_pantone_light_1.css" />
+    <link rel="stylesheet" href="assets/css/index.css" />
+    <link rel="stylesheet" href="assets/css/global.css" />
+    <link rel="stylesheet" href="assets/css/checking-system-home.css" />
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&family=Noto+Sans+TC&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body class="min-h-screen hero-background">
+    <div class="relative overflow-hidden">
+        <!-- Decorative Background Elements -->
+        <div class="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/70 to-transparent"></div>
+        <div class="absolute inset-0 pointer-events-none">
+            <div class="absolute -left-24 top-24 w-48 h-48 rounded-full border border-primary/20 glow-ring"></div>
+            <div class="absolute right-12 bottom-20 w-40 h-40 rounded-full border border-secondary/30 glow-ring-secondary"></div>
+            <div class="absolute left-1/3 top-1/2 w-20 h-20 rounded-full bg-secondary/20 blur-3xl"></div>
+            <div class="absolute right-1/4 top-1/3 w-24 h-24 rounded-full bg-primary/20 blur-3xl"></div>
+        </div>
+
+        <main class="relative z-10 mx-auto min-h-screen w-full max-w-4xl px-6 py-12 lg:py-16">
+            
+            <!-- Header Section -->
+            <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex flex-col gap-2">
+                    <h1 class="hero-title text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-[color:var(--foreground)]">
+                        <i data-lucide="search-check" class="w-8 h-8 sm:w-10 sm:h-10 inline-block mr-2 text-[color:var(--primary)]"></i>
+                        Checking System
+                    </h1>
+                    <p class="hero-subtitle text-base sm:text-lg text-[color:var(--muted-foreground)] max-w-2xl">
+                        Search and analyze pipeline data with flexible filters
+                    </p>
+                </div>
+                <a href="index.html" class="hero-button secondary-button flex items-center gap-2 px-6 py-3 text-sm font-semibold self-start">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    <span>Back to Dashboard</span>
+                </a>
+            </div>
+
+            <!-- System Health Badge -->
+            <div class="entry-card mb-6 p-4">
+                <div class="flex items-center gap-3">
+                    <div id="system-health-badge" class="badge-success flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium">
+                        <span class="status-indicator inline-block h-2 w-2 rounded-full bg-[color:var(--success)]"></span>
+                        <span id="status-text">System Healthy</span>
+                    </div>
+                    <span class="text-xs text-[color:var(--muted-foreground)]">Last snapshot: <span class="font-mono" id="snapshot-timestamp">Loading...</span></span>
+                </div>
+            </div>
+
+            <!-- Filter Chips Display -->
+            <div class="entry-card p-4 mb-4">
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                    <div id="filter-chips" class="flex flex-wrap items-center gap-2">
+                        <span class="text-xs text-[color:var(--muted-foreground)]">No filters applied</span>
+                    </div>
+                    <span id="filter-count" class="text-xs text-[color:var(--muted-foreground)] font-medium">0 filters applied</span>
+                </div>
+            </div>
+
+            <!-- Main Filter Card -->
+            <div class="entry-card p-6 lg:p-8 mb-6">
+                <h2 class="text-xl font-semibold text-[color:var(--foreground)] mb-6 flex items-center gap-2">
+                    <i data-lucide="sliders-horizontal" class="w-5 h-5 text-[color:var(--primary)]"></i>
+                    Configure Filters
+                </h2>
+                
+                <div class="space-y-4">
+                    <!-- Dynamic Filter Rows Container -->
+                    <div id="filters-container" class="space-y-3">
+                        <!-- Filter rows will be dynamically inserted here -->
+                    </div>
+
+                    <!-- Helper Text -->
+                    <div class="info-box">
+                        <i data-lucide="info" class="w-4 h-4"></i>
+                        <p class="text-xs text-[color:var(--muted-foreground)]">
+                            <strong>Filter Rules:</strong> District and Group are independent (can use both). Once you select School → Class → Student, higher levels become unavailable to prevent conflicts.
+                        </p>
+                    </div>
+
+                    <!-- Add Filter Button -->
+                    <div class="pt-2">
+                        <button id="add-filter-btn" class="flex items-center gap-1.5 text-sm font-medium text-[color:var(--primary)] hover:text-[color:var(--primary)]/80 transition-colors">
+                            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                            Add filter
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Action Footer -->
+                <div class="mt-6 pt-6 border-t border-[color:var(--border)] flex flex-col sm:flex-row items-center justify-end gap-4">
+                    <div class="flex items-center gap-3">
+                        <button id="clear-all-btn" class="hero-button secondary-button text-sm font-semibold px-6 py-2 rounded-full">
+                            Clear All
+                        </button>
+                        <button id="start-checking-btn" class="hero-button bg-[color:var(--primary)] text-white px-8 py-2.5 text-sm font-semibold rounded-full" disabled>
+                            Start Checking
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Checks -->
+            <div class="entry-card p-6">
+                <h3 class="text-sm font-semibold text-[color:var(--muted-foreground)] uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <i data-lucide="history" class="w-4 h-4"></i>
+                    Recent Checks
+                </h3>
+                <div id="recent-checks-container" class="flex flex-wrap items-center gap-2">
+                    <p class="text-xs text-[color:var(--muted-foreground)]">No recent checks</p>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- Password Entry Modal -->
+    <div id="password-modal" class="modal-backdrop hidden">
+        <div class="modal-panel">
+            <h2 class="text-xl font-semibold text-[color:var(--foreground)] mb-2">System Authentication</h2>
+            <p class="text-sm text-[color:var(--muted-foreground)] mb-6">Enter the system password to decrypt data files</p>
+            
+            <form id="password-form" class="space-y-4">
+                <div>
+                    <input type="password" 
+                           id="system-password-input" 
+                           class="modal-input" 
+                           placeholder="System Password"
+                           autocomplete="current-password">
+                </div>
+                
+                <div id="password-error" class="modal-error"></div>
+                
+                <button type="submit" 
+                        id="password-submit-btn" 
+                        class="hero-button bg-[color:var(--primary)] text-white w-full py-3 text-sm font-semibold rounded-full">
+                    Unlock
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Loading...</div>
+    </div>
+
+    <!-- JavaScript Modules -->
+    <script src="assets/js/encryption.js"></script>
+    <script src="assets/js/checking-system-data-loader.js"></script>
+    <script src="assets/js/checking-system-filters.js"></script>
+    <script src="assets/js/checking-system-router.js"></script>
+    <script src="assets/js/checking-system-app.js"></script>
+    
+    <!-- Initialize Icons -->
+    <script>
+        lucide.createIcons();
+    </script>
+</body>
+</html>

@@ -1,0 +1,55 @@
+/* Index Page Specific Styles */
+
+/* Logo Styles */
+.logo-row {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: clamp(1.5rem, 4vw, 3rem) !important;
+  max-width: 100% !important;
+}
+
+.logo-row img {
+  object-fit: contain !important;
+  width: auto !important;
+}
+
+.logo-ks {
+  height: clamp(90px, 20vw, 85px) !important;
+}
+
+.logo-eduhk {
+  height: clamp(62px, 16vw, 70px) !important;
+}
+
+/* Text Utilities */
+.wrap-long {
+  word-break: break-all !important;
+  overflow-wrap: anywhere !important;
+}
+
+/* Index Page Animations */
+.hero-title {
+  animation: fadeSlideDown 0.9s ease-out forwards;
+  opacity: 0;
+  transform: translateY(-20px);
+}
+
+.hero-subtitle {
+  animation: fadeSlideUp 1.1s ease-out forwards;
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.entry-card:nth-child(1) {
+  animation-delay: 0.4s;
+}
+
+/* Hero Badge */
+.hero-badge {
+  background: rgba(43, 57, 144, 0.08) !important;
+  color: var(--primary) !important;
+  border-radius: 9999px !important;
+  font-family: var(--font-mono);
+}
