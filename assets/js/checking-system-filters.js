@@ -1,6 +1,25 @@
 /**
  * Filter Management for Checking System Home Page
  * Handles dynamic filter rows, validation, and UI updates
+ * 
+ * FILTER HIERARCHY & INTERACTIONS:
+ * 
+ * Top Level (Independent):
+ *   - District ← → Group (filter each other)
+ * 
+ * Middle Level:
+ *   - School (filtered by District AND Group - intersection)
+ * 
+ * Lower Levels:
+ *   - Class (filtered by School > District/Group)
+ *   - Student (filtered by Class > School > District/Group)
+ * 
+ * INTERACTION RULES:
+ * 1. District filters: Group, School, Class, Student
+ * 2. Group filters: District, School, Class, Student
+ * 3. School filters: Class, Student (and IS FILTERED BY District+Group)
+ * 4. Class filters: Student (and IS FILTERED BY School OR District+Group)
+ * 5. Student (filtered by Class OR School OR District+Group in priority order)
  */
 (() => {
   let appData = null;
@@ -27,14 +46,14 @@
   }
 
   /**
-   * Render the initial filter row
+   * Render the initial filter row (now starts empty)
    */
   function renderInitialFilter() {
     const container = document.getElementById('filters-container');
     if (!container) return;
 
     container.innerHTML = '';
-    addFilterRow();
+    // User must click "Add Filter" to create first row
   }
 
   /**
@@ -313,25 +332,50 @@
   }
 
   /**
-   * Render class dropdown (dependent on school selection)
+   * Render class dropdown (filtered by ALL active higher-level filters)
+   * Priority: School > District+Group (intersection)
    */
   function renderClassSelector(container, filterId) {
-    // Check if school is selected
-    const schoolFilter = Object.values(activeFilters).find(f => 
-      f.type === FILTER_TYPES.SCHOOL
-    );
+    // Get active filters
+    const districtFilter = Object.values(activeFilters).find(f => f.type === FILTER_TYPES.DISTRICT);
+    const groupFilter = Object.values(activeFilters).find(f => f.type === FILTER_TYPES.GROUP);
+    const schoolFilter = Object.values(activeFilters).find(f => f.type === FILTER_TYPES.SCHOOL);
 
-    if (!schoolFilter) {
+    // Get available classes based on filters
+    let availableClasses = appData.classes;
+    
+    // Priority 1: If school is selected, only show classes from that school
+    if (schoolFilter) {
+      const schoolId = schoolFilter.value.schoolId || schoolFilter.value;
+      availableClasses = availableClasses.filter(c => c.schoolId === schoolId);
+    }
+    // Priority 2: If no school, filter by District AND/OR Group (intersection)
+    else {
+      // Start with all schools, apply both filters
+      let filteredSchools = appData.schools;
+      
+      if (districtFilter) {
+        filteredSchools = filteredSchools.filter(s => s.district === districtFilter.value);
+      }
+      
+      if (groupFilter) {
+        filteredSchools = filteredSchools.filter(s => s.group === parseInt(groupFilter.value));
+      }
+      
+      const schoolIds = new Set(filteredSchools.map(s => s.schoolId));
+      availableClasses = availableClasses.filter(c => schoolIds.has(c.schoolId));
+    }
+    
+    if (availableClasses.length === 0) {
       container.innerHTML = `
         <div class="w-full border border-[color:var(--border)] rounded-lg shadow-sm text-sm px-3 py-2 bg-gray-100 text-[color:var(--muted-foreground)] cursor-not-allowed">
-          Select a school first...
+          No classes available for selected filters...
         </div>
       `;
       return;
     }
 
-    const schoolId = schoolFilter.value.schoolId || schoolFilter.value;
-    const schoolClasses = appData.classes.filter(c => c.schoolId === schoolId);
+    const schoolClasses = availableClasses;
 
     // Check if this filter already has a value
     const currentFilter = activeFilters[filterId];
@@ -390,7 +434,8 @@
   }
 
   /**
-   * Show student dropdown with filtered results (respecting School/Class filters)
+   * Show student dropdown with filtered results (respecting ALL active filters)
+   * Priority: Class > School > District+Group (intersection)
    * Smart search: "C" prefix = Core ID only, "St" prefix = Student ID only, otherwise search all
    */
   function showStudentDropdown(input, dropdown, filterId) {
@@ -404,20 +449,38 @@
     
     const queryLower = query.toLowerCase();
     
-    // Get active School and Class filters
+    // Get ALL active filters
+    const districtFilter = Object.values(activeFilters).find(f => f.type === FILTER_TYPES.DISTRICT);
+    const groupFilter = Object.values(activeFilters).find(f => f.type === FILTER_TYPES.GROUP);
     const schoolFilter = Object.values(activeFilters).find(f => f.type === FILTER_TYPES.SCHOOL);
     const classFilter = Object.values(activeFilters).find(f => f.type === FILTER_TYPES.CLASS);
     
-    // Start with all students, then apply filters
+    // Start with all students, then apply filters hierarchically
     let availableStudents = appData.students;
     
-    // Filter by class if selected (most specific)
+    // Priority 1: Filter by class if selected (most specific)
     if (classFilter) {
       availableStudents = availableStudents.filter(s => s.classId === classFilter.value.classId);
     }
-    // Otherwise filter by school if selected
+    // Priority 2: Filter by school if selected
     else if (schoolFilter) {
       availableStudents = availableStudents.filter(s => s.schoolId === schoolFilter.value.schoolId);
+    }
+    // Priority 3: Filter by District AND/OR Group (intersection if both selected)
+    else if (districtFilter || groupFilter) {
+      // Get schools that match BOTH filters (if both are selected)
+      let filteredSchools = appData.schools;
+      
+      if (districtFilter) {
+        filteredSchools = filteredSchools.filter(s => s.district === districtFilter.value);
+      }
+      
+      if (groupFilter) {
+        filteredSchools = filteredSchools.filter(s => s.group === parseInt(groupFilter.value));
+      }
+      
+      const schoolIds = new Set(filteredSchools.map(s => s.schoolId));
+      availableStudents = availableStudents.filter(s => schoolIds.has(s.schoolId));
     }
     
     // Apply smart search query

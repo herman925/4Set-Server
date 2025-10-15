@@ -6,9 +6,48 @@
   let studentData = null;
   let schoolData = null;
   let classData = null;
+  
+  // System configuration (loaded from config/checking_system_config.json)
+  let systemConfig = {
+    ui: {
+      loadingStatusDelayMs: 500
+    },
+    cache: {
+      ttlHours: 1,
+      sessionStorageKeyPrefix: "student_jotform_"
+    },
+    taskView: {
+      defaultFilter: "all",
+      defaultExpandState: false
+    }
+  };
   let taskRegistry = null; // Centralized task identifier mappings
   let systemPassword = null;
 
+  /**
+   * Load system configuration from config/checking_system_config.json
+   */
+  async function loadSystemConfig() {
+    try {
+      const response = await fetch('config/checking_system_config.json');
+      const config = await response.json();
+      
+      // Merge with defaults
+      systemConfig = {
+        ...systemConfig,
+        ...config,
+        ui: { ...systemConfig.ui, ...config.ui },
+        cache: { ...systemConfig.cache, ...config.cache },
+        taskView: { ...systemConfig.taskView, ...config.taskView }
+      };
+      
+      console.log('[Config] ✅ Loaded checking system config:', systemConfig);
+    } catch (error) {
+      console.warn('[Config] ⚠️ Failed to load config, using defaults:', error);
+      console.log('[Config] Default config:', systemConfig);
+    }
+  }
+  
   /**
    * Load task metadata from survey-structure.json for centralized identifier mapping
    */
@@ -31,7 +70,10 @@
    */
   async function init() {
     try {
-      // Load task registry first
+      // Load system configuration first
+      await loadSystemConfig();
+      
+      // Load task registry
       await loadTaskRegistry();
       
       // Parse URL parameters - only need coreId
@@ -186,7 +228,7 @@
   }
 
   /**
-   * Update page title with student name
+   * Update page title with student name and breadcrumb
    */
   function populatePageTitle() {
     if (!studentData) return;
@@ -197,6 +239,39 @@
     const headerTitle = document.querySelector('h1');
     if (headerTitle) {
       headerTitle.textContent = `Student: ${studentData.studentName}`;
+    }
+    
+    // Update breadcrumb navigation with new pill style and links
+    const breadcrumbRegion = document.querySelector('.breadcrumb-region');
+    const breadcrumbGroup = document.querySelector('.breadcrumb-group');
+    const breadcrumbSchool = document.querySelector('.breadcrumb-school');
+    const breadcrumbClass = document.querySelector('.breadcrumb-class');
+    const breadcrumbStudent = document.querySelector('.breadcrumb-student');
+    
+    if (breadcrumbRegion && schoolData?.district) {
+      breadcrumbRegion.textContent = schoolData.district;
+      breadcrumbRegion.href = `checking_system_1_district.html?district=${encodeURIComponent(schoolData.district)}`;
+    }
+    if (breadcrumbGroup && schoolData?.group) {
+      breadcrumbGroup.textContent = `Group ${schoolData.group}`;
+      breadcrumbGroup.href = `checking_system_1_group.html?group=${schoolData.group}`;
+    }
+    if (breadcrumbSchool && schoolData) {
+      breadcrumbSchool.textContent = `${schoolData.schoolNameChinese || schoolData.schoolName}`;
+      breadcrumbSchool.href = `checking_system_2_school.html?schoolId=${schoolData.schoolId}`;
+    }
+    if (breadcrumbClass && classData) {
+      breadcrumbClass.textContent = classData.actualClassName || classData.classId;
+      breadcrumbClass.href = `checking_system_3_class.html?classId=${classData.classId}`;
+    }
+    if (breadcrumbStudent && studentData) {
+      breadcrumbStudent.textContent = studentData.studentName;
+      // Current page - no link needed (it's a span)
+    }
+    
+    // Reinitialize lucide icons for chevrons
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
     }
   }
 
@@ -308,6 +383,7 @@
       }
 
       // Load question mappings
+      await updateLoadingStatus('Loading question mappings...');
       const questionsResponse = await fetch('assets/jotformquestions.json');
       const questionsData = await questionsResponse.json();
       
@@ -323,16 +399,19 @@
       console.log('[StudentPage] ========== FETCHING JOTFORM DATA ==========');
       console.log('[StudentPage] Fetching Jotform data for Core ID:', coreId);
       
+      await updateLoadingStatus('Connecting to Jotform API...');
       const allSubmissions = await window.JotformAPI.fetchStudentSubmissions(coreId, coreIdQid);
       const totalReturned = allSubmissions.length;
       
       console.log(`[StudentPage] Filter API returned: ${totalReturned} submissions`);
+      await updateLoadingStatus(`Received ${totalReturned} submissions from Jotform`);
       
       // VALIDATE EXACT MATCHES (like processor_agent.ps1 does - lines 1376-1395)
       const coreIdNumeric = coreId.startsWith('C') ? coreId.substring(1) : coreId;
       const submissions = [];
       
       console.log('[StudentPage] Validating each submission for EXACT match...');
+      await updateLoadingStatus(`Validating ${totalReturned} submissions...`);
       
       for (const sub of allSubmissions) {
         // Extract student-id value (try .answer first, fallback to .text)
@@ -356,6 +435,7 @@
       }
       
       console.log(`[StudentPage] Validation complete: ${submissions.length} exact matches out of ${totalReturned} returned`);
+      await updateLoadingStatus(`Found ${submissions.length} matching submissions`);
       
       if (submissions.length !== totalReturned) {
         console.warn(`[StudentPage] ⚠️ Jotform filter is BROKEN - returned ${totalReturned} but only ${submissions.length} match!`);
@@ -374,6 +454,8 @@
       // Extract and log sessionkeys
       console.log('[StudentPage] ========== SESSIONKEY EXTRACTION ==========');
       console.log(`[StudentPage] Found ${submissions.length} submissions for Core ID ${coreId}`);
+      await updateLoadingStatus(`Processing ${submissions.length} submissions...`);
+      
       const sessionKeys = submissions.map((sub, index) => {
         const sessionKeyQid = questionsData['sessionkey'];
         const sessionKey = sub.answers?.[sessionKeyQid]?.answer || sub.answers?.[sessionKeyQid]?.text || 'UNKNOWN';
@@ -383,9 +465,11 @@
       console.log('[StudentPage] ==========================================');
 
       // Merge submissions (prefer earliest for overlaps, fill missing from later)
+      await updateLoadingStatus(`Merging ${submissions.length} submissions...`);
       const mergedData = mergeSubmissions(submissions, questionsData);
 
       // Calculate completion metrics
+      await updateLoadingStatus('Calculating completion metrics...');
       const metrics = calculateCompletionMetrics(mergedData, questionsData);
 
       // Cache the results (merged data only, not all 517 raw submissions!)
@@ -431,6 +515,11 @@
       }
       
       console.log('[StudentPage] ==========================================');
+
+      // Set last sync timestamp in localStorage (global for this student)
+      const syncKey = `jotform_last_sync_${coreId}`;
+      localStorage.setItem(syncKey, new Date().toISOString());
+      console.log(`[StudentPage] ✅ Updated sync timestamp in localStorage: ${syncKey}`);
 
       // Populate UI
       populateJotformData(cacheData);
@@ -583,6 +672,7 @@
   async function populateJotformData(data) {
     try {
       console.log('[StudentPage] ========== POPULATING UI ==========');
+      await updateLoadingStatus('Populating task data...');
       
       // Update completion percentage if element exists
       const completionEl = document.querySelector('[data-completion]');
@@ -603,6 +693,12 @@
       
       // Populate task tables with real data
       populateTaskTables(taskValidation, data.mergedAnswers);
+      
+      // Update global sync timestamp in profile section
+      updateGlobalSyncTimestamp();
+      
+      // Update task status overview
+      updateTaskStatusOverview();
       
       console.log('[StudentPage] UI population complete');
       console.log('[StudentPage] ==========================================');
@@ -667,6 +763,14 @@
         continue;
       }
       
+      // Update task title if validation provides a merged title (e.g., "SYM / NONSYM")
+      if (validation.title) {
+        const titleElement = taskElement.querySelector('summary strong');
+        if (titleElement) {
+          titleElement.textContent = validation.title;
+        }
+      }
+      
       // Find the table body within this task
       const tbody = taskElement.querySelector('table tbody');
       if (!tbody) {
@@ -688,50 +792,86 @@
         correctAnswerHeader.style.display = isYNTask ? 'none' : '';
       }
       
+      // Detect timed-out questions for SYM/NONSYM
+      let symTimeoutIndex = -1;
+      let nonsymTimeoutIndex = -1;
+      if (taskId === 'sym' && validation.symAnalysis && validation.symAnalysis.timedOut) {
+        symTimeoutIndex = validation.symAnalysis.lastAnsweredIndex;
+      }
+      if (taskId === 'sym' && validation.nonsymAnalysis && validation.nonsymAnalysis.timedOut) {
+        nonsymTimeoutIndex = validation.nonsymAnalysis.lastAnsweredIndex;
+      }
+      
+      // Detect termination for CWR (10 consecutive incorrect)
+      let cwrTerminationIndex = -1;
+      if (taskId === 'chinesewordreading' && validation.terminated) {
+        cwrTerminationIndex = validation.terminationIndex;
+      }
+      
       // Populate with real questions
-      for (const question of validation.questions) {
+      for (let i = 0; i < validation.questions.length; i++) {
+        const question = validation.questions[i];
         const row = document.createElement('tr');
-        row.setAttribute('data-state', question.isCorrect ? 'correct' : 'incorrect');
+        
+        // Check if this question is after a timeout/termination (should be marked as "Ignored")
+        let isIgnoredDueToTimeout = false;
+        if (taskId === 'sym') {
+          // Check if this is a SYM question (first half) or NONSYM question (second half)
+          const symQuestionCount = validation.symResult?.questions?.length || 0;
+          if (i < symQuestionCount) {
+            // SYM question
+            isIgnoredDueToTimeout = symTimeoutIndex >= 0 && i > symTimeoutIndex;
+          } else {
+            // NONSYM question
+            const nonsymIndex = i - symQuestionCount;
+            isIgnoredDueToTimeout = nonsymTimeoutIndex >= 0 && nonsymIndex > nonsymTimeoutIndex;
+          }
+        } else if (taskId === 'chinesewordreading') {
+          // CWR: questions after 10 consecutive incorrect are ignored
+          isIgnoredDueToTimeout = cwrTerminationIndex >= 0 && i > cwrTerminationIndex;
+        }
+        
+        // Set data-state based on whether the question is scored
+        const dataState = isIgnoredDueToTimeout ? 'ignored' :
+          (question.isUnscored ? 'unscored' : 
+          (question.isCorrect ? 'correct' : 'incorrect'));
+        row.setAttribute('data-state', dataState);
         row.setAttribute('data-missing', question.studentAnswer === null ? 'true' : 'false');
+        row.setAttribute('data-ignored', isIgnoredDueToTimeout ? 'true' : 'false'); // CRITICAL: Mark for calculation exclusion
         row.className = 'hover:bg-[color:var(--muted)]/30';
+        
+        // Determine status pill
+        let statusPill;
+        if (isIgnoredDueToTimeout) {
+          statusPill = '<span class="answer-pill" style="background: #dbeafe; color: #1e40af; border-color: #93c5fd;"><i data-lucide="ban" class="w-3 h-3"></i>Ignored (Terminated)</span>';
+        } else if (question.studentAnswer === null) {
+          statusPill = '<span class="answer-pill incorrect"><i data-lucide="minus" class="w-3 h-3"></i>Not answered</span>';
+        } else if (question.isUnscored) {
+          statusPill = '<span class="answer-pill" style="background: #f0f9ff; color: #0369a1; border-color: #bae6fd;"><i data-lucide="circle-check" class="w-3 h-3"></i>Answered</span>';
+        } else if (question.isCorrect) {
+          statusPill = '<span class="answer-pill correct"><i data-lucide="check" class="w-3 h-3"></i>Correct</span>';
+        } else {
+          statusPill = '<span class="answer-pill incorrect"><i data-lucide="x" class="w-3 h-3"></i>Incorrect</span>';
+        }
         
         row.innerHTML = `
           <td class="py-2 px-2 text-[color:var(--foreground)] font-mono">${question.id}</td>
           <td class="py-2 px-2 text-[color:var(--muted-foreground)]">${question.studentAnswer || '—'}</td>
           <td class="py-2 px-2 text-[color:var(--muted-foreground)]" style="display: ${isYNTask ? 'none' : ''}">${question.correctAnswer || '—'}</td>
-          <td class="py-2 px-2">
-            ${question.studentAnswer === null 
-              ? '<span class="answer-pill incorrect"><i data-lucide="minus" class="w-3 h-3"></i>Not answered</span>'
-              : question.isCorrect 
-                ? '<span class="answer-pill correct"><i data-lucide="check" class="w-3 h-3"></i>Correct</span>'
-                : '<span class="answer-pill incorrect"><i data-lucide="x" class="w-3 h-3"></i>Incorrect</span>'
-            }
-          </td>
-          <td class="py-2 px-2 text-xs text-[color:var(--muted-foreground)]">—</td>
+          <td class="py-2 px-2">${statusPill}</td>
         `;
         
         tbody.appendChild(row);
       }
       
-      // Update task summary (answered/total questions)
-      const answeredCountEl = taskElement.querySelector('.answered-count');
-      const totalCountEl = taskElement.querySelector('.total-count');
+      // Calculate task statistics (excluding ignored questions)
+      const taskStats = calculateTaskStatistics(validation, taskElement);
       
-      if (answeredCountEl) {
-        answeredCountEl.textContent = validation.answeredQuestions;
-        console.log(`[StudentPage] Set answered-count for ${taskId}: "${answeredCountEl.textContent}" (target was ${validation.answeredQuestions})`);
-      } else {
-        console.warn(`[StudentPage] answered-count element not found for ${taskId}`);
-      }
+      // Update task summary with refined counters
+      updateTaskSummary(taskElement, taskId, taskStats);
       
-      if (totalCountEl) {
-        totalCountEl.textContent = validation.totalQuestions;
-        console.log(`[StudentPage] Set total-count for ${taskId}: "${totalCountEl.textContent}" (target was ${validation.totalQuestions})`);
-      } else {
-        console.warn(`[StudentPage] total-count element not found for ${taskId}`);
-      }
-      
-      console.log(`[StudentPage] ✅ Updated counts for ${taskId}: ${validation.answeredQuestions}/${validation.totalQuestions}`);
+      // Update task lighting status
+      updateTaskLightingStatus(taskElement, taskStats);
       
       // Populate termination checklist if task has termination points
       populateTerminationChecklist(taskElement, taskId, validation, mergedAnswers);
@@ -746,9 +886,30 @@
   }
 
   /**
-   * Show "no data" message
+   * Show "no data" message and hide task sections
    */
   function showNoDataMessage() {
+    console.log('[StudentPage] No submissions - hiding task sections');
+    
+    // Hide Task Status Overview section
+    const taskOverview = Array.from(document.querySelectorAll('details')).find(el => 
+      el.textContent.includes('Task Status Overview')
+    );
+    if (taskOverview) {
+      taskOverview.style.display = 'none';
+      console.log('[StudentPage] Hidden: Task Status Overview');
+    }
+    
+    // Hide Task Progress section
+    const taskProgress = Array.from(document.querySelectorAll('section')).find(el => 
+      el.textContent.includes('Task Progress')
+    );
+    if (taskProgress) {
+      taskProgress.style.display = 'none';
+      console.log('[StudentPage] Hidden: Task Progress');
+    }
+    
+    // Show "No Submissions Found" message
     const mainContent = document.querySelector('main');
     if (mainContent) {
       const notice = document.createElement('div');
@@ -787,34 +948,45 @@
       
       console.log(`[StudentPage] Student gender: ${studentGender || 'unknown'}`);
       
-      // Find the Task Progress section by looking for all details.entry-card
-      // and checking their summary text
-      const allDetailCards = document.querySelectorAll('details.entry-card');
+      // Find the Task Progress section (now a section element, not details)
+      const allCards = document.querySelectorAll('.entry-card');
       let taskProgressSection = null;
       
-      for (const card of allDetailCards) {
-        const summary = card.querySelector('summary');
-        if (summary && summary.textContent.includes('Task Progress')) {
+      for (const card of allCards) {
+        const heading = card.querySelector('h2');
+        if (heading && heading.textContent.includes('Task Progress')) {
           taskProgressSection = card;
           break;
         }
       }
       
       if (!taskProgressSection) {
-        console.warn('[StudentPage] Task Progress section not found in HTML');
+        console.warn('[StudentPage] ❌ Task Progress section not found in HTML');
+        console.warn('[StudentPage] Searched through', allCards.length, 'entry-card elements');
         return;
       }
       
-      // Get the content container (div after summary)
-      const taskProgressContainer = taskProgressSection.querySelector('summary + div');
+      console.log('[StudentPage] ✅ Found Task Progress section');
+      
+      // Get the content container (the div with divide-y class, or create selector for section structure)
+      let taskProgressContainer = taskProgressSection.querySelector('.divide-y');
+      
+      // Fallback to old selector if not found (for backwards compatibility)
+      if (!taskProgressContainer) {
+        taskProgressContainer = taskProgressSection.querySelector('summary + div');
+      }
       
       if (!taskProgressContainer) {
-        console.warn('[StudentPage] Task Progress container not found in HTML');
+        console.warn('[StudentPage] ❌ Task Progress container not found in HTML');
         return;
       }
+      
+      console.log('[StudentPage] ✅ Found Task Progress container:', taskProgressContainer);
+      console.log('[StudentPage] Container has', taskProgressContainer.children.length, 'existing children');
       
       // Clear existing hardcoded content (including "Set 1: 第一組" header)
       taskProgressContainer.innerHTML = '';
+      console.log('[StudentPage] ✅ Cleared container');
       
       // Create a NEW divide-y container for our dynamic content
       const dynamicContainer = document.createElement('div');
@@ -828,8 +1000,9 @@
         // Sort sections within set
         const sortedSections = set.sections.sort((a, b) => a.order - b.order);
         
-        // Filter sections based on visibility conditions
+        // Filter sections based on visibility conditions and merge NONSYM with SYM
         const visibleSections = [];
+        const mergedTasks = new Set(); // Track tasks that have been merged
         
         for (const section of sortedSections) {
           // Check visibility conditions (e.g., gender-based)
@@ -843,6 +1016,14 @@
           // Load task metadata (title)
           const taskId = section.file.replace('.json', '');
           const taskMetadata = await loadTaskMetadata(taskId);
+          
+          // Check if this task should be merged with another (e.g., NONSYM with SYM)
+          if (taskMetadata.displayWith) {
+            // Skip this task as it will be merged with its parent
+            console.log(`[StudentPage]   ${taskId} will be merged with ${taskMetadata.displayWith}`);
+            mergedTasks.add(taskId);
+            continue;
+          }
           
           visibleSections.push({
             ...section,
@@ -874,10 +1055,7 @@
           <div class="flex items-center gap-3">
             <i data-lucide="chevron-right" class="w-4 h-4 text-[color:var(--muted-foreground)] transition-transform set-chevron"></i>
             <h3 class="text-sm font-semibold text-[color:var(--foreground)]">${setLabel}</h3>
-            <span class="text-xs text-[color:var(--muted-foreground)] font-mono">${visibleSections.length} tasks</span>
-          </div>
-          <div class="text-xs text-[color:var(--muted-foreground)]">
-            <span class="completion-summary set-${set.id}-summary">—</span>
+            <span class="set-task-count text-xs text-[color:var(--muted-foreground)] font-mono">${visibleSections.length} tasks</span>
           </div>
         `;
         setContainer.appendChild(setHeader);
@@ -894,6 +1072,18 @@
         
         setContainer.appendChild(tasksContainer);
         dynamicContainer.appendChild(setContainer);
+        
+        // Add toggle listener to rotate chevron for sets
+        setContainer.addEventListener('toggle', () => {
+          const chevron = setHeader.querySelector('.set-chevron');
+          if (chevron) {
+            if (setContainer.open) {
+              chevron.style.transform = 'rotate(90deg)';
+            } else {
+              chevron.style.transform = 'rotate(0deg)';
+            }
+          }
+        });
       }
       
       console.log('[StudentPage] Task Progress structure built successfully');
@@ -959,19 +1149,20 @@
         <span class="badge-pill bg-[color:var(--muted)] text-[color:var(--muted-foreground)]">${metadata.filename}</span>
         <span class="stage-badges"></span>
       </div>
-      <div class="text-xs text-[color:var(--muted-foreground)] font-mono">
-        <span class="answered-count">0</span> / <span class="total-count">0</span>
+      <div class="text-xs text-[color:var(--muted-foreground)] font-mono task-progress-stats">
+        <div class="answered-stat">—</div>
+        <div class="correct-stat">—</div>
+        <div class="total-stat">—</div>
       </div>
-      <div class="flex flex-wrap gap-2 text-xs text-[color:var(--muted-foreground)] sm:justify-end">
-        <span class="task-status-summary">—</span>
+      <div class="flex justify-end">
+        <i data-lucide="plus" class="task-expand-icon w-4 h-4 text-[color:var(--muted-foreground)] transition-transform"></i>
       </div>
     `;
     
     // Create task content (termination checklist + table)
     const contentDiv = document.createElement('div');
     contentDiv.className = 'bg-[color:var(--muted)]/20 border-t border-[color:var(--border)] px-4 py-3 space-y-3';
-    
-    contentDiv.innerHTML = `
+        contentDiv.innerHTML = `
       <!-- Termination Checklist (will be populated if exists) -->
       <div class="termination-checklist hidden">
         <span class="text-xs font-semibold text-[color:var(--foreground)] uppercase tracking-wide">Termination checklist · ${metadata.filename}</span>
@@ -989,11 +1180,10 @@
               <th class="text-left font-medium pb-2 px-2">Student Answer</th>
               <th class="text-left font-medium pb-2 px-2">Correct Answer</th>
               <th class="text-left font-medium pb-2 px-2">Result</th>
-              <th class="text-left font-medium pb-2 px-2">Last Updated</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-[color:var(--border)]">
-            <tr><td colspan="5" class="py-4 px-2 text-center text-[color:var(--muted-foreground)]">Loading task data...</td></tr>
+            <tr><td colspan="4" class="py-4 px-2 text-center text-[color:var(--muted-foreground)]">Loading task data...</td></tr>
           </tbody>
         </table>
       </div>
@@ -1001,6 +1191,22 @@
     
     details.appendChild(summary);
     details.appendChild(contentDiv);
+    
+    // Add toggle listener to swap plus/minus icon
+    details.addEventListener('toggle', () => {
+      const icon = summary.querySelector('.task-expand-icon');
+      if (icon) {
+        if (details.open) {
+          icon.setAttribute('data-lucide', 'minus');
+        } else {
+          icon.setAttribute('data-lucide', 'plus');
+        }
+        // Reinitialize lucide icons
+        if (typeof lucide !== 'undefined') {
+          lucide.createIcons();
+        }
+      }
+    });
     
     return details;
   }
@@ -1011,16 +1217,223 @@
    * not calculated. They document whether termination happened during assessment.
    */
   function populateTerminationChecklist(taskElement, taskId, validation, mergedAnswers) {
-    console.log(`[StudentPage] Checking termination rules for task: ${taskId}`);
+    console.log(`[StudentPage] Checking termination/timeout rules for task: ${taskId}`);
+    
+    // Special handling for SYM: show timeout status instead of termination rules
+    if (taskId === 'sym') {
+      const checklistDiv = taskElement.querySelector('.termination-checklist');
+      const rulesContainer = taskElement.querySelector('.termination-rules');
+      
+      if (!checklistDiv || !rulesContainer) return;
+      
+      // Get detailed analysis
+      const symAnalysis = validation.symAnalysis || {};
+      const nonsymAnalysis = validation.nonsymAnalysis || {};
+      
+      console.log(`[StudentPage] SYM analysis:`, symAnalysis);
+      console.log(`[StudentPage] NONSYM analysis:`, nonsymAnalysis);
+      
+      // Update checklist title
+      checklistDiv.querySelector('span').textContent = 'Timeout Status · SYM/NONSYM (2-minute timer each)';
+      
+      // Helper to determine card styling
+      const getCardStyle = (analysis) => {
+        if (analysis.hasMissingData) {
+          return { border: 'border-red-400', bg: 'bg-red-50', color: 'text-red-600', icon: 'alert-triangle', status: 'Missing Data' };
+        } else if (analysis.timedOut) {
+          return { border: 'border-green-400', bg: 'bg-green-50', color: 'text-green-600', icon: 'clock-alert', status: 'Timed Out' };
+        } else if (analysis.complete) {
+          return { border: 'border-green-400', bg: 'bg-green-50', color: 'text-green-600', icon: 'check-circle', status: 'Complete' };
+        } else {
+          return { border: 'border-gray-400', bg: 'bg-gray-50', color: 'text-gray-600', icon: 'info', status: 'In Progress' };
+        }
+      };
+      
+      const symStyle = getCardStyle(symAnalysis);
+      const nonsymStyle = getCardStyle(nonsymAnalysis);
+      
+      // Build unified timeout cards matching ERV structure
+      const buildTimeoutCard = (name, analysis, result) => {
+        const answered = result.answeredQuestions;
+        const total = result.totalQuestions;
+        const summary = `${answered}/${total}`;
+        
+        // Determine recorded status from data (if timeout field exists)
+        const recordedTimedOut = false; // TODO: Get from mergedAnswers if field exists
+        const calculatedTimedOut = analysis.timedOut;
+        const hasMissingData = analysis.hasMissingData;
+        
+        // Card styling: Green for proper timeout/complete, Red for missing data
+        let statusClass;
+        if (hasMissingData) {
+          statusClass = 'border-red-400 bg-red-50';
+        } else if (calculatedTimedOut) {
+          statusClass = 'border-green-400 bg-green-50';
+        } else if (analysis.complete) {
+          statusClass = 'border-green-400 bg-green-50';
+        } else {
+          statusClass = 'border-gray-300 bg-gray-50';
+        }
+        
+        return `
+          <div class="border rounded-lg p-3 ${statusClass}">
+            <div class="flex items-start justify-between mb-2">
+              <div>
+                <p class="font-medium text-[color:var(--foreground)]">${name}</p>
+                <p class="text-[color:var(--muted-foreground)] text-xs mt-0.5">
+                  ${hasMissingData ? 'Non-continuous data gaps detected' : 
+                    calculatedTimedOut ? 'Timed out after continuous progress' : 
+                    analysis.complete ? 'All questions completed' : 'In progress'}
+                </p>
+              </div>
+              <span class="text-xs font-mono font-semibold ${
+                hasMissingData ? 'text-red-700' : 
+                calculatedTimedOut ? 'text-green-600' : 
+                analysis.complete ? 'text-green-600' : 'text-gray-600'
+              }">${summary}</span>
+            </div>
+            
+            <div class="grid grid-cols-2 gap-2 text-xs mt-2">
+              <!-- Recorded Status -->
+              <div class="flex items-center gap-1.5 ${
+                hasMissingData ? 'text-red-600' : 
+                calculatedTimedOut ? 'text-green-600' : 'text-green-600'
+              }">
+                <i data-lucide="${
+                  hasMissingData ? 'alert-triangle' : 
+                  calculatedTimedOut ? 'clock-alert' : 'check-circle'
+                }" class="w-3.5 h-3.5"></i>
+                <span>Terminated: <strong>${
+                  hasMissingData ? 'Missing Data' : 
+                  calculatedTimedOut ? 'Timed Out' : 'Complete'
+                }</strong></span>
+              </div>
+              
+              <!-- Verification Status -->
+              <div class="flex items-center gap-1.5 text-blue-600">
+                <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+                <span>${hasMissingData ? 'Requires investigation' : 'Calculation Verified.'}</span>
+              </div>
+            </div>
+          </div>
+        `;
+      };
+      
+      rulesContainer.innerHTML = 
+        buildTimeoutCard('SYM (Symbolic)', symAnalysis, validation.symResult) +
+        buildTimeoutCard('NONSYM (Non-symbolic)', nonsymAnalysis, validation.nonsymResult);
+      
+      checklistDiv.classList.remove('hidden');
+      lucide.createIcons(); // Re-render icons
+      return; // Exit early for SYM
+    }
+    
+    // Special handling for CWR: show consecutive incorrect termination status
+    if (taskId === 'chinesewordreading') {
+      const checklistDiv = taskElement.querySelector('.termination-checklist');
+      const rulesContainer = taskElement.querySelector('.termination-rules');
+      
+      if (!checklistDiv || !rulesContainer) return;
+      
+      const terminated = validation.terminated || false;
+      const terminationIndex = validation.terminationIndex || -1;
+      const terminatedAtQuestion = terminationIndex >= 0 ? validation.questions[terminationIndex]?.id : null;
+      const answered = validation.answeredQuestions;
+      const total = validation.totalQuestions;
+      
+      // Update checklist title
+      checklistDiv.querySelector('span').textContent = 'Termination checklist · Chinese Word Reading';
+      
+      // Check for post-termination questions (yellow flag)
+      let hasPostTerminationAnswers = false;
+      if (terminated) {
+        for (let i = terminationIndex + 1; i < validation.questions.length; i++) {
+          if (validation.questions[i].studentAnswer !== null) {
+            hasPostTerminationAnswers = true;
+            break;
+          }
+        }
+      }
+      
+      // Card styling: Green for proper termination, Yellow for post-termination answers, Gray for no termination
+      let statusClass;
+      let statusColor;
+      if (hasPostTerminationAnswers) {
+        statusClass = 'border-orange-400 bg-orange-50';
+        statusColor = 'text-orange-600';
+      } else if (terminated) {
+        statusClass = 'border-green-400 bg-green-50';
+        statusColor = 'text-green-600';
+      } else {
+        statusClass = 'border-gray-400 bg-gray-50';
+        statusColor = 'text-gray-600';
+      }
+      
+      // Build unified card matching ERV/SYM structure (same width as ERV/CM)
+      rulesContainer.innerHTML = `
+        <div class="border rounded-lg p-3 ${statusClass}">
+          <div class="flex items-start justify-between mb-2">
+            <div>
+              <p class="font-medium text-[color:var(--foreground)]">CWR_10Incorrect</p>
+              <p class="text-[color:var(--muted-foreground)] text-xs mt-0.5">
+                ${hasPostTerminationAnswers 
+                  ? `⚠️ Terminated at ${terminatedAtQuestion} but has answers after termination` 
+                  : terminated 
+                    ? `Terminated after 10 consecutive incorrect at ${terminatedAtQuestion}` 
+                    : 'No termination detected - fewer than 10 consecutive incorrect'}
+              </p>
+            </div>
+            <span class="text-xs font-mono font-semibold ${statusColor}">${answered}/${total}</span>
+          </div>
+          
+          <div class="grid grid-cols-2 gap-2 text-xs mt-2">
+            <!-- Calculated Status -->
+            <div class="flex items-center gap-1.5 ${statusColor}">
+              <i data-lucide="${hasPostTerminationAnswers ? 'alert-triangle' : terminated ? 'ban' : 'check-circle'}" class="w-3.5 h-3.5"></i>
+              <span>Calculated: <strong>${hasPostTerminationAnswers ? 'Terminated + Extra Data' : terminated ? 'Terminated' : 'Not Terminated'}</strong></span>
+            </div>
+            
+            <!-- Verification Status -->
+            <div class="flex items-center gap-1.5 ${hasPostTerminationAnswers ? 'text-orange-600' : 'text-blue-600'}">
+              <i data-lucide="${hasPostTerminationAnswers ? 'alert-triangle' : 'check-circle'}" class="w-3.5 h-3.5"></i>
+              <span>${hasPostTerminationAnswers ? 'Data quality issue detected' : 'Termination Verified.'}</span>
+            </div>
+          </div>
+        </div>
+      `;
+      
+      checklistDiv.classList.remove('hidden');
+      lucide.createIcons(); // Re-render icons
+      return; // Exit early for CWR
+    }
+    
+    // Helper to generate question ranges
+    const generateRange = (prefix, start, end) => {
+      const range = [];
+      for (let i = start; i <= end; i++) {
+        range.push(`${prefix}${i}`);
+      }
+      return range;
+    };
     
     // Define termination rules metadata for tasks that have them
     const terminationRules = {
       'erv': [
-        { id: 'ERV_Ter1', description: 'Fewer than 5 correct in ERV_Q1–ERV_Q12', threshold: 5, range: ['ERV_Q1', 'ERV_Q2', 'ERV_Q3', 'ERV_Q4', 'ERV_Q5', 'ERV_Q6', 'ERV_Q7', 'ERV_Q8', 'ERV_Q9', 'ERV_Q10', 'ERV_Q11', 'ERV_Q12'] },
-        { id: 'ERV_Ter2', description: 'Fewer than 5 correct in ERV_Q13–ERV_Q24', threshold: 5, range: ['ERV_Q13', 'ERV_Q14', 'ERV_Q15', 'ERV_Q16', 'ERV_Q17', 'ERV_Q18', 'ERV_Q19', 'ERV_Q20', 'ERV_Q21', 'ERV_Q22', 'ERV_Q23', 'ERV_Q24'] },
-        { id: 'ERV_Ter3', description: 'Fewer than 5 correct in ERV_Q25–ERV_Q36', threshold: 5, range: ['ERV_Q25', 'ERV_Q26', 'ERV_Q27', 'ERV_Q28', 'ERV_Q29', 'ERV_Q30', 'ERV_Q31', 'ERV_Q32', 'ERV_Q33', 'ERV_Q34', 'ERV_Q35', 'ERV_Q36'] }
+        { id: 'ERV_Ter1', description: 'Fewer than 5 correct in ERV_Q1–ERV_Q12', threshold: 5, range: generateRange('ERV_Q', 1, 12) },
+        { id: 'ERV_Ter2', description: 'Fewer than 5 correct in ERV_Q13–ERV_Q24', threshold: 5, range: generateRange('ERV_Q', 13, 24) },
+        { id: 'ERV_Ter3', description: 'Fewer than 5 correct in ERV_Q25–ERV_Q36', threshold: 5, range: generateRange('ERV_Q', 25, 36) }
+      ],
+      'cm': [
+        { id: 'CM_Ter1', name: 'Stage 1', description: 'Fewer than 4 correct in CM_Q1–CM_Q7', threshold: 4, range: generateRange('CM_Q', 1, 7) },
+        { id: 'CM_Ter2', name: 'Stage 2', description: 'Fewer than 4 correct in CM_Q8–CM_Q12', threshold: 4, range: generateRange('CM_Q', 8, 12) },
+        { id: 'CM_Ter3', name: 'Stage 3', description: 'Fewer than 4 correct in CM_Q13–CM_Q17', threshold: 4, range: generateRange('CM_Q', 13, 17) },
+        { id: 'CM_Ter4', name: 'Stage 4', description: 'Fewer than 4 correct in CM_Q18–CM_Q22', threshold: 4, range: generateRange('CM_Q', 18, 22) }
+        // CM_Q23-Q27 (Part 5): No termination rule - students who reach here should complete all questions
+      ],
+      // CWR: Handled separately with consecutive incorrect detection logic
+      'finemotor': [
+        { id: 'FM_Ter', name: 'Square Cutting', description: 'No correct responses in FM_squ_1–FM_squ_3 (score must be > 0)', threshold: 1, range: ['FM_squ_1', 'FM_squ_2', 'FM_squ_3'] }
       ]
-      // Add more tasks with termination rules here
     };
     
     const rules = terminationRules[taskId];
@@ -1056,14 +1469,14 @@
       // Get termination value from merged Jotform data (not in validation.questions)
       const terminationField = mergedAnswers[rule.id];
       
-      if (!terminationField) {
-        console.warn(`[StudentPage] Termination field not found in data: ${rule.id}`);
-        continue; // Skip if termination field not recorded
-      }
-      
       // Get the RECORDED value (what administrator marked in PDF: 0 = passed, 1 = triggered)
-      const recordedValue = terminationField.answer || terminationField.text;
+      // If no termination field exists, treat as not recorded (0/false)
+      const recordedValue = terminationField?.answer || terminationField?.text || '0';
       const recordedTriggered = recordedValue === '1' || recordedValue === 1;
+      
+      if (!terminationField) {
+        console.log(`[StudentPage] Termination field not found in data: ${rule.id}, using calculated values only`);
+      }
       
       const priorTerminationActive = earliestTerminationIndex !== null && index > earliestTerminationIndex;
       const threshold = rule.threshold ?? 5;
@@ -1099,10 +1512,16 @@
       } else if (mismatch) {
         statusClass = 'border-orange-400 bg-orange-50';
       } else if (recordedTriggered && calculatedTriggered) {
+        // Both agree: terminated - GREEN
+        statusClass = 'border-green-400 bg-green-50';
+      } else if (!recordedTriggered && !calculatedTriggered) {
+        // Both agree: passed - GREEN
         statusClass = 'border-green-400 bg-green-50';
       } else if (recordedTriggered && !calculatedTriggered) {
+        // Mismatch: RED
         statusClass = 'border-red-300 bg-red-50';
       } else if (!recordedTriggered && calculatedTriggered) {
+        // Mismatch: RED
         statusClass = 'border-red-300 bg-red-50';
       }
       
@@ -1139,8 +1558,8 @@
             <span>${ignoredDueToPriorTermination
               ? recordedTriggered
                 ? '<strong>Recorded after termination</strong>'
-                : 'Recorded: <strong>Not terminated</strong>'
-              : `Recorded: <strong>${recordedTriggered ? 'Terminated' : 'Passed'}</strong>`}</span>
+                : 'JotForm: <strong>Not terminated</strong>'
+              : `JotForm: <strong>${recordedTriggered ? 'Terminated' : 'Passed'}</strong>`}</span>
           </div>
           
           <!-- System Calculation -->
@@ -1159,35 +1578,72 @@
                   : 'check-circle'
             }" class="w-3.5 h-3.5"></i>
             <span>${ignoredDueToPriorTermination
-              ? `Calculated: <strong>Not evaluated</strong>`
-              : `Calculated: <strong>${calculatedTriggered ? 'Should Terminate' : 'Should Pass'}</strong>`}</span>
+              ? `System: <strong>Not evaluated</strong>`
+              : `System: <strong>${calculatedTriggered ? 'Should Terminate' : 'Should Pass'}</strong>`}</span>
           </div>
         </div>
         
         ${ignoredDueToPriorTermination
           ? `<p class="mt-2 text-xs text-blue-700">ℹ️ Skipped because ${earliestTerminationRuleId} terminated earlier.</p>`
           : mismatch 
-            ? '<p class="mt-2 text-xs text-orange-700">⚠️ Recorded termination does not match calculated outcome.</p>'
+            ? '<p class="mt-2 text-xs text-orange-700">⚠️ Termination calculation mismatch between JotForm & System.</p>'
             : recordedTriggered && calculatedTriggered
-              ? '<p class="mt-2 text-xs text-green-700">✅ Verified - Termination confirmed.</p>'
-              : '<p class="mt-2 text-xs text-green-700">✅ Verified - Record matches calculation.</p>'
+              ? '<p class="mt-2 text-xs text-green-700">✅ Termination Verified.</p>'
+              : '<p class="mt-2 text-xs text-green-700">✅ Calculation Verified.</p>'
         }
       `;
       
       rulesContainer.appendChild(ruleCard);
     }
     
+    // Check for post-termination answers (yellow flag for status light)
+    let hasPostTerminationAnswers = false;
     if (earliestTerminationIndex !== null) {
-      for (let i = earliestTerminationIndex + 1; i < rules.length; i++) {
-        for (const questionId of rules[i].range) {
-          ignoredQuestionIds.add(questionId);
+      // Get all questions that should be ignored after termination
+      const terminatedRule = rules[earliestTerminationIndex];
+      const lastQuestionInRange = terminatedRule.range[terminatedRule.range.length - 1];
+      
+      // Find questions answered AFTER termination point
+      let foundTerminationPoint = false;
+      for (const question of validation.questions) {
+        if (foundTerminationPoint && question.studentAnswer !== null) {
+          hasPostTerminationAnswers = true;
+          console.log(`[StudentPage] ⚠️ Post-termination answer detected: ${question.id}`);
+          break;
+        }
+        if (question.id === lastQuestionInRange) {
+          foundTerminationPoint = true;
         }
       }
+    }
+    
+    // CASCADE RULE: If a termination triggered, mark ALL subsequent questions as ignored
+    if (earliestTerminationIndex !== null) {
+      // Get the last question ID from the earliest termination range
+      const lastQuestionInTerminationRange = rules[earliestTerminationIndex].range[rules[earliestTerminationIndex].range.length - 1];
+      
+      // Find the index of this question in the full validation.questions array
+      const lastQuestionIndex = validation.questions.findIndex(q => q.id === lastQuestionInTerminationRange);
+      
+      // Mark ALL questions AFTER this point as ignored
+      if (lastQuestionIndex !== -1) {
+        for (let i = lastQuestionIndex + 1; i < validation.questions.length; i++) {
+          ignoredQuestionIds.add(validation.questions[i].id);
+        }
+      }
+      
+      console.log(`[StudentPage] Cascade rule applied: All questions after ${lastQuestionInTerminationRange} are ignored (${ignoredQuestionIds.size} questions)`);
     }
     
     if (ignoredQuestionIds.size > 0) {
       console.log(`[StudentPage] Marking ${ignoredQuestionIds.size} questions as ignored after termination for ${taskId}`);
       markQuestionsBeyondTermination(taskElement, ignoredQuestionIds);
+      
+      // CRITICAL: Recalculate statistics after marking questions as ignored
+      console.log(`[StudentPage] Recalculating stats for ${taskId} after termination rules applied`);
+      const updatedStats = calculateTaskStatistics(validation, taskElement);
+      updateTaskSummary(taskElement, taskId, updatedStats);
+      updateTaskLightingStatus(taskElement, updatedStats);
     }
     
     // Show the checklist
@@ -1201,39 +1657,552 @@
   }
 
   /**
-   * Apply question filter to all task tables
+   * Calculate task statistics excluding ignored questions
    */
-  function applyQuestionFilter(filterValue) {
-    const allRows = document.querySelectorAll('table tbody tr[data-state]');
+  function calculateTaskStatistics(validation, taskElement) {
+    const tbody = taskElement.querySelector('table tbody');
+    const rows = tbody ? tbody.querySelectorAll('tr[data-state]') : [];
     
-    allRows.forEach(row => {
+    let total = 0;
+    let answered = 0;
+    let correct = 0;
+    let scoredTotal = 0; // Questions that have a correct answer
+    let scoredAnswered = 0;
+    let hasTerminated = false;
+    let hasPostTerminationAnswers = false; // NEW: Track answers after termination
+    
+    rows.forEach(row => {
+      const isIgnored = row.getAttribute('data-ignored') === 'true';
+      if (isIgnored) {
+        hasTerminated = true;
+        // Check if this ignored question has an answer (post-termination data)
+        const isMissing = row.getAttribute('data-missing') === 'true';
+        if (!isMissing) {
+          hasPostTerminationAnswers = true;
+        }
+        return; // Skip ignored questions from counting
+      }
+      
       const state = row.getAttribute('data-state');
-      const missing = row.getAttribute('data-missing') === 'true';
+      const isMissing = row.getAttribute('data-missing') === 'true';
+      const isUnscored = state === 'unscored';
+      
+      total++;
+      
+      if (!isMissing) {
+        answered++;
+      }
+      
+      if (state === 'correct') {
+        correct++;
+      }
+      
+      // For scored questions (exclude unscored preference questions)
+      if (!isUnscored) {
+        scoredTotal++;
+        if (!isMissing) {
+          scoredAnswered++;
+        }
+      }
+    });
+    
+    return {
+      total,
+      answered,
+      correct,
+      scoredTotal,
+      scoredAnswered,
+      hasTerminated,
+      hasPostTerminationAnswers, // NEW: Include in return
+      answeredPercent: total > 0 ? Math.round((answered / total) * 100) : 0,
+      correctPercent: scoredTotal > 0 ? Math.round((correct / scoredTotal) * 100) : 0
+    };
+  }
+
+  /**
+   * Calculate gradient color based on percentage (0-100)
+   * 0% = grey, 1-49% = red to orange, 50% = orange, 51-100% = orange to green
+   */
+  function getGradientColor(percentage) {
+    if (percentage === 0) {
+      // Grey for 0% (not started)
+      return {
+        bg: 'rgba(148, 163, 184, 0.06)',
+        border: 'rgba(148, 163, 184, 0.15)',
+        text: '#94a3b8'
+      };
+    } else if (percentage <= 50) {
+      // Red (0%) to Orange (50%)
+      const ratio = percentage / 50; // 0 to 1
+      // Interpolate between red and orange
+      const red = Math.round(220 + (251 - 220) * ratio); // #dc2626 to #fb923c
+      const green = Math.round(38 + (146 - 38) * ratio);
+      const blue = Math.round(38 + (60 - 38) * ratio);
+      
+      return {
+        bg: `rgba(${red}, ${green}, ${blue}, 0.08)`,
+        border: `rgba(${red}, ${green}, ${blue}, 0.2)`,
+        text: `rgb(${Math.round(red * 0.8)}, ${Math.round(green * 0.8)}, ${Math.round(blue * 0.8)})`
+      };
+    } else {
+      // Orange (50%) to Green (100%)
+      const ratio = (percentage - 50) / 50; // 0 to 1
+      // Interpolate between orange and green
+      const red = Math.round(251 + (34 - 251) * ratio); // #fb923c to #22c55e
+      const green = Math.round(146 + (197 - 146) * ratio);
+      const blue = Math.round(60 + (94 - 60) * ratio);
+      
+      return {
+        bg: `rgba(${red}, ${green}, ${blue}, 0.08)`,
+        border: `rgba(${red}, ${green}, ${blue}, 0.2)`,
+        text: `rgb(${Math.round(red * 0.8)}, ${Math.round(green * 0.8)}, ${Math.round(blue * 0.8)})`
+      };
+    }
+  }
+
+  /**
+   * Update task summary display with refined counters
+   */
+  function updateTaskSummary(taskElement, taskId, stats) {
+    const statsContainer = taskElement.querySelector('.task-progress-stats');
+    if (!statsContainer) {
+      console.warn(`[StudentPage] task-progress-stats not found for ${taskId}`);
+      return;
+    }
+    
+    const answeredStat = statsContainer.querySelector('.answered-stat');
+    const correctStat = statsContainer.querySelector('.correct-stat');
+    const totalStat = statsContainer.querySelector('.total-stat');
+    
+    if (answeredStat) {
+      answeredStat.textContent = `${stats.answered}/${stats.total} (${stats.answeredPercent}%)`;
+      answeredStat.title = `Answered: ${stats.answered} out of ${stats.total} questions`;
+      
+      // Apply gradient color based on answered percentage
+      const answeredColors = getGradientColor(stats.answeredPercent);
+      answeredStat.style.backgroundColor = answeredColors.bg;
+      answeredStat.style.borderColor = answeredColors.border;
+      answeredStat.style.color = answeredColors.text;
+    }
+    
+    if (correctStat) {
+      correctStat.textContent = `${stats.correct}/${stats.scoredTotal} (${stats.correctPercent}%)`;
+      correctStat.title = `Correct: ${stats.correct} out of ${stats.scoredTotal} scored questions`;
+      
+      // Apply gradient color based on correct percentage
+      const correctColors = getGradientColor(stats.correctPercent);
+      correctStat.style.backgroundColor = correctColors.bg;
+      correctStat.style.borderColor = correctColors.border;
+      correctStat.style.color = correctColors.text;
+    }
+    
+    if (totalStat) {
+      totalStat.textContent = `${stats.total}`;
+      totalStat.title = `Total questions (excluding ignored)`;
+      // Total stat keeps its default grey color (no gradient)
+    }
+    
+    console.log(`[StudentPage] ✅ Updated stats for ${taskId}: Answered ${stats.answered}/${stats.total} (${stats.answeredPercent}%), Correct ${stats.correct}/${stats.scoredTotal} (${stats.correctPercent}%)`);
+  }
+
+  /**
+   * Update task lighting status (colored circle indicator)
+   */
+  function updateTaskLightingStatus(taskElement, stats) {
+    const statusCircle = taskElement.querySelector('.status-circle');
+    if (!statusCircle) return;
+    
+    // Remove all status classes
+    statusCircle.className = 'status-circle';
+    
+    // Determine status based on completion and termination
+    if (stats.total === 0) {
+      // No data yet
+      statusCircle.classList.add('status-grey');
+      statusCircle.title = 'Not started';
+    } else if (stats.hasPostTerminationAnswers) {
+      // Yellow: Post-termination data detected (terminated BUT has answers after termination)
+      statusCircle.classList.add('status-yellow');
+      statusCircle.title = 'Post-termination data detected';
+    } else if (stats.hasTerminated && stats.answered > 0) {
+      // Green: Properly terminated (terminated and NO post-termination answers)
+      statusCircle.classList.add('status-green');
+      statusCircle.title = 'Terminated correctly';
+    } else if (stats.answeredPercent === 100 && !stats.hasTerminated) {
+      // Green: Complete - all questions answered, no termination
+      statusCircle.classList.add('status-green');
+      statusCircle.title = 'Complete';
+    } else if (stats.answered > 0) {
+      // Red: Incomplete - has some answers but not complete
+      statusCircle.classList.add('status-red');
+      statusCircle.title = 'Incomplete';
+    } else {
+      // Grey: Not started
+      statusCircle.classList.add('status-grey');
+      statusCircle.title = 'Not started';
+    }
+  }
+
+  /**
+   * Update task status overview counts
+   */
+  function updateTaskStatusOverview() {
+    const allTasks = document.querySelectorAll('.task-expand .status-circle');
+    
+    let completeCount = 0;
+    let posttermCount = 0;
+    let incompleteCount = 0;
+    let notstartedCount = 0;
+    
+    allTasks.forEach(circle => {
+      if (circle.classList.contains('status-green')) {
+        completeCount++;
+      } else if (circle.classList.contains('status-yellow')) {
+        posttermCount++;
+      } else if (circle.classList.contains('status-red')) {
+        incompleteCount++;
+      } else if (circle.classList.contains('status-grey')) {
+        notstartedCount++;
+      }
+    });
+    
+    // Update the overview display
+    const completeEl = document.getElementById('overview-complete-count');
+    const posttermEl = document.getElementById('overview-postterm-count');
+    const incompleteEl = document.getElementById('overview-incomplete-count');
+    const notstartedEl = document.getElementById('overview-notstarted-count');
+    
+    if (completeEl) completeEl.textContent = completeCount;
+    if (posttermEl) posttermEl.textContent = posttermCount;
+    if (incompleteEl) incompleteEl.textContent = incompleteCount;
+    if (notstartedEl) notstartedEl.textContent = notstartedCount;
+    
+    console.log(`[StudentPage] Task Status Overview: Complete=${completeCount}, Post-term=${posttermCount}, Incomplete=${incompleteCount}, Not started=${notstartedCount}`);
+  }
+
+  /**
+   * Update global sync timestamp in profile section
+   */
+  function updateGlobalSyncTimestamp() {
+    // Get or create sync timestamp element in profile section
+    let syncElement = document.getElementById('global-last-synced');
+    
+    if (!syncElement) {
+      // Create and append to profile section if it doesn't exist
+      const profileSection = document.querySelector('details.entry-card');
+      if (profileSection) {
+        const summaryDiv = profileSection.querySelector('summary > div:last-child');
+        if (summaryDiv) {
+          syncElement = document.createElement('p');
+          syncElement.id = 'global-last-synced';
+          syncElement.className = 'text-[11px] text-[color:var(--muted-foreground)] font-mono mt-1';
+          summaryDiv.appendChild(syncElement);
+        }
+      }
+    }
+    
+    if (!syncElement) return;
+    
+    // Get global sync timestamp from localStorage
+    const urlParams = new URLSearchParams(window.location.search);
+    const coreId = urlParams.get('coreId');
+    
+    if (coreId) {
+      const syncKey = `jotform_last_sync_${coreId}`;
+      const lastSyncTimestamp = localStorage.getItem(syncKey);
+      
+      if (lastSyncTimestamp) {
+        const syncDate = new Date(lastSyncTimestamp);
+        const formattedDate = syncDate.toLocaleString('en-GB', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        }).replace(',', ' ·');
+        
+        syncElement.textContent = `Last synced: ${formattedDate}`;
+      } else {
+        syncElement.textContent = 'Never synced';
+      }
+    }
+  }
+
+  /**
+   * Mark questions beyond termination point as ignored in the table
+   */
+  function markQuestionsBeyondTermination(taskElement, ignoredQuestionIds) {
+    if (!taskElement || ignoredQuestionIds.size === 0) return;
+    
+    const tbody = taskElement.querySelector('table tbody');
+    if (!tbody) return;
+    
+    const rows = tbody.querySelectorAll('tr[data-state]');
+    let markedCount = 0;
+    
+    rows.forEach(row => {
+      const questionId = row.querySelector('td:first-child')?.textContent?.trim();
+      
+      if (questionId && ignoredQuestionIds.has(questionId)) {
+        // Add visual indication that this question was ignored due to termination
+        row.classList.add('opacity-50', 'bg-blue-50');
+        row.setAttribute('data-ignored', 'true');
+        
+        // Update the status cell to show "Ignored"
+        const statusCell = row.querySelector('td:nth-child(4)');
+        if (statusCell) {
+          statusCell.innerHTML = '<span class="answer-pill" style="background: #e0f2fe; color: #0369a1; border-color: #7dd3fc;"><i data-lucide="ban" class="w-3 h-3"></i>Ignored (Terminated)</span>';
+        }
+        
+        markedCount++;
+      }
+    });
+    
+    console.log(`[StudentPage] Marked ${markedCount} questions as ignored due to termination`);
+    
+    // Reinitialize Lucide icons for the new icons
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
+    }
+  }
+
+  /**
+   * Apply task filter based on status light colors and update Set task counts
+   */
+  function applyTaskFilter(filterValue) {
+    const allTasks = document.querySelectorAll('.task-expand');
+    
+    allTasks.forEach(task => {
+      const statusCircle = task.querySelector('.status-circle');
+      if (!statusCircle) return;
       
       let shouldShow = true;
       
       switch (filterValue) {
         case 'completed':
-          shouldShow = !missing;
+          // Green light only
+          shouldShow = statusCircle.classList.contains('status-green');
           break;
-        case 'correct':
-          shouldShow = state === 'correct';
+        case 'incomplete':
+          // Red light only
+          shouldShow = statusCircle.classList.contains('status-red');
           break;
-        case 'incorrect':
-          shouldShow = state === 'incorrect';
+        case 'issues':
+          // NOT green (yellow or red)
+          shouldShow = statusCircle.classList.contains('status-yellow') || 
+                      statusCircle.classList.contains('status-red');
           break;
-        case 'missing':
-          shouldShow = missing;
+        case 'not-started':
+          // Grey light only
+          shouldShow = statusCircle.classList.contains('status-grey');
           break;
         case 'all':
         default:
           shouldShow = true;
       }
       
-      row.style.display = shouldShow ? '' : 'none';
+      task.style.display = shouldShow ? '' : 'none';
     });
     
-    console.log(`[StudentPage] Applied filter: ${filterValue}, affected ${allRows.length} rows`);
+    // Update Set task counts dynamically
+    updateSetTaskCounts();
+    
+    console.log(`[StudentPage] Applied task filter: ${filterValue}, affected ${allTasks.length} tasks`);
+  }
+  
+  /**
+   * Update task counts for each Set based on visible tasks and hide empty Sets
+   */
+  function updateSetTaskCounts() {
+    const allSets = document.querySelectorAll('.set-group');
+    const taskFilter = document.getElementById('task-filter');
+    const currentFilter = taskFilter ? taskFilter.value : 'all';
+    
+    allSets.forEach(setElement => {
+      const tasksInSet = setElement.querySelectorAll('.task-expand');
+      const visibleTasks = Array.from(tasksInSet).filter(task => task.style.display !== 'none');
+      
+      // Find the task count span
+      const taskCountSpan = setElement.querySelector('.set-task-count');
+      if (taskCountSpan) {
+        const totalTasks = tasksInSet.length;
+        const visibleCount = visibleTasks.length;
+        
+        // Hide Set completely if no visible tasks
+        if (visibleCount === 0) {
+          setElement.style.display = 'none';
+        } else {
+          setElement.style.display = '';
+          
+          // Always show "X of Y tasks" format except when "All tasks" filter is selected
+          if (currentFilter === 'all') {
+            taskCountSpan.textContent = `${totalTasks} tasks`;
+          } else {
+            taskCountSpan.textContent = `${visibleCount} of ${totalTasks} tasks`;
+          }
+        }
+      }
+    });
+  }
+
+  /**
+   * Populate the task config modal with toggle pills
+   */
+  function populateTaskConfigModal() {
+    const taskConfigList = document.getElementById('task-config-list');
+    if (!taskConfigList) return;
+    
+    // Get the grid container
+    const gridContainer = taskConfigList.querySelector('.grid') || taskConfigList;
+    gridContainer.innerHTML = '';
+    
+    // Get all task elements
+    const allTasks = document.querySelectorAll('.task-expand');
+    const initialVisibilityState = new Map();
+    
+    allTasks.forEach(taskElement => {
+      const taskId = taskElement.getAttribute('data-task-id');
+      const taskTitle = taskElement.querySelector('strong')?.textContent || taskId;
+      const isVisible = taskElement.style.display !== 'none';
+      initialVisibilityState.set(taskId, isVisible);
+      
+      // Create pill toggle button
+      const pillButton = document.createElement('button');
+      pillButton.className = `task-pill-toggle px-4 py-3 rounded-xl text-sm font-semibold transition-all border-2 ${isVisible ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-slate-100 border-slate-200 text-slate-500'}`;
+      pillButton.setAttribute('data-task-id', taskId);
+      pillButton.setAttribute('data-selected', isVisible ? 'true' : 'false');
+      
+      pillButton.innerHTML = `
+        <div class="flex items-center gap-2">
+          <i data-lucide="${isVisible ? 'check-circle' : 'circle'}" class="w-4 h-4"></i>
+          <span>${taskTitle}</span>
+        </div>
+      `;
+      
+      // Toggle on click
+      pillButton.addEventListener('click', () => {
+        const isSelected = pillButton.getAttribute('data-selected') === 'true';
+        const newState = !isSelected;
+        
+        pillButton.setAttribute('data-selected', newState ? 'true' : 'false');
+        
+        if (newState) {
+          pillButton.className = 'task-pill-toggle px-4 py-3 rounded-xl text-sm font-semibold transition-all border-2 bg-blue-50 border-blue-300 text-blue-700';
+          const icon = pillButton.querySelector('i');
+          if (icon) icon.setAttribute('data-lucide', 'check-circle');
+        } else {
+          pillButton.className = 'task-pill-toggle px-4 py-3 rounded-xl text-sm font-semibold transition-all border-2 bg-slate-100 border-slate-200 text-slate-500';
+          const icon = pillButton.querySelector('i');
+          if (icon) icon.setAttribute('data-lucide', 'circle');
+        }
+        
+        // Reinitialize lucide icons
+        if (typeof lucide !== 'undefined') {
+          lucide.createIcons();
+        }
+        
+        updateSelectionCount();
+      });
+      
+      gridContainer.appendChild(pillButton);
+    });
+    
+    // Reinitialize lucide icons
+    if (typeof lucide !== 'undefined') {
+      lucide.createIcons();
+    }
+    
+    updateSelectionCount();
+    
+    // Update selection count display
+    function updateSelectionCount() {
+      const pills = gridContainer.querySelectorAll('.task-pill-toggle');
+      const selected = Array.from(pills).filter(p => p.getAttribute('data-selected') === 'true').length;
+      const total = pills.length;
+      const countEl = document.getElementById('task-selection-count');
+      if (countEl) {
+        countEl.textContent = `${selected} / ${total} selected`;
+      }
+    }
+    
+    // Select All button
+    const selectAllBtn = document.getElementById('task-select-all');
+    if (selectAllBtn) {
+      selectAllBtn.onclick = () => {
+        gridContainer.querySelectorAll('.task-pill-toggle').forEach(pill => {
+          pill.setAttribute('data-selected', 'true');
+          pill.className = 'task-pill-toggle px-4 py-3 rounded-xl text-sm font-semibold transition-all border-2 bg-blue-50 border-blue-300 text-blue-700';
+          const icon = pill.querySelector('i');
+          if (icon) icon.setAttribute('data-lucide', 'check-circle');
+        });
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        updateSelectionCount();
+      };
+    }
+    
+    // Unselect All button
+    const unselectAllBtn = document.getElementById('task-unselect-all');
+    if (unselectAllBtn) {
+      unselectAllBtn.onclick = () => {
+        gridContainer.querySelectorAll('.task-pill-toggle').forEach(pill => {
+          pill.setAttribute('data-selected', 'false');
+          pill.className = 'task-pill-toggle px-4 py-3 rounded-xl text-sm font-semibold transition-all border-2 bg-slate-100 border-slate-200 text-slate-500';
+          const icon = pill.querySelector('i');
+          if (icon) icon.setAttribute('data-lucide', 'circle');
+        });
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        updateSelectionCount();
+      };
+    }
+    
+    // Reset button
+    const resetBtn = document.getElementById('task-config-reset');
+    if (resetBtn) {
+      resetBtn.onclick = () => {
+        gridContainer.querySelectorAll('.task-pill-toggle').forEach(pill => {
+          const taskId = pill.getAttribute('data-task-id');
+          const initialState = initialVisibilityState.get(taskId) || false;
+          pill.setAttribute('data-selected', initialState ? 'true' : 'false');
+          
+          if (initialState) {
+            pill.className = 'task-pill-toggle px-4 py-3 rounded-xl text-sm font-semibold transition-all border-2 bg-blue-50 border-blue-300 text-blue-700';
+            const icon = pill.querySelector('i');
+            if (icon) icon.setAttribute('data-lucide', 'check-circle');
+          } else {
+            pill.className = 'task-pill-toggle px-4 py-3 rounded-xl text-sm font-semibold transition-all border-2 bg-slate-100 border-slate-200 text-slate-500';
+            const icon = pill.querySelector('i');
+            if (icon) icon.setAttribute('data-lucide', 'circle');
+          }
+        });
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        updateSelectionCount();
+      };
+    }
+    
+    // Apply button
+    const applyButton = document.getElementById('task-config-apply');
+    if (applyButton) {
+      applyButton.onclick = () => {
+        gridContainer.querySelectorAll('.task-pill-toggle').forEach(pill => {
+          const taskId = pill.getAttribute('data-task-id');
+          const isSelected = pill.getAttribute('data-selected') === 'true';
+          const taskElement = document.querySelector(`.task-expand[data-task-id="${taskId}"]`);
+          if (taskElement) {
+            taskElement.style.display = isSelected ? '' : 'none';
+          }
+        });
+        
+        // Close modal
+        const taskConfigModal = document.getElementById('task-config-modal');
+        if (taskConfigModal) {
+          taskConfigModal.classList.add('hidden');
+          taskConfigModal.classList.remove('flex');
+        }
+        
+        console.log('[StudentPage] Task visibility updated');
+      };
+    }
   }
 
   /**
@@ -1249,6 +2218,7 @@
 
   /**
    * Clear only Jotform cache (not student/school/class cache)
+   * @deprecated No longer used with IndexedDB cache system. Use home page cache management instead.
    */
   function clearJotformCache() {
     console.log('[StudentPage] ========== CLEARING JOTFORM CACHE ==========');
@@ -1288,80 +2258,161 @@
       });
     }
     
-    // Question view filter dropdown
-    const questionFilter = document.getElementById('question-filter');
-    if (questionFilter) {
-      questionFilter.addEventListener('change', (e) => {
+    // Task view filter dropdown
+    const taskFilter = document.getElementById('task-filter');
+    if (taskFilter) {
+      taskFilter.addEventListener('change', (e) => {
         const filterValue = e.target.value;
-        console.log(`[StudentPage] Question filter changed to: ${filterValue}`);
-        applyQuestionFilter(filterValue);
+        console.log(`[StudentPage] Task filter changed to: ${filterValue}`);
+        applyTaskFilter(filterValue);
       });
     }
     
-    // Task Config button - toggle visibility of certain UI elements
-    const taskConfigButton = document.querySelector('button:has(i[data-lucide="sliders"])');
-    if (taskConfigButton) {
+    // Expand All - Smart 2-level expansion
+    const expandAllBtn = document.getElementById('expand-all-tasks');
+    if (expandAllBtn) {
+      expandAllBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent summary click
+        const allSets = document.querySelectorAll('.set-group');
+        const allTasks = document.querySelectorAll('.task-expand');
+        
+        // Check current state
+        const anySetClosed = Array.from(allSets).some(set => !set.open);
+        const anyTaskOpen = Array.from(allTasks).some(task => task.open);
+        
+        if (anySetClosed) {
+          // Level 1: Expand all Sets only (keep tasks collapsed)
+          allSets.forEach(set => set.open = true);
+          allTasks.forEach(task => task.open = false);
+          console.log('[StudentPage] Expanded all Sets (Level 1)');
+        } else if (anyTaskOpen) {
+          // Smart: If any task is open, expand all tasks
+          allTasks.forEach(task => task.open = true);
+          console.log('[StudentPage] Expanded all Tasks (Level 2 - smart detection)');
+        } else {
+          // Level 2: Expand all tasks (show questions)
+          allTasks.forEach(task => task.open = true);
+          console.log('[StudentPage] Expanded all Tasks (Level 2)');
+        }
+      });
+    }
+    
+    // Collapse All - Smart 2-level collapse
+    const collapseAllBtn = document.getElementById('collapse-all-tasks');
+    if (collapseAllBtn) {
+      collapseAllBtn.addEventListener('click', (e) => {
+        e.stopPropagation(); // Prevent summary click
+        const allSets = document.querySelectorAll('.set-group');
+        const allTasks = document.querySelectorAll('.task-expand');
+        
+        // Check current state
+        const anyTaskOpen = Array.from(allTasks).some(task => task.open);
+        const allSetsOpen = Array.from(allSets).every(set => set.open);
+        
+        if (anyTaskOpen) {
+          // Level 1: Collapse all tasks (keep Sets open)
+          allTasks.forEach(task => task.open = false);
+          console.log('[StudentPage] Collapsed all Tasks (Level 1)');
+        } else if (allSetsOpen) {
+          // Level 2: Collapse all Sets
+          allSets.forEach(set => set.open = false);
+          console.log('[StudentPage] Collapsed all Sets (Level 2)');
+        } else {
+          // Already collapsed, do nothing or reset
+          console.log('[StudentPage] Everything already collapsed');
+        }
+      });
+    }
+    
+    // Task Config button - open modal
+    const taskConfigButton = document.querySelector('.hero-button.btn-secondary');
+    const taskConfigModal = document.getElementById('task-config-modal');
+    const taskConfigClose = document.getElementById('task-config-close');
+    const taskConfigCancel = document.getElementById('task-config-cancel');
+    
+    if (taskConfigButton && taskConfigModal) {
       taskConfigButton.addEventListener('click', () => {
-        console.log('[StudentPage] Task Config clicked');
-        alert('Task configuration panel - Coming soon!\n\nThis will allow you to:\n- Configure termination rules\n- Adjust display settings\n- Export task data');
+        console.log('[StudentPage] Task Config clicked - opening modal');
+        taskConfigModal.classList.remove('hidden');
+        taskConfigModal.classList.add('flex');
+        populateTaskConfigModal();
+      });
+      
+      // Close modal handlers
+      if (taskConfigClose) {
+        taskConfigClose.addEventListener('click', () => {
+          taskConfigModal.classList.add('hidden');
+          taskConfigModal.classList.remove('flex');
+        });
+      }
+      
+      if (taskConfigCancel) {
+        taskConfigCancel.addEventListener('click', () => {
+          taskConfigModal.classList.add('hidden');
+          taskConfigModal.classList.remove('flex');
+        });
+      }
+      
+      // Close modal when clicking backdrop
+      taskConfigModal.addEventListener('click', (e) => {
+        if (e.target === taskConfigModal) {
+          taskConfigModal.classList.add('hidden');
+          taskConfigModal.classList.remove('flex');
+        }
       });
     }
 
-    // Refresh button - clear Jotform cache and re-fetch data dynamically
-    const refreshButton = document.getElementById('refresh-jotform-button');
-    if (refreshButton) {
-      refreshButton.addEventListener('click', async () => {
-        console.log('[StudentPage] Refresh button clicked');
-        
-        // Show loading state
-        const icon = refreshButton.querySelector('i');
-        const originalIcon = icon ? icon.getAttribute('data-lucide') : null;
-        if (icon) {
-          icon.classList.add('animate-spin');
-        }
-        refreshButton.disabled = true;
-        
-        try {
-          // Clear only Jotform cache
-          clearJotformCache();
-          
-          // Get Core ID from URL
-          const urlParams = new URLSearchParams(window.location.search);
-          const coreId = urlParams.get('coreId');
-          
-          if (!coreId) {
-            throw new Error('No Core ID in URL');
-          }
-          
-          // Re-run the entire sequence:
-          // 1. Filter Core ID -> 2. Find exact matches -> 3. Merge data -> 4. Display
-          console.log('[StudentPage] Re-fetching Jotform data dynamically...');
-          await fetchAndPopulateJotformData(coreId);
-          
-          console.log('[StudentPage] ✅ Refresh complete!');
-        } catch (error) {
-          console.error('[StudentPage] ❌ Refresh failed:', error);
-          showError(`Refresh failed: ${error.message}`);
-        } finally {
-          // Restore button state
-          if (icon) {
-            icon.classList.remove('animate-spin');
-          }
-          refreshButton.disabled = false;
-        }
-      });
-    }
+    // REMOVED: Refresh button no longer needed with IndexedDB cache system
+    // To refresh data, users should:
+    // 1. Go back to home page
+    // 2. Click green "System Ready" pill
+    // 3. Click "Delete Cache" button
+    // 4. Re-sync cache
+    // This ensures all users see consistent data from the same cache
   }
 
+  /**
+   * Show loading overlay - DISABLED (no overlay in HTML)
+   */
+  function showLoadingOverlay(message = 'Loading...') {
+    console.log(`[Loading] (Disabled) ${message}`);
+  }
+
+  /**
+   * Update loading status - DISABLED (no overlay in HTML)
+   */
+  function updateLoadingStatus(message) {
+    console.log(`[Loading] (Disabled) ${message}`);
+  }
+
+  /**
+   * Hide loading overlay - DISABLED (no overlay in HTML)
+   */
+  function hideLoadingOverlay() {
+    console.log(`[Loading] (Disabled) Hide overlay`);
+  }
+
+  /**
+   * Initialize with loading wrapper
+   */
+  async function initWithLoading() {
+    try {
+      // No loading overlay shown - cache should be ready
+      await init();
+      setupUIHandlers();
+    } catch (error) {
+      console.error('[StudentPage] Initialization failed:', error);
+      showError(`Failed to load student data: ${error.message}`);
+    }
+  }
+  
   // Initialize on DOM ready
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', () => {
-      init();
-      setupUIHandlers();
+      initWithLoading();
     });
   } else {
-    init();
-    setupUIHandlers();
+    initWithLoading();
   }
 
   // Export to global scope

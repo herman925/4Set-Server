@@ -50,6 +50,16 @@
     border: 1px solid rgba(240, 78, 105, 0.4) !important;
 }
 
+.badge-error #status-indicator,
+.badge-error .status-indicator {
+    background: rgb(240, 78, 105) !important;
+}
+
+.badge-error #status-text,
+.badge-error .status-value {
+    color: rgb(240, 78, 105) !important;
+}
+
 .badge-error .lucide {
     color: rgb(240, 78, 105) !important;
 }
@@ -259,4 +269,218 @@ body {
         opacity: 1;
         transform: translateY(0);
     }
+}
+
+/* ========================================
+   Checking System Styles
+   ======================================== */
+
+/* Font Families */
+body { 
+    font-family: 'Inter', sans-serif !important; 
+}
+
+.font-mono { 
+    font-family: 'JetBrains Mono', monospace !important; 
+}
+
+/* Status Circles (Lighting System) */
+.status-circle {
+    width: 14px;
+    height: 14px;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.status-circle::after {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 9999px;
+    background-color: rgba(255, 255, 255, 0.85);
+}
+
+.status-green { background-color: #22c55e; }
+.status-yellow { background-color: #fbbf24; }
+.status-red { background-color: #ef4444; }
+.status-grey { background-color: #cbd5e1; }
+
+/* Badge Pills */
+.badge-pill {
+    font-size: 11px;
+    padding: 2px 10px;
+    border-radius: 9999px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Answer Pills */
+.answer-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    border-radius: 9999px;
+    font-size: 12px;
+}
+
+.answer-pill.correct { 
+    background-color: #dcfce7; 
+    color: #166534; 
+}
+
+.answer-pill.incorrect { 
+    background-color: #fee2e2; 
+    color: #991b1b; 
+}
+
+/* Stage Chips */
+.stage-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 11px;
+    border-radius: 9999px;
+    padding: 2px 8px;
+    background-color: #e5e7eb;
+    color: #374151;
+}
+
+.stage-chip.highlight {
+    background-color: #fecaca;
+    color: #b91c1c;
+    font-weight: 600;
+}
+
+/* Details & Summary */
+details summary { 
+    cursor: pointer; 
+}
+
+details[open] { 
+    background-color: #f9fafb; 
+}
+
+/* Set chevron rotation handled by JavaScript */
+.set-chevron {
+    transition: transform 0.2s ease;
+}
+
+/* Task indentation to show hierarchy */
+.set-tasks .task-expand {
+    padding-left: 2rem !important;
+}
+
+.set-tasks .task-expand summary {
+    padding-left: 0.5rem;
+}
+
+/* Task expand/collapse icon */
+.task-expand-icon {
+    transition: opacity 0.2s ease;
+}
+
+/* Hide plus icon and show minus when expanded */
+details[open] .task-expand-icon[data-lucide="plus"] {
+    display: none;
+}
+
+details:not([open]) .task-expand-icon[data-lucide="minus"] {
+    display: none;
+}
+
+/* Task Progress Stats - Pill Style with Fixed Widths */
+.task-progress-stats {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 11px;
+    font-family: 'JetBrains Mono', monospace;
+}
+
+/* Single row on wide screens */
+@media (min-width: 1024px) {
+    .task-progress-stats {
+        flex-direction: row;
+        gap: 6px;
+    }
+}
+
+.task-progress-stats > div {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 10px;
+    border-radius: 12px;
+    white-space: nowrap;
+    background: rgba(148, 163, 184, 0.08);
+    border: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+/* Fixed widths for consistent alignment across all tasks */
+@media (min-width: 1024px) {
+    .answered-stat { 
+        min-width: 145px;
+        justify-content: flex-start;
+    }
+    .correct-stat { 
+        min-width: 145px;
+        justify-content: flex-start;
+    }
+    .total-stat { 
+        min-width: 70px;
+        justify-content: flex-start;
+    }
+}
+
+/* Labels - no extra spacing */
+.answered-stat::before { 
+    content: 'Ans:';
+    color: #94a3b8;
+    font-weight: 500;
+    margin-right: 5px;
+}
+
+.correct-stat::before { 
+    content: 'Cor:';
+    color: #94a3b8;
+    font-weight: 500;
+    margin-right: 5px;
+}
+
+.total-stat::before { 
+    content: 'Tot:';
+    color: #94a3b8;
+    font-weight: 500;
+    margin-right: 5px;
+}
+
+/* Stat colors - answered and correct use dynamic gradient, total uses static grey */
+.answered-stat,
+.correct-stat { 
+    font-weight: 600;
+    /* Colors applied dynamically via JavaScript based on percentage */
+}
+
+.total-stat { 
+    color: #94a3b8;
+    background: rgba(148, 163, 184, 0.06);
+    border-color: rgba(148, 163, 184, 0.15);
+}
+
+/* Global: Ignored/Terminated Row Styling */
+/* Applied to ALL tasks when questions are marked as "Ignored (Terminated)" */
+tr[data-state="ignored"] {
+    opacity: 0.5 !important;
+    background-color: rgba(148, 163, 184, 0.05) !important;
+}
+
+tr[data-state="ignored"] td {
+    color: #94a3b8 !important;
+}
+
+tr[data-state="ignored"]:hover {
+    background-color: rgba(148, 163, 184, 0.1) !important;
 }

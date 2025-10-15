@@ -7,9 +7,10 @@
 
   /**
    * Fetch submissions from Jotform API with filter
+   * NOW USES GLOBAL CACHE - filters client-side instead of API-side
    * @param {Object} params - API call parameters
-   * @param {string} params.filter - Filter object (will be JSON stringified)
-   * @param {number} [params.limit=1000] - Max submissions to return
+   * @param {string} params.filter - Filter object (will be applied client-side)
+   * @param {number} [params.limit=1000] - Max submissions to return (ignored, uses all cached)
    * @param {string} [params.orderby='created_at'] - Field to order by
    * @param {string} [params.direction='ASC'] - Sort direction
    * @param {boolean} [params.verbose=true] - Enable detailed logging
@@ -33,69 +34,70 @@
         throw new Error('Jotform credentials missing apiKey or formId');
       }
 
-      // Build URL
-      const filterEncoded = encodeURIComponent(JSON.stringify(filter));
-      const url = `${JOTFORM_BASE_URL}/form/${formId}/submissions?` +
-                  `filter=${filterEncoded}` +
-                  `&limit=${limit}` +
-                  `&orderby=${orderby}` +
-                  `&direction=${direction}` +
-                  `&apiKey=${apiKey}`;
-
       if (verbose) {
-        console.log('[JotformAPI] ========== API CALL ==========');
+        console.log('[JotformAPI] ========== FETCH (GLOBAL CACHE) ==========');
         console.log('[JotformAPI] Form ID:', formId);
-        console.log('[JotformAPI] Filter:', filter);
-        console.log('[JotformAPI] Filter (encoded):', filterEncoded);
-        console.log('[JotformAPI] Full URL:', url.replace(apiKey, 'API_KEY_HIDDEN'));
+        console.log('[JotformAPI] Filter (will be applied client-side):', filter);
       }
 
-      // Make request
-      const response = await fetch(url);
+      // Use global cache manager
+      if (!window.JotFormCache) {
+        throw new Error('JotFormCache not initialized - include jotform-cache.js before this script');
+      }
+
+      // Get all submissions from cache or API
+      const allSubmissions = await window.JotFormCache.getAllSubmissions({
+        formId: formId,
+        apiKey: apiKey
+      });
 
       if (verbose) {
-        console.log('[JotformAPI] Response:', response.status, response.statusText);
+        console.log('[JotformAPI] Total submissions in cache:', allSubmissions.length);
       }
 
-      if (!response.ok) {
-        if (response.status === 429) {
-          throw new Error('Rate limited by Jotform API. Please try again later.');
-        }
-        throw new Error(`Jotform API error: ${response.status} ${response.statusText}`);
-      }
-
-      // Parse response
-      const result = await response.json();
-      const submissions = result.content || [];
-
-      if (verbose) {
-        console.log('[JotformAPI] Response structure:', {
-          responseCode: result.responseCode,
-          message: result.message,
-          submissionCount: submissions.length
-        });
-
-        if (submissions.length > 0) {
-          console.log('[JotformAPI] First submission:', {
-            id: submissions[0].id,
-            created_at: submissions[0].created_at,
-            answerCount: Object.keys(submissions[0].answers || {}).length,
-            studentIdField: submissions[0].answers?.['20']?.answer || submissions[0].answers?.['20']?.text || 'NOT FOUND'
+      // Apply filter client-side
+      let filteredSubmissions = allSubmissions;
+      
+      // Common filter: {"20:eq":"10001"} - student ID exact match
+      if (filter && typeof filter === 'object') {
+        for (const [key, value] of Object.entries(filter)) {
+          // Parse key: "20:eq" → qid=20, operator=eq
+          const [qid, operator] = key.split(':');
+          
+          filteredSubmissions = filteredSubmissions.filter(submission => {
+            const answer = submission.answers?.[qid];
+            const answerValue = answer?.answer || answer?.text || null;
+            
+            if (operator === 'eq') {
+              return answerValue === value;
+            } else if (operator === 'contains') {
+              return answerValue && answerValue.includes(value);
+            } else if (operator === 'startswith') {
+              return answerValue && answerValue.startsWith(value);
+            } else {
+              // No operator, direct match
+              return answerValue === value;
+            }
           });
-          console.log('[JotformAPI] ⚠️ WARNING: Got', submissions.length, 'submissions - filter may not be working!');
-          if (submissions.length > 10) {
-            console.log('[JotformAPI] Sample student IDs from first 5 submissions:');
-            submissions.slice(0, 5).forEach((sub, idx) => {
-              console.log(`  [${idx}] ID:`, sub.answers?.['20']?.answer || sub.answers?.['20']?.text || 'MISSING');
-            });
-          }
+        }
+      }
+
+      if (verbose) {
+        console.log('[JotformAPI] Filtered submissions:', filteredSubmissions.length);
+        
+        if (filteredSubmissions.length > 0) {
+          console.log('[JotformAPI] First submission:', {
+            id: filteredSubmissions[0].id,
+            created_at: filteredSubmissions[0].created_at,
+            answerCount: Object.keys(filteredSubmissions[0].answers || {}).length
+          });
         } else {
-          console.warn('[JotformAPI] ⚠️ No submissions found');
+          console.warn('[JotformAPI] ⚠️ No submissions matched filter');
         }
         console.log('[JotformAPI] =========================================');
       }
 
-      return submissions;
+      return filteredSubmissions;
 
     } catch (error) {
       console.error('[JotformAPI] Failed to fetch submissions:', error);
@@ -106,7 +108,7 @@
   /**
    * Fetch submissions for a specific student by Core ID
    * @param {string} coreId - Student Core ID (e.g., "C10261")
-   * @param {string} [studentIdQid='20'] - QID for student-id field (optional, uses field name by default)
+   * @param {string} [studentIdQid='20'] - QID for student-id field
    * @param {boolean} [verbose=true] - Enable detailed logging
    * @returns {Promise<Array>} - Array of submissions
    */
@@ -118,13 +120,13 @@
       console.log('[JotformAPI] Fetching for student:', coreId, '(numeric:', coreIdNumeric + ')');
     }
 
-    // Try FIELD NAME first (Jotform recommends this over QID)
+    // MUST use QID for client-side filtering (answers indexed by QID, not field name)
     const filter = {
-      "student-id:eq": coreIdNumeric
+      [`${studentIdQid}:eq`]: coreIdNumeric
     };
 
     if (verbose) {
-      console.log('[JotformAPI] Using field name filter instead of QID');
+      console.log('[JotformAPI] Using QID filter for client-side filtering:', filter);
     }
 
     return fetchSubmissions({ filter, verbose });

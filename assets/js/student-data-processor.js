@@ -141,77 +141,53 @@ class StudentDataProcessor {
 
     /**
      * Fetch all submissions for a given CoreID from Jotform API
+     * Now uses global cache to avoid redundant API calls
      */
     async fetchJotformData(coreId) {
         try {
             // Get credentials from cached data (already decrypted on home page)
             const cachedData = window.CheckingSystemData?.getCachedData();
             if (!cachedData || !cachedData.credentials) {
-                throw new Error('Credentials not available. Please return to home page.');
+                throw new Error('Credentials not found in cached data');
             }
 
             const credentials = cachedData.credentials;
 
-            // Strip "C" prefix from Core ID for Jotform query
-            // E.g., "C10001" -> "10001"
-            const coreIdNumeric = coreId.startsWith('C') ? coreId.substring(1) : coreId;
-
-            // Build filter: {"20:eq":"10001"}
-            // Note: "20" is the QID for student-id field in Jotform
-            const filter = JSON.stringify({
-                "20:eq": coreIdNumeric
-            });
-
-            // Fetch from Jotform API
-            const url = `https://api.jotform.com/form/${credentials.formId}/submissions?` +
-                        `filter=${encodeURIComponent(filter)}` +
-                        `&limit=1000` +
-                        `&orderby=created_at` +
-                        `&direction=ASC` +
-                        `&apiKey=${credentials.apiKey}`;
-
-            console.log('[StudentData] ========== JOTFORM API CALL ==========');
-            console.log('[StudentData] Core ID (with C):', coreId);
-            console.log('[StudentData] Core ID (numeric):', coreIdNumeric);
+            console.log('[StudentData] ========== JOTFORM FETCH (GLOBAL CACHE) ==========');
+            console.log('[StudentData] Core ID:', coreId);
             console.log('[StudentData] Form ID:', credentials.formId);
-            console.log('[StudentData] Filter (raw JSON):', filter);
-            console.log('[StudentData] Filter (URL-encoded):', encodeURIComponent(filter));
-            console.log('[StudentData] Full URL:', url.replace(credentials.apiKey, 'API_KEY_HIDDEN'));
-            
-            const response = await fetch(url);
-            
-            console.log('[StudentData] Response status:', response.status, response.statusText);
-            
-            if (!response.ok) {
-                if (response.status === 429) {
-                    throw new Error('Rate limited by Jotform API. Please try again later.');
-                }
-                throw new Error(`Jotform API error: ${response.status}`);
+
+            // Use global cache manager
+            if (!window.JotFormCache) {
+                throw new Error('JotFormCache not initialized');
             }
 
-            const result = await response.json();
-            console.log('[StudentData] Response structure:', {
-                responseCode: result.responseCode,
-                message: result.message,
-                contentType: typeof result.content,
-                contentIsArray: Array.isArray(result.content),
-                submissionCount: result.content?.length || 0
+            // Get all submissions from cache or API
+            const allSubmissions = await window.JotFormCache.getAllSubmissions({
+                formId: credentials.formId,
+                apiKey: credentials.apiKey
             });
-            
-            if (result.content && result.content.length > 0) {
-                console.log('[StudentData] First submission sample:', {
-                    id: result.content[0].id,
-                    created_at: result.content[0].created_at,
-                    answerCount: Object.keys(result.content[0].answers || {}).length,
-                    hasSessionKey: !!result.content[0].answers?.['3'],
-                    hasStudentId: !!result.content[0].answers?.['20']
-                });
+
+            console.log('[StudentData] Total submissions in cache:', allSubmissions.length);
+
+            // Filter by CoreID client-side
+            const filteredSubmissions = window.JotFormCache.filterByCoreId(allSubmissions, coreId, '20');
+
+            console.log('[StudentData] Filtered submissions for', coreId + ':', filteredSubmissions.length);
+
+            if (filteredSubmissions.length === 0) {
+                console.warn('[StudentData] ⚠️ No submissions found for CoreID:', coreId);
             } else {
-                console.warn('[StudentData] ⚠️ NO SUBMISSIONS FOUND for Core ID:', coreId);
+                console.log('[StudentData] ✓ Found', filteredSubmissions.length, 'submission(s)');
             }
-            console.log('[StudentData] =========================================');
-            
-            return result;
+
+            // Return in same format as original API response
+            return {
+                responseCode: 200,
+                content: filteredSubmissions,
+                limit: filteredSubmissions.length,
+                offset: 0
+            };
             
         } catch (error) {
             console.error('[StudentData] Failed to fetch from Jotform:', error);

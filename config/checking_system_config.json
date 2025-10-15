@@ -1,0 +1,47 @@
+{
+  "ui": {
+    "loadingStatusDelayMs": 800,
+    "loadingMessages": {
+      "questionMappings": "Loading question mappings...",
+      "connectingApi": "Connecting to Jotform API...",
+      "receivedSubmissions": "Received {count} submissions from Jotform",
+      "validating": "Validating {count} submissions...",
+      "foundMatches": "Found {count} matching submissions",
+      "processing": "Processing {count} submissions...",
+      "merging": "Merging {count} submissions...",
+      "calculatingMetrics": "Calculating completion metrics...",
+      "populating": "Populating task data..."
+    },
+    "cacheMessages": {
+      "building": "Syncing with Jotform...",
+      "fetchingPage": "Fetching page {page} of submissions...",
+      "downloaded": "Downloaded {count} submissions",
+      "caching": "Saving to local cache...",
+      "complete": "Cache ready! System is now operational."
+    }
+  },
+  "cache": {
+    "ttlHours": 1,
+    "sessionStorageKeyPrefix": "student_jotform_",
+    "globalCacheKey": "jotform_global_cache",
+    "statusLabels": {
+      "notReady": "System Not Ready",
+      "ready": "System Ready",
+      "syncing": "Syncing..."
+    },
+    "modalText": {
+      "blockTitle": "Cache Not Built",
+      "blockMessage": "Please build the system cache first by clicking the status pill above.",
+      "syncTitle": "System Not Ready",
+      "syncMessage": "The system needs to sync with Jotform to enable fast searching. This is a one-time process that takes about 30-60 seconds.",
+      "syncButton": "Sync with Jotform",
+      "syncCancel": "Cancel",
+      "completeTitle": "System Ready",
+      "completeMessage": "Cache has been built successfully. You can now use the checking system."
+    }
+  },
+  "taskView": {
+    "defaultFilter": "all",
+    "defaultExpandState": false
+  }
+}

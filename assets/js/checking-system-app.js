@@ -187,22 +187,30 @@
 
   /**
    * Update system health badge
+   * Sets decryption pill to green, triggers cache manager to check cache status
    */
   function updateSystemHealthBadge() {
-    const badge = document.getElementById('system-health-badge');
-    const statusText = document.getElementById('status-text');
     const timestampSpan = document.getElementById('snapshot-timestamp');
+    const decryptionBadge = document.getElementById('decryption-status-badge');
+    const decryptionText = document.getElementById('decryption-status-text');
 
-    if (!badge || !statusText || !timestampSpan) return;
+    if (!timestampSpan) return;
 
-    // For now, show as healthy since we just loaded data
-    badge.className = 'badge-success flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium';
-    statusText.textContent = 'System Healthy';
-
-    // Show current time as snapshot time
+    // Update timestamp
     const now = new Date();
     const timeString = now.toISOString().slice(0, 16).replace('T', ' ');
     timestampSpan.textContent = timeString;
+
+    // Update decryption status pill to green (decryption successful)
+    if (decryptionBadge && decryptionText) {
+      decryptionBadge.className = 'badge-success flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium';
+      decryptionText.textContent = 'Data Decrypted';
+    }
+
+    // Trigger cache manager UI to check cache status and update cache badge
+    if (window.CacheManagerUI && window.CacheManagerUI.updateStatusPill) {
+      window.CacheManagerUI.updateStatusPill();
+    }
   }
 
   /**

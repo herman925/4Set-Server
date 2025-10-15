@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Student Detail · 黃子晴 (Chloe Wong) · 4Set Checking System</title>
+    <title>Loading...</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="assets/js/tailwind.config.js"></script>
     <link rel="stylesheet" href="assets/css/theme_pantone_light_1.css" />
@@ -14,74 +14,12 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet" />
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
-    <style>
-        body { font-family: 'Inter', sans-serif !important; }
-        .font-mono { font-family: 'JetBrains Mono', monospace !important; }
-        .status-circle {
-            width: 14px;
-            height: 14px;
-            border-radius: 9999px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .status-circle::after {
-            content: '';
-            width: 6px;
-            height: 6px;
-            border-radius: 9999px;
-            background-color: rgba(255,255,255,0.85);
-        }
-        .status-green { background-color: #22c55e; }
-        .status-yellow { background-color: #fbbf24; }
-        .status-red { background-color: #ef4444; }
-        .status-grey { background-color: #cbd5e1; }
-        .badge-pill {
-            font-size: 11px;
-            padding: 2px 10px;
-            border-radius: 9999px;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .answer-pill {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 4px 10px;
-            border-radius: 9999px;
-            font-size: 12px;
-        }
-        .answer-pill.correct { background-color: #dcfce7; color: #166534; }
-        .answer-pill.incorrect { background-color: #fee2e2; color: #991b1b; }
-        .stage-chip {
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-            font-size: 11px;
-            border-radius: 9999px;
-            padding: 2px 8px;
-            background-color: #e5e7eb;
-            color: #374151;
-        }
-        .stage-chip.highlight {
-            background-color: #fecaca;
-            color: #b91c1c;
-            font-weight: 600;
-        }
-        details summary { cursor: pointer; }
-        details[open] { background-color: #f9fafb; }
-        /* Rotate chevron when set is expanded */
-        details.set-group[open] .set-chevron {
-            transform: rotate(90deg);
-        }
-    </style>
 </head>
 <body class="min-h-screen hero-background">
     <div class="relative overflow-hidden">
         <!-- Decorative Background Elements -->
-        <div class="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/70 to-transparent"></div>
-        <div class="absolute inset-0 pointer-events-none">
+        <div class="fixed inset-x-0 top-0 h-32 bg-gradient-to-b from-white/70 to-transparent pointer-events-none"></div>
+        <div class="fixed inset-0 pointer-events-none z-0">
             <div class="absolute -left-24 top-24 w-48 h-48 rounded-full border border-primary/20 glow-ring"></div>
             <div class="absolute right-12 bottom-20 w-40 h-40 rounded-full border border-secondary/30 glow-ring-secondary"></div>
             <div class="absolute left-1/3 top-1/2 w-20 h-20 rounded-full bg-secondary/20 blur-3xl"></div>
@@ -100,16 +38,16 @@
                             <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
                             <span>Back</span>
                         </button>
-                        <nav class="text-sm text-[color:var(--muted-foreground)] flex items-center gap-2">
-                            <a href="#" class="hover:text-[color:var(--primary)] transition-colors">沙田區</a>
-                            <span class="text-[color:var(--border)]">/</span>
-                            <a href="#" class="hover:text-[color:var(--primary)] transition-colors">第3組</a>
-                            <span class="text-[color:var(--border)]">/</span>
-                            <a href="#" class="hover:text-[color:var(--primary)] transition-colors">星光小學 (Starlight Primary)</a>
-                            <span class="text-[color:var(--border)]">/</span>
-                            <a href="#" class="hover:text-[color:var(--primary)] transition-colors">G3A · 星耀班</a>
-                            <span class="text-[color:var(--border)]">/</span>
-                            <span class="text-[color:var(--foreground)] font-medium">黃子晴 (Chloe Wong)</span>
+                        <nav class="breadcrumb-nav text-xs text-[color:var(--muted-foreground)] flex items-center gap-1.5 font-mono">
+                            <a href="#" class="breadcrumb-region px-2 py-1 rounded bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors">—</a>
+                            <i data-lucide="chevron-right" class="w-3 h-3 text-slate-400"></i>
+                            <a href="#" class="breadcrumb-group px-2 py-1 rounded bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors">—</a>
+                            <i data-lucide="chevron-right" class="w-3 h-3 text-slate-400"></i>
+                            <a href="#" class="breadcrumb-school px-2 py-1 rounded bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors">—</a>
+                            <i data-lucide="chevron-right" class="w-3 h-3 text-slate-400"></i>
+                            <a href="#" class="breadcrumb-class px-2 py-1 rounded bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors">—</a>
+                            <i data-lucide="chevron-right" class="w-3 h-3 text-slate-400"></i>
+                            <span class="breadcrumb-student px-2 py-1 rounded bg-blue-50 text-blue-700 font-semibold">—</span>
                         </nav>
                     </div>
                     <div class="flex items-center gap-2">
@@ -117,14 +55,6 @@
                         <button class="hero-button secondary-button text-xs font-medium rounded-md px-3 py-1.5 inline-flex items-center gap-1.5">
                             <i data-lucide="download" class="w-3.5 h-3.5 flex-shrink-0"></i>
                             <span>Export</span>
-                        </button>
-                        <button class="pill-nav-default text-xs font-medium rounded-md px-3 py-1.5 inline-flex items-center gap-1.5 border border-transparent hover:opacity-80 transition-opacity">
-                            <i data-lucide="file-text" class="w-3.5 h-3.5 flex-shrink-0"></i>
-                            <span>View Log</span>
-                        </button>
-                        <button id="refresh-jotform-button" class="hero-button btn-primary text-xs font-medium rounded-md px-3 py-1.5 inline-flex items-center gap-1.5">
-                            <i data-lucide="refresh-cw" class="w-3.5 h-3.5 flex-shrink-0"></i>
-                            <span>Refresh</span>
                         </button>
                     </div>
                 </div>
@@ -178,262 +108,143 @@
                     <h2 class="text-sm font-semibold text-[color:var(--foreground)]">Task Status Overview</h2>
                     <span class="text-[11px] text-[color:var(--muted-foreground)]">Tap to expand overview metrics</span>
                 </summary>
-                <div class="mt-4 pt-4 border-t border-[color:var(--border)] grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="mt-4 pt-4 border-t border-[color:var(--border)] grid grid-cols-2 sm:grid-cols-4 gap-4">
                     <div class="bg-gradient-to-br from-white to-green-50 rounded-lg border border-green-200 px-4 py-3 shadow-sm">
-                        <h3 class="text-xs text-[color:var(--muted-foreground)] font-medium">Completion</h3>
-                        <div class="flex items-baseline gap-2 mt-1">
-                            <span class="text-2xl font-semibold text-[color:var(--foreground)]">97.7%</span>
-                            <span class="text-green-600 text-xs font-medium inline-flex items-center gap-1">
-                                <i data-lucide="trending-up" class="w-3 h-3"></i>
-                                +3.2%
-                            </span>
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="status-circle status-green"></span>
+                            <h3 class="text-xs text-[color:var(--muted-foreground)] font-medium">Complete</h3>
                         </div>
+                        <p class="text-2xl font-bold text-green-700" id="overview-complete-count">—</p>
                     </div>
-                    <div class="bg-gradient-to-br from-white to-emerald-50 rounded-lg border border-emerald-200 px-4 py-3 shadow-sm">
-                        <h3 class="text-xs text-[color:var(--muted-foreground)] font-medium">Termination</h3>
-                        <div class="flex flex-col gap-1 mt-1 text-xs">
-                            <span class="badge-pill bg-emerald-100 text-emerald-700">
-                                <i data-lucide="check" class="w-3 h-3"></i>
-                                No active termination
-                            </span>
-                            <span class="text-[color:var(--muted-foreground)]">Last triggered · ERV_Ter2 on 2025-10-05</span>
+                    <div class="bg-gradient-to-br from-white to-yellow-50 rounded-lg border border-yellow-200 px-4 py-3 shadow-sm">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="status-circle status-yellow"></span>
+                            <h3 class="text-xs text-[color:var(--muted-foreground)] font-medium">Post-term</h3>
                         </div>
+                        <p class="text-2xl font-bold text-yellow-700" id="overview-postterm-count">—</p>
                     </div>
-                    <div class="bg-gradient-to-br from-white to-blue-50 rounded-lg border border-blue-200 px-4 py-3 shadow-sm">
-                        <h3 class="text-xs text-[color:var(--muted-foreground)] font-medium">Answered</h3>
-                        <p class="mt-1 text-sm text-[color:var(--foreground)] font-mono">196 / 200 questions</p>
+                    <div class="bg-gradient-to-br from-white to-red-50 rounded-lg border border-red-200 px-4 py-3 shadow-sm">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="status-circle status-red"></span>
+                            <h3 class="text-xs text-[color:var(--muted-foreground)] font-medium">Incomplete</h3>
+                        </div>
+                        <p class="text-2xl font-bold text-red-700" id="overview-incomplete-count">—</p>
                     </div>
-                    <div class="bg-gradient-to-br from-white to-amber-50 rounded-lg border border-amber-200 px-4 py-3 shadow-sm">
-                        <h3 class="text-xs text-[color:var(--muted-foreground)] font-medium">Outstanding Focus</h3>
-                        <p class="mt-1 text-sm text-[color:var(--foreground)]">Math Pattern (Q6 follow-up)</p>
+                    <div class="bg-gradient-to-br from-white to-slate-50 rounded-lg border border-slate-200 px-4 py-3 shadow-sm">
+                        <div class="flex items-center gap-2 mb-2">
+                            <span class="status-circle status-grey"></span>
+                            <h3 class="text-xs text-[color:var(--muted-foreground)] font-medium">Not started</h3>
+                        </div>
+                        <p class="text-2xl font-bold text-slate-700" id="overview-notstarted-count">—</p>
                     </div>
                 </div>
             </details>
 
             <!-- Task Progress -->
-            <details open class="entry-card border-l-4 border-l-[color:var(--accent)]">
-                <summary class="p-4 lg:p-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between border-b border-[color:var(--border)] cursor-pointer list-none">
-                    <div>
-                        <h2 class="text-sm font-semibold text-[color:var(--foreground)]">Task Progress</h2>
-                        <p class="text-xs text-[color:var(--muted-foreground)] mt-1">Expand a task to review individual questions, responses, and correctness</p>
-                    </div>
-                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3 sm:gap-5">
-                        <div class="flex items-center gap-2 text-xs text-[color:var(--muted-foreground)]">
+            <section class="entry-card border-l-4 border-l-[color:var(--accent)]">
+                <div class="p-4 lg:p-6 border-b border-[color:var(--border)]">
+                    <div class="flex flex-col gap-3">
+                        <!-- Row 1: Title and Main Controls -->
+                        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                            <div>
+                                <h2 class="text-sm font-semibold text-[color:var(--foreground)]">Task Progress</h2>
+                                <p class="text-xs text-[color:var(--muted-foreground)] mt-1">Expand a task to review individual questions, responses, and correctness</p>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <div class="flex items-center gap-2 text-xs">
+                                    <label for="task-filter" class="font-medium text-[color:var(--foreground)]">Task view</label>
+                                    <select id="task-filter" name="task-filter" class="px-2 py-1 border border-[color:var(--border)] rounded-md bg-white text-xs text-[color:var(--foreground)] shadow-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]">
+                                        <option value="all" selected>All tasks</option>
+                                        <option value="completed">Completed</option>
+                                        <option value="incomplete">Incomplete</option>
+                                        <option value="issues">Issues</option>
+                                        <option value="not-started">Not started</option>
+                                    </select>
+                                </div>
+                                <button id="expand-all-tasks" class="hero-button secondary-button px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center gap-1.5">
+                                    <i data-lucide="chevrons-down" class="w-3.5 h-3.5"></i>
+                                    <span>Expand All</span>
+                                </button>
+                                <button id="collapse-all-tasks" class="hero-button secondary-button px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center gap-1.5">
+                                    <i data-lucide="chevrons-up" class="w-3.5 h-3.5"></i>
+                                    <span>Collapse All</span>
+                                </button>
+                                <button class="hero-button btn-secondary px-4 py-2 rounded-lg text-xs font-medium inline-flex items-center gap-2">
+                                    <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
+                                    <span>Task Config</span>
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Row 2: Status Legends (aligned with Task view label on desktop) -->
+                        <div class="flex items-center gap-2 text-xs text-[color:var(--muted-foreground)] pt-2 border-t border-[color:var(--border)]">
                             <span class="inline-flex items-center gap-1"><span class="status-circle status-green"></span>Complete</span>
                             <span class="inline-flex items-center gap-1"><span class="status-circle status-yellow"></span>Post-term</span>
                             <span class="inline-flex items-center gap-1"><span class="status-circle status-red"></span>Incomplete</span>
                             <span class="inline-flex items-center gap-1"><span class="status-circle status-grey"></span>Not started</span>
                         </div>
-                        <div class="flex flex-col sm:flex-row sm:items-center gap-3">
-                            <div class="flex items-center gap-2 text-xs">
-                                <label for="question-filter" class="font-medium text-[color:var(--foreground)]">Question view</label>
-                                <select id="question-filter" name="question-filter" class="px-2 py-1 border border-[color:var(--border)] rounded-md bg-white text-xs text-[color:var(--foreground)] shadow-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]">
-                                    <option value="all" selected>All questions</option>
-                                    <option value="completed">Completed only</option>
-                                    <option value="correct">Correct only</option>
-                                    <option value="incorrect">Incorrect only</option>
-                                    <option value="missing">Missing only</option>
-                                </select>
-                            </div>
-                            <button class="hero-button btn-secondary px-4 py-2 rounded-lg text-xs font-medium inline-flex items-center gap-2">
-                                <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
-                                <span>Task Config</span>
-                            </button>
-                        </div>
                     </div>
-                </summary>
-                <div class="divide-y divide-[color:var(--border)]">
-                    <!-- Set 1 -->
-                    <details class="group" data-set="set1">
-                        <summary class="px-4 py-3 cursor-pointer flex items-center justify-between gap-4 hover:bg-[color:var(--muted)]/30 transition-colors">
-                            <div>
-                                <h3 class="text-sm font-semibold text-[color:var(--foreground)]">Set 1 · 第一組</h3>
-                                <p class="text-xs text-[color:var(--muted-foreground)] mt-0.5">ERV 英語詞彙 · SYM / NONSYM (符號/非符號關係) · Theory of Mind 心理理論 · 中文詞語閱讀</p>
-                            </div>
-                            <div class="flex items-center gap-3 text-xs text-[color:var(--muted-foreground)]">
-                                <span class="inline-flex items-center gap-1"><span class="status-circle status-yellow"></span>1 post-term</span>
-                                <span class="inline-flex items-center gap-1"><span class="status-circle status-green"></span>4 complete</span>
-                            </div>
-                        </summary>
-                        <div class="divide-y divide-[color:var(--border)] bg-[color:var(--muted)]/20">
-                            <!-- ERV Task -->
-                            <details class="task-expand" data-task="ERV">
-                                <summary class="px-4 py-3 grid gap-2 sm:grid-cols-[minmax(0,220px)_minmax(0,200px)_minmax(0,120px)_minmax(0,1fr)] sm:items-center cursor-pointer hover:bg-white/60 transition-colors">
-                                    <div class="flex items-center gap-2">
-                                        <span class="status-circle status-yellow" title="Responses logged after termination gate"></span>
-                                        <strong class="text-[color:var(--foreground)] text-sm">ERV</strong>
-                                    </div>
-                                    <div class="flex flex-wrap items-center gap-1 text-xs">
-                                        <span class="stage-chip">Stage 1 · N</span>
-                                        <span class="stage-chip highlight">Stage 2 · Y</span>
-                                        <span class="stage-chip">Stage 3 · N</span>
-                                    </div>
-                                    <span class="text-xs text-[color:var(--muted-foreground)] font-mono">48 / 48</span>
-                                    <div class="flex flex-wrap gap-2 text-xs text-[color:var(--muted-foreground)] sm:justify-end">
-                                        <span class="answer-pill correct"><i data-lucide="badge-check" class="w-3.5 h-3.5"></i>Post-termination responses</span>
-                                        <span>Updated · 2025-10-05 16:05</span>
-                                    </div>
-                                </summary>
-                                <div class="bg-white/80 border-t border-[color:var(--border)] px-4 py-3 space-y-3">
-                                    <div class="flex flex-col gap-2">
-                                        <span class="text-xs font-semibold text-[color:var(--primary)] uppercase tracking-wide">Termination checklist · ERV</span>
-                                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-                                            <div class="border border-[color:var(--border)] rounded-lg p-2 bg-white shadow-sm">
-                                                <p class="font-medium text-[color:var(--foreground)]">ERV_Ter1</p>
-                                                <p class="text-[color:var(--muted-foreground)] mt-0.5">Fewer than 5 correct in ERV_Q1–ERV_Q12</p>
-                                            </div>
-                                            <div class="border border-[color:var(--border)] rounded-lg p-2 bg-white shadow-sm">
-                                                <p class="font-medium text-[color:var(--foreground)]">ERV_Ter2</p>
-                                                <p class="text-[color:var(--muted-foreground)] mt-0.5">Fewer than 5 correct in ERV_Q13–ERV_Q24</p>
-                                            </div>
-                                            <div class="border border-[color:var(--border)] rounded-lg p-2 bg-white shadow-sm">
-                                                <p class="font-medium text-[color:var(--foreground)]">ERV_Ter3</p>
-                                                <p class="text-[color:var(--muted-foreground)] mt-0.5">Fewer than 5 correct in ERV_Q25–ERV_Q36</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="overflow-x-auto">
-                                        <table class="min-w-full text-sm">
-                                            <thead class="text-xs text-[color:var(--muted-foreground)] uppercase bg-[color:var(--muted)]/60">
-                                                <tr>
-                                                    <th class="text-left font-medium pb-2 px-2">Question</th>
-                                                    <th class="text-left font-medium pb-2 px-2">Student Answer</th>
-                                                    <th class="text-left font-medium pb-2 px-2">Correct Answer</th>
-                                                    <th class="text-left font-medium pb-2 px-2">Result</th>
-                                                    <th class="text-left font-medium pb-2 px-2">Last Updated</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody class="divide-y divide-[color:var(--border)]">
-                                                <tr data-state="correct" class="hover:bg-[color:var(--muted)]/30">
-                                                    <td class="py-2 px-2 text-[color:var(--foreground)] font-mono">ERV_Q11</td>
-                                                    <td class="py-2 px-2 text-[color:var(--muted-foreground)]">"autumn"</td>
-                                                    <td class="py-2 px-2 text-[color:var(--muted-foreground)]">"autumn"</td>
-                                                    <td class="py-2 px-2"><span class="answer-pill correct"><i data-lucide="check" class="w-3 h-3"></i>Correct</span></td>
-                                                    <td class="py-2 px-2 text-xs text-[color:var(--muted-foreground)]">2025-10-05 15:42</td>
-                                                </tr>
-                                                <tr data-state="correct" class="hover:bg-[color:var(--muted)]/30">
-                                                    <td class="py-2 px-2 text-[color:var(--foreground)] font-mono">ERV_Q24</td>
-                                                    <td class="py-2 px-2 text-[color:var(--muted-foreground)]">Option C</td>
-                                                    <td class="py-2 px-2 text-[color:var(--muted-foreground)]">Option C</td>
-                                                    <td class="py-2 px-2"><span class="answer-pill correct"><i data-lucide="check" class="w-3 h-3"></i>Correct</span></td>
-                                                    <td class="py-2 px-2 text-xs text-[color:var(--muted-foreground)]">2025-10-05 15:54</td>
-                                                </tr>
-                                                <tr data-state="incorrect" class="hover:bg-[color:var(--muted)]/30">
-                                                    <td class="py-2 px-2 text-[color:var(--foreground)] font-mono">ERV_Q27</td>
-                                                    <td class="py-2 px-2 text-[color:var(--muted-foreground)]">Option A</td>
-                                                    <td class="py-2 px-2 text-[color:var(--muted-foreground)]">Option B</td>
-                                                    <td class="py-2 px-2"><span class="answer-pill incorrect"><i data-lucide="x" class="w-3 h-3"></i>Incorrect</span></td>
-                                                    <td class="py-2 px-2 text-xs text-[color:var(--muted-foreground)]">2025-10-05 15:57</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </details>
-
-                            <!-- Math Pattern Task (Set 2 example - incomplete with red status) -->
-                            <details class="task-expand" data-task="MathPattern" open>
-                                <summary class="px-4 py-3 grid gap-2 sm:grid-cols-[minmax(0,220px)_minmax(0,200px)_minmax(0,120px)_minmax(0,1fr)] sm:items-center cursor-pointer hover:bg-white/60 transition-colors">
-                                    <div class="flex items-center gap-2">
-                                        <span class="status-circle status-red" title="Incomplete"></span>
-                                        <strong class="text-[color:var(--foreground)] text-sm">Math Pattern (Set 2)</strong>
-                                    </div>
-                                    <div class="flex flex-wrap items-center gap-1 text-xs">
-                                        <span class="stage-chip">Stage 1 · N</span>
-                                        <span class="stage-chip">Stage 2 · N</span>
-                                        <span class="stage-chip">Stage 3 · N</span>
-                                    </div>
-                                    <span class="text-xs text-[color:var(--muted-foreground)] font-mono">18 / 20</span>
-                                    <div class="flex flex-wrap gap-2 text-xs text-[color:var(--muted-foreground)] sm:justify-end">
-                                        <span class="answer-pill incorrect"><i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>Incorrect text override</span>
-                                        <span>Updated · 2025-10-06 09:12</span>
-                                    </div>
-                                </summary>
-                                <div class="bg-white/80 border-t border-[color:var(--border)] px-4 py-3 space-y-3">
-                                    <div class="flex flex-col gap-2">
-                                        <span class="text-xs font-semibold text-[color:var(--primary)] uppercase tracking-wide">Termination checklist · Math Pattern</span>
-                                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-xs">
-                                            <div class="border border-[color:var(--border)] rounded-lg p-2 bg-white shadow-sm">
-                                                <p class="font-medium text-[color:var(--foreground)]">Stage 1</p>
-                                                <p class="text-[color:var(--muted-foreground)] mt-0.5">More than 1 incorrect within MPT_1_r_Q1–MPT_1_r_Q6</p>
-                                            </div>
-                                            <div class="border border-[color:var(--border)] rounded-lg p-2 bg-white shadow-sm">
-                                                <p class="font-medium text-[color:var(--foreground)]">Stage 2</p>
-                                                <p class="text-[color:var(--muted-foreground)] mt-0.5">More than 1 incorrect within MPT_2_gr_Q1–MPT_2_gr_Q6</p>
-                                            </div>
-                                            <div class="border border-[color:var(--border)] rounded-lg p-2 bg-white shadow-sm">
-                                                <p class="font-medium text-[color:var(--foreground)]">Stage 3</p>
-                                                <p class="text-[color:var(--muted-foreground)] mt-0.5">More than 1 incorrect within MPT_3_m_Q1–MPT_4_ge_Q4</p>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="overflow-x-auto">
-                                        <table class="min-w-full text-sm">
-                                            <thead class="text-xs text-[color:var(--muted-foreground)] uppercase bg-[color:var(--muted)]/60">
-                                                <tr>
-                                                    <th class="text-left font-medium pb-2 px-2">Question</th>
-                                                    <th class="text-left font-medium pb-2 px-2">Student Answer</th>
-                                                    <th class="text-left font-medium pb-2 px-2">Correct Answer</th>
-                                                    <th class="text-left font-medium pb-2 px-2">Result</th>
-                                                    <th class="text-left font-medium pb-2 px-2">Notes</th>
-                                                </tr>
-                                            </thead>
-                                            <tbody class="divide-y divide-[color:var(--border)]">
-                                                <tr data-state="incorrect" class="hover:bg-[color:var(--muted)]/30">
-                                                    <td class="py-2 px-2 text-[color:var(--foreground)] font-mono">MPT_2_gr_Q6</td>
-                                                    <td class="py-2 px-2 text-[color:var(--muted-foreground)]">Option B</td>
-                                                    <td class="py-2 px-2 text-[color:var(--muted-foreground)]">Option C</td>
-                                                    <td class="py-2 px-2"><span class="answer-pill incorrect"><i data-lucide="x" class="w-3 h-3"></i>Incorrect</span></td>
-                                                    <td class="py-2 px-2 text-xs text-[color:var(--muted-foreground)]">Text override present</td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </details>
-
-                            <!-- TEC Female Task (Gender conditional) -->
-                            <details class="task-expand" data-task="TECFemale">
-                                <summary class="px-4 py-3 grid gap-2 sm:grid-cols-[minmax(0,220px)_minmax(0,200px)_minmax(0,120px)_minmax(0,1fr)] sm:items-center cursor-pointer hover:bg-white/60 transition-colors">
-                                    <div class="flex items-center gap-2">
-                                        <span class="status-circle status-green" title="Complete"></span>
-                                        <strong class="text-[color:var(--foreground)] text-sm">TEC (Female)</strong>
-                                    </div>
-                                    <div class="flex flex-wrap items-center gap-1 text-xs">
-                                        <span class="stage-chip">No termination</span>
-                                        <span class="badge-pill bg-pink-100 text-pink-700">Gender-specific</span>
-                                    </div>
-                                    <span class="text-xs text-[color:var(--muted-foreground)] font-mono">42 / 42</span>
-                                    <div class="flex flex-wrap gap-2 text-xs text-[color:var(--muted-foreground)] sm:justify-end">
-                                        <span class="answer-pill correct"><i data-lucide="check" class="w-3 h-3"></i>Complete</span>
-                                        <span>Updated · 2025-10-02 14:12</span>
-                                    </div>
-                                </summary>
-                                <div class="bg-white/80 border-t border-[color:var(--border)] px-4 py-3 text-xs text-[color:var(--muted-foreground)] space-y-2">
-                                    <p>Female theatre emotion comprehension path completed. Ensure gender-specific follow-up flagged as "not required".</p>
-                                </div>
-                            </details>
-                        </div>
-                    </details>
                 </div>
-            </details>
+                <div class="divide-y divide-[color:var(--border)]">
+                    <!-- Sets will be dynamically populated here by JavaScript -->
+                </div>
+            </section>
         </main>
     </div>
 
+    <!-- Loading Overlay REMOVED - Cache should already be ready from home page -->
+    <!-- If slow loading occurs, data fetches from cache (instant) not API -->
+
     <!-- Task Config Modal -->
     <div id="task-config-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm px-4">
-        <div class="w-full max-w-xl space-y-4 rounded-xl bg-white p-6 shadow-lg ring-1 ring-black/10">
-            <div class="flex items-start justify-between">
+        <div class="w-full max-w-3xl space-y-6 rounded-2xl bg-gradient-to-br from-white to-slate-50 p-8 shadow-2xl ring-1 ring-black/5">
+            <!-- Header -->
+            <div class="flex items-start justify-between pb-4 border-b border-slate-200">
                 <div>
-                    <h3 class="text-lg font-semibold text-[color:var(--foreground)]">Task visibility</h3>
-                    <p class="text-sm text-[color:var(--muted-foreground)]">Choose which tasks appear in the drilldown view.</p>
+                    <h3 class="text-xl font-bold text-slate-900 flex items-center gap-2">
+                        <i data-lucide="sliders" class="w-5 h-5 text-[color:var(--primary)]"></i>
+                        Task Visibility Configuration
+                    </h3>
+                    <p class="text-sm text-slate-600 mt-1">Toggle tasks on or off to customize your view</p>
                 </div>
-                <button id="task-config-close" class="hero-button secondary-button px-3 py-1 text-xs font-semibold">Close</button>
+                <button id="task-config-close" class="rounded-full p-2 hover:bg-slate-100 transition-colors" title="Close modal" aria-label="Close modal">
+                    <i data-lucide="x" class="w-5 h-5 text-slate-500"></i>
+                </button>
             </div>
-            <div id="task-config-list" class="max-h-[45vh] space-y-3 overflow-y-auto"></div>
-            <div class="flex items-center justify-end gap-3">
-                <button id="task-config-cancel" class="hero-button secondary-button px-4 py-2 text-xs font-semibold">Cancel</button>
-                <button id="task-config-apply" class="hero-button btn-primary px-4 py-2 text-xs font-semibold">Apply</button>
+            
+            <!-- Bulk Actions -->
+            <div class="flex items-center gap-3 pb-4 border-b border-slate-200">
+                <button id="task-select-all" class="px-4 py-2 text-xs font-semibold rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 transition-colors inline-flex items-center gap-2">
+                    <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+                    Select All
+                </button>
+                <button id="task-unselect-all" class="px-4 py-2 text-xs font-semibold rounded-lg bg-slate-50 text-slate-700 border border-slate-200 hover:bg-slate-100 transition-colors inline-flex items-center gap-2">
+                    <i data-lucide="circle" class="w-3.5 h-3.5"></i>
+                    Unselect All
+                </button>
+                <div class="flex-1"></div>
+                <span id="task-selection-count" class="text-xs text-slate-600 font-mono">0 / 0 selected</span>
+            </div>
+            
+            <!-- Task Pills Grid -->
+            <div id="task-config-list" class="max-h-[50vh] overflow-y-auto">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <!-- Pills will be inserted here -->
+                </div>
+            </div>
+            
+            <!-- Actions -->
+            <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+                <button id="task-config-reset" class="px-5 py-2.5 text-sm font-semibold rounded-lg bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 transition-colors inline-flex items-center gap-2 shadow-sm">
+                    <i data-lucide="rotate-ccw" class="w-4 h-4"></i>
+                    Reset
+                </button>
+                <button id="task-config-cancel" class="px-5 py-2.5 text-sm font-semibold rounded-lg bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 transition-colors shadow-sm">
+                    Cancel
+                </button>
+                <button id="task-config-apply" class="px-5 py-2.5 text-sm font-semibold rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg inline-flex items-center gap-2">
+                    <i data-lucide="check" class="w-4 h-4"></i>
+                    Apply Changes
+                </button>
             </div>
         </div>
     </div>
@@ -442,9 +253,11 @@
     <!-- Now using checking-system-student-page.js which mirrors processor_agent.ps1 -->
     
     <!-- Core scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script><!-- IndexedDB wrapper -->
     <script src="assets/js/encryption.js"></script>
     <script src="assets/js/checking-system-data-loader.js"></script>
     <script src="assets/js/checking-system-router.js"></script>
+    <script src="assets/js/jotform-cache.js"></script><!-- MUST load before jotform-api.js -->
     <script src="assets/js/jotform-api.js"></script>
     <script src="assets/js/task-validator.js"></script>
     <script src="assets/js/checking-system-student-page.js"></script>

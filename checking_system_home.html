@@ -37,7 +37,7 @@
                         Checking System
                     </h1>
                     <p class="hero-subtitle text-base sm:text-lg text-[color:var(--muted-foreground)] max-w-2xl">
-                        Search and analyze pipeline data with flexible filters
+                        Search and analyse submitted data from every angle
                     </p>
                 </div>
                 <a href="index.html" class="hero-button secondary-button flex items-center gap-2 px-6 py-3 text-sm font-semibold self-start">
@@ -46,14 +46,22 @@
                 </a>
             </div>
 
-            <!-- System Health Badge -->
+            <!-- System Status Pills -->
             <div class="entry-card mb-6 p-4">
-                <div class="flex items-center gap-3">
-                    <div id="system-health-badge" class="badge-success flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium">
-                        <span class="status-indicator inline-block h-2 w-2 rounded-full bg-[color:var(--success)]"></span>
-                        <span id="status-text">System Healthy</span>
+                <div class="flex items-center gap-3 flex-wrap">
+                    <!-- Decryption Status Pill -->
+                    <div id="decryption-status-badge" class="badge-error flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium">
+                        <span class="status-indicator inline-block h-2 w-2 rounded-full"></span>
+                        <span id="decryption-status-text">Not Decrypted</span>
                     </div>
-                    <span class="text-xs text-[color:var(--muted-foreground)]">Last snapshot: <span class="font-mono" id="snapshot-timestamp">Loading...</span></span>
+                    
+                    <!-- JotForm Cache Status Pill -->
+                    <div id="system-health-badge" class="badge-error flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium">
+                        <span class="status-indicator inline-block h-2 w-2 rounded-full"></span>
+                        <span id="status-text">System Not Ready</span>
+                    </div>
+                    
+                    <span class="text-xs text-[color:var(--muted-foreground)]">Last Synced: <span class="font-mono" id="snapshot-timestamp">—</span></span>
                 </div>
             </div>
 
@@ -157,8 +165,11 @@
     </div>
 
     <!-- JavaScript Modules -->
+    <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script><!-- IndexedDB wrapper -->
     <script src="assets/js/encryption.js"></script>
     <script src="assets/js/checking-system-data-loader.js"></script>
+    <script src="assets/js/jotform-cache.js"></script><!-- Global JotForm cache (IndexedDB) -->
+    <script src="assets/js/cache-manager-ui.js"></script><!-- Cache UI controls -->
     <script src="assets/js/checking-system-filters.js"></script>
     <script src="assets/js/checking-system-router.js"></script>
     <script src="assets/js/checking-system-app.js"></script>

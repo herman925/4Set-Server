@@ -178,10 +178,77 @@ The home page provides **six filter types** that users can add dynamically:
 - Maximum 6 filters (one of each type)
 - Filters display as removable chips above the filter configuration area
 
-##### Dynamic Dependencies
-- **Class filter** is disabled until a School (or School ID) is selected
-  - Show tooltip: "Select a school first to enable class selection"
-- **Group filter** can narrow School options when District is selected
+##### Dynamic Dependencies & Filter Interactions
+
+**Filter Hierarchy:**
+```
+Top Level (Independent):
+  - District ↔ Group (filter each other bidirectionally)
+
+Middle Level:
+  - School (filtered by District AND Group - intersection)
+
+Lower Levels:
+  - Class (filtered by School > District+Group)
+  - Student (filtered by Class > School > District+Group)
+```
+
+**Interaction Rules:**
+
+| Selected Filters     | Affects  | Behavior                                        |
+| -------------------- | -------- | ----------------------------------------------- |
+| **District**         | Group    | Only groups with schools in selected district   |
+| **District**         | School   | Only schools in selected district               |
+| **District**         | Class    | Only classes from schools in selected district  |
+| **District**         | Student  | Only students from schools in selected district |
+| **Group**            | District | Only districts with schools in selected group   |
+| **Group**            | School   | Only schools in selected group                  |
+| **Group**            | Class    | Only classes from schools in selected group     |
+| **Group**            | Student  | Only students from schools in selected group    |
+| **District + Group** | School   | Only schools matching BOTH (intersection)       |
+| **District + Group** | Class    | Only classes from schools matching BOTH         |
+| **District + Group** | Student  | Only students from schools matching BOTH        |
+| **School**           | Class    | Only classes from selected school               |
+| **School**           | Student  | Only students from selected school              |
+| **Class**            | Student  | Only students from selected class               |
+
+**Priority Logic (Hierarchical Override):**
+
+*School Selector:*
+- Filters: District AND Group (intersection if both selected)
+- Shows only schools matching all active top-level filters
+
+*Class Selector:*
+```
+Priority 1: School selected? → Show only classes from that school
+Priority 2: No school? → District AND/OR Group → Intersection
+```
+
+*Student Selector:*
+```
+Priority 1: Class selected? → Show only students from that class
+Priority 2: School selected? → Show only students from that school  
+Priority 3: District/Group selected? → District AND Group intersection
+```
+
+**Example Scenarios:**
+
+1. **District "Kowloon" + Group "5" → Student Search:**
+   - System finds all schools in BOTH Kowloon AND Group 5
+   - Student dropdown shows only students from those schools
+   - Typing "1" shows students with "1" in their ID/name from filtered schools only
+
+2. **Group "5" → School Selection:**
+   - School dropdown shows only schools in Group 5
+   - If user then selects District "Kowloon", school list updates to intersection
+
+3. **School Selected → Class Selection:**
+   - Class dropdown shows only classes from that specific school
+   - District/Group filters are ignored (School is more specific)
+
+**Additional Dependencies:**
+- **Class filter** requires School OR (District AND/OR Group)
+  - Show tooltip: "Select a school or district/group first"
 - **School ID and School filters** are mutually synchronized:
   - Selecting School ID auto-fills School
   - Selecting School displays its School ID as a chip
@@ -273,20 +340,280 @@ Provide quick re-entry to previously viewed drilldowns without reconfiguring fil
 - Highlight the most recent check
 - Click navigates directly to the stored URL
 
-### System Health Badge
+### System Status Pill & Cache Management
 
 #### Purpose
-Display data freshness and system status at the top of the home page.
+Display JotForm cache status and provide explicit cache building controls for optimal performance.
 
-#### Indicators
-- **System Healthy** (green): Last snapshot < 30 minutes old
-- **Data Stale** (yellow): Last snapshot 30-60 minutes old
-- **Refresh Needed** (red): Last snapshot > 60 minutes old or pipeline error
+#### Cache System Overview
+The system uses a **global cache** for JotForm submissions to eliminate redundant API calls:
+- **Problem**: JotForm API doesn't filter server-side (returns all data regardless of filter)
+- **Solution**: Fetch ALL submissions once, cache locally, filter client-side
+- **Benefit**: First student ~3s (cache build), subsequent students <100ms (instant)
 
-#### Display
-- Badge with pulsing indicator dot
-- Timestamp: "Last snapshot: 2025-10-06 11:45"
-- Link to "View routing rules" (opens modal with filter logic documentation)
+#### Status Pills
+
+**Decryption Status Pill:**
+- **Purpose**: Indicates whether data files have been decrypted
+- **States**:
+  - 🔴 Red: "Not Decrypted" (on page load)
+  - 🟢 Green: "Data Decrypted" (after password entry)
+
+**JotForm Cache Status Pill:**
+- **Purpose**: Indicates JotForm submission cache status
+
+**🔴 Red: "System Not Ready"**
+- **When**: No cache, cache expired (>1 hour), or cache structure invalid
+- **Behavior**: Clickable - opens sync modal
+- **User Action**: Must build cache before filtering
+- **Validation**: Cache must have valid structure (submissions array, timestamp, count)
+
+**🟢 Green: "System Ready"**
+- **When**: Cache exists, valid structure, and not expired
+- **Behavior**: Clickable - opens cache info modal
+- **Modal Content**:
+  - Title: "JotForm Data is Ready"
+  - Info: Cache count and age (e.g., "Cache contains 544 submissions, synced 15 min ago")
+  - **Delete Cache** button (red) - Clears IndexedDB, requires re-sync
+  - **Close** button
+- **Purpose**: Allows users to manage cache, force refresh if needed
+
+**🟡 Orange: "Syncing..."**
+- **When**: Cache building in progress
+- **Behavior**: Shows progress as mini progress bar inside pill
+- **Progress Display**: Fills pill from left to right (0-100%)
+- **Can Close Modal**: Sync continues in background, pill updates
+- **Auto-transitions**: To green when complete
+
+**Last Synced Timestamp:**
+- **Location**: Next to status pills
+- **Label**: "Last Synced: [time]"
+- **Format**:
+  - "—" (no cache)
+  - "just now" (<1 min)
+  - "X min ago" (1-59 min)
+  - "X hours ago" (60+ min)
+- **Updates**: Automatically refreshes when pill updates or cache rebuilds
+- **Source**: Reads timestamp from IndexedDB cache metadata
+
+#### User Flow
+
+**First Time Usage:**
+1. Load home page → Red pill "System Not Ready"
+2. Try to click "Start Checking" → BLOCKED with modal
+   - Spotlight effect highlights red pill with pulsing border
+   - Message: "Please build the system cache first"
+3. Click red pill → Sync modal appears
+   - Explanation: "System needs to sync with Jotform..."
+   - Button: "Sync with Jotform"
+4. Click sync button → Progress bar shows:
+   - "Connecting to Jotform API..." (5%)
+   - "Fetching page X of submissions..." (10-85%)
+   - "Downloaded 1523 submissions" (85%)
+   - "Saving to IndexedDB cache..." (90%)
+   - "Cache ready!" (100%)
+5. Pill turns green → "System Ready"
+6. Now filtering works instantly
+
+**Subsequent Usage (<1 hour):**
+- Load page → Green pill (cache valid)
+- Filter and navigate instantly (no API calls)
+
+**Cache Expired (>1 hour):**
+- Load page → Red pill (expired)
+- Rebuild cache (repeat first-time flow)
+
+#### Blocking Modal (Pre-cache Warning)
+When user tries to filter without cache:
+```
+┌─────────────────────────────────────┐
+│ ⚠️ Cache Not Built                  │
+├─────────────────────────────────────┤
+│ Please build the system cache first│
+│ by clicking the status pill above.  │
+├─────────────────────────────────────┤
+│                 [OK, Got It]        │
+└─────────────────────────────────────┘
+```
+- Spotlight effect on status pill
+- Dark backdrop (70% opacity)
+- Dismissal closes modal and removes spotlight
+
+#### Sync Modal (Cache Building)
+**Phase 1 - Confirmation:**
+```
+┌─────────────────────────────────────┐
+│ 🗄️ System Not Ready                 │
+├─────────────────────────────────────┤
+│ The system needs to sync with      │
+│ Jotform to enable fast searching.  │
+│ This takes about 30-60 seconds.    │
+├─────────────────────────────────────┤
+│     [Cancel] [Sync with Jotform]   │
+└─────────────────────────────────────┘
+```
+
+**Phase 2 - Progress:**
+```
+┌─────────────────────────────────────┐
+│ 🗄️ Syncing...                       │
+├─────────────────────────────────────┤
+│ Fetching page 2 of submissions      │
+│ ████████░░░░░░░░░░░░░░  45%        │
+└─────────────────────────────────────┘
+```
+
+**Phase 3 - Complete:**
+```
+┌─────────────────────────────────────┐
+│ 🗄️ System Ready                     │
+├─────────────────────────────────────┤
+│ ✅ Cache built successfully.        │
+│ You can now use the checking system│
+│ ████████████████████████  100%     │
+├─────────────────────────────────────┤
+│                      [Close]        │
+└─────────────────────────────────────┘
+```
+
+#### Configuration
+All text customizable in `config/checking_system_config.json`:
+```json
+{
+  "cache": {
+    "ttlHours": 1,
+    "statusLabels": {
+      "notReady": "System Not Ready",
+      "ready": "System Ready",
+      "syncing": "Syncing..."
+    },
+    "modalText": {
+      "blockTitle": "Cache Not Built",
+      "blockMessage": "Please build the system cache first...",
+      "syncTitle": "System Not Ready",
+      "syncMessage": "The system needs to sync with Jotform...",
+      "syncButton": "Sync with Jotform",
+      "syncCancel": "Cancel",
+      "completeTitle": "System Ready",
+      "completeMessage": "Cache has been built successfully."
+    }
+  },
+  "ui": {
+    "cacheMessages": {
+      "building": "Syncing with Jotform...",
+      "fetchingPage": "Fetching page {page} of submissions...",
+      "downloaded": "Downloaded {count} submissions",
+      "caching": "Saving to local cache...",
+      "complete": "Cache ready! System is now operational."
+    }
+  }
+}
+```
+
+#### Technical Implementation
+
+**Storage Technology:**
+- **Database**: IndexedDB (via localForage library)
+- **Reason**: JotForm cache size (~30 MB for 500+ submissions) exceeds localStorage limit (5-10 MB)
+- **Library**: localForage v1.10.0 (CDN: https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js)
+- **Fallback**: Automatically falls back to WebSQL or localStorage if IndexedDB unavailable
+
+**Storage Configuration:**
+- **Database Name**: `JotFormCacheDB`
+- **Store Name**: `cache`
+- **Cache Key**: `jotform_global_cache`
+- **Cache Duration**: 1 hour (configurable via `config.cache.ttlHours`)
+- **Storage Capacity**: 50+ MB to several GB (browser-dependent)
+- **Typical Size**: ~30 MB for 500 submissions (full JotForm response with all metadata)
+
+**Architecture:**
+```javascript
+// Cache Entry Structure
+{
+  submissions: [...],  // Array of full JotForm submission objects
+  timestamp: 1735189200000,  // Unix timestamp
+  count: 544  // Quick count for stats
+}
+```
+
+**Cache Validation:**
+
+System validates cache structure before accepting as valid:
+
+```javascript
+// Structure Validation Checks
+1. submissions: Must be array and not empty
+2. timestamp: Must exist and be numeric
+3. count: Must match actual submissions.length
+4. submissions[0]: Must have 'id' and 'answers' fields
+```
+
+Cache is considered **valid** only if:
+- ✅ Time validity: Age < 1 hour (configurable)
+- ✅ Structure validity: All fields present and correct
+- ✅ Data validity: Contains at least one submission with required fields
+
+If any validation fails:
+- `getCacheStats()` returns `{ valid: false }`
+- Status pill shows red "System Not Ready"
+- System requires fresh sync
+
+**API Layer:**
+```javascript
+// All operations are async (Promise-based)
+await JotFormCache.getAllSubmissions(credentials)  // Fetch or return cached
+await JotFormCache.getCacheStats()  // { exists, count, age, valid, structureValid }
+await JotFormCache.clearCache()  // Force refresh
+await JotFormCache.validateCacheStructure(cached)  // Structure validation
+```
+
+**File Dependencies:**
+1. `localforage.min.js` (CDN) - IndexedDB wrapper
+2. `jotform-cache.js` - Cache manager with progress callbacks
+3. `cache-manager-ui.js` - UI controls (pill, modals, spotlight)
+4. `jotform-api.js` - Consumes cache for filtering
+5. `checking-system-student-page.js` - Consumes cache for student data
+
+**Load Order (Critical):**
+```html
+<script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
+<script src="assets/js/jotform-cache.js"></script>
+<script src="assets/js/cache-manager-ui.js"></script>
+<!-- Other scripts -->
+```
+
+**Why IndexedDB vs localStorage:**
+| Feature        | localStorage           | IndexedDB                   |
+| -------------- | ---------------------- | --------------------------- |
+| Capacity       | 5-10 MB                | 50+ MB to GB                |
+| Performance    | Synchronous (blocking) | Asynchronous (non-blocking) |
+| Data Types     | Strings only           | Objects, Blobs, Arrays      |
+| Our Cache Size | ❌ 29.5 MB (fails)     | ✅ 29.5 MB (success)        |
+
+**Browser Compatibility:**
+- Chrome/Edge: IndexedDB (50+ MB)
+- Firefox: IndexedDB (50+ MB)
+- Safari: IndexedDB (limited to ~50 MB, may prompt)
+- Fallback: WebSQL or localStorage via localForage
+
+**Verification:**
+Developers can inspect cache in DevTools:
+- **Chrome DevTools**: Application → IndexedDB → JotFormCacheDB → cache
+- **Key**: `jotform_global_cache`
+- **Value**: Cache entry object with submissions array
+
+#### Performance Metrics
+**Old System (No Cache):**
+- 10 students = 10 API calls = ~32 seconds
+- Every navigation triggers full JotForm API fetch
+- Rate limiting risk increases with usage
+
+**New System (IndexedDB Cache):**
+- 10 students = 1 API call + 9 cache hits = ~4 seconds
+- **87% faster, 90% fewer API calls**
+- First load: ~3s (cache build + 29 MB IndexedDB write)
+- Subsequent loads: <100ms (IndexedDB read)
+- Cache persists across browser sessions (until expired or cleared)
 
 ### Mobile Responsiveness
 
@@ -554,6 +881,31 @@ When a user selects a student filter and clicks "Start Checking," the following 
    - Parses URL parameter: `studentId` (Core ID only)
    - Checks for cached sessionStorage data
    - **If cached**: Loads student data immediately from `coreIdMap`
+
+#### Student Page UI Behavior
+
+**When Student Has Submissions:**
+- Display full page with all sections:
+  - Student Profile (identifiers panel)
+  - Task Status Overview (hero metrics)
+  - Task Progress (set accordion with all tasks)
+
+**When Student Has NO Submissions:**
+- **Hide**: Task Status Overview section
+- **Hide**: Task Progress section
+- **Show**: "No Submissions Found" message card
+  - Icon: Inbox icon
+  - Title: "No Submissions Found"
+  - Message: "This student hasn't submitted any assessment data yet."
+- **Purpose**: Clean UI without confusing empty task sections
+
+**Data Fetching from Cache:**
+- Uses QID-based filtering: `filter = { "20:eq": studentId }` (QID 20 = student-id field)
+- **Critical**: Must use Question ID (QID), NOT field name
+  - ❌ Wrong: `{ "student-id:eq": "10001" }`
+  - ✅ Correct: `{ "20:eq": "10001" }`
+- **Reason**: IndexedDB cache stores `submission.answers` indexed by QID, not field name
+- Fetches from IndexedDB cache (not API) for instant loading
    - **If not cached**: Prompts for system password → Decrypts `.enc` files → Caches data
    - Derives all parent context from student record:
      - `student.classId` → lookup class data
@@ -610,13 +962,13 @@ When a user selects a student filter and clicks "Start Checking," the following 
 
 **Clean, Minimal URLs** - Each drilldown page receives only the ID for its specific level:
 
-| Level | Page | URL Example | Context Derivation |
-|-------|------|-------------|-------------------|
-| Level 4 | Student | `?studentId=C10001` | Student record contains `classId`, `schoolId` → lookup class/school → derive district, group |
-| Level 3 | Class | `?classId=C-085-02` | Class record contains `schoolId` → lookup school → derive district, group |
-| Level 2 | School | `?schoolId=S085` | School record contains `district`, `group` directly |
-| Level 1 | Group | `?group=3` | Standalone; optionally `&district=X` if both filters used |
-| Level 1 | District | `?district=Kowloon%20City` | Standalone; optionally `&group=3` if both filters used |
+| Level   | Page     | URL Example                | Context Derivation                                                                           |
+| ------- | -------- | -------------------------- | -------------------------------------------------------------------------------------------- |
+| Level 4 | Student  | `?studentId=C10001`        | Student record contains `classId`, `schoolId` → lookup class/school → derive district, group |
+| Level 3 | Class    | `?classId=C-085-02`        | Class record contains `schoolId` → lookup school → derive district, group                    |
+| Level 2 | School   | `?schoolId=S085`           | School record contains `district`, `group` directly                                          |
+| Level 1 | Group    | `?group=3`                 | Standalone; optionally `&district=X` if both filters used                                    |
+| Level 1 | District | `?district=Kowloon%20City` | Standalone; optionally `&group=3` if both filters used                                       |
 
 **Rationale**: 
 - Avoids redundant URL parameters
@@ -686,6 +1038,263 @@ GET https://api.jotform.com/form/123456/submissions?filter=%7B%227%3Aeq%22%3A%22
 - Log fetch durations, API responses, error rates, and rule violations.
 - Emit structured events (`checking_run_started`, `checking_run_completed`, `checking_violation_detected`).
 - Retain historical snapshots for trend analysis (configurable retention).
+
+## Task-Specific Termination & Timeout Display
+
+### SYM/NONSYM (Timeout-Based Termination)
+
+#### Overview
+SYM (Symbolic) and NONSYM (Non-symbolic) tasks are **merged** into a single "Symbolic Relations" task card, each with independent 2-minute timers.
+
+#### Timeout Detection Logic
+The system distinguishes between **proper timeout** and **missing data**:
+- **Proper Timeout**: Continuous answered sequence (Q1-Q10) followed by all empty questions (Q11-Q56)
+  - **Status**: ✅ Green with "Timed Out" badge
+  - **Meaning**: Student worked continuously until timer expired
+- **Missing Data**: Non-continuous gaps (Q1-Q10 answered, Q11 empty, Q12 answered)
+  - **Status**: ❌ Red with "Missing Data" badge  
+  - **Meaning**: Data quality issue - requires investigation
+
+#### Display Format
+Two-card layout showing independent status:
+```
+┌──────────────────────────┐  ┌──────────────────────────┐
+│ SYM (Symbolic)           │  │ NONSYM (Non-symbolic)    │
+│ 45/56 answered           │  │ 32/56 answered           │
+│ ✅ Timed Out             │  │ ❌ Missing Data          │
+│ (continuous progress)     │  │ (gaps detected)          │
+└──────────────────────────┘  └──────────────────────────┘
+```
+
+#### Question Table Behavior
+- Questions answered before timeout: Show actual status (correct/incorrect)
+- Questions after timeout: Marked as **"Ignored (Terminated)"** with blue styling
+- Missing data scenario: All unanswered questions show "Not answered" (red)
+
+#### Task Title Display
+Shows combined title: **"SYM / NONSYM"** instead of separate entries
+
+### ERV (English Receptive Vocabulary) - Stage-Based Termination
+
+#### Termination Rules
+- **Stage 1** (Q1-Q12): Requires ≥5 correct to continue
+- **Stage 2** (Q13-Q24): Requires ≥5 correct to continue  
+- **Stage 3** (Q25-Q36): Requires ≥5 correct to continue
+
+#### Display Format
+Three-column grid showing all stages **regardless of termination point**:
+```
+┌──────────┐ ┌──────────┐ ┌──────────┐
+│ Stage 1  │ │ Stage 2  │ │ Stage 3  │
+│ ERV_Ter1 │ │ ERV_Ter2 │ │ ERV_Ter3 │
+│ Q1–Q12   │ │ Q13–Q24  │ │ Q25–Q36  │
+│ 7/12 ✓   │ │ 3/12 ✗   │ │ — Not    │
+│ Passed   │ │ Failed   │ │ evaluated│
+└──────────┘ └──────────┘ └──────────┘
+```
+
+#### Visual States
+- **✓ Passed** (Green): ≥5 correct, threshold met
+- **✗ Terminated** (Red): <5 correct, threshold not met
+- **— Not Evaluated** (Blue/Grey): Prior stage terminated, not attempted
+
+#### Always Show All Stages
+All termination stages are displayed even if:
+- Termination field is missing from data (uses calculated values)
+- Student terminated at Stage 1 (Stages 2-3 show "Not evaluated")
+- No termination data was recorded by administrator
+
+#### Status Light Logic (Traffic Light System)
+The task status light (colored circle) indicates data quality and termination correctness:
+
+- **🟢 Green**: Proper termination
+  - Termination triggered correctly
+  - NO answers found after termination point
+  - Data quality: Good
+  
+- **🟡 Yellow**: Post-termination data detected
+  - Termination triggered
+  - BUT answers exist AFTER termination point
+  - Data quality: Requires investigation
+  - Example: ERV terminated at Stage 2, but Stage 3 questions answered
+  
+- **🔴 Red**: Data quality issues or incomplete
+  - Missing data
+  - Termination mismatch (recorded ≠ calculated)
+  - Incomplete assessment
+
+- **⚫ Grey**: Not started or no data
+
+## Question Calculation Logic (Fundamental)
+
+### Core Principle: Ignored Questions Are Excluded
+When termination occurs, questions after the termination point are marked as **"Ignored (Terminated)"** and are **completely excluded** from ALL calculations.
+
+### Calculation Rules
+
+#### 1. Total Questions
+```
+Total = Count of NON-IGNORED questions only
+```
+**Example:**
+- ERV has 36 questions (Q1-Q36)
+- Student terminates at Stage 1 (Q12 is last in range)
+- Questions Q13-Q36 are marked as `data-ignored="true"`
+- **Total = 12** (only Q1-Q12)
+
+#### 2. Answered Questions  
+```
+Answered = Count of NON-IGNORED questions that have student answers
+```
+**Excludes:**
+- Ignored questions (after termination)
+- Missing/unanswered questions (data-missing="true")
+
+**Example:**
+- Total = 12 (Q1-Q12)
+- Q5, Q8, Q11 are missing (no answer)
+- **Answered = 9**
+
+#### 3. Correct Questions
+```
+Correct = Count of NON-IGNORED questions with correct answers
+```
+**Only counts:**
+- Non-ignored questions
+- That have answers
+- That are correct (data-state="correct")
+
+**Example:**
+- Answered = 9
+- 6 correct, 3 incorrect
+- **Correct = 6**
+
+#### 4. Percentages
+```
+Answered% = (Answered / Total) × 100
+Correct% = (Correct / Total) × 100
+```
+**Using above example:**
+- Answered% = 9/12 = 75%
+- Correct% = 6/12 = 50%
+
+### Why This Matters
+
+**Without exclusion (WRONG):**
+- Total = 36 (all questions)
+- Answered = 9
+- Answered% = 9/36 = 25% ❌ (looks incomplete)
+
+**With exclusion (CORRECT):**
+- Total = 12 (only questions before termination)
+- Answered = 9
+- Answered% = 9/12 = 75% ✅ (accurate progress)
+
+### Implementation Details
+
+#### HTML Markers
+```html
+<!-- Ignored question row -->
+<tr data-state="ignored" data-ignored="true" data-missing="true">
+  <!-- Dimmed appearance via CSS -->
+</tr>
+
+<!-- Active question row -->
+<tr data-state="correct" data-ignored="false" data-missing="false">
+  <!-- Normal appearance -->
+</tr>
+```
+
+#### JavaScript Calculation
+```javascript
+function calculateTaskStatistics(validation, taskElement) {
+  rows.forEach(row => {
+    const isIgnored = row.getAttribute('data-ignored') === 'true';
+    if (isIgnored) {
+      return; // Skip completely - don't count toward anything
+    }
+    
+    total++; // Count non-ignored questions
+    
+    if (!isMissing) {
+      answered++; // Has answer
+    }
+    
+    if (state === 'correct') {
+      correct++; // Is correct
+    }
+  });
+}
+```
+
+#### Applies To All Tasks (Global Rule)
+This calculation logic is **universal** and applies to **ALL tasks** with one exception:
+
+**✅ Standard Tasks** (use this logic):
+- ERV (stage-based termination)
+- CM (stage-based termination)
+- CWR (consecutive incorrect termination)
+- FM (threshold-based termination)
+- All other tasks with termination rules
+
+**⚠️ Exception: SYM/NONSYM** (special handling):
+- SYM and NONSYM are **two independent tasks** concatenated into one display
+- Each maintains its **own separate calculation**:
+  - SYM: Total, Answered, Correct (excluding SYM ignored questions)
+  - NONSYM: Total, Answered, Correct (excluding NONSYM ignored questions)
+- Then **concatenated** for combined display:
+  ```javascript
+  combinedTotal = symTotal + nonsymTotal
+  combinedAnswered = symAnswered + nonsymAnswered
+  combinedCorrect = symCorrect + nonsymCorrect
+  ```
+- Each can terminate independently via timeout
+- Combined statistics shown in UI, but calculated separately first
+
+### CM (Chinese Morphology) - Multi-Stage Termination
+
+#### Termination Rules
+- **Stage 1** (Q1-Q7): Requires ≥4 correct
+- **Stage 2** (Q8-Q12): Requires ≥4 correct
+- **Stage 3** (Q13-Q17): Requires ≥4 correct  
+- **Stage 4** (Q18-Q22): Requires ≥4 correct
+- **Q23-Q27**: No termination rule (students who pass all 4 stages complete remaining questions)
+
+#### Display Format
+Four-column grid showing termination stages only:
+```
+┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐
+│ Stage 1  │ │ Stage 2  │ │ Stage 3  │ │ Stage 4  │
+│ Q1–Q7    │ │ Q8–Q12   │ │ Q13–Q17  │ │ Q18–Q22  │
+│ 5/7 ✓    │ │ 4/5 ✓    │ │ 4/5 ✓    │ │ 4/5 ✓    │
+└──────────┘ └──────────┘ └──────────┘ └──────────┘
+```
+
+#### Notes
+- **CM_S5** is an administrative score field, not a termination stage
+- **Q23-Q27** appear in the question table but not in termination checklist
+- If a student reaches Q23, they've passed all 4 stages and should complete the task
+- No need to display "Part 5" since termination is no longer relevant at this point
+
+### CWR (Chinese Word Reading) - Consecutive Incorrect Termination
+
+#### Termination Rule
+- **CWR_10Incorrect**: Terminates after **10 consecutive incorrect responses**
+- Question range: Q1-Q60
+
+#### Implementation
+- Special detection logic for consecutive incorrect streaks
+- Display shows which question triggered termination
+- All questions after termination marked as "Ignored (Terminated)"
+
+### FM (Fine Motor) - Threshold-Based Termination
+
+#### Termination Rule
+- **FM_Ter** (Square Cutting): Must score > 0 across FM_squ_1–FM_squ_3
+- If all 3 questions score 0, tree-cutting items (FM_tree_*) are skipped
+
+#### Display
+Shows pass/fail status for square cutting trial with score breakdown
 
 ## Open Questions
 - Preferred schedule (hourly, daily, manual trigger) for production.

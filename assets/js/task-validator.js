@@ -139,8 +139,12 @@ window.TaskValidator = (() => {
    * Check if a field ID should be excluded from question counting
    */
   function isExcludedField(id) {
-    // Exclude date fields, text memo fields, and other non-question fields
-    return id.endsWith('_Date') || id.endsWith('_TEXT') || id.includes('_Memo_');
+    // Exclude date fields, text memo fields, termination records, and other non-question fields
+    return id.endsWith('_Date') || 
+           id.endsWith('_TEXT') || 
+           id.includes('_Memo_') ||
+           id.includes('_Ter') || // Exclude all termination records (ERV_Ter1, CM_Ter2, etc.)
+           id.endsWith('_timeout'); // Exclude timeout fields (SYM_timeout, NONSYM_timeout)
   }
 
   /**
@@ -168,8 +172,8 @@ window.TaskValidator = (() => {
                           mergedAnswers[questionId]?.text || 
                           null;
       
-      // Map JotForm option indices (1, 2) to actual values for image-choice questions
-      if (studentAnswer && question.type === 'image-choice' && question.options) {
+      // Map JotForm option indices (1, 2, 3) to actual values for image-choice, radio, and radio_text questions
+      if (studentAnswer && (question.type === 'image-choice' || question.type === 'radio' || question.type === 'radio_text') && question.options) {
         const optionIndex = parseInt(studentAnswer);
         if (!isNaN(optionIndex) && optionIndex >= 1 && optionIndex <= question.options.length) {
           const mappedValue = question.options[optionIndex - 1].value;
@@ -191,13 +195,17 @@ window.TaskValidator = (() => {
         isCorrect = studentAnswer === 'Y' || studentAnswer === 'y';
       }
       
+      // Check if this is an unscored preference question (no correctAnswer at all)
+      const isUnscoredQuestion = correctAnswer === undefined && question.type !== 'matrix-cell' && !['Y', 'y', 'N', 'n'].includes(studentAnswer);
+      
       validatedQuestions.push({
         id: questionId,
         studentAnswer: studentAnswer,
-        correctAnswer: correctAnswer, // Will be undefined for Y/N tasks and matrix cells
+        correctAnswer: correctAnswer, // Will be undefined for Y/N tasks, matrix cells, and unscored questions
         isCorrect: isCorrect,
         label: question.label?.answer || question.label?.zh || questionId,
-        isYNQuestion: correctAnswer === undefined // Flag for UI (includes Y/N and matrix cells)
+        isYNQuestion: correctAnswer === undefined, // Flag for UI (includes Y/N, matrix cells, and unscored questions)
+        isUnscored: isUnscoredQuestion // Flag for preference questions with no scoring
       });
     }
 
@@ -229,11 +237,141 @@ window.TaskValidator = (() => {
     // Get all unique canonical task IDs (not aliases)
     const taskIds = new Set();
     for (const [filename, metadata] of Object.entries(taskMetadata)) {
+      // Skip tasks that should be merged with others
+      if (metadata.displayWith) {
+        console.log(`[TaskValidator] Skipping ${metadata.id} - will be merged with ${metadata.displayWith}`);
+        continue;
+      }
       taskIds.add(metadata.id);
     }
     
     for (const taskId of taskIds) {
-      results[taskId] = await validateTask(taskId, mergedAnswers);
+      // Special handling for SYM: merge with NONSYM
+      if (taskId === 'sym') {
+        const symResult = await validateTask('sym', mergedAnswers);
+        const nonsymResult = await validateTask('nonsym', mergedAnswers);
+        
+        // Detect timeout vs missing data
+        // Timeout: continuous sequence of answers then all empty
+        // Missing data: non-continuous gaps (answered, gap, answered again)
+        const analyzeCompletionPattern = (questions) => {
+          // Find index of last answered question
+          let lastAnsweredIndex = -1;
+          for (let i = questions.length - 1; i >= 0; i--) {
+            if (questions[i].studentAnswer !== null) {
+              lastAnsweredIndex = i;
+              break;
+            }
+          }
+          
+          // If no answers at all, not started
+          if (lastAnsweredIndex === -1) {
+            return { timedOut: false, hasMissingData: false, complete: false };
+          }
+          
+          // If last question is answered, completed
+          if (lastAnsweredIndex === questions.length - 1) {
+            return { timedOut: false, hasMissingData: false, complete: true };
+          }
+          
+          // Check if all questions after the last answered are empty (continuous gap)
+          let hasGapAfter = false;
+          for (let i = lastAnsweredIndex + 1; i < questions.length; i++) {
+            if (questions[i].studentAnswer !== null) {
+              // Found an answer after gap → non-continuous, missing data problem
+              return { timedOut: false, hasMissingData: true, complete: false };
+            }
+            hasGapAfter = true;
+          }
+          
+          // Check for gaps BEFORE last answered (spotty pattern)
+          for (let i = 0; i < lastAnsweredIndex; i++) {
+            if (questions[i].studentAnswer === null) {
+              // Gap found before last answer → missing data
+              return { timedOut: false, hasMissingData: true, complete: false };
+            }
+          }
+          
+          // Continuous from start to lastAnswered, then all empty → proper timeout
+          if (hasGapAfter) {
+            return { timedOut: true, hasMissingData: false, complete: false, lastAnsweredIndex };
+          }
+          
+          return { timedOut: false, hasMissingData: false, complete: true };
+        };
+        
+        const symAnalysis = analyzeCompletionPattern(symResult.questions);
+        const nonsymAnalysis = analyzeCompletionPattern(nonsymResult.questions);
+        
+        // Merge NONSYM into SYM
+        results[taskId] = {
+          taskId: 'sym',
+          title: `${symResult.title} / ${nonsymResult.title}`, // "SYM / NONSYM"
+          questions: [...symResult.questions, ...nonsymResult.questions],
+          totalQuestions: symResult.totalQuestions + nonsymResult.totalQuestions,
+          answeredQuestions: symResult.answeredQuestions + nonsymResult.answeredQuestions,
+          correctAnswers: symResult.correctAnswers + nonsymResult.correctAnswers,
+          completionPercentage: Math.round(
+            ((symResult.answeredQuestions + nonsymResult.answeredQuestions) / 
+             (symResult.totalQuestions + nonsymResult.totalQuestions)) * 100
+          ),
+          accuracyPercentage: Math.round(
+            ((symResult.correctAnswers + nonsymResult.correctAnswers) / 
+             (symResult.answeredQuestions + nonsymResult.answeredQuestions)) * 100
+          ),
+          // Store individual results and analysis
+          symResult,
+          nonsymResult,
+          symAnalysis,
+          nonsymAnalysis,
+          // Legacy flags for compatibility
+          symTimedOut: symAnalysis.timedOut,
+          nonsymTimedOut: nonsymAnalysis.timedOut,
+          timedOut: symAnalysis.timedOut || nonsymAnalysis.timedOut,
+          hasMissingData: symAnalysis.hasMissingData || nonsymAnalysis.hasMissingData
+        };
+        
+        console.log(`[TaskValidator] SYM: timeout=${symAnalysis.timedOut}, missingData=${symAnalysis.hasMissingData}`);
+        console.log(`[TaskValidator] NONSYM: timeout=${nonsymAnalysis.timedOut}, missingData=${nonsymAnalysis.hasMissingData}`);
+      } else if (taskId === 'chinesewordreading') {
+        // Special handling for CWR: detect 10 consecutive incorrect responses
+        const cwrResult = await validateTask(taskId, mergedAnswers);
+        
+        // Detect 10 consecutive incorrect
+        let consecutiveIncorrect = 0;
+        let terminationIndex = -1;
+        
+        for (let i = 0; i < cwrResult.questions.length; i++) {
+          const q = cwrResult.questions[i];
+          
+          if (q.studentAnswer === null) {
+            // No answer - break streak
+            consecutiveIncorrect = 0;
+          } else if (q.isCorrect) {
+            // Correct answer - reset streak
+            consecutiveIncorrect = 0;
+          } else {
+            // Incorrect answer - increment streak
+            consecutiveIncorrect++;
+            
+            if (consecutiveIncorrect >= 10 && terminationIndex === -1) {
+              // Found termination point
+              terminationIndex = i;
+              console.log(`[TaskValidator] CWR terminated at question ${i + 1} (${q.id}) after 10 consecutive incorrect`);
+              break;
+            }
+          }
+        }
+        
+        results[taskId] = {
+          ...cwrResult,
+          terminated: terminationIndex >= 0,
+          terminationIndex,
+          terminationType: 'consecutive_incorrect'
+        };
+      } else {
+        results[taskId] = await validateTask(taskId, mergedAnswers);
+      }
     }
     
     return results;
