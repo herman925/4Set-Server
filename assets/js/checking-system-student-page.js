@@ -1016,9 +1016,9 @@
     // Define termination rules metadata for tasks that have them
     const terminationRules = {
       'erv': [
-        { id: 'ERV_Ter1', description: 'Fewer than 5 correct in ERV_Q1–ERV_Q12', range: ['ERV_Q1', 'ERV_Q2', 'ERV_Q3', 'ERV_Q4', 'ERV_Q5', 'ERV_Q6', 'ERV_Q7', 'ERV_Q8', 'ERV_Q9', 'ERV_Q10', 'ERV_Q11', 'ERV_Q12'] },
-        { id: 'ERV_Ter2', description: 'Fewer than 5 correct in ERV_Q13–ERV_Q24', range: ['ERV_Q13', 'ERV_Q14', 'ERV_Q15', 'ERV_Q16', 'ERV_Q17', 'ERV_Q18', 'ERV_Q19', 'ERV_Q20', 'ERV_Q21', 'ERV_Q22', 'ERV_Q23', 'ERV_Q24'] },
-        { id: 'ERV_Ter3', description: 'Fewer than 5 correct in ERV_Q25–ERV_Q36', range: ['ERV_Q25', 'ERV_Q26', 'ERV_Q27', 'ERV_Q28', 'ERV_Q29', 'ERV_Q30', 'ERV_Q31', 'ERV_Q32', 'ERV_Q33', 'ERV_Q34', 'ERV_Q35', 'ERV_Q36'] }
+        { id: 'ERV_Ter1', description: 'Fewer than 5 correct in ERV_Q1–ERV_Q12', threshold: 5, range: ['ERV_Q1', 'ERV_Q2', 'ERV_Q3', 'ERV_Q4', 'ERV_Q5', 'ERV_Q6', 'ERV_Q7', 'ERV_Q8', 'ERV_Q9', 'ERV_Q10', 'ERV_Q11', 'ERV_Q12'] },
+        { id: 'ERV_Ter2', description: 'Fewer than 5 correct in ERV_Q13–ERV_Q24', threshold: 5, range: ['ERV_Q13', 'ERV_Q14', 'ERV_Q15', 'ERV_Q16', 'ERV_Q17', 'ERV_Q18', 'ERV_Q19', 'ERV_Q20', 'ERV_Q21', 'ERV_Q22', 'ERV_Q23', 'ERV_Q24'] },
+        { id: 'ERV_Ter3', description: 'Fewer than 5 correct in ERV_Q25–ERV_Q36', threshold: 5, range: ['ERV_Q25', 'ERV_Q26', 'ERV_Q27', 'ERV_Q28', 'ERV_Q29', 'ERV_Q30', 'ERV_Q31', 'ERV_Q32', 'ERV_Q33', 'ERV_Q34', 'ERV_Q35', 'ERV_Q36'] }
       ]
       // Add more tasks with termination rules here
     };
@@ -1047,7 +1047,12 @@
     // Clear and populate rules
     rulesContainer.innerHTML = '';
     
-    for (const rule of rules) {
+    let earliestTerminationIndex = null;
+    let earliestTerminationRuleId = null;
+    const ignoredQuestionIds = new Set();
+    
+    for (let index = 0; index < rules.length; index++) {
+      const rule = rules[index];
       // Get termination value from merged Jotform data (not in validation.questions)
       const terminationField = mergedAnswers[rule.id];
       
@@ -1060,28 +1065,49 @@
       const recordedValue = terminationField.answer || terminationField.text;
       const recordedTriggered = recordedValue === '1' || recordedValue === 1;
       
-      console.log(`[StudentPage] Processing termination rule ${rule.id}:`, {
-        recorded: recordedValue,
-        triggered: recordedTriggered
-      });
+      const priorTerminationActive = earliestTerminationIndex !== null && index > earliestTerminationIndex;
+      const threshold = rule.threshold ?? 5;
       
-      // CALCULATE what it SHOULD be based on actual answers
-      const questionsInRange = validation.questions.filter(q => rule.range.includes(q.id));
-      const correctInRange = questionsInRange.filter(q => q.isCorrect).length;
-      const totalInRange = questionsInRange.length;
-      const calculatedTriggered = correctInRange < 5; // Threshold: fewer than 5 correct
+      let correctInRange = 0;
+      let totalInRange = rule.range.length;
+      let calculatedTriggered = false;
+      let calculatedSummary = '';
       
-      // COMPARE: Flag if there's a mismatch
-      const mismatch = recordedTriggered !== calculatedTriggered;
+      if (priorTerminationActive) {
+        calculatedSummary = 'Not evaluated';
+      } else {
+        const questionsInRange = validation.questions.filter(q => rule.range.includes(q.id));
+        correctInRange = questionsInRange.filter(q => q.isCorrect).length;
+        totalInRange = questionsInRange.length;
+        calculatedTriggered = correctInRange < threshold;
+        calculatedSummary = `${correctInRange}/${totalInRange}`;
+      }
+      
+      if (earliestTerminationIndex === null && (recordedTriggered || calculatedTriggered)) {
+        earliestTerminationIndex = index;
+        earliestTerminationRuleId = rule.id;
+      }
+      
+      const ignoredDueToPriorTermination = priorTerminationActive;
+      const mismatch = ignoredDueToPriorTermination
+        ? recordedTriggered
+        : recordedTriggered !== calculatedTriggered;
+      
+      let statusClass = 'border-[color:var(--border)] bg-white';
+      if (ignoredDueToPriorTermination) {
+        statusClass = 'border-blue-200 bg-blue-50';
+      } else if (mismatch) {
+        statusClass = 'border-orange-400 bg-orange-50';
+      } else if (recordedTriggered && calculatedTriggered) {
+        statusClass = 'border-green-400 bg-green-50';
+      } else if (recordedTriggered && !calculatedTriggered) {
+        statusClass = 'border-red-300 bg-red-50';
+      } else if (!recordedTriggered && calculatedTriggered) {
+        statusClass = 'border-red-300 bg-red-50';
+      }
       
       const ruleCard = document.createElement('div');
-      ruleCard.className = `border rounded-lg p-3 ${
-        mismatch 
-          ? 'border-orange-400 bg-orange-50' // Mismatch = orange warning
-          : recordedTriggered 
-            ? 'border-red-300 bg-red-50'     // Triggered correctly = red
-            : 'border-[color:var(--border)] bg-white' // Passed = normal
-      }`;
+      ruleCard.className = `border rounded-lg p-3 ${statusClass}`;
       
       ruleCard.innerHTML = `
         <div class="flex items-start justify-between mb-2">
@@ -1089,29 +1115,79 @@
             <p class="font-medium text-[color:var(--foreground)]">${rule.id}</p>
             <p class="text-[color:var(--muted-foreground)] text-xs mt-0.5">${rule.description}</p>
           </div>
-          <span class="text-xs font-mono font-semibold ${correctInRange < 5 ? 'text-red-700' : 'text-green-600'}">${correctInRange}/${totalInRange}</span>
+          <span class="text-xs font-mono font-semibold ${
+            ignoredDueToPriorTermination
+              ? 'text-[color:var(--muted-foreground)]'
+              : calculatedTriggered
+                ? 'text-red-700'
+                : 'text-green-600'
+          }">${ignoredDueToPriorTermination ? '—' : calculatedSummary}</span>
         </div>
         
         <div class="grid grid-cols-2 gap-2 text-xs mt-2">
           <!-- Administrator's Record -->
-          <div class="flex items-center gap-1.5 ${recordedTriggered ? 'text-red-600' : 'text-green-600'}">
-            <i data-lucide="${recordedTriggered ? 'x-circle' : 'check-circle'}" class="w-3.5 h-3.5"></i>
-            <span>Recorded: <strong>${recordedTriggered ? 'Terminated' : 'Passed'}</strong></span>
+          <div class="flex items-center gap-1.5 ${
+            ignoredDueToPriorTermination
+              ? recordedTriggered ? 'text-orange-600' : 'text-green-600'
+              : recordedTriggered ? 'text-red-600' : 'text-green-600'
+          }">
+            <i data-lucide="${
+              ignoredDueToPriorTermination
+                ? recordedTriggered ? 'alert-triangle' : 'minus-circle'
+                : recordedTriggered ? 'x-circle' : 'check-circle'
+            }" class="w-3.5 h-3.5"></i>
+            <span>${ignoredDueToPriorTermination
+              ? recordedTriggered
+                ? '<strong>Recorded after termination</strong>'
+                : 'Recorded: <strong>Not terminated</strong>'
+              : `Recorded: <strong>${recordedTriggered ? 'Terminated' : 'Passed'}</strong>`}</span>
           </div>
           
           <!-- System Calculation -->
-          <div class="flex items-center gap-1.5 ${calculatedTriggered ? 'text-red-600' : 'text-green-600'}">
-            <i data-lucide="${calculatedTriggered ? 'x-circle' : 'check-circle'}" class="w-3.5 h-3.5"></i>
-            <span>Calculated: <strong>${calculatedTriggered ? 'Should Terminate' : 'Should Pass'}</strong></span>
+          <div class="flex items-center gap-1.5 ${
+            ignoredDueToPriorTermination
+              ? 'text-[color:var(--muted-foreground)]'
+              : calculatedTriggered
+                ? 'text-red-600'
+                : 'text-green-600'
+          }">
+            <i data-lucide="${
+              ignoredDueToPriorTermination
+                ? 'minus-circle'
+                : calculatedTriggered
+                  ? 'x-circle'
+                  : 'check-circle'
+            }" class="w-3.5 h-3.5"></i>
+            <span>${ignoredDueToPriorTermination
+              ? `Calculated: <strong>Not evaluated</strong>`
+              : `Calculated: <strong>${calculatedTriggered ? 'Should Terminate' : 'Should Pass'}</strong>`}</span>
           </div>
         </div>
         
-        ${mismatch 
-          ? '<div class="mt-2 pt-2 border-t border-orange-300 flex items-center gap-1.5 text-xs text-orange-700 font-semibold"><i data-lucide="alert-triangle" class="w-4 h-4"></i>Mismatch detected - Please verify</div>' 
-          : '<div class="mt-2 pt-2 border-t flex items-center gap-1.5 text-xs text-green-600"><i data-lucide="check" class="w-3.5 h-3.5"></i>Verified - Record matches calculation</div>'}
+        ${ignoredDueToPriorTermination
+          ? `<p class="mt-2 text-xs text-blue-700">ℹ️ Skipped because ${earliestTerminationRuleId} terminated earlier.</p>`
+          : mismatch 
+            ? '<p class="mt-2 text-xs text-orange-700">⚠️ Recorded termination does not match calculated outcome.</p>'
+            : recordedTriggered && calculatedTriggered
+              ? '<p class="mt-2 text-xs text-green-700">✅ Verified - Termination confirmed.</p>'
+              : '<p class="mt-2 text-xs text-green-700">✅ Verified - Record matches calculation.</p>'
+        }
       `;
       
       rulesContainer.appendChild(ruleCard);
+    }
+    
+    if (earliestTerminationIndex !== null) {
+      for (let i = earliestTerminationIndex + 1; i < rules.length; i++) {
+        for (const questionId of rules[i].range) {
+          ignoredQuestionIds.add(questionId);
+        }
+      }
+    }
+    
+    if (ignoredQuestionIds.size > 0) {
+      console.log(`[StudentPage] Marking ${ignoredQuestionIds.size} questions as ignored after termination for ${taskId}`);
+      markQuestionsBeyondTermination(taskElement, ignoredQuestionIds);
     }
     
     // Show the checklist
