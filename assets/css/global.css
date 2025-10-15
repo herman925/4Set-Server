@@ -34,7 +34,7 @@
 
 .badge-valid {
     background: rgba(34, 197, 94, 0.1) !important;
-    border-color: rgba(34, 197, 94, 0.25) !important;
+    border: 1px solid rgba(34, 197, 94, 0.25) !important;
 }
 
 .badge-valid .lucide {
@@ -47,7 +47,7 @@
 
 .badge-error {
     background: rgba(240, 78, 105, 0.15) !important;
-    border-color: rgba(240, 78, 105, 0.4) !important;
+    border: 1px solid rgba(240, 78, 105, 0.4) !important;
 }
 
 .badge-error .lucide {

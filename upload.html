@@ -182,21 +182,17 @@
             try {
                 console.log('[PC Detection] Starting...');
                 
-                // Detect PC number (multi-tier detection)
-                let detectedPCNumber = null;
-                
-                // Priority 1: Manual configuration (localStorage)
+                // Detect PC number from localStorage only
                 const manualPC = localStorage.getItem('pc_number');
-                if (manualPC && manualPC !== '000') {
-                    detectedPCNumber = manualPC;
-                    console.log('[PC Detection] Using configured PC number:', detectedPCNumber);
-                } else {
-                    // Priority 2-4: Auto-detection from paths/URL
-                    detectedPCNumber = detectPCNumberFromSystem();
-                    console.log('[PC Detection] Auto-detected:', detectedPCNumber);
-                }
+                const detectedPCNumber = (manualPC && manualPC !== '000') ? manualPC : null;
                 
-                state.pcNumber = detectedPCNumber || '000';
+                state.pcNumber = detectedPCNumber;
+                
+                if (detectedPCNumber) {
+                    console.log('[PC Detection] PC number from localStorage:', detectedPCNumber);
+                } else {
+                    console.log('[PC Detection] No PC number configured');
+                }
                 
                 // Update UI
                 updatePCNumberDisplay(state.pcNumber);
@@ -204,8 +200,8 @@
                 
             } catch (error) {
                 console.error('[PC Detection] Failed:', error);
-                const pcNumEl = document.getElementById('pc-number');
-                if (pcNumEl) pcNumEl.textContent = '???';
+                state.pcNumber = null;
+                updatePCNumberDisplay(state.pcNumber);
                 lucide.createIcons();
             }
         }
@@ -459,19 +455,27 @@
             const pcNumberSpan = document.getElementById('pc-number');
             const pcBadge = document.getElementById('pc-number-badge');
             
-            pcNumberSpan.textContent = pcNumber;
+            if (!pcNumberSpan || !pcBadge) {
+                console.error('[UI] PC number elements not found');
+                return;
+            }
+            
+            // Display "Not Set" if no PC number configured
+            pcNumberSpan.textContent = pcNumber || 'Not Set';
             
             // Remove all state classes first
             pcBadge.classList.remove('badge-valid', 'badge-error', 'pc-number-not-set');
             
-            if (pcNumber === '000' || !pcNumber) {
+            if (!pcNumber || pcNumber === '000') {
                 // PC number NOT set - error state
                 pcBadge.classList.add('badge-error');
                 pcBadge.title = 'PC number not set - Click to configure';
+                console.log('[UI] PC number badge set to ERROR state (not configured)');
             } else {
                 // PC number IS set - success state (green)
                 pcBadge.classList.add('badge-valid');
                 pcBadge.title = 'PC ' + pcNumber + ' - Click to change';
+                console.log('[UI] PC number badge set to VALID state:', pcNumber);
             }
             
             // Update system status based on both PC and OneDrive
@@ -804,43 +808,40 @@
         
         // Store directory handle in IndexedDB
         async function storeDirectoryHandle(handle) {
-            return new Promise((resolve, reject) => {
-                const db = indexedDB.open('4SetUploader', 1);
+            try {
+                const database = await openDB();
+                const tx = database.transaction('handles', 'readwrite');
+                const store = tx.objectStore('handles');
+                const request = store.put(handle, 'incomingFolder');
                 
-                db.onsuccess = () => {
-                    const database = db.result;
-                    const tx = database.transaction('handles', 'readwrite');
-                    const store = tx.objectStore('handles');
-                    const request = store.put(handle, 'incomingFolder');
-                    
+                return new Promise((resolve, reject) => {
                     request.onsuccess = () => {
                         console.log('[IndexedDB] ✓ Handle stored');
                         resolve();
                     };
                     
                     request.onerror = () => reject(request.error);
-                };
-                
-                db.onerror = () => reject(db.error);
-            });
+                });
+            } catch (error) {
+                console.error('[IndexedDB] Error storing handle:', error);
+                throw error;
+            }
         }
         
         // Restore directory handle from IndexedDB
         async function restoreDirectoryHandle() {
-            return new Promise((resolve, reject) => {
-                const dbRequest = indexedDB.open('4SetUploader', 1);
+            try {
+                const database = await openDB();
+                const tx = database.transaction('handles', 'readonly');
+                const store = tx.objectStore('handles');
+                const getRequest = store.get('incomingFolder');
                 
-                dbRequest.onsuccess = async () => {
-                    try {
-                        const database = dbRequest.result;
-                        const tx = database.transaction('handles', 'readonly');
-                        const store = tx.objectStore('handles');
-                        const getRequest = store.get('incomingFolder');
+                return new Promise((resolve) => {
+                    getRequest.onsuccess = async () => {
+                        const handle = getRequest.result;
                         
-                        getRequest.onsuccess = async () => {
-                            const handle = getRequest.result;
-                            
-                            if (handle) {
+                        if (handle) {
+                            try {
                                 // Verify permission still valid
                                 const permission = await handle.queryPermission({ mode: 'readwrite' });
                                 if (permission === 'granted') {
@@ -850,27 +851,24 @@
                                     return;
                                 }
                                 console.log('[File Access] Permission no longer granted, will request again');
-                            } else {
-                                console.log('[File Access] No stored handle found');
+                            } catch (error) {
+                                console.log('[File Access] Handle no longer valid:', error.message);
                             }
-                            resolve(null);
-                        };
-                        
-                        getRequest.onerror = () => {
-                            console.log('[File Access] Error reading handle:', getRequest.error);
-                            resolve(null);
-                        };
-                    } catch (error) {
-                        console.log('[File Access] Could not restore handle:', error.message);
+                        } else {
+                            console.log('[File Access] No stored handle found');
+                        }
                         resolve(null);
-                    }
-                };
-                
-                dbRequest.onerror = () => {
-                    console.log('[File Access] Could not open database:', dbRequest.error);
-                    resolve(null);
-                };
-            });
+                    };
+                    
+                    getRequest.onerror = () => {
+                        console.log('[File Access] Error reading handle:', getRequest.error);
+                        resolve(null);
+                    };
+                });
+            } catch (error) {
+                console.log('[File Access] Could not restore handle:', error.message);
+                return null;
+            }
         }
         
         // Open IndexedDB
