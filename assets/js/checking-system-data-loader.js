@@ -140,6 +140,7 @@
           schoolName: classItem['School Name'],
           actualClassName: classItem['Actual Class Name'],
           teacherNames: classItem['Teacher Names 25/26'] || classItem['Teacher Names 24/25'] || '',
+          grade: classItem['Grade'] || '',
           displayName: classItem['Actual Class Name']
         };
         
