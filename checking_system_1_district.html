@@ -14,6 +14,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&family=Noto+Sans+TC&display=swap" rel="stylesheet" />
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
 </head>
 <body class="min-h-screen hero-background">
     <div class="relative overflow-hidden">
@@ -93,6 +94,9 @@
 
     <script src="assets/js/encryption.js"></script>
     <script src="assets/js/checking-system-data-loader.js"></script>
+    <script src="assets/js/task-validator.js"></script>
+    <script src="assets/js/jotform-cache.js"></script>
+    <script src="assets/js/export-utils.js"></script>
     <script>
         (async () => {
             const urlParams = new URLSearchParams(window.location.search);
@@ -133,6 +137,53 @@
             document.getElementById('total-students').textContent = districtStudents.length;
             document.getElementById('district-groups').textContent = groups.join(', ');
             document.title = `${district} Overview · 4Set Checking System`;
+
+            // VALIDATION ARCHITECTURE NOTE:
+            // District page now uses JotFormCache.buildStudentValidationCache() to calculate
+            // accurate completion metrics using TaskValidator (same as school/class pages).
+            // This ensures validation consistency across all hierarchical levels.
+            
+            // Load survey structure for validation
+            let surveyStructure = null;
+            try {
+                const response = await fetch('assets/tasks/survey-structure.json');
+                surveyStructure = await response.json();
+                console.log('[DistrictPage] Survey structure loaded');
+            } catch (error) {
+                console.error('[DistrictPage] Failed to load survey structure:', error);
+            }
+
+            // Build validation cache for completion metrics
+            let avgCompletion = '—';
+            if (window.JotFormCache && surveyStructure && districtStudents.length > 0) {
+                try {
+                    console.log('[DistrictPage] Building validation cache for', districtStudents.length, 'students...');
+                    const validationCache = await window.JotFormCache.buildStudentValidationCache(
+                        districtStudents,
+                        surveyStructure
+                    );
+                    
+                    // Calculate average completion
+                    let totalCompletion = 0;
+                    let validStudents = 0;
+                    for (const [coreId, cache] of validationCache.entries()) {
+                        if (!cache.error && cache.completionPercentage !== undefined) {
+                            totalCompletion += cache.completionPercentage;
+                            validStudents++;
+                        }
+                    }
+                    
+                    if (validStudents > 0) {
+                        avgCompletion = Math.round(totalCompletion / validStudents) + '%';
+                    }
+                    
+                    console.log('[DistrictPage] Validation complete:', validStudents, 'students, avg:', avgCompletion);
+                } catch (error) {
+                    console.error('[DistrictPage] Failed to build validation cache:', error);
+                }
+            }
+            
+            document.getElementById('avg-completion').textContent = avgCompletion;
 
             // Breadcrumb is already in HTML, no need to build dynamically
 
