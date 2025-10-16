@@ -199,57 +199,53 @@
     </div>
 
     <!-- Grade Filter Modal -->
-    <div id="grade-filter-modal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
-            <div class="flex items-center justify-between px-6 py-4 border-b border-[color:var(--border)]">
+    <div id="grade-filter-modal" class="modal-backdrop hidden">
+        <div class="modal-panel max-w-md">
+            <div class="flex items-center justify-between mb-4">
                 <h3 class="text-lg font-semibold text-[color:var(--foreground)]">Filter by Grade</h3>
-                <button onclick="window.closeGradeFilterModal()" class="p-1 rounded-full hover:bg-[color:var(--muted)] text-[color:var(--muted-foreground)] hover:text-[color:var(--primary)] transition-colors">
+                <button onclick="window.closeGradeFilterModal()" class="modal-close">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            <div class="px-6 py-4">
-                <div class="flex flex-wrap gap-2" id="grade-pills-container">
-                    <button class="grade-pill px-4 py-2 rounded-full border-2 border-[color:var(--border)] bg-white text-sm font-medium hover:border-[color:var(--primary)] hover:bg-blue-50 transition-colors" data-grade="all">
-                        All Grades
-                    </button>
-                    <button class="grade-pill px-4 py-2 rounded-full border-2 border-[color:var(--border)] bg-white text-sm font-medium hover:border-[color:var(--primary)] hover:bg-blue-50 transition-colors" data-grade="K1">
-                        K1
-                    </button>
-                    <button class="grade-pill px-4 py-2 rounded-full border-2 border-[color:var(--border)] bg-white text-sm font-medium hover:border-[color:var(--primary)] hover:bg-blue-50 transition-colors" data-grade="K2">
-                        K2
-                    </button>
-                    <button class="grade-pill px-4 py-2 rounded-full border-2 border-[color:var(--border)] bg-white text-sm font-medium hover:border-[color:var(--primary)] hover:bg-blue-50 transition-colors" data-grade="K3">
-                        K3
-                    </button>
-                    <button class="grade-pill px-4 py-2 rounded-full border-2 border-[color:var(--border)] bg-white text-sm font-medium hover:border-[color:var(--primary)] hover:bg-blue-50 transition-colors" data-grade="Others">
-                        Others
-                    </button>
-                </div>
-            </div>
-            <div class="px-6 py-4 border-t border-[color:var(--border)] bg-[color:var(--muted)]/20">
-                <button onclick="window.closeGradeFilterModal()" class="hero-button secondary-button text-sm font-medium rounded-md px-4 py-2 w-full">
-                    Close
+            <div class="flex flex-wrap gap-2 mb-4" id="grade-pills-container">
+                <button class="grade-pill px-4 py-2 rounded-full border-2 border-[color:var(--border)] bg-white text-sm font-medium hover:border-[color:var(--primary)] hover:bg-blue-50 transition-colors" data-grade="all">
+                    All Grades
+                </button>
+                <button class="grade-pill px-4 py-2 rounded-full border-2 border-[color:var(--border)] bg-white text-sm font-medium hover:border-[color:var(--primary)] hover:bg-blue-50 transition-colors" data-grade="1">
+                    K1
+                </button>
+                <button class="grade-pill px-4 py-2 rounded-full border-2 border-[color:var(--border)] bg-white text-sm font-medium hover:border-[color:var(--primary)] hover:bg-blue-50 transition-colors" data-grade="2">
+                    K2
+                </button>
+                <button class="grade-pill px-4 py-2 rounded-full border-2 border-[color:var(--border)] bg-white text-sm font-medium hover:border-[color:var(--primary)] hover:bg-blue-50 transition-colors" data-grade="3">
+                    K3
+                </button>
+                <button class="grade-pill px-4 py-2 rounded-full border-2 border-[color:var(--border)] bg-white text-sm font-medium hover:border-[color:var(--primary)] hover:bg-blue-50 transition-colors" data-grade="0">
+                    Others
                 </button>
             </div>
+            <button onclick="window.closeGradeFilterModal()" class="hero-button secondary-button text-sm font-medium rounded-md px-4 py-2 w-full">
+                Close
+            </button>
         </div>
     </div>
 
     <!-- Student List Modal -->
-    <div id="student-list-modal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
-            <div class="flex items-center justify-between px-6 py-4 border-b border-[color:var(--border)]">
+    <div id="student-list-modal" class="modal-backdrop hidden">
+        <div class="modal-panel max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+            <div class="flex items-center justify-between mb-4">
                 <div>
                     <h3 class="text-lg font-semibold text-[color:var(--foreground)]">Students in Class</h3>
                     <p class="text-xs text-[color:var(--muted-foreground)] mt-1" id="modal-class-name">—</p>
                 </div>
-                <button onclick="window.closeStudentListModal()" class="p-1 rounded-full hover:bg-[color:var(--muted)] text-[color:var(--muted-foreground)] hover:text-[color:var(--primary)] transition-colors">
+                <button onclick="window.closeStudentListModal()" class="modal-close">
                     <i data-lucide="x" class="w-5 h-5"></i>
                 </button>
             </div>
-            <div class="flex-1 overflow-y-auto px-6 py-4">
+            <div class="flex-1 overflow-y-auto">
                 <div id="modal-students-list" class="space-y-2"></div>
             </div>
-            <div class="px-6 py-4 border-t border-[color:var(--border)] bg-[color:var(--muted)]/20">
+            <div class="pt-4 border-t border-[color:var(--border)] mt-4">
                 <button onclick="window.closeStudentListModal()" class="hero-button secondary-button text-sm font-medium rounded-md px-4 py-2 w-full">
                     Close
                 </button>

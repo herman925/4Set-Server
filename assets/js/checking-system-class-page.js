@@ -255,6 +255,17 @@
   }
 
   /**
+   * Get display label for grade number
+   */
+  function getGradeLabel(gradeNumber) {
+    if (gradeNumber === 1) return 'K1';
+    if (gradeNumber === 2) return 'K2';
+    if (gradeNumber === 3) return 'K3';
+    if (gradeNumber === 0) return 'Other';
+    return 'N/A';
+  }
+
+  /**
    * Render class profile section
    */
   function renderClassProfile() {
@@ -263,7 +274,7 @@
     document.getElementById('school-name').textContent = schoolData ? 
       `${schoolData.schoolNameChinese} · ${schoolData.schoolName}` : '';
     
-    document.getElementById('class-grade').textContent = classData.grade || 'N/A';
+    document.getElementById('class-grade').textContent = getGradeLabel(classData.grade);
     document.getElementById('teacher-name').textContent = classData.teacherNames || 'N/A';
     document.getElementById('district-name').textContent = schoolData?.district || 'N/A';
     document.getElementById('group-number').textContent = schoolData?.group || 'N/A';

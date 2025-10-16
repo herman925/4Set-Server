@@ -243,6 +243,17 @@
   }
 
   /**
+   * Get display label for grade number
+   */
+  function getGradeLabel(gradeNumber) {
+    if (gradeNumber === 1) return 'K1';
+    if (gradeNumber === 2) return 'K2';
+    if (gradeNumber === 3) return 'K3';
+    if (gradeNumber === 0) return 'Other';
+    return '—';
+  }
+
+  /**
    * Render classes table with status lights (PRD-compliant)
    */
   function renderClassesTable() {
@@ -322,7 +333,7 @@
                   ${cls.classId}
                 </td>
                 <td class="px-3 py-3 text-[color:var(--muted-foreground)]">
-                  ${cls.grade || '—'}
+                  ${getGradeLabel(cls.grade)}
                 </td>
                 <td class="px-3 py-3">
                   <button onclick="window.openStudentListModal('${cls.classId}')" class="text-[color:var(--primary)] hover:underline font-medium">
@@ -448,6 +459,7 @@
 
   /**
    * Apply grade filter to classes table
+   * Now uses numeric grades: 1 (K1), 2 (K2), 3 (K3), 0 (Other)
    */
   function applyGradeFilter(grade) {
     const rows = document.querySelectorAll('[data-class-row]');
@@ -455,7 +467,17 @@
 
     rows.forEach(row => {
       const rowGrade = row.getAttribute('data-grade');
-      let shouldShow = grade === 'all' || rowGrade === grade || (grade === 'Others' && !['K1', 'K2', 'K3'].includes(rowGrade));
+      let shouldShow = false;
+      
+      if (grade === 'all') {
+        shouldShow = true;
+      } else if (grade === '1' || grade === '2' || grade === '3') {
+        // Filter by specific grade number
+        shouldShow = rowGrade === grade;
+      } else if (grade === '0' || grade === 'Others') {
+        // Filter by "Other" grade
+        shouldShow = rowGrade === '0';
+      }
       
       if (shouldShow) {
         row.style.removeProperty('display');
@@ -468,8 +490,12 @@
     // Update class count display
     const classCountEl = document.getElementById('class-count');
     if (classCountEl) {
-      const filterText = grade === 'all' ? '' : ` (${grade} only)`;
-      classCountEl.textContent = `${visibleCount} ${visibleCount === 1 ? 'class' : 'classes'}${filterText}`;
+      const gradeLabel = grade === 'all' ? '' : 
+                         grade === '1' ? ' (K1 only)' :
+                         grade === '2' ? ' (K2 only)' :
+                         grade === '3' ? ' (K3 only)' :
+                         ' (Others only)';
+      classCountEl.textContent = `${visibleCount} ${visibleCount === 1 ? 'class' : 'classes'}${gradeLabel}`;
     }
   }
 
