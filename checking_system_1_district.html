@@ -15,9 +15,38 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&family=Noto+Sans+TC&display=swap" rel="stylesheet" />
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
+    <style>
+        .status-circle {
+            width: 14px;
+            height: 14px;
+            border-radius: 9999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .status-circle::after {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 9999px;
+            background-color: rgba(255, 255, 255, 0.85);
+        }
+        .status-green { background-color: #22c55e; }
+        .status-yellow { background-color: #fbbf24; }
+        .status-red { background-color: #ef4444; }
+        .status-grey { background-color: #cbd5e1; }
+        
+        .group-chevron {
+            transition: transform 0.2s ease;
+        }
+    </style>
 </head>
 <body class="min-h-screen hero-background">
     <div class="relative overflow-hidden">
+        <!-- Animated Background Elements -->
+        <div id="background-circles"></div>
+        
         <div class="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/70 to-transparent"></div>
 
         <header class="relative z-20 bg-white/80 backdrop-blur-md border-b border-[color:var(--border)] shadow-sm sticky top-0">
@@ -48,9 +77,16 @@
 
         <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4">
             <!-- District Overview Card -->
-            <div class="entry-card p-6 lg:p-8">
-                <h1 class="text-2xl font-bold text-[color:var(--foreground)] mb-2">District Overview: <span id="district-title">Loading...</span></h1>
-                <p class="text-sm text-[color:var(--muted-foreground)]" id="district-context">All schools in this district</p>
+            <details class="entry-card p-6 lg:p-8">
+                <summary class="cursor-pointer list-none">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h1 class="text-2xl font-bold text-[color:var(--foreground)] mb-2">District Overview: <span id="district-title">Loading...</span></h1>
+                            <p class="text-sm text-[color:var(--muted-foreground)]" id="district-context">All schools in this district</p>
+                        </div>
+                        <span class="text-xs text-[color:var(--muted-foreground)]">Tap to expand/collapse</span>
+                    </div>
+                </summary>
                 
                 <!-- Summary Metrics -->
                 <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -79,17 +115,99 @@
                         </div>
                     </div>
                 </div>
-            </div>
+            </details>
 
-            <!-- Schools List -->
-            <div class="entry-card p-6">
-                <h2 class="text-lg font-semibold text-[color:var(--foreground)] mb-4 flex items-center gap-2">
-                    <i data-lucide="building-2" class="w-5 h-5"></i>
-                    Schools in District
-                </h2>
-                <div id="schools-list" class="space-y-3"></div>
+            <!-- Task Progress (Schools) -->
+            <div class="entry-card">
+                <div class="px-6 py-4 border-b border-[color:var(--border)]">
+                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                        <div>
+                            <h2 class="text-lg font-semibold text-[color:var(--foreground)] flex items-center gap-2">
+                                <i data-lucide="building-2" class="w-5 h-5"></i>
+                                Task Progress (Schools)
+                            </h2>
+                            <p class="text-xs text-[color:var(--muted-foreground)] mt-1">
+                                Schools grouped by assignment, showing class completion status
+                            </p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="flex items-center gap-2 text-xs">
+                                <label for="view-filter" class="font-medium text-[color:var(--foreground)]">View</label>
+                                <select id="view-filter" name="view-filter" class="px-2 py-1 border border-[color:var(--border)] rounded-md bg-white text-xs text-[color:var(--foreground)] shadow-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]">
+                                    <option value="all" selected>All</option>
+                                    <option value="complete">Complete</option>
+                                    <option value="incomplete">Incomplete</option>
+                                    <option value="notstarted">Not Started</option>
+                                </select>
+                            </div>
+                            <button id="filter-button" class="hero-button secondary-button px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center gap-1.5 relative">
+                                <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                                <span>Grade Filter</span>
+                                <span id="filter-badge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-blue-600 text-white text-[10px] font-bold rounded-full flex items-center justify-center">0</span>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Status Legends -->
+                    <div class="flex items-center gap-3 text-xs text-[color:var(--muted-foreground)] mt-3 pt-3 border-t border-[color:var(--border)]">
+                        <span class="inline-flex items-center gap-1"><span class="status-circle status-green"></span>Complete</span>
+                        <span class="inline-flex items-center gap-1"><span class="status-circle status-yellow"></span>Incomplete</span>
+                        <span class="inline-flex items-center gap-1"><span class="status-circle status-grey"></span>Not Started</span>
+                    </div>
+                </div>
+                <div id="schools-by-group-container" class="divide-y divide-[color:var(--border)]">
+                    <!-- Schools grouped by group will be dynamically populated here -->
+                </div>
             </div>
         </main>
+    </div>
+
+    <!-- Grade Filter Modal -->
+    <div id="filter-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 backdrop-blur-sm px-4">
+        <div class="w-full max-w-md space-y-4 rounded-2xl bg-gradient-to-br from-white to-slate-50 p-6 shadow-2xl ring-1 ring-black/5">
+            <!-- Header -->
+            <div class="flex items-start justify-between pb-3 border-b border-slate-200">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                        <i data-lucide="filter" class="w-5 h-5 text-[color:var(--primary)]"></i>
+                        Grade Filter
+                    </h3>
+                    <p class="text-xs text-slate-600 mt-1">Select grades to filter schools</p>
+                </div>
+                <button id="filter-close" class="rounded-full p-2 hover:bg-slate-100 transition-colors">
+                    <i data-lucide="x" class="w-4 h-4 text-slate-500"></i>
+                </button>
+            </div>
+            
+            <!-- Filter Options -->
+            <div class="space-y-2">
+                <label class="flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer">
+                    <input type="checkbox" value="K1" class="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500">
+                    <span class="text-sm font-medium text-slate-900">K1 (Kindergarten Year 1)</span>
+                </label>
+                <label class="flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer">
+                    <input type="checkbox" value="K2" class="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500">
+                    <span class="text-sm font-medium text-slate-900">K2 (Kindergarten Year 2)</span>
+                </label>
+                <label class="flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer">
+                    <input type="checkbox" value="K3" class="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500">
+                    <span class="text-sm font-medium text-slate-900">K3 (Kindergarten Year 3)</span>
+                </label>
+                <label class="flex items-center gap-3 p-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors cursor-pointer">
+                    <input type="checkbox" value="Others" class="w-4 h-4 text-blue-600 border-slate-300 rounded focus:ring-blue-500">
+                    <span class="text-sm font-medium text-slate-900">Others</span>
+                </label>
+            </div>
+            
+            <!-- Actions -->
+            <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-200">
+                <button id="filter-reset" class="px-4 py-2 text-xs font-semibold rounded-lg bg-white text-slate-700 border border-slate-300 hover:bg-slate-50 transition-colors">
+                    Reset
+                </button>
+                <button id="filter-apply" class="px-4 py-2 text-xs font-semibold rounded-lg bg-gradient-to-r from-blue-600 to-blue-700 text-white hover:from-blue-700 hover:to-blue-800 transition-all shadow-md hover:shadow-lg">
+                    Apply Filter
+                </button>
+            </div>
+        </div>
     </div>
 
     <script src="assets/js/encryption.js"></script>
@@ -97,111 +215,61 @@
     <script src="assets/js/task-validator.js"></script>
     <script src="assets/js/jotform-cache.js"></script>
     <script src="assets/js/export-utils.js"></script>
+    <script src="assets/js/checking-system-district-page.js"></script>
     <script>
+        // Load background animation config and render
         (async () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const district = urlParams.get('district');
-            const group = urlParams.get('group'); // Optional if both Level 1 filters selected
-            
-            if (!district) {
-                alert('No district specified');
-                window.location.href = 'checking_system_home.html';
-                return;
-            }
-
-            const cachedData = window.CheckingSystemData?.getCachedData();
-            if (!cachedData) {
-                alert('Please go through home page first');
-                window.location.href = 'checking_system_home.html';
-                return;
-            }
-
-            // Filter schools by district (and optionally group)
-            let districtSchools = cachedData.schools.filter(s => s.district === district);
-            if (group) {
-                districtSchools = districtSchools.filter(s => s.group === parseInt(group));
-                document.getElementById('district-context').textContent = `Schools in ${district} district within Group ${group}`;
-            }
-
-            const districtStudents = cachedData.students.filter(s => {
-                const school = cachedData.schoolIdMap.get(s.schoolId);
-                return school && school.district === district;
-            });
-
-            const groups = [...new Set(districtSchools.map(s => s.group))].sort((a, b) => a - b);
-
-            // Update UI
-            document.getElementById('district-name').textContent = district;
-            document.getElementById('district-title').textContent = district;
-            document.getElementById('total-schools').textContent = districtSchools.length;
-            document.getElementById('total-students').textContent = districtStudents.length;
-            document.getElementById('district-groups').textContent = groups.join(', ');
-            document.title = `${district} Overview · 4Set Checking System`;
-
-            // VALIDATION ARCHITECTURE NOTE:
-            // District page now uses JotFormCache.buildStudentValidationCache() to calculate
-            // accurate completion metrics using TaskValidator (same as school/class pages).
-            // This ensures validation consistency across all hierarchical levels.
-            
-            // Load survey structure for validation
-            let surveyStructure = null;
             try {
-                const response = await fetch('assets/tasks/survey-structure.json');
-                surveyStructure = await response.json();
-                console.log('[DistrictPage] Survey structure loaded');
-            } catch (error) {
-                console.error('[DistrictPage] Failed to load survey structure:', error);
-            }
-
-            // Build validation cache for completion metrics
-            let avgCompletion = '—';
-            if (window.JotFormCache && surveyStructure && districtStudents.length > 0) {
-                try {
-                    console.log('[DistrictPage] Building validation cache for', districtStudents.length, 'students...');
-                    const validationCache = await window.JotFormCache.buildStudentValidationCache(
-                        districtStudents,
-                        surveyStructure
-                    );
+                const response = await fetch('config/checking_system_config.json');
+                const config = await response.json();
+                
+                if (config.backgroundAnimation) {
+                    const container = document.getElementById('background-circles');
+                    if (!container) return;
                     
-                    // Calculate average completion
-                    let totalCompletion = 0;
-                    let validStudents = 0;
-                    for (const [coreId, cache] of validationCache.entries()) {
-                        if (!cache.error && cache.completionPercentage !== undefined) {
-                            totalCompletion += cache.completionPercentage;
-                            validStudents++;
-                        }
+                    let html = '<div class="fixed inset-0 pointer-events-none z-0">';
+                    
+                    // Add circles
+                    if (config.backgroundAnimation.circles) {
+                        config.backgroundAnimation.circles.forEach(circle => {
+                            const positionStyles = Object.entries(circle.position)
+                                .map(([key, value]) => `${key}: ${value}`)
+                                .join('; ');
+                            const sizeStyles = Object.entries(circle.size)
+                                .map(([key, value]) => `${key}: ${value}`)
+                                .join('; ');
+                            
+                            html += `<div class="absolute rounded-full border ${circle.animation}" 
+                                     style="${positionStyles}; ${sizeStyles}; 
+                                            border-color: ${circle.color}; 
+                                            animation-duration: ${circle.animationDuration}; 
+                                            animation-delay: ${circle.animationDelay};"></div>`;
+                        });
                     }
                     
-                    if (validStudents > 0) {
-                        avgCompletion = Math.round(totalCompletion / validStudents) + '%';
+                    // Add blobs
+                    if (config.backgroundAnimation.blobs) {
+                        config.backgroundAnimation.blobs.forEach(blob => {
+                            const positionStyles = Object.entries(blob.position)
+                                .map(([key, value]) => `${key}: ${value}`)
+                                .join('; ');
+                            const sizeStyles = Object.entries(blob.size)
+                                .map(([key, value]) => `${key}: ${value}`)
+                                .join('; ');
+                            
+                            html += `<div class="absolute rounded-full" 
+                                     style="${positionStyles}; ${sizeStyles}; 
+                                            background-color: ${blob.color}; 
+                                            filter: blur(${blob.blur});"></div>`;
+                        });
                     }
                     
-                    console.log('[DistrictPage] Validation complete:', validStudents, 'students, avg:', avgCompletion);
-                } catch (error) {
-                    console.error('[DistrictPage] Failed to build validation cache:', error);
+                    html += '</div>';
+                    container.innerHTML = html;
                 }
+            } catch (error) {
+                console.error('[DistrictPage] Failed to load background animation config:', error);
             }
-            
-            document.getElementById('avg-completion').textContent = avgCompletion;
-
-            // Breadcrumb is already in HTML, no need to build dynamically
-
-            // Render schools
-            document.getElementById('schools-list').innerHTML = districtSchools.map(school => `
-                <a href="checking_system_2_school.html?schoolId=${encodeURIComponent(school.schoolId)}" 
-                   class="block p-4 border border-[color:var(--border)] rounded-lg hover:border-[color:var(--primary)] transition-colors">
-                    <div class="flex items-center justify-between">
-                        <div class="font-noto">
-                            <h3 class="font-semibold text-[color:var(--foreground)]">${school.schoolNameChinese}</h3>
-                            <p class="text-sm text-[color:var(--muted-foreground)]">${school.schoolName} · Group ${school.group}</p>
-                        </div>
-                        <i data-lucide="chevron-right" class="w-5 h-5 text-[color:var(--muted-foreground)]"></i>
-                    </div>
-                </a>
-            `).join('');
-
-            lucide.createIcons();
         })();
     </script>
 </body>
