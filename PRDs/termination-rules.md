@@ -1,7 +1,7 @@
 # Task Termination Rules
 
-**Version:** 2.1  
-**Last Updated:** October 16, 2025 (SYM/NONSYM timeout detection fix)  
+**Version:** 2.2  
+**Last Updated:** October 16, 2025 (Validation architecture consistency)  
 **Maintainer:** Curriculum Team
 
 ---
@@ -26,6 +26,9 @@ This document defines all task termination rules used across the 4Set assessment
   - Consecutive incorrect (CWR)
   - Threshold-based (Fine Motor)
   - Timeout-based (SYM/NONSYM)
+- **Used By All Pages:**
+  - Student: Direct call to `TaskValidator.validateAllTasks()`
+  - Class/School/District/Group: Via `JotFormCache.buildStudentValidationCache()`
 
 ### Server Pipeline (TestWatchFolder) ✅ **Implemented**
 - **Location:** `processor_agent.ps1`
