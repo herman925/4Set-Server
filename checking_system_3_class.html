@@ -76,7 +76,7 @@
         <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4">
             
             <!-- Class Profile -->
-            <details class="entry-card" open>
+            <details class="entry-card">
                 <summary class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between px-6 py-4 cursor-pointer list-none">
                     <div>
                         <h2 class="text-sm font-semibold text-[color:var(--foreground)] font-noto" id="class-name">Loading...</h2>
@@ -85,7 +85,7 @@
                     <span class="text-[11px] text-[color:var(--muted-foreground)]">Last synced · Today</span>
                 </summary>
                 <div class="px-6 pb-4">
-                    <div class="grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-5 gap-2 text-xs">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2 text-xs">
                         <div class="border border-[color:var(--border)] rounded-md p-2.5 bg-[color:var(--muted)]/30">
                             <p class="text-[10px] uppercase text-[color:var(--muted-foreground)] tracking-wide">Students (with Core ID)</p>
                             <p class="text-base font-semibold" id="total-students">0</p>
@@ -93,10 +93,6 @@
                         <div class="border border-[color:var(--border)] rounded-md p-2.5 bg-[color:var(--muted)]/30">
                             <p class="text-[10px] uppercase text-[color:var(--muted-foreground)] tracking-wide">Teacher</p>
                             <p class="text-base font-semibold font-noto" id="teacher-name">—</p>
-                        </div>
-                        <div class="border border-[color:var(--border)] rounded-md p-2.5 bg-[color:var(--muted)]/30">
-                            <p class="text-[10px] uppercase text-[color:var(--muted-foreground)] tracking-wide">School</p>
-                            <p class="text-xs font-semibold font-noto truncate" id="school-name-detail">—</p>
                         </div>
                         <div class="border border-[color:var(--border)] rounded-md p-2.5 bg-[color:var(--muted)]/30">
                             <p class="text-[10px] uppercase text-[color:var(--muted-foreground)] tracking-wide">District</p>
@@ -111,34 +107,34 @@
             </details>
 
             <!-- Class Metrics -->
-            <details class="entry-card" open>
+            <details class="entry-card">
                 <summary class="flex items-center justify-between px-6 py-4 cursor-pointer list-none">
                     <h2 class="text-sm font-semibold text-[color:var(--foreground)]">Class-level Task Status Overview</h2>
                     <span class="text-[11px] text-[color:var(--muted-foreground)]">Set completion percentages</span>
                 </summary>
                 <div class="px-6 pb-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-                    <div class="bg-gradient-to-br from-white to-blue-50 rounded-lg border border-blue-200 px-4 py-3">
+                    <div class="bg-gradient-to-br from-white to-blue-50 rounded-lg border border-blue-200 px-4 py-3 shadow-sm hover:shadow-md transition-shadow">
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-xs font-medium text-blue-700">Set 1</span>
                             <span class="text-xs text-[color:var(--muted-foreground)]" id="set1-count">—</span>
                         </div>
                         <p class="text-2xl font-bold text-blue-900" id="set1-completion">—%</p>
                     </div>
-                    <div class="bg-gradient-to-br from-white to-green-50 rounded-lg border border-green-200 px-4 py-3">
+                    <div class="bg-gradient-to-br from-white to-green-50 rounded-lg border border-green-200 px-4 py-3 shadow-sm hover:shadow-md transition-shadow">
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-xs font-medium text-green-700">Set 2</span>
                             <span class="text-xs text-[color:var(--muted-foreground)]" id="set2-count">—</span>
                         </div>
                         <p class="text-2xl font-bold text-green-900" id="set2-completion">—%</p>
                     </div>
-                    <div class="bg-gradient-to-br from-white to-purple-50 rounded-lg border border-purple-200 px-4 py-3">
+                    <div class="bg-gradient-to-br from-white to-purple-50 rounded-lg border border-purple-200 px-4 py-3 shadow-sm hover:shadow-md transition-shadow">
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-xs font-medium text-purple-700">Set 3</span>
                             <span class="text-xs text-[color:var(--muted-foreground)]" id="set3-count">—</span>
                         </div>
                         <p class="text-2xl font-bold text-purple-900" id="set3-completion">—%</p>
                     </div>
-                    <div class="bg-gradient-to-br from-white to-amber-50 rounded-lg border border-amber-200 px-4 py-3">
+                    <div class="bg-gradient-to-br from-white to-amber-50 rounded-lg border border-amber-200 px-4 py-3 shadow-sm hover:shadow-md transition-shadow">
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-xs font-medium text-amber-700">Set 4</span>
                             <span class="text-xs text-[color:var(--muted-foreground)]" id="set4-count">—</span>
@@ -149,33 +145,29 @@
             </details>
             
             <!-- Additional Class Statistics -->
-            <details class="entry-card" open>
+            <details class="entry-card">
                 <summary class="flex items-center justify-between px-6 py-4 cursor-pointer list-none">
                     <h2 class="text-sm font-semibold text-[color:var(--foreground)]">Additional Statistics</h2>
                     <span class="text-[11px] text-[color:var(--muted-foreground)]">Quick overview</span>
                 </summary>
-                <div class="px-6 pb-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-                    <div class="bg-gradient-to-br from-white to-blue-50 rounded-lg border border-blue-200 px-4 py-3">
+                <div class="px-6 pb-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="bg-gradient-to-br from-white to-blue-50 rounded-lg border border-blue-200 px-4 py-3 shadow-sm hover:shadow-md transition-shadow">
                         <h3 class="text-xs text-[color:var(--muted-foreground)] font-medium">Students with Data</h3>
                         <p class="mt-1 text-2xl font-semibold text-[color:var(--foreground)]" id="students-with-data">0</p>
                     </div>
-                    <div class="bg-gradient-to-br from-white to-amber-50 rounded-lg border border-amber-200 px-4 py-3">
+                    <div class="bg-gradient-to-br from-white to-amber-50 rounded-lg border border-amber-200 px-4 py-3 shadow-sm hover:shadow-md transition-shadow">
                         <h3 class="text-xs text-[color:var(--muted-foreground)] font-medium">No Submissions Yet</h3>
                         <p class="mt-1 text-2xl font-semibold text-[color:var(--foreground)]" id="students-without-data">0</p>
                     </div>
-                    <div class="bg-gradient-to-br from-white to-green-50 rounded-lg border border-green-200 px-4 py-3">
+                    <div class="bg-gradient-to-br from-white to-green-50 rounded-lg border border-green-200 px-4 py-3 shadow-sm hover:shadow-md transition-shadow">
                         <h3 class="text-xs text-[color:var(--muted-foreground)] font-medium">Data Coverage</h3>
                         <p class="mt-1 text-2xl font-semibold text-[color:var(--foreground)]" id="data-percentage">0%</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-white to-purple-50 rounded-lg border border-purple-200 px-4 py-3">
-                        <h3 class="text-xs text-[color:var(--muted-foreground)] font-medium">Class ID</h3>
-                        <p class="mt-1 text-sm font-mono font-semibold text-[color:var(--foreground)]" id="class-id">—</p>
                     </div>
                 </div>
             </details>
 
             <!-- Student List Table -->
-            <details class="entry-card" open>
+            <details class="entry-card">
                 <summary class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between px-6 py-4 border-b border-[color:var(--border)] cursor-pointer list-none">
                     <div>
                         <h2 class="text-sm font-semibold text-[color:var(--foreground)]">Student List</h2>
@@ -194,7 +186,7 @@
                         </span>
                         <span class="inline-flex items-center gap-1.5">
                             <span class="status-circle status-yellow"></span>
-                            <span>Post-termination</span>
+                            <span>In Progress</span>
                         </span>
                         <span class="inline-flex items-center gap-1.5">
                             <span class="status-circle status-red"></span>
@@ -244,6 +236,27 @@
                 </div>
             </details>
         </main>
+    </div>
+
+    <!-- Outstanding Tasks Modal -->
+    <div id="outstanding-modal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-[color:var(--border)]">
+                <h3 class="text-lg font-semibold text-[color:var(--foreground)]">Outstanding Tasks</h3>
+                <button onclick="window.closeOutstandingModal()" class="p-1 rounded-full hover:bg-[color:var(--muted)] text-[color:var(--muted-foreground)] hover:text-[color:var(--primary)] transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto px-6 py-4">
+                <div id="modal-student-name" class="text-sm font-medium text-[color:var(--muted-foreground)] mb-4"></div>
+                <div id="modal-tasks-list"></div>
+            </div>
+            <div class="px-6 py-4 border-t border-[color:var(--border)] bg-[color:var(--muted)]/20">
+                <button onclick="window.closeOutstandingModal()" class="hero-button secondary-button text-sm font-medium rounded-md px-4 py-2 w-full">
+                    Close
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- Core Dependencies -->
