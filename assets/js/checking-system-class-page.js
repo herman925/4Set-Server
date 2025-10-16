@@ -189,12 +189,15 @@
 
   /**
    * Calculate outstanding count from set status
+   * Returns the number of incomplete TASKS, not sets
    */
   function calculateOutstanding(setStatus) {
     let outstanding = 0;
     for (const setId in setStatus) {
-      if (setStatus[setId].status === 'incomplete') {
-        outstanding++;
+      const set = setStatus[setId];
+      // Count incomplete tasks in each set
+      if (set.tasksTotal > 0) {
+        outstanding += (set.tasksTotal - set.tasksComplete);
       }
     }
     return outstanding;
@@ -255,19 +258,12 @@
    * Render class profile section
    */
   function renderClassProfile() {
-    document.getElementById('class-name').textContent = classData.actualClassName;
+    // Add class ID in brackets next to class name
+    document.getElementById('class-name').textContent = `${classData.actualClassName} (${classData.classId})`;
     document.getElementById('school-name').textContent = schoolData ? 
       `${schoolData.schoolNameChinese} · ${schoolData.schoolName}` : '';
     
-    // School name detail in the collapsible section
-    const schoolNameDetail = document.getElementById('school-name-detail');
-    if (schoolNameDetail && schoolData) {
-      schoolNameDetail.textContent = `${schoolData.schoolNameChinese} (${schoolData.schoolName})`;
-      schoolNameDetail.title = `${schoolData.schoolNameChinese} ${schoolData.schoolName}`;
-    }
-    
     document.getElementById('teacher-name').textContent = classData.teacherNames || 'N/A';
-    document.getElementById('class-id').textContent = classData.classId;
     document.getElementById('district-name').textContent = schoolData?.district || 'N/A';
     document.getElementById('group-number').textContent = schoolData?.group || 'N/A';
   }
@@ -356,11 +352,25 @@
         filteredStudents = filteredStudents.filter(s => studentSubmissionData.has(s.coreId));
         break;
       case 'incomplete':
-        // Only show students with incomplete sets (has data but not all complete)
+        // Show ALL students that don't have Complete status across all 4 sets
+        // This includes: students without data (not started) AND students with incomplete data
         filteredStudents = filteredStudents.filter(s => {
           const data = studentSubmissionData.get(s.coreId);
-          if (!data) return false; // No data = not incomplete, just no data
-          return data.outstanding > 0; // Has outstanding tasks
+          
+          // No data = incomplete (not started = incomplete)
+          if (!data) return true;
+          
+          // Has data - check if all 4 sets are complete
+          const setStatus = data.validationCache?.setStatus;
+          if (!setStatus) return true;
+          
+          // All 4 sets must be complete for student to NOT be shown
+          const allSetsComplete = ['set1', 'set2', 'set3', 'set4'].every(setId => 
+            setStatus[setId] && setStatus[setId].status === 'complete'
+          );
+          
+          // Show if NOT all complete (i.e., at least one set is incomplete or not started)
+          return !allSetsComplete;
         });
         break;
       case 'all':
@@ -442,8 +452,11 @@
           ${renderSetStatus(setStatus.set2, 'Set 2')}
           ${renderSetStatus(setStatus.set3, 'Set 3')}
           ${renderSetStatus(setStatus.set4, 'Set 4')}
-          <td class="px-4 py-3 text-sm font-medium ${outstanding > 0 ? 'text-amber-600' : 'text-[color:var(--muted-foreground)]'}">
-            ${outstanding > 0 ? outstanding : '—'}
+          <td class="px-4 py-3 text-sm font-medium">
+            ${outstanding > 0 ? 
+              `<button onclick="window.showOutstandingModal('${student.coreId}')" class="text-amber-600 hover:text-amber-800 hover:underline transition-colors cursor-pointer">${outstanding}</button>` : 
+              '<span class="text-[color:var(--muted-foreground)]">—</span>'
+            }
           </td>
           <td class="px-4 py-3 text-center">
             <a href="checking_system_4_student.html?coreId=${encodeURIComponent(student.coreId)}" 
@@ -510,8 +523,114 @@
     `;
   }
 
-  // Expose init function
+  /**
+   * Show modal with outstanding tasks for a student
+   */
+  function showOutstandingModal(coreId) {
+    const data = studentSubmissionData.get(coreId);
+    if (!data) return;
+    
+    const student = students.find(s => s.coreId === coreId);
+    if (!student) return;
+    
+    const modal = document.getElementById('outstanding-modal');
+    const studentNameEl = document.getElementById('modal-student-name');
+    const tasksListEl = document.getElementById('modal-tasks-list');
+    
+    if (!modal || !studentNameEl || !tasksListEl) return;
+    
+    // Set student name
+    studentNameEl.textContent = `Student: ${student.studentName} (${coreId})`;
+    
+    // Build tasks list by set
+    const setStatus = data.validationCache?.setStatus;
+    if (!setStatus) {
+      tasksListEl.innerHTML = '<p class="text-sm text-[color:var(--muted-foreground)]">No task data available</p>';
+      modal.classList.remove('hidden');
+      lucide.createIcons();
+      return;
+    }
+    
+    let html = '';
+    
+    // Iterate through sets in order
+    for (const setId of ['set1', 'set2', 'set3', 'set4']) {
+      const set = setStatus[setId];
+      if (!set || !set.tasks || set.tasks.length === 0) continue;
+      
+      // Get incomplete tasks in this set
+      const incompleteTasks = set.tasks.filter(t => !t.complete);
+      if (incompleteTasks.length === 0) continue;
+      
+      // Get set name from survey structure
+      const setInfo = surveyStructure?.sets.find(s => s.id === setId);
+      const setName = setInfo ? `${setInfo.name} (Set ${setId.replace('set', '')})` : setId;
+      
+      html += `
+        <div class="mb-4">
+          <h4 class="text-sm font-semibold text-[color:var(--foreground)] mb-2">${setName}</h4>
+          <ul class="space-y-1 ml-4">
+      `;
+      
+      for (const task of incompleteTasks) {
+        const taskName = getTaskDisplayName(task.taskId);
+        const progress = task.total > 0 ? `${task.answered}/${task.total} questions` : 'Not started';
+        html += `
+          <li class="text-sm text-[color:var(--muted-foreground)]">
+            <span class="font-medium text-[color:var(--foreground)]">${taskName}</span>
+            <span class="text-xs"> — ${progress}</span>
+          </li>
+        `;
+      }
+      
+      html += `
+          </ul>
+        </div>
+      `;
+    }
+    
+    if (html === '') {
+      html = '<p class="text-sm text-[color:var(--muted-foreground)]">All tasks completed!</p>';
+    }
+    
+    tasksListEl.innerHTML = html;
+    modal.classList.remove('hidden');
+    lucide.createIcons();
+  }
+  
+  /**
+   * Close the outstanding tasks modal
+   */
+  function closeOutstandingModal() {
+    const modal = document.getElementById('outstanding-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+    }
+  }
+  
+  /**
+   * Get display name for a task ID
+   */
+  function getTaskDisplayName(taskId) {
+    if (!surveyStructure || !surveyStructure.taskMetadata) return taskId.toUpperCase();
+    
+    // Find task in metadata
+    for (const [filename, metadata] of Object.entries(surveyStructure.taskMetadata)) {
+      if (metadata.id === taskId || metadata.aliases?.includes(taskId)) {
+        // Return the filename without .json as display name
+        return filename;
+      }
+    }
+    
+    return taskId.toUpperCase();
+  }
+
+  // Expose functions
   window.CheckingSystemClassPage = {
     init
   };
+  
+  // Expose modal functions globally
+  window.showOutstandingModal = showOutstandingModal;
+  window.closeOutstandingModal = closeOutstandingModal;
 })();
