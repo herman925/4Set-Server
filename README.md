@@ -1403,6 +1403,12 @@ type(scope): description
 - **Security Architecture**: `PRDs/data_security_prd.md`
 - **Termination Rules**: `PRDs/termination-rules.md`
 
+**Note**: All documentation has been consolidated into the `/PRDs/` directory. Legacy references to `TEMP/` subdirectories should use the following paths:
+- `TEMP/tasks/termination-rules.md` → `PRDs/termination-rules.md`
+- `TEMP/integrations/jotform-integration.md` → `PRDs/jotform-integration.md`
+- `TEMP/architecture/security-architecture.md` → `PRDs/data_security_prd.md`
+- `TEMP/data-tool/*` → `PRDs/data-pipeline.md`
+
 ### External APIs
 - **JotForm API**: https://api.jotform.com/docs/
 - **OneDrive API**: https://docs.microsoft.com/graph/onedrive-concept-overview
