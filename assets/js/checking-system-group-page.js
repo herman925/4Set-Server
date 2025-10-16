@@ -452,7 +452,6 @@
         if (!schoolData) return false;
 
         const { complete, incomplete, notstarted } = calculateSchoolStatus(schoolData);
-        const total = complete + incomplete + notstarted;
 
         switch (currentFilter) {
           case 'complete':
