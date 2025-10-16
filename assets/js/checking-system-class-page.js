@@ -70,6 +70,9 @@
     // Setup export button
     setupExportButton();
 
+    // Setup filters
+    setupFilters();
+
     lucide.createIcons();
   }
 
@@ -257,21 +260,103 @@
   }
 
   /**
-   * Render class metrics
+   * Calculate class-level set completion metrics
+   */
+  function calculateClassMetrics() {
+    const metrics = {
+      set1: { complete: 0, total: 0 },
+      set2: { complete: 0, total: 0 },
+      set3: { complete: 0, total: 0 },
+      set4: { complete: 0, total: 0 }
+    };
+
+    // Aggregate completion status from student submission data
+    for (const student of students) {
+      const data = studentSubmissionData.get(student.coreId);
+      if (!data || data.validationCache?.error) continue;
+
+      // Count set completion for each student
+      for (const setId of ['set1', 'set2', 'set3', 'set4']) {
+        metrics[setId].total++;
+        const setStatus = data.validationCache?.setStatus[setId];
+        if (setStatus && setStatus.status === 'complete') {
+          metrics[setId].complete++;
+        }
+      }
+    }
+
+    return metrics;
+  }
+
+  /**
+   * Render class metrics - both set-level and additional statistics
    */
   function renderClassMetrics() {
     const totalStudents = students.length;
     const studentsWithData = studentSubmissionData.size;
     const studentsWithoutData = totalStudents - studentsWithData;
 
+    // Render additional statistics
     document.getElementById('total-students').textContent = totalStudents;
     document.getElementById('students-with-data').textContent = studentsWithData;
     document.getElementById('students-without-data').textContent = studentsWithoutData;
     
-    // Calculate percentage
+    // Calculate data coverage percentage
     const dataPercentage = totalStudents > 0 ? 
       Math.round((studentsWithData / totalStudents) * 100) : 0;
     document.getElementById('data-percentage').textContent = `${dataPercentage}%`;
+
+    // Calculate and display set-level completion metrics
+    const classMetrics = calculateClassMetrics();
+    for (const setId of ['set1', 'set2', 'set3', 'set4']) {
+      const metric = classMetrics[setId];
+      const percentage = metric.total > 0 ? Math.round((metric.complete / metric.total) * 100) : 0;
+      document.getElementById(`${setId}-completion`).textContent = `${percentage}%`;
+      document.getElementById(`${setId}-count`).textContent = `${metric.complete}/${metric.total}`;
+    }
+  }
+
+  /**
+   * Setup filter functionality
+   */
+  function setupFilters() {
+    const filterSelect = document.getElementById('student-view-filter');
+    if (filterSelect) {
+      filterSelect.addEventListener('change', () => {
+        renderStudentTable();
+      });
+    }
+  }
+
+  /**
+   * Get filtered students based on current filter selection
+   */
+  function getFilteredStudents() {
+    const filterSelect = document.getElementById('student-view-filter');
+    const filterValue = filterSelect ? filterSelect.value : 'all';
+    
+    let filteredStudents = [...students];
+    
+    switch (filterValue) {
+      case 'with-data':
+        // Only show students with submission data
+        filteredStudents = filteredStudents.filter(s => studentSubmissionData.has(s.coreId));
+        break;
+      case 'incomplete':
+        // Only show students with incomplete sets (has data but not all complete)
+        filteredStudents = filteredStudents.filter(s => {
+          const data = studentSubmissionData.get(s.coreId);
+          if (!data) return false; // No data = not incomplete, just no data
+          return data.outstanding > 0; // Has outstanding tasks
+        });
+        break;
+      case 'all':
+      default:
+        // Show all students (no filtering)
+        break;
+    }
+    
+    return filteredStudents;
   }
 
   /**
@@ -279,6 +364,9 @@
    */
   function renderStudentTable() {
     const tbody = document.getElementById('students-tbody');
+    
+    // Get filtered students based on current filter
+    const filteredStudents = getFilteredStudents();
     
     if (students.length === 0) {
       tbody.innerHTML = `
@@ -292,8 +380,21 @@
       return;
     }
 
+    if (filteredStudents.length === 0) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="9" class="px-4 py-8 text-center text-[color:var(--muted-foreground)]">
+            <i data-lucide="filter" class="w-12 h-12 mx-auto mb-2 text-[color:var(--muted-foreground)]"></i>
+            <p>No students match the current filter</p>
+          </td>
+        </tr>
+      `;
+      lucide.createIcons();
+      return;
+    }
+
     // Sort students: with data first, then alphabetically
-    const sortedStudents = [...students].sort((a, b) => {
+    const sortedStudents = [...filteredStudents].sort((a, b) => {
       const aHasData = studentSubmissionData.has(a.coreId);
       const bHasData = studentSubmissionData.has(b.coreId);
       
@@ -389,8 +490,8 @@
     return `
       <td class="px-4 py-3">
         <span class="inline-flex items-center gap-2 text-xs ${config.textClass}">
-          <span class="status-circle ${config.class}"></span>
-          ${config.text}
+          <span class="status-circle ${config.class}" title="${config.text}"></span>
+          <span class="hidden sm:inline">${config.text}</span>
         </span>
       </td>
     `;
