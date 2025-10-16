@@ -383,7 +383,18 @@
         const cachedValidation = await this.loadValidationCache();
         if (cachedValidation && cachedValidation.size > 0) {
           console.log(`[JotFormCache] ✅ Loaded validation cache from IndexedDB: ${cachedValidation.size} students`);
-          return cachedValidation;
+          
+          // Filter cache to only include students in the provided list
+          const studentCoreIds = new Set(students.map(s => s.coreId));
+          const filteredCache = new Map();
+          for (const [coreId, data] of cachedValidation.entries()) {
+            if (studentCoreIds.has(coreId)) {
+              filteredCache.set(coreId, data);
+            }
+          }
+          
+          console.log(`[JotFormCache] Filtered to ${filteredCache.size} students matching provided list`);
+          return filteredCache;
         }
       }
       
@@ -521,6 +532,23 @@
           return null;
         }
         
+        // Validate cache data structure
+        const sampleKey = Object.keys(cacheEntry.validations)[0];
+        if (sampleKey) {
+          const sampleData = cacheEntry.validations[sampleKey];
+          if (!sampleData.taskValidation || !sampleData.setStatus) {
+            console.warn('[JotFormCache] Validation cache has invalid structure (missing taskValidation or setStatus), will rebuild');
+            return null;
+          }
+          
+          // Check if all sets are "notstarted" which indicates bad data
+          const allNotStarted = Object.values(sampleData.setStatus || {}).every(set => set.status === 'notstarted');
+          if (allNotStarted && sampleData.submissions && sampleData.submissions.length > 0) {
+            console.warn('[JotFormCache] Validation cache shows all sets as notstarted despite having submissions, will rebuild');
+            return null;
+          }
+        }
+        
         // Convert object back to Map
         const validationCache = new Map();
         for (const [coreId, data] of Object.entries(cacheEntry.validations)) {
@@ -553,11 +581,18 @@
      * @returns {Promise<Object>} - Validation cache entry
      */
     async validateStudent(student, submissions, surveyStructure) {
-      // Merge all submission answers
+      // Merge all submission answers BY FIELD NAME (not QID)
+      // JotForm stores answers with QID as key, but each answer has a 'name' field
+      // TaskValidator looks up answers by field name (e.g., "ERV_P1")
       const mergedAnswers = {};
       for (const submission of submissions) {
         if (submission.answers) {
-          Object.assign(mergedAnswers, submission.answers);
+          // Convert from QID-keyed to name-keyed
+          for (const [qid, answerObj] of Object.entries(submission.answers)) {
+            if (answerObj.name) {
+              mergedAnswers[answerObj.name] = answerObj;
+            }
+          }
         }
       }
       
@@ -589,23 +624,25 @@
         set4: { status: 'notstarted', tasksComplete: 0, tasksTotal: 0, tasks: [] }
       };
       
-      // Count tasks per set
-      for (const set of surveyStructure.sets) {
-        setStatus[set.id].tasksTotal = set.sections.length;
-      }
-      
-      // Analyze each task
+      // Analyze each task and build task lists per set
       let totalTasks = 0;
       let completeTasks = 0;
       const terminationTasks = [];
       let hasPostTerminationData = false;
       
       for (const [taskId, validation] of Object.entries(taskValidation)) {
-        if (validation.error || taskId === 'nonsym') continue;
+        if (validation.error) {
+          console.warn(`[JotFormCache] Task ${taskId} has error: ${validation.error}`);
+          continue;
+        }
+        if (taskId === 'nonsym') continue;
         
         totalTasks++;
         const setId = taskToSetMap.get(taskId);
-        if (!setId) continue;
+        if (!setId) {
+          console.warn(`[JotFormCache] Task ${taskId} not found in taskToSetMap`);
+          continue;
+        }
         
         // TaskValidator returns answeredQuestions/totalQuestions, not totals.answered/total
         const answered = validation.answeredQuestions || 0;
@@ -617,6 +654,9 @@
           completeTasks++;
           setStatus[setId].tasksComplete++;
         }
+        
+        // Increment tasksTotal for this set (only count tasks that actually exist for this student)
+        setStatus[setId].tasksTotal++;
         
         if (validation.terminated) {
           terminationTasks.push(taskId);
@@ -634,10 +674,18 @@
         });
       }
       
-      // Calculate set status
+      // Log summary for debugging
+      if (completeTasks > 0) {
+        console.log(`[JotFormCache] Student ${student.coreId}: ${completeTasks}/${totalTasks} tasks complete`);
+      }
+      
+      // Calculate set status based on ACTUAL task counts (not section counts)
       for (const setId in setStatus) {
         const set = setStatus[setId];
-        if (set.tasksTotal === 0) continue;
+        if (set.tasksTotal === 0) {
+          set.status = 'notstarted';
+          continue;
+        }
         
         const completionRate = set.tasksComplete / set.tasksTotal;
         if (completionRate === 1) {

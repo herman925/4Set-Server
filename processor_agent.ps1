@@ -1363,16 +1363,29 @@ function Invoke-JotformUpsert {
             $foundSubmission = $null
             
             # METHOD 1: Try filter API first (much faster for large datasets)
+            # NOTE: JotForm's :eq filter is BROKEN (Oct 2025 testing shows it returns all 545+ submissions)
+            # We use :matches operator which works better, then validate client-side for exact match
             try {
                 Add-Type -AssemblyName System.Web -ErrorAction SilentlyContinue
-                $filter = "{`"${sessionkeyQid}:eq`":`"${SessionKey}`"}"
+                
+                # Extract student ID from sessionkey for pattern matching
+                # SessionKey format: {studentId}_{yyyymmdd}_{hh}_{mm}
+                $studentIdPattern = $SessionKey -split '_' | Select-Object -First 1
+                
+                # Use :matches operator on sessionkey field (QID 3) - this actually filters server-side
+                # Unlike :eq which returns everything, :matches returns only submissions containing the pattern
+                $filter = "{`"q${sessionkeyQid}:matches`":`"${studentIdPattern}`"}"
                 $encodedFilter = [System.Web.HttpUtility]::UrlEncode($filter)
                 $filterUri = "https://api.jotform.com/form/$formId/submissions?apiKey=$apiKey&filter=$encodedFilter&limit=1000&orderby=created_at&direction=ASC"
+                
+                Write-Log -Message "Using :matches filter with pattern '$studentIdPattern' (extracted from sessionkey)" -Level "DEBUG" -File $FileName
                 
                 $filterResponse = Invoke-RestMethod -Uri $filterUri -Method Get -TimeoutSec $script:JotformConfig.searchTimeoutSec
                 
                 if ($filterResponse.content -and $filterResponse.content.Count -gt 0) {
-                    # Verify the match (filter might return similar results)
+                    Write-Log -Message "Filter API returned $($filterResponse.content.Count) submission(s), validating for exact sessionkey match..." -Level "DEBUG" -File $FileName
+                    
+                    # CRITICAL: Verify exact match (filter returns pattern matches, we need exact sessionkey)
                     foreach ($sub in $filterResponse.content) {
                         $sessionKeyValue = $null
                         if ($sub.answers.$sessionkeyQid.answer) {

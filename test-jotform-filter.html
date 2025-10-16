@@ -104,6 +104,13 @@
     <div id="result-contains" class="result"></div>
   </div>
 
+  <div class="test-section">
+    <h2>Test 7: Matches Operator on SessionKey ({"q3:matches":"10261"})</h2>
+    <p style="font-size: 12px; color: #ce9178;">Jotform support recommended - matches student ID pattern in sessionkey field</p>
+    <button onclick="testMatchesFilter()">Run Test</button>
+    <div id="result-matches" class="result"></div>
+  </div>
+
   <script>
     async function testQidFilter() {
       const resultDiv = document.getElementById('result-qid');
@@ -503,6 +510,96 @@
 
         resultDiv.textContent = output.join('\n');
         resultDiv.className = result.content?.length > 0 ? 'result warning' : 'result error';
+      } catch (error) {
+        resultDiv.textContent = `❌ Error: ${error.message}`;
+        resultDiv.className = 'result error';
+      }
+    }
+
+    async function testMatchesFilter() {
+      const resultDiv = document.getElementById('result-matches');
+      resultDiv.textContent = 'Testing...';
+      resultDiv.className = 'result';
+
+      try {
+        const apiKey = document.getElementById('apiKey').value;
+        const formId = document.getElementById('formId').value;
+        const studentId = document.getElementById('studentId').value;
+
+        // Test :matches operator on QID 3 (sessionkey) - as recommended by Jotform support
+        const filter = {"q3:matches": studentId};
+        const filterEncoded = encodeURIComponent(JSON.stringify(filter));
+        
+        const url = `https://api.jotform.com/form/${formId}/submissions?` +
+                    `apiKey=${apiKey}` +
+                    `&filter=${filterEncoded}` +
+                    `&limit=1000` +
+                    `&orderby=created_at` +
+                    `&direction=ASC`;
+
+        console.log('Matches Filter URL:', url);
+
+        const response = await fetch(url);
+        const result = await response.json();
+
+        const output = [];
+        output.push(`✅ Status: ${response.status} ${response.statusText}`);
+        output.push(`📊 Response Code: ${result.responseCode}`);
+        output.push(`📝 Message: ${result.message}`);
+        output.push(`📦 Total Submissions: ${result.content?.length || 0}`);
+        output.push('');
+        output.push('🔍 Filter Used (:matches on sessionkey/QID 3):');
+        output.push(`   Raw: ${JSON.stringify(filter)}`);
+        output.push(`   Encoded: ${filterEncoded}`);
+        output.push('');
+        output.push('📋 COMPLETE URL (copy to test in browser):');
+        output.push(`   ${url}`);
+        output.push('');
+
+        if (result.content && result.content.length > 0) {
+          output.push('📋 First 10 SessionKeys (QID 3):');
+          result.content.slice(0, 10).forEach((sub, idx) => {
+            const sessionKey = sub.answers?.['3']?.answer || sub.answers?.['3']?.text || 'MISSING';
+            const studentIdInSub = sub.answers?.['20']?.answer || sub.answers?.['20']?.text || 'N/A';
+            const containsPattern = sessionKey.includes(studentId);
+            const match = containsPattern ? '✅ CONTAINS' : '❌ NO MATCH';
+            output.push(`   [${idx}] ${sessionKey} (Student ID: ${studentIdInSub}) ${match}`);
+          });
+
+          // Count how many sessionkeys contain the student ID pattern
+          const matchingSubmissions = result.content.filter(sub => {
+            const sessionKey = sub.answers?.['3']?.answer || sub.answers?.['3']?.text || '';
+            return sessionKey.includes(studentId);
+          });
+
+          // Count submissions where student ID field matches
+          const studentIdMatches = result.content.filter(sub => {
+            const id = sub.answers?.['20']?.answer || sub.answers?.['20']?.text || '';
+            return id.trim() === studentId;
+          });
+
+          output.push('');
+          output.push(`📊 SessionKeys containing "${studentId}": ${matchingSubmissions.length} / ${result.content.length}`);
+          output.push(`✨ Student ID (QID 20) exact matches: ${studentIdMatches.length} / ${result.content.length}`);
+          output.push('');
+
+          if (matchingSubmissions.length > 0) {
+            output.push(`✅ SUCCESS: :matches operator found ${matchingSubmissions.length} submission(s)`);
+            output.push('   This searches sessionkey field for pattern matching');
+            if (studentIdMatches.length === result.content.length) {
+              output.push('✅ All returned submissions have matching student ID!');
+            } else if (studentIdMatches.length > 0) {
+              output.push(`⚠️ ${studentIdMatches.length} submissions have matching student ID`);
+            }
+          } else {
+            output.push('❌ No submissions with matching pattern in sessionkey');
+          }
+        } else {
+          output.push('❌ No submissions found');
+        }
+
+        resultDiv.textContent = output.join('\n');
+        resultDiv.className = result.content?.length > 0 ? 'result success' : 'result warning';
       } catch (error) {
         resultDiv.textContent = `❌ Error: ${error.message}`;
         resultDiv.className = 'result error';

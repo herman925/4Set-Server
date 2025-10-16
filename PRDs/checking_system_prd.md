@@ -78,6 +78,82 @@ This approach provides a **holistic and accurate view** because:
 - Implement a status light engine (`/api/checking/status`) to expose task-level completion metrics and termination reasons.
 - Support demo coverage for the Checking System dashboard tab.
 
+## ⚠️ CRITICAL: JotForm API Filter Implementation
+
+### Mandatory Filter Usage
+**All student data retrieval MUST use the `:matches` operator on sessionkey field (QID 3).**
+
+After extensive testing in October 2025, we discovered that JotForm's standard filter operators (`:eq`, `:contains`) **DO NOT WORK** for student ID field (QID 20). They return the full dataset (545+ submissions) regardless of filter values, causing:
+- Massive data transfer overhead (~30 MB vs ~110 KB)
+- Client-side filtering burden
+- Slow performance (3-5 seconds vs <500ms)
+- Increased rate limiting risk
+
+### Working Solution
+
+**✅ CORRECT Implementation:**
+```javascript
+// Use :matches operator on sessionkey field (QID 3)
+const studentIdNumeric = coreId.replace(/^C/, ''); // Remove "C" prefix
+const filter = { "q3:matches": studentIdNumeric };
+
+const url = `https://api.jotform.com/form/${formId}/submissions?` +
+            `apiKey=${apiKey}` +
+            `&filter=${encodeURIComponent(JSON.stringify(filter))}` +
+            `&limit=1000` +
+            `&orderby=created_at` +
+            `&direction=ASC`;
+```
+
+**Why This Works:**
+- SessionKey format: `{studentId}_{yyyymmdd}_{hh}_{mm}` (e.g., `10261_20251014_10_25`)
+- The `:matches` operator performs pattern matching within the sessionkey field
+- Server-side filtering actually works - returns only relevant submissions
+- **Test results: 100% accuracy, 99.6% data reduction**
+
+### Affected Files
+All files performing student lookups must use this filter:
+1. `assets/js/jotform-cache.js` - Cache building and filtering
+2. `assets/js/checking-system-student-page.js` - Student detail page data loading
+3. `processor_agent.ps1` - Backend student processing (if migrated)
+4. Future student data retrieval modules
+
+### Validation Requirements
+Even with working filters, validate results for data integrity:
+```javascript
+// After API fetch, verify each submission
+for (const submission of submissions) {
+  const sessionKey = submission.answers?.['3']?.answer;
+  const studentId = submission.answers?.['20']?.answer;
+  
+  // Primary check: SessionKey contains student ID pattern
+  if (!sessionKey?.includes(targetStudentId)) {
+    console.warn(`Filter returned false positive: ${sessionKey}`);
+    continue;
+  }
+  
+  // Secondary check: Student ID field matches (recommended)
+  if (studentId?.trim() !== targetStudentId) {
+    console.warn(`SessionKey matches but student ID mismatch: expected ${targetStudentId}, got ${studentId}`);
+  }
+}
+```
+
+### Test Coverage
+Comprehensive test suite validates filter behavior:
+- **Interactive Tests**: `test-jotform-filter.html` (browser-based, 7 scenarios)
+- **Automated Tests**: `test-jotform-filters.ps1` (PowerShell, 5 scenarios)
+- **Documentation**: Test results logged in both test files
+- **Verification**: Only `:matches` operator passes all tests
+
+### Performance Comparison
+| Method | Data Transfer | API Calls | Time | Accuracy |
+|--------|--------------|-----------|------|----------|
+| ❌ Old (`:eq` on QID 20) | ~30 MB (545 submissions) | 1 | 3-5s | 0.4% (2/545) |
+| ✅ New (`:matches` on QID 3) | ~110 KB (2 submissions) | 1 | <500ms | 100% (2/2) |
+
+**See `PRDs/checking_system_pipeline_prd.md` for full technical details and implementation examples.**
+
 ## Home Page Entry Point (`checking_system_home.html`)
 
 ### Purpose

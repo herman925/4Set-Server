@@ -334,13 +334,119 @@ try {
 
 Write-Host ""
 Write-Host "=====================================" -ForegroundColor Cyan
+Write-Host ""
+
+# Test 5: Matches Operator on SessionKey (q3:matches) - Jotform Support Recommendation
+Write-Host "TEST 5: Matches Operator (q3:matches)" -ForegroundColor Yellow
+Write-Host "Student ID Pattern: $StudentId" -ForegroundColor Gray
+Write-Host "(Jotform support recommended - searches for student ID pattern in sessionkey)" -ForegroundColor Gray
+Write-Host ""
+
+try {
+    $filter5 = "{`"q3:matches`":`"${StudentId}`"}"
+    $encodedFilter5 = [System.Web.HttpUtility]::UrlEncode($filter5)
+    $url5 = "https://api.jotform.com/form/$FormId/submissions?apiKey=$ApiKey&filter=$encodedFilter5&limit=1000&orderby=created_at&direction=ASC"
+    
+    Write-Host "Raw Filter: $filter5" -ForegroundColor Gray
+    Write-Host "Encoded: $encodedFilter5" -ForegroundColor Gray
+    Write-Host ""
+    Write-Host "COMPLETE URL (copy to browser to test):" -ForegroundColor Cyan
+    Write-Host $url5 -ForegroundColor White
+    Write-Host ""
+    
+    $response5 = Invoke-RestMethod -Uri $url5 -Method Get -TimeoutSec 30
+    
+    $totalReturned5 = if ($response5.content) { $response5.content.Count } else { 0 }
+    Write-Host "✅ Response Code: $($response5.responseCode)" -ForegroundColor Green
+    Write-Host "📦 Total Submissions Returned by API: $totalReturned5" -ForegroundColor Cyan
+    Write-Host ""
+    
+    if ($totalReturned5 -gt 0) {
+        Write-Host "🔍 Validating submissions:" -ForegroundColor Yellow
+        Write-Host "   Showing first 10 sessionkeys:" -ForegroundColor Gray
+        
+        $matchingSessionKeys = 0
+        $matchingStudentIds = 0
+        $count = 0
+        
+        foreach ($sub in $response5.content) {
+            # Extract sessionkey (QID 3)
+            $sessionKeyValue = $null
+            if ($sub.answers."3".answer) {
+                $sessionKeyValue = $sub.answers."3".answer
+            } elseif ($sub.answers."3".text) {
+                $sessionKeyValue = $sub.answers."3".text
+            }
+            
+            # Extract student-id (QID 20)
+            $studentIdValue = $null
+            if ($sub.answers."20".answer) {
+                $studentIdValue = $sub.answers."20".answer
+            } elseif ($sub.answers."20".text) {
+                $studentIdValue = $sub.answers."20".text
+            }
+            
+            if ($studentIdValue) {
+                $studentIdValue = $studentIdValue.Trim() -replace '\s+', ' '
+            }
+            
+            # Check if sessionkey contains the student ID pattern
+            $containsPattern = $sessionKeyValue -like "*$StudentId*"
+            if ($containsPattern) {
+                $matchingSessionKeys++
+            }
+            
+            # Check if student ID matches exactly
+            if ($studentIdValue -eq $StudentId) {
+                $matchingStudentIds++
+            }
+            
+            # Show first 10
+            if ($count -lt 10) {
+                $match = if ($containsPattern) { "✅ CONTAINS" } else { "❌ NO MATCH" }
+                Write-Host "   [$count] SK: $sessionKeyValue | SID: $studentIdValue $match" -ForegroundColor Gray
+                $count++
+            }
+        }
+        
+        Write-Host ""
+        Write-Host "📊 VALIDATION RESULTS:" -ForegroundColor Cyan
+        Write-Host "   API returned: $totalReturned5 submissions" -ForegroundColor Gray
+        Write-Host "   SessionKeys containing pattern '$StudentId': $matchingSessionKeys" -ForegroundColor Gray
+        Write-Host "   Student IDs matching exactly: $matchingStudentIds" -ForegroundColor Gray
+        Write-Host ""
+        
+        if ($matchingSessionKeys -eq $totalReturned5) {
+            Write-Host "✅ :matches WORKS PERFECTLY - all sessionkeys contain the pattern!" -ForegroundColor Green
+            if ($matchingStudentIds -eq $totalReturned5) {
+                Write-Host "✅ BONUS: All submissions also have matching student IDs!" -ForegroundColor Green
+            } elseif ($matchingStudentIds -gt 0) {
+                Write-Host "⚠️ Note: $matchingStudentIds submissions have matching student IDs" -ForegroundColor Yellow
+            }
+        } elseif ($matchingSessionKeys -gt 0) {
+            Write-Host "⚠️ :matches partially working - $matchingSessionKeys/$totalReturned5 contain pattern" -ForegroundColor Yellow
+        } else {
+            Write-Host "❌ :matches returned results but none contain the pattern" -ForegroundColor Red
+        }
+    } else {
+        Write-Host "❌ No submissions returned by API" -ForegroundColor Red
+    }
+} catch {
+    Write-Host "❌ ERROR: $($_.Exception.Message)" -ForegroundColor Red
+}
+
+Write-Host ""
+Write-Host "=====================================" -ForegroundColor Cyan
 Write-Host "SUMMARY" -ForegroundColor Cyan
 Write-Host "=====================================" -ForegroundColor Cyan
 Write-Host ""
 Write-Host "SessionKey filter (QID 3): Uses same logic as processor_agent.ps1" -ForegroundColor Gray
 Write-Host "Student-ID filter (QID 20): Testing if it works like sessionkey" -ForegroundColor Gray
 Write-Host "Field Name filter: Alternative approach recommended by Jotform" -ForegroundColor Gray
+Write-Host ":matches operator: Search for pattern in sessionkey (Jotform support)" -ForegroundColor Gray
 Write-Host ""
 Write-Host "If student-id filters return 517 submissions but only 2-3 match," -ForegroundColor Yellow
 Write-Host "then the filter is BROKEN and we need client-side filtering." -ForegroundColor Yellow
+Write-Host ""
+Write-Host "The :matches operator might be the solution if it works correctly!" -ForegroundColor Green
 Write-Host ""

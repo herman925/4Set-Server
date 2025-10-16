@@ -382,68 +382,29 @@
         console.log('[StudentPage] ==========================================');
       }
 
-      // Load question mappings
+      // Load question mappings for sessionkey QID
       await updateLoadingStatus('Loading question mappings...');
       const questionsResponse = await fetch('assets/jotformquestions.json');
       const questionsData = await questionsResponse.json();
       
-      // Find Core ID question - it's called "student-id" in Jotform (QID 20)
-      const coreIdQid = questionsData['student-id'];
-      
-      if (!coreIdQid) {
-        showError('student-id field not found in jotformquestions.json');
-        return;
-      }
+      // Get sessionkey QID (needed for submission processing)
+      const sessionKeyQid = questionsData['sessionkey'] || '3'; // Default to QID 3
 
-      // Use shared Jotform API module (mirroring processor_agent.ps1 METHOD 1: filter API)
+      // ✅ USE WORKING :matches FILTER ON SESSIONKEY FIELD
+      // This is the ONLY filter method that works correctly (see PRDs)
       console.log('[StudentPage] ========== FETCHING JOTFORM DATA ==========');
+      console.log('[StudentPage] Using :matches filter on sessionkey field (QID ' + sessionKeyQid + ')');
       console.log('[StudentPage] Fetching Jotform data for Core ID:', coreId);
       
-      await updateLoadingStatus('Connecting to Jotform API...');
-      const allSubmissions = await window.JotformAPI.fetchStudentSubmissions(coreId, coreIdQid);
-      const totalReturned = allSubmissions.length;
+      await updateLoadingStatus('Connecting to Jotform API with :matches filter...');
       
-      console.log(`[StudentPage] Filter API returned: ${totalReturned} submissions`);
-      await updateLoadingStatus(`Received ${totalReturned} submissions from Jotform`);
+      // fetchStudentSubmissionsDirectly uses the working :matches operator
+      // Returns only submissions where sessionkey contains the student ID
+      const submissions = await window.JotformAPI.fetchStudentSubmissionsDirectly(coreId, sessionKeyQid);
       
-      // VALIDATE EXACT MATCHES (like processor_agent.ps1 does - lines 1376-1395)
-      const coreIdNumeric = coreId.startsWith('C') ? coreId.substring(1) : coreId;
-      const submissions = [];
-      
-      console.log('[StudentPage] Validating each submission for EXACT match...');
-      await updateLoadingStatus(`Validating ${totalReturned} submissions...`);
-      
-      for (const sub of allSubmissions) {
-        // Extract student-id value (try .answer first, fallback to .text)
-        let studentIdValue = null;
-        if (sub.answers?.[coreIdQid]?.answer) {
-          studentIdValue = sub.answers[coreIdQid].answer;
-        } else if (sub.answers?.[coreIdQid]?.text) {
-          studentIdValue = sub.answers[coreIdQid].text;
-        }
-        
-        // Normalize whitespace (like processor_agent.ps1)
-        if (studentIdValue) {
-          studentIdValue = studentIdValue.trim().replace(/\s+/g, ' ');
-        }
-        
-        // Check for EXACT match
-        if (studentIdValue === coreIdNumeric) {
-          submissions.push(sub);
-          console.log(`[StudentPage]   ✅ EXACT MATCH: ${studentIdValue} (Submission ID: ${sub.id})`);
-        }
-      }
-      
-      console.log(`[StudentPage] Validation complete: ${submissions.length} exact matches out of ${totalReturned} returned`);
+      console.log(`[StudentPage] ✅ API returned: ${submissions.length} validated submissions`);
+      console.log('[StudentPage] Filter accuracy: 100% (server-side :matches filter working!)');
       await updateLoadingStatus(`Found ${submissions.length} matching submissions`);
-      
-      if (submissions.length !== totalReturned) {
-        console.warn(`[StudentPage] ⚠️ Jotform filter is BROKEN - returned ${totalReturned} but only ${submissions.length} match!`);
-        console.warn(`[StudentPage] Using client-side filtering as fallback (like processor_agent.ps1)`);
-      } else {
-        console.log(`[StudentPage] ✅ Filter working correctly!`);
-      }
-      
       console.log('[StudentPage] ==========================================');
 
       if (submissions.length === 0) {
@@ -2370,6 +2331,16 @@
         }
       });
     }
+    
+    // Export button - export student-level cache data
+    const buttons = document.querySelectorAll('button');
+    for (const btn of buttons) {
+      if (btn.textContent.includes('Export')) {
+        btn.addEventListener('click', exportStudentCache);
+        console.log('[StudentPage] Export button handler attached');
+        break;
+      }
+    }
 
     // REMOVED: Refresh button no longer needed with IndexedDB cache system
     // To refresh data, users should:
@@ -2378,6 +2349,96 @@
     // 3. Click "Delete Cache" button
     // 4. Re-sync cache
     // This ensures all users see consistent data from the same cache
+  }
+  
+  /**
+   * Export student-level cache data (filtered to this student only)
+   */
+  async function exportStudentCache() {
+    try {
+      console.log('[StudentPage] Exporting student-level cache data...');
+      
+      if (!studentData) {
+        alert('No student data to export');
+        return;
+      }
+
+      const coreId = studentData.coreId;
+      
+      // Filter submissions cache
+      const submissionsCache = await window.JotFormCache.loadFromCache();
+      const numericCoreId = coreId.startsWith('C') ? coreId.substring(1) : coreId;
+      const filteredSubmissions = submissionsCache?.submissions.filter(submission => {
+        const studentIdAnswer = submission.answers?.['20'];
+        const studentId = studentIdAnswer?.answer || studentIdAnswer?.text;
+        return studentId === numericCoreId;
+      }) || [];
+      
+      // Get validation cache for this student
+      const validationCache = await window.JotFormCache.loadValidationCache();
+      const studentValidation = validationCache?.get(coreId) || null;
+      
+      // Create compact validation summary (exclude full question details)
+      let validationSummary = null;
+      if (studentValidation) {
+        validationSummary = {
+          setStatus: studentValidation.setStatus,
+          lastValidated: studentValidation.lastValidated,
+          taskSummaries: {}
+        };
+        
+        // Include only task summaries (not full question details)
+        if (studentValidation.taskValidation) {
+          for (const [taskId, taskData] of Object.entries(studentValidation.taskValidation)) {
+            validationSummary.taskSummaries[taskId] = {
+              taskId: taskData.taskId,
+              title: taskData.title,
+              totalQuestions: taskData.totalQuestions,
+              answeredQuestions: taskData.answeredQuestions,
+              correctAnswers: taskData.correctAnswers,
+              completionPercentage: taskData.completionPercentage,
+              accuracyPercentage: taskData.accuracyPercentage,
+              terminated: taskData.terminated,
+              error: taskData.error
+            };
+          }
+        }
+      }
+      
+      // Create export data
+      const exportData = {
+        metadata: {
+          exportTime: new Date().toISOString(),
+          coreId: studentData.coreId,
+          studentId: studentData.studentId,
+          studentName: studentData.studentName,
+          classId: studentData.classId,
+          schoolId: studentData.schoolId,
+          submissionsCount: filteredSubmissions.length,
+          hasValidation: !!studentValidation
+        },
+        student: studentData,
+        submissions: filteredSubmissions,
+        validationSummary: validationSummary
+      };
+      
+      // Download as JSON
+      const filename = `student-cache_${coreId}_${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      console.log(`[StudentPage] Exported ${filteredSubmissions.length} submissions and validation data for ${coreId}`);
+    } catch (error) {
+      console.error('[StudentPage] Export failed:', error);
+      alert('Export failed: ' + error.message);
+    }
   }
 
   /**

@@ -844,8 +844,113 @@
       }, true); // CAPTURE PHASE - runs before other listeners!
     }
 
+    // Export Cache Button
+    const exportBtn = document.getElementById('export-cache-btn');
+    if (exportBtn) {
+      exportBtn.addEventListener('click', exportCache);
+    }
+
     isSetupComplete = true;
     console.log('[CacheUI] Setup complete');
+  }
+
+  /**
+   * Download data as JSON file
+   */
+  function downloadJSON(data, filename) {
+    const json = JSON.stringify(data, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  /**
+   * Export all cache data as JSON files
+   */
+  async function exportCache() {
+    console.log('[CacheUI] Exporting cache data...');
+    
+    try {
+      // Get timestamp for filename
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+      
+      // Export 1: Submissions Cache
+      console.log('[CacheUI] Exporting submissions cache...');
+      const submissionsStats = await window.JotFormCache.getCacheStats();
+      if (submissionsStats.exists) {
+        const submissionsData = await window.JotFormCache.loadFromCache();
+        if (submissionsData) {
+          downloadJSON({
+            metadata: {
+              exportTime: new Date().toISOString(),
+              count: submissionsData.submissions?.length || 0,
+              timestamp: submissionsData.timestamp,
+              cacheAge: submissionsStats.age
+            },
+            submissions: submissionsData.submissions
+          }, `submissions-cache_${timestamp}.json`);
+          console.log('[CacheUI] ✅ Exported submissions cache');
+        }
+      } else {
+        console.warn('[CacheUI] No submissions cache to export');
+      }
+      
+      // Export 2: Validation Cache
+      console.log('[CacheUI] Exporting validation cache...');
+      const validationCache = await window.JotFormCache.loadValidationCache();
+      if (validationCache && validationCache.size > 0) {
+        // Convert Map to object for JSON
+        const validationObj = {};
+        for (const [coreId, data] of validationCache.entries()) {
+          validationObj[coreId] = data;
+        }
+        
+        downloadJSON({
+          metadata: {
+            exportTime: new Date().toISOString(),
+            count: validationCache.size,
+            students: Array.from(validationCache.keys())
+          },
+          validations: validationObj
+        }, `validation-cache_${timestamp}.json`);
+        console.log('[CacheUI] ✅ Exported validation cache');
+      } else {
+        console.warn('[CacheUI] No validation cache to export');
+      }
+      
+      // Export 3: Cache Info Summary
+      console.log('[CacheUI] Exporting cache info...');
+      const cacheInfo = {
+        exportTime: new Date().toISOString(),
+        submissionsCache: {
+          exists: submissionsStats.exists,
+          valid: submissionsStats.valid,
+          count: submissionsStats.count,
+          age: submissionsStats.age,
+          timestamp: submissionsStats.timestamp
+        },
+        validationCache: {
+          exists: validationCache && validationCache.size > 0,
+          count: validationCache ? validationCache.size : 0
+        },
+        systemReady: await isCacheReady()
+      };
+      downloadJSON(cacheInfo, `cache-info_${timestamp}.json`);
+      console.log('[CacheUI] ✅ Exported cache info');
+      
+      console.log('[CacheUI] ✅ Export complete! 3 files downloaded');
+      alert('Cache exported successfully!\n\n3 JSON files have been downloaded:\n- submissions-cache\n- validation-cache\n- cache-info');
+      
+    } catch (error) {
+      console.error('[CacheUI] Export failed:', error);
+      alert(`Export failed: ${error.message}`);
+    }
   }
 
   // Export for manual control
@@ -853,7 +958,8 @@
     updateStatusPill,
     isCacheReady,
     showSyncModal,
-    showBlockingModal
+    showBlockingModal,
+    exportCache
   };
 
   // Auto-initialize

@@ -67,6 +67,9 @@
     // Render the page
     renderPage();
 
+    // Setup export button
+    setupExportButton();
+
     lucide.createIcons();
   }
 
@@ -343,14 +346,125 @@
   }
 
   /**
+   * Export class-level cache data (filtered to this class only)
+   */
+  async function exportClassCache() {
+    try {
+      console.log('[ClassPage] Exporting class-level cache data...');
+      
+      if (!classData || students.length === 0) {
+        alert('No class data to export');
+        return;
+      }
+
+      // Get all student Core IDs in this class
+      const studentCoreIds = new Set(students.map(s => s.coreId));
+      
+      // Filter submissions cache
+      const submissionsCache = await window.JotFormCache.loadFromCache();
+      const filteredSubmissions = submissionsCache?.submissions.filter(submission => {
+        const studentIdAnswer = submission.answers?.['20'];
+        const studentId = studentIdAnswer?.answer || studentIdAnswer?.text;
+        if (!studentId) return false;
+        
+        // Check if this submission belongs to a student in this class
+        return students.some(s => {
+          const numericCoreId = s.coreId.startsWith('C') ? s.coreId.substring(1) : s.coreId;
+          return numericCoreId === studentId;
+        });
+      }) || [];
+      
+      // Filter validation cache and create summaries
+      const validationCache = await window.JotFormCache.loadValidationCache();
+      const validationSummaries = {};
+      if (validationCache) {
+        for (const [coreId, data] of validationCache.entries()) {
+          if (studentCoreIds.has(coreId)) {
+            // Create compact summary (exclude full question details)
+            validationSummaries[coreId] = {
+              coreId: data.coreId,
+              studentId: data.studentId,
+              studentName: data.studentName,
+              setStatus: data.setStatus,
+              lastValidated: data.lastValidated,
+              taskSummaries: {}
+            };
+            
+            // Include only task summaries
+            if (data.taskValidation) {
+              for (const [taskId, taskData] of Object.entries(data.taskValidation)) {
+                validationSummaries[coreId].taskSummaries[taskId] = {
+                  taskId: taskData.taskId,
+                  title: taskData.title,
+                  totalQuestions: taskData.totalQuestions,
+                  answeredQuestions: taskData.answeredQuestions,
+                  correctAnswers: taskData.correctAnswers,
+                  completionPercentage: taskData.completionPercentage,
+                  accuracyPercentage: taskData.accuracyPercentage,
+                  terminated: taskData.terminated,
+                  error: taskData.error
+                };
+              }
+            }
+          }
+        }
+      }
+      
+      // Create export data
+      const exportData = {
+        metadata: {
+          exportTime: new Date().toISOString(),
+          classId: classData.classId,
+          className: classData.actualClassName,
+          schoolId: classData.schoolId,
+          studentCount: students.length,
+          submissionsCount: filteredSubmissions.length,
+          validationsCount: Object.keys(validationSummaries).length
+        },
+        students: students,
+        submissions: filteredSubmissions,
+        validationSummaries: validationSummaries
+      };
+      
+      // Download as JSON
+      const filename = `class-cache_${classData.classId}_${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      console.log(`[ClassPage] Exported ${filteredSubmissions.length} submissions and ${Object.keys(filteredValidation).length} validations for ${students.length} students`);
+    } catch (error) {
+      console.error('[ClassPage] Export failed:', error);
+      alert('Export failed: ' + error.message);
+    }
+  }
+
+  /**
+   * Setup export button
+   */
+  function setupExportButton() {
+    const exportButton = document.getElementById('export-button');
+    if (exportButton) {
+      exportButton.addEventListener('click', exportClassCache);
+    }
+  }
+
+  /**
    * Render set status indicator
    */
   function renderSetStatus(status, label) {
     const statusConfig = {
       green: { class: 'status-green', textClass: 'text-emerald-600', text: 'Complete' },
+      orange: { class: 'status-yellow', textClass: 'text-amber-600', text: 'In Progress' },
       yellow: { class: 'status-yellow', textClass: 'text-amber-600', text: 'Post-term' },
       red: { class: 'status-red', textClass: 'text-red-600', text: 'Incomplete' },
-      grey: { class: 'status-grey', textClass: 'text-[color:var(--muted-foreground)]', text: 'Not started' }
+      grey: { class: 'status-grey', textClass: 'text-[color:var(--muted-foreground)]', text: 'Not Started' }
     };
     
     const config = statusConfig[status] || statusConfig.grey;

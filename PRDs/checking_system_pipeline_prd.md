@@ -13,6 +13,112 @@ Define how the Checking System ingests Jotform data, transforms it into actionab
   - Webhooks are available but limited to form-level events; batching still required for reconciliation.
 - **Mapping assets**: Completion logic relies on `assets/id_mapping/*.enc` (district/group/school/class roster) and `assets/id_mapping/jotformquestions.json` for resolver tables.
 
+## CRITICAL DISCOVERY: JotForm API Filter Breakthrough (October 2025)
+
+### Problem: Server-Side Filters Were Broken
+After extensive testing (documented in `test-jotform-filter.html` and `test-jotform-filters.ps1`), we discovered that JotForm's documented filter operators **DO NOT WORK** for student ID lookups:
+
+**❌ BROKEN FILTERS (All return 545 submissions but only 2-3 actual matches):**
+- `{"20:eq":"10261"}` - QID-based equality filter
+- `{"student-id:eq":"10261"}` - Field name-based filter  
+- `{"20:contains":"10261"}` - Contains operator on student-id field
+
+**Root Cause:** JotForm API returns the full dataset regardless of filter parameters on the student-id field (QID 20). The API downloads all 545+ submissions before attempting to filter, and the filter logic fails to properly match student IDs.
+
+### Solution: `:matches` Operator on SessionKey Field
+
+**✅ WORKING FILTER:** `{"q3:matches":"10261"}` 
+
+**Why This Works:**
+- Uses the `:matches` operator (pattern matching) instead of `:eq` (exact equality)
+- Filters on **sessionkey field (QID 3)** instead of student-id field (QID 20)
+- SessionKey format: `{studentId}_{yyyymmdd}_{hh}_{mm}` (e.g., `10261_20251014_10_25`)
+- Pattern matching finds all sessionkeys containing the student ID
+- **Server-side filtering actually works** - returns only matching submissions!
+
+**Test Results (October 16, 2025):**
+```powershell
+TEST 5: Matches Operator (q3:matches)
+Filter: {"q3:matches":"10261"}
+✅ Response: 2 submissions returned
+✅ Validation: 2/2 submissions contain pattern "10261"
+✅ Student IDs: 2/2 exact matches
+Result: 100% accuracy, 0% false positives
+```
+
+**Performance Impact:**
+- **Old Method**: Download 545 submissions (~30 MB) → Filter client-side → Get 2 matches
+- **New Method**: Download 2 submissions (~110 KB) → Already filtered → Get 2 matches
+- **Improvement**: 99.6% reduction in data transfer, instant results
+
+### Implementation Requirements
+
+**All JotForm API calls for student lookups MUST use this filter:**
+
+```javascript
+// CORRECT - Use :matches on sessionkey (QID 3)
+const filter = {
+  "q3:matches": studentId  // Numeric ID without "C" prefix
+};
+
+const url = `https://api.jotform.com/form/${formId}/submissions?` +
+            `apiKey=${apiKey}` +
+            `&filter=${encodeURIComponent(JSON.stringify(filter))}` +
+            `&limit=1000` +
+            `&orderby=created_at` +
+            `&direction=ASC`;
+```
+
+**DO NOT use these broken filters:**
+```javascript
+// ❌ WRONG - These are broken and will return hundreds of wrong submissions
+{"20:eq": studentId}           // Broken
+{"student-id:eq": studentId}   // Broken
+{"20:contains": studentId}     // Broken
+```
+
+### Files That Must Use This Filter
+1. **`assets/js/jotform-cache.js`** - `filterByCoreId()` method
+2. **`assets/js/checking-system-student-page.js`** - `fetchAndPopulateJotformData()` function
+3. **`processor_agent.ps1`** - Student submission lookup (if migrated to web)
+4. Any future student data retrieval logic
+
+### Validation Logic Still Required
+Even with working filters, implement client-side validation to ensure data integrity:
+
+```javascript
+// After fetching with :matches filter, validate each submission
+for (const submission of submissions) {
+  const sessionKey = submission.answers?.['3']?.answer;
+  const studentId = submission.answers?.['20']?.answer;
+  
+  // Verify sessionkey contains the pattern
+  if (!sessionKey?.includes(targetStudentId)) {
+    console.warn('False positive from filter');
+    continue;
+  }
+  
+  // Verify student ID matches exactly (recommended)
+  if (studentId?.trim() !== targetStudentId) {
+    console.warn('SessionKey match but student ID mismatch');
+    // Decide whether to include or exclude
+  }
+}
+```
+
+### Test Coverage
+Comprehensive test suite in place:
+- **HTML Interactive Tests**: `test-jotform-filter.html` (7 test scenarios)
+- **PowerShell Tests**: `test-jotform-filters.ps1` (5 test scenarios with validation)
+- **Test Data**: Student ID 10261 (2 submissions), SessionKey validation
+- **Verification**: All 7 filter types tested, only `:matches` works correctly
+
+### Future Considerations
+- **Monitor JotForm API changes**: If they fix the `:eq` operator on QID 20, we can simplify
+- **Cache strategy remains critical**: Even with working filters, global cache eliminates redundant API calls
+- **Document in onboarding**: All developers must know about this filter limitation
+- **Alert on filter failures**: Log warnings if returned submission count > expected
+
 ## High-Level Pipeline Flow
 1. **Scheduler trigger** (cron or dashboard action) initiates the data refresh.
 2. **Fetch coordinator** orchestrates batched API pulls per configured form ID, respecting rate limits and capturing pagination cursors.

@@ -48,20 +48,30 @@
 
             <!-- System Status Pills -->
             <div class="entry-card mb-6 p-4">
-                <div class="flex items-center gap-3 flex-wrap">
-                    <!-- Decryption Status Pill -->
-                    <div id="decryption-status-badge" class="badge-error flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium">
-                        <span class="status-indicator inline-block h-2 w-2 rounded-full"></span>
-                        <span id="decryption-status-text">Not Decrypted</span>
+                <div class="flex items-center justify-between gap-3 flex-wrap">
+                    <div class="flex items-center gap-3 flex-wrap">
+                        <!-- Decryption Status Pill -->
+                        <div id="decryption-status-badge" class="badge-error flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium">
+                            <span class="status-indicator inline-block h-2 w-2 rounded-full"></span>
+                            <span id="decryption-status-text">Not Decrypted</span>
+                        </div>
+                        
+                        <!-- JotForm Cache Status Pill -->
+                        <div id="system-health-badge" class="badge-error flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium">
+                            <span class="status-indicator inline-block h-2 w-2 rounded-full"></span>
+                            <span id="status-text">System Not Ready</span>
+                        </div>
+                        
+                        <span class="text-xs text-[color:var(--muted-foreground)]">Last Synced: <span class="font-mono" id="snapshot-timestamp">—</span></span>
                     </div>
                     
-                    <!-- JotForm Cache Status Pill -->
-                    <div id="system-health-badge" class="badge-error flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium">
-                        <span class="status-indicator inline-block h-2 w-2 rounded-full"></span>
-                        <span id="status-text">System Not Ready</span>
-                    </div>
-                    
-                    <span class="text-xs text-[color:var(--muted-foreground)]">Last Synced: <span class="font-mono" id="snapshot-timestamp">—</span></span>
+                    <!-- Export Cache Button -->
+                    <button id="export-cache-btn" 
+                            class="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-[color:var(--primary)] hover:bg-[color:var(--muted)] rounded-full transition-colors"
+                            title="Export cache to JSON files for inspection">
+                        <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                        <span>Export Cache</span>
+                    </button>
                 </div>
             </div>
 

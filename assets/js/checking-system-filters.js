@@ -256,14 +256,54 @@
     dropdown.className = 'absolute z-10 mt-1 w-full bg-white border border-[color:var(--border)] rounded-lg shadow-lg max-h-60 overflow-y-auto hidden';
     dropdown.dataset.filterId = filterId;
 
-    input.addEventListener('input', () => showSchoolDropdown(input, dropdown, filterId));
+    let selectedIndex = -1;
+    
+    input.addEventListener('input', () => {
+      selectedIndex = -1;
+      showSchoolDropdown(input, dropdown, filterId);
+    });
     input.addEventListener('focus', () => showSchoolDropdown(input, dropdown, filterId));
     input.addEventListener('blur', () => setTimeout(() => dropdown.classList.add('hidden'), 200));
+    
+    // Keyboard navigation
+    input.addEventListener('keydown', (e) => {
+      const options = dropdown.querySelectorAll('.school-option');
+      if (options.length === 0) return;
+      
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        selectedIndex = Math.min(selectedIndex + 1, options.length - 1);
+        updateSelectedOption(options, selectedIndex);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        selectedIndex = Math.max(selectedIndex - 1, -1);
+        updateSelectedOption(options, selectedIndex);
+      } else if (e.key === 'Enter' && selectedIndex >= 0) {
+        e.preventDefault();
+        // Trigger mousedown event (not click) since handlers are on mousedown
+        const mousedownEvent = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
+        options[selectedIndex].dispatchEvent(mousedownEvent);
+      }
+    });
 
     container.innerHTML = '';
     container.style.position = 'relative';
     container.appendChild(input);
     container.appendChild(dropdown);
+  }
+
+  /**
+   * Helper function to update selected option styling for keyboard navigation
+   */
+  function updateSelectedOption(options, selectedIndex) {
+    options.forEach((opt, idx) => {
+      if (idx === selectedIndex) {
+        opt.classList.add('bg-gray-200', 'keyboard-selected');
+        opt.scrollIntoView({ block: 'nearest' });
+      } else {
+        opt.classList.remove('bg-gray-200', 'keyboard-selected');
+      }
+    });
   }
 
   /**
@@ -311,20 +351,25 @@
     }
 
     dropdown.innerHTML = filtered.map(school => `
-      <div class="px-3 py-2 hover:bg-[color:var(--muted)] cursor-pointer text-sm font-noto school-option" 
+      <div class="px-3 py-2 cursor-pointer text-sm font-noto school-option" 
            data-school-id="${school.schoolId}"
-           data-display-name="${school.displayName}">
+           data-display-name="${school.displayName}"
+           onmouseenter="this.classList.add('bg-gray-200')" 
+           onmouseleave="if(!this.classList.contains('keyboard-selected')) this.classList.remove('bg-gray-200')">
         ${school.displayName}
       </div>
     `).join('');
 
     dropdown.querySelectorAll('.school-option').forEach(option => {
-      option.addEventListener('click', () => {
+      // Use mousedown instead of click to fire before blur event
+      option.addEventListener('mousedown', (e) => {
+        e.preventDefault(); // Prevent blur from firing
         const schoolId = option.dataset.schoolId;
         const school = appData.schoolsMap.get(schoolId);
         input.value = option.dataset.displayName;
         dropdown.classList.add('hidden');
         handleValueChange(filterId, FILTER_TYPES.SCHOOL, school);
+        input.blur();
       });
     });
 
@@ -332,10 +377,81 @@
   }
 
   /**
-   * Render class dropdown (filtered by ALL active higher-level filters)
+   * Render class searchable input (filtered by ALL active higher-level filters)
    * Priority: School > District+Group (intersection)
+   * Searchable by class ID and class name
    */
   function renderClassSelector(container, filterId) {
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = 'Search class by name or ID...';
+    input.className = 'w-full border border-[color:var(--border)] rounded-lg shadow-sm text-sm px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]/30 font-noto';
+    input.dataset.filterId = filterId;
+    input.dataset.filterType = FILTER_TYPES.CLASS;
+    input.autocomplete = 'off';
+
+    // Check if this filter already has a value
+    const currentFilter = activeFilters[filterId];
+    if (currentFilter?.type === FILTER_TYPES.CLASS && currentFilter.value) {
+      input.value = currentFilter.value.displayName || '';
+    }
+
+    const dropdown = document.createElement('div');
+    dropdown.className = 'absolute z-10 mt-1 w-full bg-white border border-[color:var(--border)] rounded-lg shadow-lg max-h-60 overflow-y-auto hidden';
+    dropdown.dataset.filterId = filterId;
+
+    let selectedIndex = -1;
+    
+    input.addEventListener('input', () => {
+      selectedIndex = -1;
+      showClassDropdown(input, dropdown, filterId);
+    });
+    input.addEventListener('focus', () => showClassDropdown(input, dropdown, filterId));
+    input.addEventListener('blur', () => setTimeout(() => dropdown.classList.add('hidden'), 200));
+    
+    // Keyboard navigation
+    input.addEventListener('keydown', (e) => {
+      const options = dropdown.querySelectorAll('.class-option');
+      if (options.length === 0) return;
+      
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        selectedIndex = Math.min(selectedIndex + 1, options.length - 1);
+        updateSelectedOption(options, selectedIndex);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        selectedIndex = Math.max(selectedIndex - 1, -1);
+        updateSelectedOption(options, selectedIndex);
+      } else if (e.key === 'Enter' && selectedIndex >= 0) {
+        e.preventDefault();
+        // Trigger mousedown event (not click) since handlers are on mousedown
+        const mousedownEvent = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
+        options[selectedIndex].dispatchEvent(mousedownEvent);
+      }
+    });
+
+    container.innerHTML = '';
+    container.style.position = 'relative';
+    container.appendChild(input);
+    container.appendChild(dropdown);
+  }
+
+  /**
+   * Show class dropdown with filtered results (respecting ALL active higher-level filters)
+   * Priority: School > District+Group (intersection)
+   * Search by class ID and class name
+   */
+  function showClassDropdown(input, dropdown, filterId) {
+    const query = input.value.trim();
+    
+    // Don't show dropdown if no query entered
+    if (!query) {
+      dropdown.classList.add('hidden');
+      return;
+    }
+    
+    const queryLower = query.toLowerCase();
+    
     // Get active filters
     const districtFilter = Object.values(activeFilters).find(f => f.type === FILTER_TYPES.DISTRICT);
     const groupFilter = Object.values(activeFilters).find(f => f.type === FILTER_TYPES.GROUP);
@@ -366,39 +482,43 @@
       availableClasses = availableClasses.filter(c => schoolIds.has(c.schoolId));
     }
     
-    if (availableClasses.length === 0) {
-      container.innerHTML = `
-        <div class="w-full border border-[color:var(--border)] rounded-lg shadow-sm text-sm px-3 py-2 bg-gray-100 text-[color:var(--muted-foreground)] cursor-not-allowed">
-          No classes available for selected filters...
-        </div>
-      `;
+    // Apply search query - search by class ID and class name
+    const filtered = availableClasses.filter(c => 
+      c.classId.toLowerCase().includes(queryLower) ||
+      c.actualClassName.toLowerCase().includes(queryLower) ||
+      c.displayName.toLowerCase().includes(queryLower)
+    ).slice(0, 50);
+
+    if (filtered.length === 0) {
+      dropdown.classList.add('hidden');
       return;
     }
 
-    const schoolClasses = availableClasses;
+    dropdown.innerHTML = filtered.map(classItem => `
+      <div class="px-3 py-2 cursor-pointer text-sm font-noto class-option" 
+           data-class-id="${classItem.classId}"
+           data-display-name="${classItem.displayName}"
+           onmouseenter="this.classList.add('bg-gray-200')" 
+           onmouseleave="if(!this.classList.contains('keyboard-selected')) this.classList.remove('bg-gray-200')">
+        <div class="font-medium">${classItem.actualClassName}</div>
+        <div class="text-xs text-[color:var(--muted-foreground)]">Class ID: ${classItem.classId}</div>
+      </div>
+    `).join('');
 
-    // Check if this filter already has a value
-    const currentFilter = activeFilters[filterId];
-    const currentValue = currentFilter?.type === FILTER_TYPES.CLASS ? currentFilter.value?.classId : '';
-
-    const select = document.createElement('select');
-    select.className = 'w-full border border-[color:var(--border)] rounded-lg shadow-sm text-sm px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]/30 font-noto';
-    select.dataset.filterId = filterId;
-    select.dataset.filterType = FILTER_TYPES.CLASS;
-
-    select.innerHTML = `
-      <option value="">Choose class...</option>
-      ${schoolClasses.map(c => `<option value="${c.classId}" ${c.classId === currentValue ? 'selected' : ''}>${c.displayName}</option>`).join('')}
-    `;
-
-    select.addEventListener('change', () => {
-      const classId = select.value;
-      const classData = appData.classesMap.get(classId);
-      handleValueChange(filterId, FILTER_TYPES.CLASS, classData);
+    dropdown.querySelectorAll('.class-option').forEach(option => {
+      // Use mousedown instead of click to fire before blur event
+      option.addEventListener('mousedown', (e) => {
+        e.preventDefault(); // Prevent blur from firing
+        const classId = option.dataset.classId;
+        const classData = appData.classesMap.get(classId);
+        input.value = option.dataset.displayName;
+        dropdown.classList.add('hidden');
+        handleValueChange(filterId, FILTER_TYPES.CLASS, classData);
+        input.blur();
+      });
     });
 
-    container.innerHTML = '';
-    container.appendChild(select);
+    dropdown.classList.remove('hidden');
   }
 
   /**
@@ -423,9 +543,35 @@
     dropdown.className = 'absolute z-10 mt-1 w-full bg-white border border-[color:var(--border)] rounded-lg shadow-lg max-h-60 overflow-y-auto hidden';
     dropdown.dataset.filterId = filterId;
 
-    input.addEventListener('input', () => showStudentDropdown(input, dropdown, filterId));
+    let selectedIndex = -1;
+    
+    input.addEventListener('input', () => {
+      selectedIndex = -1;
+      showStudentDropdown(input, dropdown, filterId);
+    });
     input.addEventListener('focus', () => showStudentDropdown(input, dropdown, filterId));
     input.addEventListener('blur', () => setTimeout(() => dropdown.classList.add('hidden'), 200));
+    
+    // Keyboard navigation
+    input.addEventListener('keydown', (e) => {
+      const options = dropdown.querySelectorAll('.student-option');
+      if (options.length === 0) return;
+      
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        selectedIndex = Math.min(selectedIndex + 1, options.length - 1);
+        updateSelectedOption(options, selectedIndex);
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        selectedIndex = Math.max(selectedIndex - 1, -1);
+        updateSelectedOption(options, selectedIndex);
+      } else if (e.key === 'Enter' && selectedIndex >= 0) {
+        e.preventDefault();
+        // Trigger mousedown event (not click) since handlers are on mousedown
+        const mousedownEvent = new MouseEvent('mousedown', { bubbles: true, cancelable: true });
+        options[selectedIndex].dispatchEvent(mousedownEvent);
+      }
+    });
 
     container.innerHTML = '';
     container.style.position = 'relative';
@@ -508,21 +654,26 @@
     }
 
     dropdown.innerHTML = filtered.map(student => `
-      <div class="px-3 py-2 hover:bg-[color:var(--muted)] cursor-pointer text-sm font-noto student-option" 
+      <div class="px-3 py-2 cursor-pointer text-sm font-noto student-option" 
            data-core-id="${student.coreId}"
-           data-display-name="${student.displayName}">
+           data-display-name="${student.displayName}"
+           onmouseenter="this.classList.add('bg-gray-200')" 
+           onmouseleave="if(!this.classList.contains('keyboard-selected')) this.classList.remove('bg-gray-200')">
         <div class="font-medium">${student.studentName}</div>
         <div class="text-xs text-[color:var(--muted-foreground)]">Core ID: ${student.coreId} · Student ID: ${student.studentId}</div>
       </div>
     `).join('');
 
     dropdown.querySelectorAll('.student-option').forEach(option => {
-      option.addEventListener('click', () => {
+      // Use mousedown instead of click to fire before blur event
+      option.addEventListener('mousedown', (e) => {
+        e.preventDefault(); // Prevent blur from firing
         const coreId = option.dataset.coreId;
         const student = appData.coreIdMap.get(coreId);
         input.value = option.dataset.displayName;
         dropdown.classList.add('hidden');
         handleValueChange(filterId, FILTER_TYPES.STUDENT, student);
+        input.blur();
       });
     });
 
