@@ -486,7 +486,7 @@ Documented in `PRDs/processor_agent_runbook_prd.md`:
 
 ### Deployment Process
 1. Test changes in development environment
-2. Update relevant documentation (PRDs, README, AGENDA)
+2. Update relevant documentation (PRDs, README, Agent)
 3. Create pull request with detailed description
 4. Code review by at least one team member
 5. Merge to main branch
@@ -500,7 +500,7 @@ Documented in `PRDs/processor_agent_runbook_prd.md`:
 ### Documentation
 - **PRDs/** - Detailed product requirement documents
 - **README.md** - Quick start guide and technical overview
-- **AGENDA.md** - This file (roadmap and strategic planning)
+- **Agent.md** - This file (roadmap and strategic planning)
 
 ### Key PRD Files
 - `overview_prd.md` - System architecture and user journeys

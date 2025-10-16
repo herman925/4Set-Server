@@ -116,7 +116,7 @@ Monitoring Dashboard (GitHub Pages)
 | `queue_manifest.json` | Persistent queue state for restart recovery |
 | `requirements.txt` | Python dependencies (pypdf/PyPDF2) |
 | `README.md` | This file - comprehensive documentation |
-| `AGENDA.md` | Development roadmap and strategic planning |
+| `Agent.md` | Development roadmap and strategic planning |
 
 ### Key Directories
 
@@ -1365,7 +1365,7 @@ Get-Counter '\PhysicalDisk(*)\% Disk Time'
 1. **Clone repository** and create feature branch
 2. **Make changes** following code standards (see below)
 3. **Test locally** with `-SingleRun` mode
-4. **Update documentation** (PRDs, README, AGENDA)
+4. **Update documentation** (PRDs, README, Agent)
 5. **Commit with conventional commit messages**
 6. **Create pull request** with detailed description
 
@@ -1399,7 +1399,7 @@ type(scope): description
 
 ### Documentation
 - **Main Documentation**: `/PRDs/` folder
-- **AGENDA.md**: Development roadmap and priorities
+- **Agent.md**: Development roadmap and priorities
 - **Security Architecture**: `PRDs/data_security_prd.md`
 - **Termination Rules**: `PRDs/termination-rules.md`
 
