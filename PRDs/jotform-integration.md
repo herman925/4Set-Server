@@ -6,11 +6,13 @@ last-updated: 2025-09-02
 
 # Jotform Integration
 
+> **Documentation Note:** This document consolidates Jotform-related specifications from several legacy PRD files into a single comprehensive source.
+
 Single source for Jotform upload/upsert, sessionkey handling, field mapping, retries/backoff, and verification across the web app and desktop tools.
 
-Origin docs consolidated here:
-- PRDs/sessionkey-jotform-pipeline-plan.md
-- PRDs/jotform-api.md
+**Originally consolidated from** (now deprecated):
+- `sessionkey-jotform-pipeline-plan.md`
+- `jotform-api.md`
 
 ## Overview
 - Primary key: `sessionkey` (lowercase). Must be stable and immutable.

@@ -42,7 +42,7 @@ Document the autonomous PDF processing pipeline executed by the Windows-based pr
    - Batched payloads sent to serverless proxy for Jotform upsert (`sessionkey` unique) with retries/backoff.
    - Emits `uploading`, `completed` (with `jotformsubmissionid`), or `upload_error` events.
 7. **Archival & Reporting**
-   - Successful runs apply the filing protocol (`TEMP/data-tool/filing-protocol.md`) to move artefacts into `...\97 - Project RAW Data\PDF Form Data\{schoolId}` on OneDrive with collision-safe naming.
+   - Successful runs apply the filing protocol (implemented in `processor_agent.ps1`) to move artefacts into `...\97 - Project RAW Data\PDF Form Data\{schoolId}` on OneDrive with collision-safe naming.
    - Rejected/failed items relocate to `PDF Form Data\Unsorted\` alongside diagnostic JSON for follow-up.
    - Summaries persisted to daily log and exposed to dashboard via telemetry API (`/api/summary`, `/api/events`).
 

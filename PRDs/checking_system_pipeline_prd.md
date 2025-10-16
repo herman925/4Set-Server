@@ -580,7 +580,7 @@ checking_system_4_student.html?studentId={coreId}
      - Questions answered
      - Questions unanswered
      - Completion percentage
-   - Load termination rules from `TEMP/tasks/termination-rules.md`
+   - Load termination rules from `PRDs/termination-rules.md`
    - Check for termination conditions (e.g., multiple wrong answers in critical section)
    - Assign traffic light status:
      - **Green**: All required questions answered, no terminations
@@ -696,7 +696,7 @@ function mergeSubmissions(submissions) {
 ## Testing & Validation Strategy
 - **Manual probes**:
   - Use curl or PowerShell `Invoke-RestMethod` to call `https://api.jotform.com/form/{formId}/submissions` with sandbox keys; validate pagination, filter accuracy, and response latency.
-  - Capture representative payloads for unit-test fixtures, masking PII before storing under `/TEMP/checking-system/sample_responses/`.
+  - Capture representative payloads for unit-test fixtures, masking PII before storing in test fixtures directory (location TBD).
 - **Automated integration tests**:
   - Mock Jotform using WireMock or MSW with recorded payloads; ensure the pipeline handles pagination, duplicates, and throttling.
   - Regression suite verifying completion/termination calculations against curated golden datasets (import from legacy desktop exports).

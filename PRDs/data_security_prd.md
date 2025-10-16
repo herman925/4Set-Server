@@ -44,7 +44,7 @@
 | `pdfmapping.json` | `assets/id_mapping/` | PDF field mapping | Plaintext (allowed) | Non-sensitive metadata |
 
 ## 6. References
-- `TEMP/architecture/security-architecture.md`
+- This document consolidates security architecture (formerly in legacy `TEMP/architecture/` documentation)
 - `PRDs/processor_agent_runbook_prd.md`
 - `PRDs/checking_system_pipeline_prd.md`
 - Front-end modules (archived): `secure-credentials.js`, `secure-csv.js`
