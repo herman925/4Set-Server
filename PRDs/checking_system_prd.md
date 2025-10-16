@@ -670,6 +670,640 @@ Developers can inspect cache in DevTools:
 - Pre-compute filter result counts ("X schools match your criteria")
 - Lazy-load dropdown options (e.g., load class options only when School is selected)
 
+## Hierarchical Validation Cache Architecture
+
+### Overview
+
+The Checking System implements a **multi-level pre-computed validation cache** to enable instant performance across all drilldown levels (student → class → school → group → district) while maintaining TaskValidator as the single source of truth.
+
+**Design Principle**: Validate once at the student level using TaskValidator, then aggregate upward through the hierarchy. Higher-level pages read pre-computed summaries rather than re-validating.
+
+### TaskValidator: Single Source of Truth
+
+**File**: `assets/js/task-validator.js`
+
+TaskValidator is the **centralized validation engine** for all task completion logic. It determines:
+- Task completion status (all questions answered vs. partial)
+- Question-level correctness (right/wrong answers)
+- Termination rules (e.g., CWR terminates after 10 consecutive incorrect - Rule 4.2)
+- Timeout detection (e.g., SYM/NONSYM 2-minute timed tests with continuous answer pattern analysis)
+- Post-termination data (answers recorded after termination gates)
+- SYM/NONSYM merge (112 questions combined as single task)
+
+**Critical Rules:**
+1. **NO other file should implement validation logic** - all pages must consume TaskValidator
+2. **SYM and NONSYM are merged** - counted as 1 task, not 2, with combined 112 questions
+3. **Completion requires all questions answered** - not based on percentage thresholds
+4. **Post-termination tracking included** - flags answers after termination for data quality review
+
+**API Surface:**
+```javascript
+// Validate all tasks for a student
+const taskValidation = await window.TaskValidator.validateAllTasks(mergedAnswers);
+
+// Returns structure:
+{
+  "erv": {
+    taskId: "erv",
+    title: "English Vocab",
+    questions: [...],  // 51 questions with {id, studentAnswer, correctAnswer, isCorrect}
+    totals: { total: 51, answered: 51, correct: 48, incorrect: 3 },
+    terminated: false,
+    error: null
+  },
+  "chinesewordreading": {
+    taskId: "chinesewordreading",
+    title: "Chinese Word Reading",
+    questions: [...],  // 55 questions
+    totals: { total: 55, answered: 45, correct: 38 },
+    terminated: true,
+    terminationIndex: 45,
+    terminationReason: "Rule 4.2 - 10 consecutive incorrect",
+    hasPostTerminationAnswers: false
+  },
+  "sym": {
+    taskId: "sym",
+    title: "Symbolic / Non-Symbolic",
+    questions: [...],  // Combined 112 questions (56 SYM + 56 NONSYM)
+    totals: { total: 112, answered: 91, correct: 88 },
+    terminated: false,
+    timedOut: true,
+    symAnalysis: { 
+      timedOut: true, 
+      lastAnsweredIndex: 45, 
+      hasPostTerminationAnswers: false,
+      hasMissingData: false,
+      complete: false
+    },
+    nonsymAnalysis: { 
+      timedOut: true, 
+      lastAnsweredIndex: 45,
+      hasPostTerminationAnswers: false,
+      hasMissingData: false,
+      complete: false
+    }
+  }
+  // ... 14 total tasks (18 tasks - 4 merged)
+}
+```
+
+### Cache Levels & Data Structures
+
+#### Level 1: Student Validation Cache (Detailed)
+
+**IndexedDB Store**: `student_validation`
+
+**Purpose**: Store full TaskValidator output for individual student detail pages
+
+**Structure**:
+```javascript
+{
+  // Identity
+  coreId: "C10001",
+  studentId: "St11121",
+  studentName: "張梓煋",
+  classId: "C-096-02",
+  schoolId: "S096",
+  group: 2,
+  district: "Shatin",
+  gender: "M",
+  
+  // Raw submissions
+  submissions: [...],  // Array of JotForm submission objects
+  mergedAnswers: {...},  // All answers merged across submissions
+  
+  // TaskValidator output (pre-computed once)
+  taskValidation: {
+    erv: { 
+      totals: {total: 51, answered: 51, correct: 48},
+      questions: [...],  // Full question array for display
+      terminated: false
+    },
+    sym: { 
+      totals: {total: 112, answered: 91, correct: 88},
+      questions: [...],  // Combined SYM+NONSYM questions
+      timedOut: true,
+      symAnalysis: {...},
+      nonsymAnalysis: {...}
+    },
+    theoryofmind: {
+      totals: {total: 24, answered: 23, correct: 16},
+      questions: [...],
+      terminated: false
+    },
+    chinesewordreading: {
+      totals: {total: 55, answered: 55, correct: 50},
+      questions: [...],
+      terminated: true,
+      terminationIndex: 45,
+      terminationReason: "Rule 4.2",
+      hasPostTerminationAnswers: false
+    }
+    // ... all 14 validated tasks
+  },
+  
+  // Set-level summary (for class page quick lookup)
+  setStatus: {
+    set1: { 
+      status: 'incomplete',  // complete | incomplete | notstarted
+      tasksComplete: 3,
+      tasksTotal: 4,
+      tasks: [
+        {taskId: 'erv', complete: true, answered: 51, total: 51},
+        {taskId: 'sym', complete: true, answered: 91, total: 112},
+        {taskId: 'theoryofmind', complete: false, answered: 23, total: 24},
+        {taskId: 'chinesewordreading', complete: true, answered: 55, total: 55}
+      ]
+    },
+    set2: { status: 'complete', tasksComplete: 4, tasksTotal: 4, tasks: [...] },
+    set3: { status: 'complete', tasksComplete: 3, tasksTotal: 3, tasks: [...] },
+    set4: { status: 'incomplete', tasksComplete: 2, tasksTotal: 3, tasks: [...] }
+  },
+  
+  // Student-level aggregate (for school/group/district pages)
+  overallStatus: 'incomplete',  // complete | incomplete | notstarted
+  completionPercentage: 85.7,  // (12/14 tasks complete)
+  totalTasks: 14,
+  completeTasks: 12,
+  incompleteTasks: 2,
+  
+  // Alert flags
+  hasTerminations: true,
+  terminationCount: 1,
+  terminationTasks: ['chinesewordreading'],
+  hasPostTerminationData: false,
+  
+  // Metadata
+  lastValidated: 1234567890,
+  validationVersion: "1.0"
+}
+```
+
+**Size Estimate**: ~8KB per student (includes full task validation)
+
+#### Level 2: Class Summary Cache (Aggregate)
+
+**IndexedDB Store**: `class_summary`
+
+**Purpose**: Store class-level aggregates for school drilldown page
+
+**Structure**:
+```javascript
+{
+  // Identity
+  classId: "C-096-02",
+  className: "K1A 愛班",
+  schoolId: "S096",
+  teacherNames: "陸潔儀",
+  
+  // Counts
+  totalStudents: 26,
+  studentsWithData: 23,
+  studentsNoData: 3,
+  
+  // Overall class status (simple 3-status)
+  overallStatus: 'incomplete',  // complete | incomplete | notstarted
+  
+  // Student status breakdown
+  studentStatus: {
+    complete: 15,      // Students with all 4 sets done
+    incomplete: 8,     // Students with some sets done
+    notstarted: 3      // Students with no data
+  },
+  
+  completionPercentage: 65.2,  // (15/23) students with data complete
+  
+  // Set-level details (for class page display)
+  setCompletion: {
+    set1: {
+      studentsComplete: 20,
+      studentsIncomplete: 3,
+      studentsNotStarted: 3,
+      completionRate: 0.87  // 20/23 with data
+    },
+    set2: {
+      studentsComplete: 18,
+      studentsIncomplete: 5,
+      studentsNotStarted: 3,
+      completionRate: 0.78
+    },
+    set3: {
+      studentsComplete: 15,
+      studentsIncomplete: 8,
+      studentsNotStarted: 3,
+      completionRate: 0.65
+    },
+    set4: {
+      studentsComplete: 10,
+      studentsIncomplete: 13,
+      studentsNotStarted: 3,
+      completionRate: 0.43
+    }
+  },
+  
+  // Alert flags
+  hasTerminations: true,
+  terminationCount: 2,
+  studentsWithTerminations: ["C10042", "C10087"],
+  
+  // Student references (for drilldown)
+  studentIds: ["C10001", "C10002", ...],  // 26 Core IDs
+  
+  // Metadata
+  lastAggregated: 1234567890,
+  sourceCount: 23  // Students with validation data
+}
+```
+
+**Size Estimate**: ~500 bytes per class
+
+#### Level 3: School Summary Cache (Aggregate)
+
+**IndexedDB Store**: `school_summary`
+
+**Purpose**: Store school-level aggregates for group/district drilldown pages
+
+**Structure**:
+```javascript
+{
+  // Identity
+  schoolId: "S096",
+  schoolName: "Regina Coeli Anglo-Chinese Kindergarten",
+  schoolNameChinese: "天后中英文幼稚園",
+  district: "Shatin",
+  group: 2,
+  
+  // Counts
+  totalClasses: 8,
+  totalStudents: 203,
+  studentsWithData: 187,
+  studentsNoData: 16,
+  
+  // Overall school status (simple 3-status)
+  overallStatus: 'incomplete',  // complete | incomplete | notstarted
+  
+  // Student-level aggregate (school-wide)
+  studentStatus: {
+    complete: 145,     // Students with all 4 sets done (77.5%)
+    incomplete: 42,    // Students with some sets done (22.5%)
+    notstarted: 16     // Students with no data
+  },
+  
+  completionPercentage: 77.5,  // (145/187) students with data complete
+  
+  // Class-level aggregate (for school drilldown page list)
+  classStatus: {
+    complete: 5,       // Classes where >90% students complete
+    incomplete: 3,     // Classes with mixed completion
+    notstarted: 0      // Classes with no data
+  },
+  
+  // Alert aggregates
+  hasTerminations: true,
+  totalTerminations: 15,
+  classesWithTerminations: 6,
+  
+  // Class references (for drilldown)
+  classIds: ["C-096-01", "C-096-02", ...],  // 8 Class IDs
+  
+  // Metadata
+  lastAggregated: 1234567890,
+  sourceCount: 8  // Classes aggregated
+}
+```
+
+**Size Estimate**: ~800 bytes per school
+
+**Status Calculation**:
+```javascript
+// School status based on student completion
+function calculateSchoolStatus(studentStatus) {
+  const { complete, incomplete, notstarted } = studentStatus;
+  const totalWithData = complete + incomplete;
+  
+  // >90% of students with data are complete → school is "complete"
+  if (totalWithData > 0 && complete / totalWithData >= 0.9) {
+    return 'complete';
+  }
+  // Some students with data → school is "incomplete"
+  if (totalWithData > 0) {
+    return 'incomplete';
+  }
+  // No data at all → "notstarted"
+  return 'notstarted';
+}
+```
+
+#### Level 4: District Summary Cache (Aggregate)
+
+**IndexedDB Store**: `district_summary`
+
+**Purpose**: Store district-level aggregates for district drilldown page
+
+**Structure**:
+```javascript
+{
+  // Identity
+  district: "Shatin",
+  
+  // Counts
+  totalSchools: 15,
+  totalClasses: 120,
+  totalStudents: 3045,
+  studentsWithData: 2834,
+  studentsNoData: 211,
+  
+  // Overall district status
+  overallStatus: 'incomplete',
+  
+  // School-level aggregate (for district page list)
+  schoolStatus: {
+    complete: 8,       // Schools where >90% students complete
+    incomplete: 6,     // Schools with mixed completion
+    notstarted: 1      // Schools with no data
+  },
+  
+  completionPercentage: 71.3,  // (2021/2834) students with data complete
+  
+  // Group breakdown (for district drilldown - schools by group)
+  byGroup: {
+    1: { 
+      schools: 5, 
+      complete: 3, 
+      incomplete: 2, 
+      notstarted: 0,
+      completionPercentage: 75.2
+    },
+    2: { 
+      schools: 6, 
+      complete: 3, 
+      incomplete: 2, 
+      notstarted: 1,
+      completionPercentage: 68.9
+    },
+    3: { 
+      schools: 4, 
+      complete: 2, 
+      incomplete: 2, 
+      notstarted: 0,
+      completionPercentage: 72.1
+    }
+  },
+  
+  // School references (for drilldown)
+  schoolIds: ["S001", "S023", "S045", ...],  // 15 School IDs
+  
+  // Metadata
+  lastAggregated: 1234567890,
+  sourceCount: 15  // Schools aggregated
+}
+```
+
+**Size Estimate**: ~1KB per district
+
+#### Level 5: Group Summary Cache (Aggregate)
+
+**IndexedDB Store**: `group_summary`
+
+**Purpose**: Store group-level aggregates for group drilldown page
+
+**Structure**:
+```javascript
+{
+  // Identity
+  group: 2,
+  
+  // Counts
+  totalSchools: 6,
+  totalClasses: 48,
+  totalStudents: 1234,
+  studentsWithData: 1156,
+  studentsNoData: 78,
+  
+  // Overall group status
+  overallStatus: 'incomplete',
+  
+  // School-level aggregate (for group page list)
+  schoolStatus: {
+    complete: 3,       // Schools where >90% students complete
+    incomplete: 2,     // Schools with mixed completion
+    notstarted: 1      // Schools with no data
+  },
+  
+  completionPercentage: 68.9,  // (797/1156) students with data complete
+  
+  // District breakdown (for group drilldown - schools by district)
+  byDistrict: {
+    "Shatin": { 
+      schools: 3, 
+      complete: 2, 
+      incomplete: 1,
+      notstarted: 0,
+      completionPercentage: 72.1
+    },
+    "Tuen Mun": { 
+      schools: 2, 
+      complete: 1, 
+      incomplete: 1,
+      notstarted: 0,
+      completionPercentage: 65.4
+    },
+    "Yuen Long": { 
+      schools: 1, 
+      complete: 0, 
+      incomplete: 0,
+      notstarted: 1,
+      completionPercentage: 0
+    }
+  },
+  
+  // School references (for drilldown)
+  schoolIds: ["S001", "S023", "S045", ...],  // 6 School IDs
+  
+  // Metadata
+  lastAggregated: 1234567890,
+  sourceCount: 6  // Schools aggregated
+}
+```
+
+**Size Estimate**: ~1KB per group
+
+### Status Calculation Logic
+
+#### Student-Level Status
+```javascript
+// Based on set completion (all 4 sets)
+function calculateStudentStatus(setStatus) {
+  const completeSets = Object.values(setStatus)
+    .filter(s => s.status === 'complete').length;
+  
+  if (completeSets === 4) return 'complete';
+  if (completeSets > 0) return 'incomplete';
+  return 'notstarted';
+}
+```
+
+#### Class-Level Status
+```javascript
+// Based on student statuses
+function calculateClassStatus(studentStatuses) {
+  const { complete, incomplete, notstarted } = studentStatuses;
+  const totalWithData = complete + incomplete;
+  
+  // If >90% of students with data are complete → class is "complete"
+  if (totalWithData > 0 && complete / totalWithData >= 0.9) {
+    return 'complete';
+  }
+  // Some students have data → class is "incomplete"
+  if (totalWithData > 0) {
+    return 'incomplete';
+  }
+  // No students have data → "notstarted"
+  return 'notstarted';
+}
+```
+
+#### School/Group/District Status
+Uses same logic as class-level, applied to lower-level aggregates.
+
+### Cache Building Strategy
+
+#### Phase 1: Initial Sync (Bottom-Up Aggregation)
+
+**Trigger**: User clicks "Fetch Database" button on home page
+
+**Process**:
+```javascript
+async function buildHierarchicalCache() {
+  // Step 1: Fetch all submissions from JotForm API
+  console.log('[CacheBuilder] Fetching submissions from JotForm...');
+  const submissions = await JotFormCache.getAllSubmissions(credentials);
+  
+  // Step 2: Group submissions by student (Core ID)
+  console.log('[CacheBuilder] Grouping submissions by student...');
+  const studentGroups = groupSubmissionsByStudent(submissions);
+  
+  // Step 3: Build Level 1 - Student validations (in Web Worker)
+  console.log('[CacheBuilder] Validating 3000 students (background worker)...');
+  const studentCache = await buildStudentValidationCache(studentGroups);
+  // Output: 3000 student_validation records in IndexedDB
+  
+  // Step 4: Build Level 2 - Class aggregations (fast - just summarize students)
+  console.log('[CacheBuilder] Aggregating 800 classes...');
+  const classCache = await aggregateByClass(studentCache);
+  // Output: 800 class_summary records in IndexedDB
+  
+  // Step 5: Build Level 3 - School aggregations
+  console.log('[CacheBuilder] Aggregating 120 schools...');
+  const schoolCache = await aggregateBySchool(classCache);
+  // Output: 120 school_summary records in IndexedDB
+  
+  // Step 6: Build Level 4 - District aggregations
+  console.log('[CacheBuilder] Aggregating 5 districts...');
+  const districtCache = await aggregateByDistrict(schoolCache);
+  // Output: 5 district_summary records in IndexedDB
+  
+  // Step 7: Build Level 5 - Group aggregations
+  console.log('[CacheBuilder] Aggregating 3 groups...');
+  const groupCache = await aggregateByGroup(schoolCache);
+  // Output: 3 group_summary records in IndexedDB
+  
+  console.log('[CacheBuilder] ✅ All cache levels built successfully');
+  updateStatusPill('green', 'System Ready');
+}
+```
+
+**Estimated Time**:
+- Fetch JotForm submissions: ~30 seconds (1 API call, 544 submissions)
+- Validate 3000 students: ~60 seconds (Web Worker, parallel processing)
+- Aggregate all levels: ~10 seconds (pure computation)
+- **Total: ~100 seconds (1.5 minutes) for initial sync**
+
+#### Phase 2: Incremental Updates
+
+**Trigger**: Single student's data changes (e.g., new submission uploaded)
+
+**Process**:
+```javascript
+async function updateStudentCache(coreId) {
+  // Step 1: Re-fetch submissions for this student only
+  const submissions = await JotFormCache.getSubmissionsForStudent(coreId);
+  
+  // Step 2: Re-validate this student
+  const studentCache = await validateStudent(coreId, submissions);
+  await saveToIndexedDB('student_validation', coreId, studentCache);
+  
+  // Step 3: Bubble up - Update class aggregate
+  const classId = studentCache.classId;
+  await updateClassAggregate(classId);
+  
+  // Step 4: Bubble up - Update school aggregate
+  const schoolId = studentCache.schoolId;
+  await updateSchoolAggregate(schoolId);
+  
+  // Step 5: Bubble up - Update district/group aggregates
+  await updateDistrictAggregate(studentCache.district);
+  await updateGroupAggregate(studentCache.group);
+  
+  console.log('[CacheBuilder] ✅ Incremental update complete');
+}
+```
+
+**Estimated Time**: <5 seconds for single student update cascade
+
+### Display Requirements by Page Level
+
+| Page Level | Displays | Status Detail | Cache Source |
+|------------|----------|---------------|--------------|
+| **Student** | Question-by-question tables with correctness | Full validation + post-termination flags | `student_validation` |
+| **Class** | Student list with 4 set columns | Set 1/2/3/4 status per student (green/yellow/red/grey) | `student_validation.setStatus` |
+| **School** | Class list with overall status | Complete/Incomplete/Not Started per class | `class_summary` |
+| **Group** | School list (grouped by district) | Complete/Incomplete/Not Started per school | `school_summary` |
+| **District** | School list (grouped by group) | Complete/Incomplete/Not Started per school | `school_summary` |
+
+### Storage Estimates
+
+```
+Student cache:     8KB × 3000 students = 24 MB
+Class cache:       500B × 800 classes = 400 KB
+School cache:      800B × 120 schools = 96 KB
+District cache:    1KB × 5 districts = 5 KB
+Group cache:       1KB × 3 groups = 3 KB
+---
+Total:             ~25 MB (well within IndexedDB's 50+ MB limit per origin)
+```
+
+### Performance Benefits
+
+| Page Level | Without Cache | With Hierarchical Cache | Improvement |
+|------------|---------------|------------------------|-------------|
+| **Student** | 3-4s (fetch + validate) | <100ms (direct read) | **97% faster** |
+| **Class (30 students)** | 90-120s (validate all) | <100ms (read 30 summaries) | **99.9% faster** |
+| **School (200 students)** | 600-900s (10-15 min) | <100ms (read 1 aggregate) | **99.98% faster** |
+| **Group (1000 students)** | 3000-4500s (50-75 min) | <100ms (read 1 aggregate) | **99.997% faster** |
+| **District (3000 students)** | 9000-13500s (2.5-3.7 hrs) | <100ms (read 1 aggregate) | **99.999% faster** |
+
+### Implementation Notes
+
+**Web Worker for Validation**:
+- TaskValidator operations run in a background Web Worker to avoid blocking UI
+- Progress updates sent to main thread for UI display
+- Enables parallel processing of student validations
+
+**Cache Invalidation**:
+- Time-based: Full re-sync every 24 hours
+- Manual: User can trigger "Refresh Data" to rebuild cache
+- Incremental: Individual student updates trigger cascade
+
+**Error Handling**:
+- If validation fails for a student, store error in cache
+- Page displays "Validation Error" status with retry option
+- Failed validations don't block aggregate calculations
+
+**Backward Compatibility**:
+- Temporary fallback: Class page uses `TASKNAME_Com` flags if cache not available
+- Final implementation: All pages require hierarchical cache
+
 ## Out of Scope
 - Direct modification of Jotform submissions (read-only analysis).
 - Manual data correction UI; remediation handled in existing tools/runbooks.

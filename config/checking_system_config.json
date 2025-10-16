@@ -13,11 +13,12 @@
       "populating": "Populating task data..."
     },
     "cacheMessages": {
-      "building": "Syncing with Jotform...",
+      "building": "Fetching database...",
+      "syncing": "Syncing with JotForm...",
       "fetchingPage": "Fetching page {page} of submissions...",
       "downloaded": "Downloaded {count} submissions",
       "caching": "Saving to local cache...",
-      "complete": "Cache ready! System is now operational."
+      "complete": "Database ready! System is now operational."
     }
   },
   "cache": {
@@ -27,17 +28,17 @@
     "statusLabels": {
       "notReady": "System Not Ready",
       "ready": "System Ready",
-      "syncing": "Syncing..."
+      "syncing": "Fetching..."
     },
     "modalText": {
-      "blockTitle": "Cache Not Built",
-      "blockMessage": "Please build the system cache first by clicking the status pill above.",
+      "blockTitle": "Database Not Fetched",
+      "blockMessage": "Please fetch the database from JotForm first by clicking the status pill above.",
       "syncTitle": "System Not Ready",
-      "syncMessage": "The system needs to sync with Jotform to enable fast searching. This is a one-time process that takes about 30-60 seconds.",
-      "syncButton": "Sync with Jotform",
+      "syncMessage": "The system needs to fetch the database from JotForm to enable fast searching. This is a one-time process that takes about 30-60 seconds.",
+      "syncButton": "Fetch Database",
       "syncCancel": "Cancel",
       "completeTitle": "System Ready",
-      "completeMessage": "Cache has been built successfully. You can now use the checking system."
+      "completeMessage": "Database has been fetched successfully. You can now use the checking system."
     }
   },
   "taskView": {

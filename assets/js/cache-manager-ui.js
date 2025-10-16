@@ -27,12 +27,43 @@
   }
 
   /**
-   * Check if cache exists and is valid
+   * Check if BOTH caches exist and are valid
+   * - Submissions cache (raw JotForm data)
+   * - Validation cache (TaskValidator results)
    */
   async function isCacheReady() {
+    const checkStartTime = Date.now();
+    console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Starting check at ${new Date(checkStartTime).toISOString()}`);
+    
     if (!window.JotFormCache) return false;
-    const stats = await window.JotFormCache.getCacheStats();
-    return stats.exists && stats.valid;
+    
+    // Check submissions cache
+    const submissionsCheckStart = Date.now();
+    const submissionsStats = await window.JotFormCache.getCacheStats();
+    const submissionsCheckEnd = Date.now();
+    console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Submissions check took ${submissionsCheckEnd - submissionsCheckStart}ms`);
+    
+    if (!submissionsStats.exists || !submissionsStats.valid) {
+      console.log('[CacheUI] Submissions cache not ready');
+      console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Total time ${Date.now() - checkStartTime}ms, result: FALSE (submissions missing)`);
+      return false;
+    }
+    
+    // Check validation cache
+    const validationCheckStart = Date.now();
+    const validationCache = await window.JotFormCache.loadValidationCache();
+    const validationCheckEnd = Date.now();
+    console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Validation check took ${validationCheckEnd - validationCheckStart}ms`);
+    
+    if (!validationCache || validationCache.size === 0) {
+      console.log('[CacheUI] Validation cache not ready');
+      console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Total time ${Date.now() - checkStartTime}ms, result: FALSE (validation missing)`);
+      return false;
+    }
+    
+    console.log('[CacheUI] Both caches ready: submissions + validation');
+    console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Total time ${Date.now() - checkStartTime}ms, result: TRUE ✅`);
+    return true;
   }
 
   /**
@@ -130,12 +161,20 @@
       }
       
     } else {
+      const checkStartTime = Date.now();
+      console.log(`[SYNC-TIMING] ⏱️ updateStatusPill: Starting cache readiness check at ${new Date(checkStartTime).toISOString()}`);
       console.log('[CacheUI] updateStatusPill checking cache readiness...');
+      
       const isReady = await isCacheReady();
+      
+      const checkEndTime = Date.now();
+      console.log(`[SYNC-TIMING] ⏱️ updateStatusPill: Cache check took ${checkEndTime - checkStartTime}ms`);
       console.log('[CacheUI] isCacheReady returned:', isReady);
       
       if (isReady) {
         // Green: System Ready (clickable to show cache info)
+        const pillGreenTime = Date.now();
+        console.log(`[SYNC-TIMING] ⏱️ updateStatusPill: Setting pill to GREEN at ${new Date(pillGreenTime).toISOString()}`);
         console.log('[CacheUI] Setting pill to GREEN (System Ready)');
         badge.classList.add('badge-success');
         statusText.textContent = config.cache.statusLabels.ready;
@@ -143,6 +182,8 @@
         badge.style.cursor = 'pointer';
       } else {
         // Red: System Not Ready
+        const pillRedTime = Date.now();
+        console.log(`[SYNC-TIMING] ⏱️ updateStatusPill: Setting pill to RED at ${new Date(pillRedTime).toISOString()}`);
         console.log('[CacheUI] Setting pill to RED (System Not Ready)');
         badge.classList.add('badge-error');
         statusText.textContent = config.cache.statusLabels.notReady;
@@ -168,37 +209,27 @@
    */
   function showSpotlight() {
     const badge = document.getElementById('system-health-badge');
-    if (!badge) return;
+    if (!badge) return {};
 
-    // Create spotlight overlay
-    const spotlight = document.createElement('div');
-    spotlight.id = 'cache-spotlight';
-    spotlight.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.7);
-      z-index: 9998;
-      pointer-events: none;
-    `;
+    // Remove any existing spotlight first
+    removeSpotlight();
 
     // Create spotlight cutout effect (highlight the pill)
     const pillRect = badge.getBoundingClientRect();
     const highlightBox = document.createElement('div');
+    highlightBox.id = 'cache-spotlight-highlight';
     highlightBox.style.cssText = `
       position: fixed;
       top: ${pillRect.top - 10}px;
       left: ${pillRect.left - 10}px;
       width: ${pillRect.width + 20}px;
       height: ${pillRect.height + 20}px;
-      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.7);
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
       border-radius: 9999px;
-      border: 3px solid #f59e0b;
+      border: 4px solid #f59e0b;
       z-index: 9999;
       pointer-events: none;
-      animation: pulse 2s ease-in-out infinite;
+      animation: spotlightPulse 2s ease-in-out infinite;
     `;
 
     // Add pulse animation
@@ -206,29 +237,39 @@
       const style = document.createElement('style');
       style.id = 'spotlight-style';
       style.textContent = `
-        @keyframes pulse {
-          0%, 100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.8; transform: scale(1.05); }
+        @keyframes spotlightPulse {
+          0%, 100% { 
+            opacity: 1; 
+            transform: scale(1);
+            border-color: #f59e0b;
+          }
+          50% { 
+            opacity: 1; 
+            transform: scale(1.05);
+            border-color: #fb923c;
+          }
         }
       `;
       document.head.appendChild(style);
     }
 
-    document.body.appendChild(spotlight);
     document.body.appendChild(highlightBox);
 
-    return { spotlight, highlightBox };
+    return { highlightBox };
   }
 
   /**
    * Remove spotlight effect
    */
   function removeSpotlight() {
-    const spotlight = document.getElementById('cache-spotlight');
-    if (spotlight) spotlight.remove();
+    const highlight = document.getElementById('cache-spotlight-highlight');
+    if (highlight) {
+      highlight.remove();
+    }
     
-    const highlights = document.querySelectorAll('[style*="box-shadow: 0 0 0 9999px"]');
-    highlights.forEach(el => el.remove());
+    // Fallback: remove any orphaned spotlight elements
+    const orphans = document.querySelectorAll('[id^="cache-spotlight"]');
+    orphans.forEach(el => el.remove());
   }
 
   /**
@@ -302,7 +343,6 @@
     modal.id = 'cache-block-modal';
     modal.className = 'modal-overlay';
     modal.innerHTML = `
-      <div class="modal-backdrop" style="background: rgba(0, 0, 0, 0.5);"></div>
       <div class="modal-content" style="max-width: 400px; margin-top: 100px; animation: slideDown 0.3s ease-out;">
         <div class="modal-header">
           <h3 class="text-lg font-semibold text-[color:var(--foreground)] flex items-center gap-2">
@@ -560,28 +600,111 @@
         // Force fetch (clear cache first)
         await window.JotFormCache.clearCache();
         
-        // Fetch all submissions
+        // Step 1: Fetch all submissions from JotForm API (0-70%)
         console.log('[CacheUI] Calling getAllSubmissions...');
+        progressBar.style.width = '70%';
+        progressPercent.textContent = '70%';
+        progressText.textContent = 'Fetching submissions from JotForm...';
+        
+        // This waits for IndexedDB write to fully complete
         const result = await window.JotFormCache.getAllSubmissions({
           formId: credentials.jotformFormId || credentials.formId,
           apiKey: credentials.jotformApiKey || credentials.apiKey
         });
         console.log('[CacheUI] getAllSubmissions returned:', result ? result.length : 0, 'submissions');
-
-        // Success!
-        console.log('[CacheUI] ✅ Cache build complete!');
         
-        // Immediately update pill to green (no delay)
+        // Step 2: Build validation cache (70-95%)
+        progressBar.style.width = '75%';
+        progressPercent.textContent = '75%';
+        progressText.textContent = 'Submissions cached, loading validation data...';
+        
+        // Get student data from CheckingSystemData
+        const cachedSystemData = window.CheckingSystemData?.getCachedData();
+        
+        console.log('[CacheUI] CheckingSystemData available?', !!window.CheckingSystemData);
+        console.log('[CacheUI] Students available?', !!cachedSystemData?.students);
+        
+        if (!cachedSystemData?.students) {
+          console.warn('[CacheUI] Student data not available, skipping validation cache build');
+          console.warn('[CacheUI] Validation cache will be built when class page loads');
+          
+          // Still mark as complete - submissions are cached
+          progressBar.style.width = '100%';
+          progressPercent.textContent = '100%';
+          progressText.textContent = 'Submissions cached! (Validation pending)';
+          
+          isSyncing = false;
+          currentSyncProgress = 100;
+          await updateStatusPill();
+          
+          modalTitle.textContent = 'Submissions Cached';
+          modalMessage.textContent = 'Submission data cached successfully. Validation will complete when you navigate to a class page.';
+          modalMessage.classList.remove('text-[color:var(--muted-foreground)]');
+          modalMessage.classList.add('text-yellow-600');
+          
+          cancelBtn.classList.add('hidden');
+          confirmBtn.textContent = 'Close';
+          confirmBtn.classList.remove('hidden');
+          confirmBtn.onclick = () => modal.remove();
+          
+          return;
+        }
+        
+        // Load survey structure
+        console.log('[CacheUI] Loading survey structure...');
+        const surveyResponse = await fetch('assets/tasks/survey-structure.json');
+        const surveyStructure = await surveyResponse.json();
+        console.log('[CacheUI] Survey structure loaded');
+        
+        progressText.textContent = 'Submissions cached, validating students...';
+        
+        // Hook up progress callback for validation
+        window.JotFormCache.setProgressCallback((message, progress) => {
+          if (progressBar) {
+            progressBar.style.width = `${progress}%`;
+            progressPercent.textContent = `${progress}%`;
+            progressText.textContent = message;
+          }
+          // Don't call updateStatusPill here - it causes hundreds of IndexedDB reads
+          // The pill will be updated once when validation completes
+        });
+        
+        console.log('[CacheUI] Building validation cache...');
+        const validationCache = await window.JotFormCache.buildStudentValidationCache(
+          cachedSystemData.students,
+          surveyStructure,
+          true // Force rebuild
+        );
+        console.log('[CacheUI] Validation cache built:', validationCache.size, 'students');
+        
+        // Clear progress callback
+        window.JotFormCache.setProgressCallback(null);
+        
+        // Step 3: All done (100%)
+        const progressBar100Time = Date.now();
+        progressBar.style.width = '100%';
+        progressPercent.textContent = '100%';
+        progressText.textContent = 'All caches ready!';
+        console.log(`[SYNC-TIMING] ⏱️ Progress bar set to 100% at: ${new Date(progressBar100Time).toISOString()}`);
+        
+        // Mark sync complete and update pill
         isSyncing = false;
         currentSyncProgress = 100;
+        
+        const pillUpdateStartTime = Date.now();
+        console.log(`[SYNC-TIMING] ⏱️ Starting pill update at: ${new Date(pillUpdateStartTime).toISOString()}`);
+        console.log(`[SYNC-TIMING] ⏱️ Time between progress bar 100% and pill update start: ${pillUpdateStartTime - progressBar100Time}ms`);
+        
         await updateStatusPill();
-        console.log('[CacheUI] Pill updated to green');
         
-        // Verify cache was saved (for debugging)
-        const stats = await window.JotFormCache.getCacheStats();
-        console.log('[CacheUI] Cache stats after sync:', stats);
+        const pillUpdateEndTime = Date.now();
+        console.log(`[SYNC-TIMING] ⏱️ Pill update completed at: ${new Date(pillUpdateEndTime).toISOString()}`);
+        console.log(`[SYNC-TIMING] ⏱️ Pill update took: ${pillUpdateEndTime - pillUpdateStartTime}ms`);
+        console.log(`[SYNC-TIMING] ⏱️ Total time from progress 100% to pill green: ${pillUpdateEndTime - progressBar100Time}ms`);
+        console.log('[CacheUI] ✅ Both caches complete, pill updated to green');
         
-        // Update modal
+        // NOW show success message (cache is confirmed saved)
+        progressText.textContent = 'Complete!';
         modalTitle.textContent = config.cache.modalText.completeTitle;
         modalMessage.textContent = config.cache.modalText.completeMessage;
         modalMessage.classList.remove('text-[color:var(--muted-foreground)]');
@@ -593,6 +716,7 @@
         confirmBtn.classList.remove('hidden');
         confirmBtn.onclick = () => {
           modal.remove();
+          // No need to update pill - already updated at line 585
         };
 
       } catch (error) {

@@ -184,9 +184,24 @@
       </button>
     `).join('');
 
-    // Add click handlers
+    // Add click handlers with cache check
     container.querySelectorAll('.pill-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
+        // Check if cache is ready before navigating
+        if (window.CacheManagerUI && typeof window.CacheManagerUI.isCacheReady === 'function') {
+          const cacheReady = await window.CacheManagerUI.isCacheReady();
+          if (!cacheReady) {
+            // Show blocking modal
+            if (typeof window.CacheManagerUI.showBlockingModal === 'function') {
+              window.CacheManagerUI.showBlockingModal();
+            } else {
+              alert('Please build the system cache first by clicking the red status pill above.');
+            }
+            return;
+          }
+        }
+        
+        // Cache is ready, navigate
         window.location.href = btn.dataset.url;
       });
     });

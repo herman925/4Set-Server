@@ -14,6 +14,28 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&family=Noto+Sans+TC&display=swap" rel="stylesheet" />
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+        .status-circle {
+            width: 14px;
+            height: 14px;
+            border-radius: 9999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .status-circle::after {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 9999px;
+            background-color: rgba(255, 255, 255, 0.85);
+        }
+        .status-green { background-color: #22c55e; }
+        .status-yellow { background-color: #fbbf24; }
+        .status-red { background-color: #ef4444; }
+        .status-grey { background-color: #cbd5e1; }
+    </style>
 </head>
 <body class="min-h-screen hero-background">
     <div class="relative overflow-hidden">
@@ -23,10 +45,19 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-16">
                     <div class="flex items-center gap-3">
-                        <a href="index.html" class="p-2 rounded-full hover:bg-[color:var(--muted)] text-[color:var(--muted-foreground)] hover:text-[color:var(--primary)] transition-colors">
-                            <i data-lucide="home" class="w-4 h-4"></i>
-                        </a>
-                        <nav id="breadcrumbs" class="text-sm text-[color:var(--muted-foreground)] flex items-center gap-2 font-noto"></nav>
+                        <button onclick="window.history.back()" class="hero-button secondary-button text-xs font-medium rounded-md px-3 py-1.5 inline-flex items-center gap-1.5">
+                            <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+                            <span>Back</span>
+                        </button>
+                        <nav class="breadcrumb-nav text-xs text-[color:var(--muted-foreground)] flex items-center gap-1.5 font-mono">
+                            <a href="#" class="breadcrumb-district px-2 py-1 rounded bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors">—</a>
+                            <i data-lucide="chevron-right" class="w-3 h-3 text-slate-400"></i>
+                            <a href="#" class="breadcrumb-group px-2 py-1 rounded bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors">—</a>
+                            <i data-lucide="chevron-right" class="w-3 h-3 text-slate-400"></i>
+                            <a href="#" class="breadcrumb-school px-2 py-1 rounded bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors">—</a>
+                            <i data-lucide="chevron-right" class="w-3 h-3 text-slate-400"></i>
+                            <span class="breadcrumb-class px-2 py-1 rounded bg-blue-50 text-blue-700 font-semibold">—</span>
+                        </nav>
                     </div>
                     <a href="checking_system_home.html" class="text-sm text-[color:var(--primary)] hover:underline">New Search</a>
                 </div>
@@ -34,107 +65,158 @@
         </header>
 
         <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4">
+            
             <!-- Class Profile -->
-            <div class="entry-card p-6 lg:p-8">
-                <h1 class="text-2xl font-bold text-[color:var(--foreground)] font-noto" id="class-name">Loading...</h1>
-                <p class="text-sm text-[color:var(--muted-foreground)] mt-1" id="school-name">School</p>
-
-                <!-- Metrics -->
-                <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3">
-                    <div class="bg-gradient-to-br from-white to-blue-50 rounded-lg border border-blue-200 p-4">
-                        <h3 class="text-xs text-[color:var(--muted-foreground)]">Total Students</h3>
-                        <p class="text-2xl font-semibold" id="total-students">0</p>
+            <details class="entry-card" open>
+                <summary class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between px-6 py-4 cursor-pointer list-none">
+                    <div>
+                        <h2 class="text-sm font-semibold text-[color:var(--foreground)] font-noto" id="class-name">Loading...</h2>
+                        <p class="text-xs text-[color:var(--muted-foreground)]" id="school-name">Tap to expand class details</p>
                     </div>
-                    <div class="bg-gradient-to-br from-white to-green-50 rounded-lg border border-green-200 p-4">
-                        <h3 class="text-xs text-[color:var(--muted-foreground)]">Avg Completion</h3>
-                        <p class="text-2xl font-semibold" id="avg-completion">—%</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-white to-purple-50 rounded-lg border border-purple-200 p-4">
-                        <h3 class="text-xs text-[color:var(--muted-foreground)]">Teacher</h3>
-                        <p class="text-sm font-medium" id="teacher-name">—</p>
-                    </div>
-                    <div class="bg-gradient-to-br from-white to-amber-50 rounded-lg border border-amber-200 p-4">
-                        <h3 class="text-xs text-[color:var(--muted-foreground)]">Class ID</h3>
-                        <p class="text-sm font-mono font-semibold" id="class-id">—</p>
+                    <span class="text-[11px] text-[color:var(--muted-foreground)]">Last synced · Today</span>
+                </summary>
+                <div class="px-6 pb-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-5 gap-2 text-xs">
+                        <div class="border border-[color:var(--border)] rounded-md p-2.5 bg-[color:var(--muted)]/30">
+                            <p class="text-[10px] uppercase text-[color:var(--muted-foreground)] tracking-wide">Students (with Core ID)</p>
+                            <p class="text-base font-semibold" id="total-students">0</p>
+                        </div>
+                        <div class="border border-[color:var(--border)] rounded-md p-2.5 bg-[color:var(--muted)]/30">
+                            <p class="text-[10px] uppercase text-[color:var(--muted-foreground)] tracking-wide">Teacher</p>
+                            <p class="text-base font-semibold font-noto" id="teacher-name">—</p>
+                        </div>
+                        <div class="border border-[color:var(--border)] rounded-md p-2.5 bg-[color:var(--muted)]/30">
+                            <p class="text-[10px] uppercase text-[color:var(--muted-foreground)] tracking-wide">School</p>
+                            <p class="text-xs font-semibold font-noto truncate" id="school-name-detail">—</p>
+                        </div>
+                        <div class="border border-[color:var(--border)] rounded-md p-2.5 bg-[color:var(--muted)]/30">
+                            <p class="text-[10px] uppercase text-[color:var(--muted-foreground)] tracking-wide">District</p>
+                            <p class="text-base font-semibold" id="district-name">—</p>
+                        </div>
+                        <div class="border border-[color:var(--border)] rounded-md p-2.5 bg-[color:var(--muted)]/30">
+                            <p class="text-[10px] uppercase text-[color:var(--muted-foreground)] tracking-wide">Group</p>
+                            <p class="text-base font-semibold" id="group-number">—</p>
+                        </div>
                     </div>
                 </div>
-            </div>
+            </details>
 
-            <!-- Students List -->
-            <div class="entry-card p-6">
-                <h2 class="text-lg font-semibold mb-4">Students</h2>
-                <div id="students-list" class="space-y-3"></div>
-            </div>
+            <!-- Class Metrics -->
+            <details class="entry-card" open>
+                <summary class="flex items-center justify-between px-6 py-4 cursor-pointer list-none">
+                    <h2 class="text-sm font-semibold text-[color:var(--foreground)]">Class-level Task Status Overview</h2>
+                    <span class="text-[11px] text-[color:var(--muted-foreground)]">Quick statistics</span>
+                </summary>
+                <div class="px-6 pb-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                    <div class="bg-gradient-to-br from-white to-blue-50 rounded-lg border border-blue-200 px-4 py-3">
+                        <h3 class="text-xs text-[color:var(--muted-foreground)] font-medium">Students with Data</h3>
+                        <p class="mt-1 text-2xl font-semibold text-[color:var(--foreground)]" id="students-with-data">0</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-white to-amber-50 rounded-lg border border-amber-200 px-4 py-3">
+                        <h3 class="text-xs text-[color:var(--muted-foreground)] font-medium">No Submissions Yet</h3>
+                        <p class="mt-1 text-2xl font-semibold text-[color:var(--foreground)]" id="students-without-data">0</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-white to-green-50 rounded-lg border border-green-200 px-4 py-3">
+                        <h3 class="text-xs text-[color:var(--muted-foreground)] font-medium">Data Coverage</h3>
+                        <p class="mt-1 text-2xl font-semibold text-[color:var(--foreground)]" id="data-percentage">0%</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-white to-purple-50 rounded-lg border border-purple-200 px-4 py-3">
+                        <h3 class="text-xs text-[color:var(--muted-foreground)] font-medium">Class ID</h3>
+                        <p class="mt-1 text-sm font-mono font-semibold text-[color:var(--foreground)]" id="class-id">—</p>
+                    </div>
+                </div>
+            </details>
+
+            <!-- Student List Table -->
+            <details class="entry-card" open>
+                <summary class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between px-6 py-4 border-b border-[color:var(--border)] cursor-pointer list-none">
+                    <div>
+                        <h2 class="text-sm font-semibold text-[color:var(--foreground)]">Student List</h2>
+                        <p class="text-xs text-[color:var(--muted-foreground)]">Click student name to view detailed assessment data</p>
+                    </div>
+                    <span class="text-[11px] text-[color:var(--muted-foreground)]">Showing students with Core IDs only</span>
+                </summary>
+                
+                <!-- Legend and Filters -->
+                <div class="px-6 py-3 border-b border-[color:var(--border)] bg-[color:var(--muted)]/20 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div class="flex items-center gap-4 text-xs text-[color:var(--muted-foreground)]">
+                        <span class="font-medium text-[color:var(--foreground)]">Legend:</span>
+                        <span class="inline-flex items-center gap-1.5">
+                            <span class="status-circle status-green"></span>
+                            <span>Complete</span>
+                        </span>
+                        <span class="inline-flex items-center gap-1.5">
+                            <span class="status-circle status-yellow"></span>
+                            <span>Post-termination</span>
+                        </span>
+                        <span class="inline-flex items-center gap-1.5">
+                            <span class="status-circle status-red"></span>
+                            <span>Incomplete</span>
+                        </span>
+                        <span class="inline-flex items-center gap-1.5">
+                            <span class="status-circle status-grey"></span>
+                            <span>Not started</span>
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <label for="student-view-filter" class="text-xs font-medium text-[color:var(--foreground)]">View:</label>
+                        <select id="student-view-filter" class="px-2 py-1 border border-[color:var(--border)] rounded-md bg-white text-xs focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]">
+                            <option value="all" selected>All Students</option>
+                            <option value="with-data">With Data Only</option>
+                            <option value="incomplete">Incomplete Only</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full text-sm">
+                        <thead class="bg-[color:var(--muted)]/30 text-xs text-[color:var(--muted-foreground)]">
+                            <tr>
+                                <th class="px-4 py-3 text-left font-medium">Student Name</th>
+                                <th class="px-4 py-3 text-left font-medium">Student ID</th>
+                                <th class="px-4 py-3 text-left font-medium">Core ID</th>
+                                <th class="px-4 py-3 text-left font-medium">Set 1</th>
+                                <th class="px-4 py-3 text-left font-medium">Set 2</th>
+                                <th class="px-4 py-3 text-left font-medium">Set 3</th>
+                                <th class="px-4 py-3 text-left font-medium">Set 4</th>
+                                <th class="px-4 py-3 text-left font-medium">Outstanding</th>
+                                <th class="px-4 py-3 text-center font-medium">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-[color:var(--border)]" id="students-tbody">
+                            <tr>
+                                <td colspan="9" class="px-4 py-8 text-center text-[color:var(--muted-foreground)]">
+                                    <div class="flex flex-col items-center gap-2">
+                                        <i data-lucide="loader" class="w-8 h-8 animate-spin"></i>
+                                        <p>Loading student data...</p>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </details>
         </main>
     </div>
 
+    <!-- Core Dependencies -->
+    <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
     <script src="assets/js/encryption.js"></script>
     <script src="assets/js/checking-system-data-loader.js"></script>
+    <script src="assets/js/task-validator.js"></script>
+    <script src="assets/js/jotform-cache.js"></script>
+    <script src="assets/js/jotform-api.js"></script>
+    <script src="assets/js/checking-system-class-page.js"></script>
+    
+    <!-- Initialize Page -->
     <script>
         (async () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const classId = urlParams.get('classId'); // Only param needed
-            
-            if (!classId) {
-                alert('No class specified');
-                window.location.href = 'checking_system_home.html';
-                return;
+            try {
+                await window.CheckingSystemClassPage.init();
+            } catch (error) {
+                console.error('[ClassPage] Initialization failed:', error);
+                alert('Failed to load class page. Please try again.');
             }
-
-            const cachedData = window.CheckingSystemData?.getCachedData();
-            if (!cachedData) {
-                alert('Please go through home page first');
-                window.location.href = 'checking_system_home.html';
-                return;
-            }
-
-            const classData = cachedData.classIdMap.get(classId);
-            if (!classData) {
-                alert('Class not found');
-                return;
-            }
-
-            // Derive parent context from class data
-            const school = cachedData.schoolIdMap.get(classData.schoolId);
-            const students = cachedData.students.filter(s => s.classId === classId);
-
-            // Update UI
-            document.getElementById('class-name').textContent = classData.actualClassName;
-            document.getElementById('school-name').textContent = school ? `${school.schoolNameChinese} (${school.schoolName})` : '';
-            document.getElementById('total-students').textContent = students.length;
-            document.getElementById('teacher-name').textContent = classData.teacherNames || 'N/A';
-            document.getElementById('class-id').textContent = classId;
-            document.title = `${classData.actualClassName} · 4Set Checking System`;
-
-            // Build breadcrumbs (derive from data)
-            const breadcrumbs = [];
-            if (school) {
-                if (school.district) {
-                    breadcrumbs.push(`<a href="checking_system_1_district.html?district=${encodeURIComponent(school.district)}" class="hover:text-[color:var(--primary)]">${school.district}</a>`);
-                }
-                if (school.group) {
-                    breadcrumbs.push(`<a href="checking_system_1_group.html?group=${school.group}" class="hover:text-[color:var(--primary)]">Group ${school.group}</a>`);
-                }
-                breadcrumbs.push(`<a href="checking_system_2_school.html?schoolId=${school.schoolId}" class="hover:text-[color:var(--primary)]">${school.schoolNameChinese}</a>`);
-            }
-            breadcrumbs.push(`<span class="font-medium text-[color:var(--foreground)]">${classData.actualClassName}</span>`);
-            document.getElementById('breadcrumbs').innerHTML = breadcrumbs.join(' <span class="text-[color:var(--border)]">/</span> ');
-
-            // Render students
-            document.getElementById('students-list').innerHTML = students.map(student => `
-                <a href="checking_system_4_student.html?coreId=${encodeURIComponent(student.coreId)}" 
-                   class="block p-4 border border-[color:var(--border)] rounded-lg hover:border-[color:var(--primary)] transition-colors">
-                    <div class="flex items-center justify-between">
-                        <div class="font-noto">
-                            <h3 class="font-semibold">${student.studentName}</h3>
-                            <p class="text-sm text-[color:var(--muted-foreground)]">Core ID: ${student.coreId} · Student ID: ${student.studentId}</p>
-                        </div>
-                        <i data-lucide="chevron-right" class="w-5 h-5 text-[color:var(--muted-foreground)]"></i>
-                    </div>
-                </a>
-            `).join('');
-
-            lucide.createIcons();
         })();
     </script>
 </body>

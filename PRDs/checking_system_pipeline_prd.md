@@ -60,13 +60,89 @@ Define how the Checking System ingests Jotform data, transforms it into actionab
   }
   ```
 
+### TaskValidator: Single Source of Truth
+**File**: `assets/js/task-validator.js`
+
+TaskValidator is the **centralized validation engine** for all task completion logic across the entire Checking System. It acts as an auditor that all pages must use - no custom validation logic should exist elsewhere.
+
+**Core Responsibilities**:
+- Load task definitions from `assets/tasks/*.json` and `assets/tasks/survey-structure.json`
+- Validate student answers against correct answers for all 18 tasks
+- Detect completion status (all questions answered vs. partial)
+- Apply termination rules (e.g., CWR terminates after 10 consecutive incorrect)
+- Detect timeout conditions (e.g., SYM/NONSYM 2-minute timed tests)
+- Merge SYM and NONSYM into single combined task (112 questions)
+- Calculate per-task statistics: `{total, answered, correct, terminated, timedOut}`
+- Return standardized validation objects consumed by all UI layers
+
+**API Surface**:
+```javascript
+// Validate all tasks for a student
+const taskValidation = await window.TaskValidator.validateAllTasks(mergedAnswers);
+
+// Returns:
+{
+  "erv": {
+    taskId: "erv",
+    title: "English Vocab",
+    questions: [...],  // Array of {id, studentAnswer, correctAnswer, isCorrect}
+    totals: { total: 51, answered: 51, correct: 48, incorrect: 3 },
+    terminated: false,
+    error: null
+  },
+  "sym": {
+    taskId: "sym",
+    title: "Symbolic / Non-Symbolic",
+    questions: [...],  // Combined 112 questions (56 SYM + 56 NONSYM)
+    totals: { total: 112, answered: 91, correct: 88 },
+    terminated: false,
+    timedOut: true,
+    symAnalysis: { timedOut: true, lastAnsweredIndex: 45 },
+    nonsymAnalysis: { timedOut: true, lastAnsweredIndex: 45 }
+  },
+  // ... other tasks
+}
+```
+
+**Multi-Level Integration**:
+- **Student Page** (`checking_system_4_student.html`): Calls `validateAllTasks()` once per student, displays detailed question tables
+- **Class Page** (`checking_system_3_class.html`): Calls `validateAllTasks()` for each student, aggregates to set-level status
+- **School Page** (future): Aggregates class-level validations
+- **Group/District Pages** (future): Aggregates school-level validations
+
+**Validation Flow**:
+```
+JotForm Submissions → Merge Answers → TaskValidator.validateAllTasks() →
+{
+  Task-level validation (correct/incorrect per question)
+  ↓
+  Set-level aggregation (4 tasks per set)
+  ↓
+  Status light calculation (green/yellow/red)
+  ↓
+  UI rendering (tables, pills, export CSVs)
+}
+```
+
+**Critical Rules**:
+1. **No page should implement custom validation** - all must use TaskValidator
+2. **SYM and NONSYM are merged** - counted as 1 task, not 2
+3. **Completion = all questions answered** - not based on percentage or `_Com` flags
+4. **Termination detection** - CWR terminates after 10 consecutive incorrect (Rule 4.2)
+5. **Timeout detection** - SYM/NONSYM analyze continuous answer patterns
+
 ### Completion & Termination Engine
-- Apply logic from `TEMP/tasks/termination-rules.md` and legacy `renderToc()` semantics:
-  - **Completion**: Mark set as complete when answered == total or when rule-driven termination qualifies (store reason string).
-  - **In progress**: answered > 0 but < total without termination reason.
-  - **Not started**: answered == 0.
-- Generate status lights (`status-green`, `status-yellow`, `status-red`) used by `.superdesign/design_iterations/checking_system_drilldown_*.html` reference layouts.
-- Capture per-set notes (e.g., unanswered question IDs, last submission timestamp) for tooltips.
+Built on top of TaskValidator's output:
+- Apply aggregation logic to roll up task validations into set-level metrics
+- **Completion**: All tasks in set have `totals.answered == totals.total` (100% answered)
+- **In progress**: Some tasks incomplete, calculate outstanding count
+- **Not started**: No tasks have any answered questions
+- Generate status lights (`status-green`, `status-yellow`, `status-red`) based on set completion rate:
+  - Green: ≥90% complete
+  - Yellow: 1-89% complete  
+  - Grey: 0% complete
+- Capture per-set notes (e.g., unanswered question IDs, termination flags, last submission timestamp) for tooltips
+- Store termination reasons from TaskValidator (e.g., "CWR terminated at Q45 - Rule 4.2")
 
 ### Aggregation Layer
 - Compute metrics for every hierarchy level:

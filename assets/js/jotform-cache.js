@@ -29,6 +29,12 @@
     name: 'JotFormCacheDB',
     storeName: 'cache'
   }) : null;
+  
+  // Create separate storage for validation cache
+  const validationStorage = typeof localforage !== 'undefined' ? localforage.createInstance({
+    name: 'JotFormCacheDB',
+    storeName: 'student_validation'
+  }) : null;
 
   /**
    * Global JotForm Cache Manager
@@ -84,13 +90,13 @@
       this.isLoading = true;
       console.log('[JotFormCache] Starting fresh fetch...');
       this.loadPromise = this.fetchAllSubmissions(credentials)
-        .then(submissions => {
+        .then(async submissions => {
           console.log('[JotFormCache] Fetch complete, saving', submissions.length, 'submissions');
-          this.saveToCache(submissions);
+          await this.saveToCache(submissions); // WAIT for IndexedDB write to complete
           this.cache = submissions;
           this.isLoading = false;
           this.loadPromise = null;
-          console.log('[JotFormCache] getAllSubmissions complete');
+          console.log('[JotFormCache] getAllSubmissions complete - cache committed');
           return submissions;
         })
         .catch(error => {
@@ -273,7 +279,10 @@
         await storage.removeItem(CACHE_KEY);
       }
       this.cache = null;
-      console.log('[JotFormCache] Cache cleared');
+      console.log('[JotFormCache] Submissions cache cleared');
+      
+      // Also clear validation cache
+      await this.clearValidationCache();
     }
 
     /**
@@ -351,6 +360,332 @@
         age: ageMinutes,
         valid: isValid,
         structureValid: structureValid
+      };
+    }
+
+    /**
+     * Build student validation cache (Level 1)
+     * Checks IndexedDB first, validates if needed, then saves
+     * @param {Array} students - Array of student objects from coreid.csv
+     * @param {Object} surveyStructure - Survey structure for task-to-set mapping
+     * @param {boolean} forceRebuild - Force rebuild even if cache exists
+     * @returns {Promise<Map>} - Map of coreId -> validation cache
+     */
+    async buildStudentValidationCache(students, surveyStructure, forceRebuild = false) {
+      console.log('[JotFormCache] Building student validation cache...');
+      
+      if (!window.TaskValidator) {
+        throw new Error('TaskValidator not loaded');
+      }
+      
+      // Check if validation cache exists and is valid
+      if (!forceRebuild) {
+        const cachedValidation = await this.loadValidationCache();
+        if (cachedValidation && cachedValidation.size > 0) {
+          console.log(`[JotFormCache] ✅ Loaded validation cache from IndexedDB: ${cachedValidation.size} students`);
+          return cachedValidation;
+        }
+      }
+      
+      console.log('[JotFormCache] Building fresh validation cache...');
+      const validationCache = new Map();
+      const submissions = await this.getAllSubmissions();
+      
+      if (!submissions || submissions.length === 0) {
+        console.warn('[JotFormCache] No submissions to validate');
+        return validationCache;
+      }
+      
+      // Group submissions by student
+      const studentSubmissions = new Map();
+      for (const submission of submissions) {
+        const studentIdAnswer = submission.answers?.['20'];
+        const studentId = studentIdAnswer?.answer || studentIdAnswer?.text;
+        if (!studentId) continue;
+        
+        // Find student by Core ID
+        const student = students.find(s => {
+          const numericCoreId = s.coreId.startsWith('C') ? s.coreId.substring(1) : s.coreId;
+          return numericCoreId === studentId;
+        });
+        
+        if (student) {
+          if (!studentSubmissions.has(student.coreId)) {
+            studentSubmissions.set(student.coreId, {
+              student,
+              submissions: []
+            });
+          }
+          studentSubmissions.get(student.coreId).submissions.push(submission);
+        }
+      }
+      
+      console.log(`[JotFormCache] Validating ${studentSubmissions.size} students...`);
+      
+      // Validate each student
+      let processed = 0;
+      const totalStudents = studentSubmissions.size;
+      
+      for (const [coreId, data] of studentSubmissions.entries()) {
+        try {
+          const cache = await this.validateStudent(data.student, data.submissions, surveyStructure);
+          validationCache.set(coreId, cache);
+          
+          processed++;
+          
+          // Report progress (75% to 95% = 20% range for validation)
+          const validationProgress = 75 + Math.round((processed / totalStudents) * 20);
+          this.emitProgress(`Validating students (${processed}/${totalStudents})`, validationProgress);
+          
+          if (processed % 10 === 0) {
+            console.log(`[JotFormCache] Validated ${processed}/${totalStudents} students`);
+          }
+        } catch (error) {
+          console.error(`[JotFormCache] Failed to validate ${coreId}:`, error);
+          validationCache.set(coreId, {
+            coreId,
+            error: error.message,
+            lastValidated: Date.now()
+          });
+          processed++;
+        }
+      }
+      
+      console.log(`[JotFormCache] ✅ Student validation complete: ${validationCache.size} students`);
+      
+      // Save to IndexedDB
+      await this.saveValidationCache(validationCache);
+      
+      return validationCache;
+    }
+    
+    /**
+     * Save validation cache to IndexedDB
+     * @param {Map} validationCache - Map of coreId -> validation data
+     */
+    async saveValidationCache(validationCache) {
+      if (!validationStorage) {
+        console.error('[JotFormCache] Validation storage not initialized');
+        return;
+      }
+      
+      try {
+        console.log('[JotFormCache] Saving validation cache to IndexedDB...');
+        
+        // Convert Map to object for storage
+        const cacheObject = {};
+        for (const [coreId, data] of validationCache.entries()) {
+          cacheObject[coreId] = data;
+        }
+        
+        const cacheEntry = {
+          validations: cacheObject,
+          timestamp: Date.now(),
+          count: validationCache.size,
+          version: "1.0"
+        };
+        
+        await validationStorage.setItem('validation_cache', cacheEntry);
+        console.log(`[JotFormCache] ✅ Saved validation cache: ${validationCache.size} students`);
+        
+        // Verify
+        const verification = await validationStorage.getItem('validation_cache');
+        console.log('[JotFormCache] Validation cache verification:', verification ? 'SUCCESS' : 'FAILED');
+      } catch (error) {
+        console.error('[JotFormCache] Failed to save validation cache:', error);
+      }
+    }
+    
+    /**
+     * Load validation cache from IndexedDB
+     * @returns {Promise<Map|null>} - Map of coreId -> validation data or null
+     */
+    async loadValidationCache() {
+      if (!validationStorage) {
+        console.warn('[JotFormCache] Validation storage not initialized');
+        return null;
+      }
+      
+      try {
+        const cacheEntry = await validationStorage.getItem('validation_cache');
+        
+        if (!cacheEntry || !cacheEntry.validations) {
+          console.log('[JotFormCache] No validation cache found');
+          return null;
+        }
+        
+        // Check if cache is stale (older than submissions cache)
+        const submissionsCache = await this.loadFromCache();
+        if (submissionsCache && cacheEntry.timestamp < submissionsCache.timestamp) {
+          console.log('[JotFormCache] Validation cache is stale, will rebuild');
+          return null;
+        }
+        
+        // Convert object back to Map
+        const validationCache = new Map();
+        for (const [coreId, data] of Object.entries(cacheEntry.validations)) {
+          validationCache.set(coreId, data);
+        }
+        
+        console.log(`[JotFormCache] Loaded validation cache: ${validationCache.size} students, age: ${Math.round((Date.now() - cacheEntry.timestamp) / 1000 / 60)} min`);
+        return validationCache;
+      } catch (error) {
+        console.error('[JotFormCache] Failed to load validation cache:', error);
+        return null;
+      }
+    }
+    
+    /**
+     * Clear validation cache from IndexedDB
+     */
+    async clearValidationCache() {
+      if (validationStorage) {
+        await validationStorage.removeItem('validation_cache');
+        console.log('[JotFormCache] Validation cache cleared');
+      }
+    }
+
+    /**
+     * Validate a single student using TaskValidator
+     * @param {Object} student - Student object
+     * @param {Array} submissions - Student's submissions
+     * @param {Object} surveyStructure - Survey structure
+     * @returns {Promise<Object>} - Validation cache entry
+     */
+    async validateStudent(student, submissions, surveyStructure) {
+      // Merge all submission answers
+      const mergedAnswers = {};
+      for (const submission of submissions) {
+        if (submission.answers) {
+          Object.assign(mergedAnswers, submission.answers);
+        }
+      }
+      
+      // Run TaskValidator
+      const taskValidation = await window.TaskValidator.validateAllTasks(mergedAnswers);
+      
+      // Build task-to-set mapping
+      const taskToSetMap = new Map();
+      for (const set of surveyStructure.sets) {
+        for (const section of set.sections) {
+          const taskName = section.file.replace('.json', '');
+          const taskKey = taskName.toLowerCase();
+          taskToSetMap.set(taskKey, set.id);
+          
+          const metadata = surveyStructure.taskMetadata[taskName];
+          if (metadata?.aliases) {
+            metadata.aliases.forEach(alias => {
+              taskToSetMap.set(alias.toLowerCase(), set.id);
+            });
+          }
+        }
+      }
+      
+      // Calculate set status
+      const setStatus = {
+        set1: { status: 'notstarted', tasksComplete: 0, tasksTotal: 0, tasks: [] },
+        set2: { status: 'notstarted', tasksComplete: 0, tasksTotal: 0, tasks: [] },
+        set3: { status: 'notstarted', tasksComplete: 0, tasksTotal: 0, tasks: [] },
+        set4: { status: 'notstarted', tasksComplete: 0, tasksTotal: 0, tasks: [] }
+      };
+      
+      // Count tasks per set
+      for (const set of surveyStructure.sets) {
+        setStatus[set.id].tasksTotal = set.sections.length;
+      }
+      
+      // Analyze each task
+      let totalTasks = 0;
+      let completeTasks = 0;
+      const terminationTasks = [];
+      let hasPostTerminationData = false;
+      
+      for (const [taskId, validation] of Object.entries(taskValidation)) {
+        if (validation.error || taskId === 'nonsym') continue;
+        
+        totalTasks++;
+        const setId = taskToSetMap.get(taskId);
+        if (!setId) continue;
+        
+        // TaskValidator returns answeredQuestions/totalQuestions, not totals.answered/total
+        const answered = validation.answeredQuestions || 0;
+        const total = validation.totalQuestions || 0;
+        
+        const isComplete = answered === total && total > 0;
+        
+        if (isComplete) {
+          completeTasks++;
+          setStatus[setId].tasksComplete++;
+        }
+        
+        if (validation.terminated) {
+          terminationTasks.push(taskId);
+        }
+        
+        if (validation.hasPostTerminationAnswers) {
+          hasPostTerminationData = true;
+        }
+        
+        setStatus[setId].tasks.push({
+          taskId,
+          complete: isComplete,
+          answered,
+          total
+        });
+      }
+      
+      // Calculate set status
+      for (const setId in setStatus) {
+        const set = setStatus[setId];
+        if (set.tasksTotal === 0) continue;
+        
+        const completionRate = set.tasksComplete / set.tasksTotal;
+        if (completionRate === 1) {
+          set.status = 'complete';
+        } else if (completionRate > 0) {
+          set.status = 'incomplete';
+        } else {
+          set.status = 'notstarted';
+        }
+      }
+      
+      // Calculate overall status
+      const completeSets = Object.values(setStatus).filter(s => s.status === 'complete').length;
+      let overallStatus = 'notstarted';
+      if (completeSets === 4) {
+        overallStatus = 'complete';
+      } else if (completeSets > 0 || completeTasks > 0) {
+        overallStatus = 'incomplete';
+      }
+      
+      return {
+        coreId: student.coreId,
+        studentId: student.studentId,
+        studentName: student.studentName,
+        classId: student.classId,
+        schoolId: student.schoolId,
+        group: student.group,
+        district: student.district || 'Unknown',
+        gender: student.gender,
+        
+        submissions,
+        mergedAnswers,
+        taskValidation,
+        setStatus,
+        
+        overallStatus,
+        completionPercentage: totalTasks > 0 ? (completeTasks / totalTasks) * 100 : 0,
+        totalTasks,
+        completeTasks,
+        incompleteTasks: totalTasks - completeTasks,
+        
+        hasTerminations: terminationTasks.length > 0,
+        terminationCount: terminationTasks.length,
+        terminationTasks,
+        hasPostTerminationData,
+        
+        lastValidated: Date.now(),
+        validationVersion: "1.0"
       };
     }
   }

@@ -1,6 +1,22 @@
 /**
  * Task Validator for 4Set Checking System
- * Loads task definitions and validates student answers
+ * 
+ * SINGLE SOURCE OF TRUTH for all task validation logic across the entire system.
+ * Acts as an auditor determining:
+ * - Task completion status (all questions answered)
+ * - Termination rules (e.g., 10 consecutive incorrect for CWR)
+ * - Timeout detection (e.g., 2-minute timer for SYM/NONSYM)
+ * - Question-level correctness
+ * - Task-level statistics (answered/correct counts)
+ * 
+ * SCOPE: Operates at ALL hierarchical levels:
+ * - Student level: validateAllTasks(mergedAnswers) for individual student
+ * - Class level: Call validateAllTasks() for each student, aggregate results
+ * - School level: Aggregate validation results for all classes in school
+ * - Group level: Aggregate validation results across school groups
+ * - District level: Aggregate validation results across districts
+ * 
+ * NO OTHER FILE should implement validation logic - all pages must use TaskValidator.
  */
 window.TaskValidator = (() => {
   // Task metadata loaded from survey-structure.json

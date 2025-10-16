@@ -1344,9 +1344,17 @@
       // Update checklist title
       checklistDiv.querySelector('span').textContent = 'Termination checklist · Chinese Word Reading';
       
-      // Check for post-termination questions (yellow flag)
+      // Get recorded termination value (from uploaded data)
+      const cwrTermField = 'CWR_10Incorrect';
+      const recordedValue = mergedAnswers[cwrTermField];
+      const recordedTerminated = recordedValue === '1' || recordedValue === 1;
+      
+      // Calculate termination based on actual consecutive incorrect (validation logic)
+      const calculatedTerminated = terminated; // validation.terminated already calculated this
+      
+      // Check for post-termination questions (mismatch indicator)
       let hasPostTerminationAnswers = false;
-      if (terminated) {
+      if (calculatedTerminated) {
         for (let i = terminationIndex + 1; i < validation.questions.length; i++) {
           if (validation.questions[i].studentAnswer !== null) {
             hasPostTerminationAnswers = true;
@@ -1355,18 +1363,24 @@
         }
       }
       
-      // Card styling: Green for proper termination, Yellow for post-termination answers, Gray for no termination
+      // Normalize to boolean
+      const recordedBool = Boolean(recordedTerminated);
+      const calculatedBool = Boolean(calculatedTerminated);
+      const mismatch = recordedBool !== calculatedBool;
+      
+      // Card styling: GREEN when both agree, ORANGE when mismatch, YELLOW when post-termination
       let statusClass;
       let statusColor;
       if (hasPostTerminationAnswers) {
         statusClass = 'border-orange-400 bg-orange-50';
         statusColor = 'text-orange-600';
-      } else if (terminated) {
+      } else if (mismatch) {
+        statusClass = 'border-orange-400 bg-orange-50';
+        statusColor = 'text-orange-600';
+      } else {
+        // Both agree (either both terminated OR both not terminated) - GREEN
         statusClass = 'border-green-400 bg-green-50';
         statusColor = 'text-green-600';
-      } else {
-        statusClass = 'border-gray-400 bg-gray-50';
-        statusColor = 'text-gray-600';
       }
       
       // Build unified card matching ERV/SYM structure (same width as ERV/CM)
@@ -1502,27 +1516,22 @@
       }
       
       const ignoredDueToPriorTermination = priorTerminationActive;
-      const mismatch = ignoredDueToPriorTermination
-        ? recordedTriggered
-        : recordedTriggered !== calculatedTriggered;
       
-      let statusClass = 'border-[color:var(--border)] bg-white';
+      // Normalize to boolean (handle undefined/null)
+      const recordedBool = Boolean(recordedTriggered);
+      const calculatedBool = Boolean(calculatedTriggered);
+      const mismatch = ignoredDueToPriorTermination
+        ? recordedBool
+        : recordedBool !== calculatedBool;
+      
+      let statusClass = '';
       if (ignoredDueToPriorTermination) {
         statusClass = 'border-blue-200 bg-blue-50';
       } else if (mismatch) {
         statusClass = 'border-orange-400 bg-orange-50';
-      } else if (recordedTriggered && calculatedTriggered) {
-        // Both agree: terminated - GREEN
+      } else {
+        // Both agree (either both triggered or both passed) - GREEN
         statusClass = 'border-green-400 bg-green-50';
-      } else if (!recordedTriggered && !calculatedTriggered) {
-        // Both agree: passed - GREEN
-        statusClass = 'border-green-400 bg-green-50';
-      } else if (recordedTriggered && !calculatedTriggered) {
-        // Mismatch: RED
-        statusClass = 'border-red-300 bg-red-50';
-      } else if (!recordedTriggered && calculatedTriggered) {
-        // Mismatch: RED
-        statusClass = 'border-red-300 bg-red-50';
       }
       
       const ruleCard = document.createElement('div');

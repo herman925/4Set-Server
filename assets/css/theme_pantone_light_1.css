@@ -73,9 +73,9 @@
 }
 
 .badge-success {
-  background-color: rgba(141, 190, 80, 0.18) !important;
-  color: var(--success) !important;
-  border: 1px solid rgba(141, 190, 80, 0.4) !important;
+  background-color: rgba(34, 197, 94, 0.1) !important;
+  color: rgb(34, 197, 94) !important;
+  border: 1px solid rgba(34, 197, 94, 0.25) !important;
 }
 
 .badge-warning {
