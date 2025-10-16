@@ -194,6 +194,7 @@
 
   /**
    * Convert validation cache set status to class page format
+   * By Set view: green (complete), red (incomplete), grey (not started) - NO yellow
    */
   function convertSetStatus(setStatus) {
     const result = {};
@@ -203,7 +204,7 @@
       if (set.status === 'complete') {
         result[setId] = 'green';
       } else if (set.status === 'incomplete') {
-        result[setId] = 'orange';
+        result[setId] = 'red';  // Changed from orange to red - no yellow in By Set view
       } else {
         result[setId] = 'grey';
       }
@@ -242,6 +243,9 @@
 
     // Render class metrics
     renderClassMetrics();
+
+    // Render legend (dynamic based on view mode)
+    renderLegend();
 
     // Render student table
     renderStudentTable();
@@ -392,6 +396,56 @@
   }
   
   /**
+   * Render dynamic legend based on current view mode
+   */
+  function renderLegend() {
+    const legendContainer = document.getElementById('legend-container');
+    if (!legendContainer) return;
+    
+    let legendHtml = '';
+    
+    if (currentViewMode === 'set') {
+      // By Set view: 3 colors (no yellow/post-term)
+      legendHtml += `
+        <span class="inline-flex items-center gap-1.5">
+          <span class="status-circle status-green"></span>
+          <span>Complete</span>
+        </span>
+        <span class="inline-flex items-center gap-1.5">
+          <span class="status-circle status-red"></span>
+          <span>Incomplete</span>
+        </span>
+        <span class="inline-flex items-center gap-1.5">
+          <span class="status-circle status-grey"></span>
+          <span>Not Started</span>
+        </span>
+      `;
+    } else {
+      // By Task view: 4 colors (includes yellow for Post-Term)
+      legendHtml += `
+        <span class="inline-flex items-center gap-1.5">
+          <span class="status-circle status-green"></span>
+          <span>Complete</span>
+        </span>
+        <span class="inline-flex items-center gap-1.5">
+          <span class="status-circle status-yellow"></span>
+          <span>Post-Term</span>
+        </span>
+        <span class="inline-flex items-center gap-1.5">
+          <span class="status-circle status-red"></span>
+          <span>Incomplete</span>
+        </span>
+        <span class="inline-flex items-center gap-1.5">
+          <span class="status-circle status-grey"></span>
+          <span>Not Started</span>
+        </span>
+      `;
+    }
+    
+    legendContainer.innerHTML = legendHtml;
+  }
+
+  /**
    * Update view mode button styles
    */
   function updateViewModeButtons() {
@@ -417,6 +471,9 @@
       viewBySetBtn.classList.remove('bg-[color:var(--primary)]', 'text-white', 'shadow-sm', 'bg-[color:var(--secondary)]', 'text-[color:var(--secondary-foreground)]');
       viewBySetBtn.classList.add('text-[color:var(--muted-foreground)]', 'hover:bg-[color:var(--primary)]', 'hover:text-white');
     }
+    
+    // Update legend after button styles
+    renderLegend();
   }
 
   /**
@@ -789,9 +846,17 @@
         );
         
         if (foundTask) {
+          // Post-term detection (yellow): Task has answers after termination
+          if (foundTask.hasPostTerminationAnswers) return 'status-yellow';
+          
+          // Complete (green): All questions answered or properly terminated
           if (foundTask.complete) return 'status-green';
-          if (foundTask.answered > 0) return 'status-yellow';
-          return 'status-red';
+          
+          // Incomplete (red): Started but not complete
+          if (foundTask.answered > 0) return 'status-red';
+          
+          // Not started (grey): No answers yet
+          return 'status-grey';
         }
       }
     }
@@ -843,13 +908,11 @@
   }
 
   /**
-   * Render set status indicator
+   * Render set status indicator (By Set view only - no yellow/post-term)
    */
   function renderSetStatus(status, label) {
     const statusConfig = {
       green: { class: 'status-green', textClass: 'text-emerald-600', text: 'Complete' },
-      orange: { class: 'status-yellow', textClass: 'text-amber-600', text: 'In Progress' },
-      yellow: { class: 'status-yellow', textClass: 'text-amber-600', text: 'Post-term' },
       red: { class: 'status-red', textClass: 'text-red-600', text: 'Incomplete' },
       grey: { class: 'status-grey', textClass: 'text-[color:var(--muted-foreground)]', text: 'Not Started' }
     };

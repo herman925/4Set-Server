@@ -767,7 +767,8 @@
           taskId,
           complete: isComplete,
           answered,
-          total
+          total,
+          hasPostTerminationAnswers: validation.hasPostTerminationAnswers || false
         });
       }
       

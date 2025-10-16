@@ -312,8 +312,8 @@
                 // Some complete, rest not started - Red
                 statusClass = 'status-red';
               } else if (incomplete > 0 && complete === 0) {
-                // None complete, but some in progress - Yellow
-                statusClass = 'status-yellow';
+                // None complete, but some in progress - Red (incomplete)
+                statusClass = 'status-red';
               }
               
               const title = `${complete} complete, ${incomplete} in progress, ${total - complete - incomplete} not started`;
@@ -616,8 +616,8 @@
                   <span class="text-[color:var(--muted-foreground)]">${complete} complete</span>
                 </div>
                 <div class="flex items-center gap-1.5">
-                  <span class="status-circle status-yellow" title="In Progress"></span>
-                  <span class="text-[color:var(--muted-foreground)]">${incomplete} in progress</span>
+                  <span class="status-circle status-red" title="Incomplete"></span>
+                  <span class="text-[color:var(--muted-foreground)]">${incomplete} incomplete</span>
                 </div>
                 <div class="flex items-center gap-1.5">
                   <span class="status-circle status-grey" title="Not Started"></span>

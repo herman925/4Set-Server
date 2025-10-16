@@ -350,7 +350,7 @@
                   <span>${complete}</span>
                 </span>
                 <span class="inline-flex items-center gap-1">
-                  <span class="status-circle status-yellow"></span>
+                  <span class="status-circle status-red"></span>
                   <span>${incomplete}</span>
                 </span>
                 <span class="inline-flex items-center gap-1">
