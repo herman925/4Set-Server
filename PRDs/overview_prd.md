@@ -49,8 +49,8 @@
 ### Monitoring Dashboard (front page successor)
 - Authenticate via system password, probe processor agent connectivity, display OneDrive sync status.
 - Surface live metrics (active queue count, last processed file, health indicators) and activity feed.
-- Provide detailed modals for each stage (validation, parsing, merge, upload) mirroring `.superdesign/design_iterations/*.html` screens as informational views.
-- Offer drilldown navigation from district → group → school → class → student with parity across desktop (`checking_system_drilldown_desktop_[1-5].html`) and mobile (`checking_system_drilldown_mobile_[1-5].html`) reference layouts.
+- Provide detailed modals for each stage (validation, parsing, merge, upload) following design patterns documented in the "Design TBC" section.
+- Offer drilldown navigation from district → group → school → class → student with parity across desktop and mobile reference layouts (see "Design TBC" section).
 - Offer operational controls (open upload folder, download logs, trigger retry) by invoking agent endpoints.
 - Highlight rejections with remediation guidance and links to naming rules.
 

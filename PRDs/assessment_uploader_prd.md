@@ -90,12 +90,11 @@ The Assessment Uploader is a GitHub Pages-hosted web interface for the 4Set Pipe
 │   │   └── upload.css          # Upload page specific
 │   ├── js/                     # (All inline for now)
 │   └── favicon.ico
-├── .superdesign/
-│   └── design_iterations/
-│       └── theme_pantone_light_1.css
 └── PRDs/
     └── assessment_uploader_prd.md
 ```
+
+**Note:** Design iterations previously in `.superdesign/design_iterations/` have been documented in `overview_prd.md` "Design TBC" section and the directory has been retired.
 
 ---
 
