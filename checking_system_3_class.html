@@ -177,7 +177,17 @@
                         <h2 class="text-sm font-semibold text-[color:var(--foreground)]">Student List</h2>
                         <p class="text-xs text-[color:var(--muted-foreground)]">Click student name to view detailed assessment data</p>
                     </div>
-                    <span class="text-[11px] text-[color:var(--muted-foreground)]">Showing students with Core IDs only</span>
+                    <div class="flex items-center gap-3">
+                        <span class="text-[11px] text-[color:var(--muted-foreground)]">View Mode:</span>
+                        <div class="inline-flex items-center bg-[color:var(--muted)]/30 rounded-lg p-1">
+                            <button id="view-by-set-btn" class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors bg-white shadow-sm text-[color:var(--foreground)]">
+                                By Set
+                            </button>
+                            <button id="view-by-task-btn" class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors text-[color:var(--muted-foreground)] hover:text-[color:var(--foreground)]">
+                                By Task
+                            </button>
+                        </div>
+                    </div>
                 </summary>
                 
                 <!-- Legend and Filters -->
@@ -212,31 +222,7 @@
                 </div>
                 
                 <div class="overflow-x-auto">
-                    <table class="min-w-full text-sm">
-                        <thead class="bg-[color:var(--muted)]/30 text-xs text-[color:var(--muted-foreground)]">
-                            <tr>
-                                <th class="px-4 py-3 text-left font-medium">Student Name</th>
-                                <th class="px-4 py-3 text-left font-medium">Student ID</th>
-                                <th class="px-4 py-3 text-left font-medium">Core ID</th>
-                                <th class="px-4 py-3 text-left font-medium">Set 1</th>
-                                <th class="px-4 py-3 text-left font-medium">Set 2</th>
-                                <th class="px-4 py-3 text-left font-medium">Set 3</th>
-                                <th class="px-4 py-3 text-left font-medium">Set 4</th>
-                                <th class="px-4 py-3 text-left font-medium">Outstanding</th>
-                                <th class="px-4 py-3 text-center font-medium">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-[color:var(--border)]" id="students-tbody">
-                            <tr>
-                                <td colspan="9" class="px-4 py-8 text-center text-[color:var(--muted-foreground)]">
-                                    <div class="flex flex-col items-center gap-2">
-                                        <i data-lucide="loader" class="w-8 h-8 animate-spin"></i>
-                                        <p>Loading student data...</p>
-                                    </div>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+                    <div id="students-table-container"></div>
                 </div>
             </details>
         </main>
