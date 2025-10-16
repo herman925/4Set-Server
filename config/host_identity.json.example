@@ -1,5 +1,0 @@
-{
-  "computerno": "095",
-  "hostName": "KS095",
-  "notes": "Override file for Synology/container deployments where COMPUTERNAME is not available or needs to be explicitly set. On Windows, this file is optional - the agent will extract computerno from %COMPUTERNAME% automatically."
-}
