@@ -134,13 +134,25 @@
         const classId = classItem['Class ID'];
         const schoolId = classItem['School ID'];
         
+        // Normalize grade from K1/K2/K3/Other to numeric 1/2/3/0
+        const rawGrade = classItem['Grade'] || '';
+        let normalizedGrade = 0; // Default to 0 for "Other"
+        if (rawGrade.toString().toUpperCase().includes('K1') || rawGrade.toString().toUpperCase().includes('N1')) {
+          normalizedGrade = 1;
+        } else if (rawGrade.toString().toUpperCase().includes('K2') || rawGrade.toString().toUpperCase().includes('N2')) {
+          normalizedGrade = 2;
+        } else if (rawGrade.toString().toUpperCase().includes('K3') || rawGrade.toString().toUpperCase().includes('N3')) {
+          normalizedGrade = 3;
+        }
+        
         const classData = {
           classId,
           schoolId,
           schoolName: classItem['School Name'],
           actualClassName: classItem['Actual Class Name'],
           teacherNames: classItem['Teacher Names 25/26'] || classItem['Teacher Names 24/25'] || '',
-          grade: classItem['Grade'] || '',
+          grade: normalizedGrade, // Store normalized numeric grade
+          gradeDisplay: rawGrade, // Keep original for display if needed
           displayName: classItem['Actual Class Name']
         };
         

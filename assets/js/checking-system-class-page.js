@@ -10,6 +10,7 @@
   let studentSubmissionData = new Map(); // coreId -> { submissions: [], setStatus: {}, outstanding: 0 }
   let surveyStructure = null; // Task-to-set mapping
   let taskToSetMap = new Map(); // taskKey -> setId
+  let currentViewMode = 'set'; // 'set' or 'task'
 
   /**
    * Initialize the page
@@ -255,6 +256,17 @@
   }
 
   /**
+   * Get display label for grade number
+   */
+  function getGradeLabel(gradeNumber) {
+    if (gradeNumber === 1) return 'K1';
+    if (gradeNumber === 2) return 'K2';
+    if (gradeNumber === 3) return 'K3';
+    if (gradeNumber === 0) return 'Other';
+    return 'N/A';
+  }
+
+  /**
    * Render class profile section
    */
   function renderClassProfile() {
@@ -263,7 +275,7 @@
     document.getElementById('school-name').textContent = schoolData ? 
       `${schoolData.schoolNameChinese} · ${schoolData.schoolName}` : '';
     
-    document.getElementById('class-grade').textContent = classData.grade || 'N/A';
+    document.getElementById('class-grade').textContent = getGradeLabel(classData.grade);
     document.getElementById('teacher-name').textContent = classData.teacherNames || 'N/A';
     document.getElementById('district-name').textContent = schoolData?.district || 'N/A';
     document.getElementById('group-number').textContent = schoolData?.group || 'N/A';
@@ -336,6 +348,48 @@
         renderStudentTable();
       });
     }
+    
+    // Setup view mode toggle buttons
+    const viewBySetBtn = document.getElementById('view-by-set-btn');
+    const viewByTaskBtn = document.getElementById('view-by-task-btn');
+    
+    if (viewBySetBtn && viewByTaskBtn) {
+      viewBySetBtn.addEventListener('click', () => {
+        currentViewMode = 'set';
+        updateViewModeButtons();
+        renderStudentTable();
+      });
+      
+      viewByTaskBtn.addEventListener('click', () => {
+        currentViewMode = 'task';
+        updateViewModeButtons();
+        renderStudentTable();
+      });
+    }
+  }
+  
+  /**
+   * Update view mode button styles
+   */
+  function updateViewModeButtons() {
+    const viewBySetBtn = document.getElementById('view-by-set-btn');
+    const viewByTaskBtn = document.getElementById('view-by-task-btn');
+    
+    if (!viewBySetBtn || !viewByTaskBtn) return;
+    
+    if (currentViewMode === 'set') {
+      viewBySetBtn.classList.add('bg-white', 'shadow-sm', 'text-[color:var(--foreground)]');
+      viewBySetBtn.classList.remove('text-[color:var(--muted-foreground)]', 'hover:text-[color:var(--foreground)]');
+      
+      viewByTaskBtn.classList.remove('bg-white', 'shadow-sm', 'text-[color:var(--foreground)]');
+      viewByTaskBtn.classList.add('text-[color:var(--muted-foreground)]', 'hover:text-[color:var(--foreground)]');
+    } else {
+      viewByTaskBtn.classList.add('bg-white', 'shadow-sm', 'text-[color:var(--foreground)]');
+      viewByTaskBtn.classList.remove('text-[color:var(--muted-foreground)]', 'hover:text-[color:var(--foreground)]');
+      
+      viewBySetBtn.classList.remove('bg-white', 'shadow-sm', 'text-[color:var(--foreground)]');
+      viewBySetBtn.classList.add('text-[color:var(--muted-foreground)]', 'hover:text-[color:var(--foreground)]');
+    }
   }
 
   /**
@@ -387,90 +441,249 @@
    * Render student table with set status columns
    */
   function renderStudentTable() {
-    const tbody = document.getElementById('students-tbody');
+    const container = document.getElementById('students-table-container');
+    
+    if (!container) return;
     
     // Get filtered students based on current filter
     const filteredStudents = getFilteredStudents();
     
     if (students.length === 0) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="9" class="px-4 py-8 text-center text-[color:var(--muted-foreground)]">
-            <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-2 text-[color:var(--muted-foreground)]"></i>
-            <p>No students with Core IDs found in this class</p>
-          </td>
-        </tr>
-      `;
-      return;
-    }
-
-    if (filteredStudents.length === 0) {
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="9" class="px-4 py-8 text-center text-[color:var(--muted-foreground)]">
-            <i data-lucide="filter" class="w-12 h-12 mx-auto mb-2 text-[color:var(--muted-foreground)]"></i>
-            <p>No students match the current filter</p>
-          </td>
-        </tr>
+      container.innerHTML = `
+        <div class="px-4 py-8 text-center text-[color:var(--muted-foreground)]">
+          <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-2 text-[color:var(--muted-foreground)]"></i>
+          <p>No students with Core IDs found in this class</p>
+        </div>
       `;
       lucide.createIcons();
       return;
     }
-
-    // Sort students: with data first, then alphabetically
-    const sortedStudents = [...filteredStudents].sort((a, b) => {
-      const aHasData = studentSubmissionData.has(a.coreId);
-      const bHasData = studentSubmissionData.has(b.coreId);
-      
-      if (aHasData && !bHasData) return -1;
-      if (!aHasData && bHasData) return 1;
-      
-      return a.studentName.localeCompare(b.studentName, 'zh-HK');
-    });
-
-    tbody.innerHTML = sortedStudents.map(student => {
-      const data = studentSubmissionData.get(student.coreId);
-      const hasData = !!data;
-      const setStatus = data?.setStatus || { set1: 'grey', set2: 'grey', set3: 'grey', set4: 'grey' };
-      const outstanding = data?.outstanding || 0;
-      const submissionCount = data?.submissions.length || 0;
-      
-      return `
-        <tr class="hover:bg-[color:var(--muted)]/30 transition-colors">
-          <td class="px-4 py-3">
-            <a href="checking_system_4_student.html?coreId=${encodeURIComponent(student.coreId)}" 
-               class="text-[color:var(--primary)] hover:underline font-medium font-noto">
-              ${student.studentName}
-            </a>
-          </td>
-          <td class="px-4 py-3 text-xs text-[color:var(--muted-foreground)] font-mono">
-            ${student.studentId}
-          </td>
-          <td class="px-4 py-3 text-xs text-[color:var(--muted-foreground)] font-mono">
-            ${student.coreId}
-          </td>
-          ${renderSetStatus(setStatus.set1, 'Set 1')}
-          ${renderSetStatus(setStatus.set2, 'Set 2')}
-          ${renderSetStatus(setStatus.set3, 'Set 3')}
-          ${renderSetStatus(setStatus.set4, 'Set 4')}
-          <td class="px-4 py-3 text-sm font-medium">
-            ${outstanding > 0 ? 
-              `<button onclick="window.showOutstandingModal('${student.coreId}')" class="text-amber-600 hover:text-amber-800 hover:underline transition-colors cursor-pointer">${outstanding}</button>` : 
-              '<span class="text-[color:var(--muted-foreground)]">—</span>'
-            }
-          </td>
-          <td class="px-4 py-3 text-center">
-            <a href="checking_system_4_student.html?coreId=${encodeURIComponent(student.coreId)}" 
-               class="inline-flex items-center gap-1 text-xs text-[color:var(--primary)] hover:underline">
-              View Details
-              <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-            </a>
+    
+    if (currentViewMode === 'set') {
+      renderStudentTableBySet(container, filteredStudents);
+    } else {
+      renderStudentTableByTask(container, filteredStudents);
+    }
+    
+    lucide.createIcons();
+  }
+  
+  /**
+   * Render student table in Set-by-Set view
+   */
+  function renderStudentTableBySet(container, filteredStudents) {
+    let html = `
+      <table class="min-w-full text-sm">
+        <thead class="bg-[color:var(--muted)]/30 text-xs text-[color:var(--muted-foreground)]">
+          <tr>
+            <th class="px-4 py-3 text-left font-medium">Student Name</th>
+            <th class="px-4 py-3 text-left font-medium">Student ID</th>
+            <th class="px-4 py-3 text-left font-medium">Core ID</th>
+            <th class="px-4 py-3 text-left font-medium">Set 1</th>
+            <th class="px-4 py-3 text-left font-medium">Set 2</th>
+            <th class="px-4 py-3 text-left font-medium">Set 3</th>
+            <th class="px-4 py-3 text-left font-medium">Set 4</th>
+            <th class="px-4 py-3 text-left font-medium">Outstanding</th>
+            <th class="px-4 py-3 text-center font-medium">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[color:var(--border)]">
+    `;
+    
+    if (filteredStudents.length === 0) {
+      html += `
+        <tr>
+          <td colspan="9" class="px-4 py-8 text-center text-[color:var(--muted-foreground)]">
+            <p>No students match the current filter</p>
           </td>
         </tr>
       `;
-    }).join('');
+    } else {
+      filteredStudents.forEach(student => {
+        const data = studentSubmissionData.get(student.coreId);
+        const setStatus = data?.validationCache?.setStatus;
+        
+        // Calculate outstanding count
+        const outstanding = calculateOutstandingCount(setStatus);
+        
+        html += `
+          <tr class="hover:bg-[color:var(--muted)]/20 transition-colors">
+            <td class="px-4 py-3">
+              <a href="checking_system_4_student.html?coreId=${encodeURIComponent(student.coreId)}" 
+                 class="font-medium text-[color:var(--primary)] hover:underline font-noto">
+                ${student.studentName}
+              </a>
+            </td>
+            <td class="px-4 py-3 text-xs font-mono text-[color:var(--muted-foreground)]">${student.studentId || '—'}</td>
+            <td class="px-4 py-3 text-xs font-mono text-[color:var(--muted-foreground)]">${student.coreId}</td>
+            ${renderSetStatus(getSetStatusColor(setStatus, 'set1'))}
+            ${renderSetStatus(getSetStatusColor(setStatus, 'set2'))}
+            ${renderSetStatus(getSetStatusColor(setStatus, 'set3'))}
+            ${renderSetStatus(getSetStatusColor(setStatus, 'set4'))}
+            <td class="px-4 py-3">
+              ${outstanding > 0 ? 
+                `<button onclick="window.showOutstandingModal('${student.coreId}')" 
+                         class="px-2 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-medium hover:bg-amber-200 transition-colors">
+                  ${outstanding}
+                </button>` :
+                `<span class="text-[color:var(--muted-foreground)] text-xs">—</span>`
+              }
+            </td>
+            <td class="px-4 py-3 text-center">
+              <a href="checking_system_4_student.html?coreId=${encodeURIComponent(student.coreId)}" 
+                 class="text-xs text-[color:var(--primary)] hover:underline">
+                View →
+              </a>
+            </td>
+          </tr>
+        `;
+      });
+    }
+    
+    html += `
+        </tbody>
+      </table>
+    `;
+    
+    container.innerHTML = html;
+  }
+  
+  /**
+   * Render student table in Task-by-Task view
+   */
+  function renderStudentTableByTask(container, filteredStudents) {
+    // Get all tasks from survey structure in order
+    const allTasks = [];
+    if (surveyStructure && surveyStructure.sets) {
+      surveyStructure.sets.forEach(set => {
+        set.sections.forEach(section => {
+          const taskName = section.file.replace('.json', '');
+          allTasks.push({
+            name: taskName,
+            setId: set.id,
+            order: section.order
+          });
+        });
+      });
+    }
+    
+    let html = `
+      <table class="min-w-full text-sm">
+        <thead class="bg-[color:var(--muted)]/30 text-xs text-[color:var(--muted-foreground)]">
+          <tr>
+            <th class="px-4 py-3 text-left font-medium sticky left-0 bg-[color:var(--muted)]/30 z-10">Student Name</th>
+            <th class="px-4 py-3 text-left font-medium">Core ID</th>
+    `;
+    
+    // Add column headers for each task
+    allTasks.forEach(task => {
+      html += `<th class="px-4 py-3 text-center font-medium" title="${task.name}">${task.name}</th>`;
+    });
+    
+    html += `
+            <th class="px-4 py-3 text-center font-medium">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[color:var(--border)]">
+    `;
+    
+    if (filteredStudents.length === 0) {
+      html += `
+        <tr>
+          <td colspan="${allTasks.length + 3}" class="px-4 py-8 text-center text-[color:var(--muted-foreground)]">
+            <p>No students match the current filter</p>
+          </td>
+        </tr>
+      `;
+    } else {
+      filteredStudents.forEach(student => {
+        const data = studentSubmissionData.get(student.coreId);
+        const setStatus = data?.validationCache?.setStatus;
+        
+        html += `
+          <tr class="hover:bg-[color:var(--muted)]/20 transition-colors">
+            <td class="px-4 py-3 sticky left-0 bg-white z-10">
+              <a href="checking_system_4_student.html?coreId=${encodeURIComponent(student.coreId)}" 
+                 class="font-medium text-[color:var(--primary)] hover:underline font-noto">
+                ${student.studentName}
+              </a>
+            </td>
+            <td class="px-4 py-3 text-xs font-mono text-[color:var(--muted-foreground)]">${student.coreId}</td>
+        `;
+        
+        // Add status for each task
+        allTasks.forEach(task => {
+          const taskStatus = getTaskStatus(setStatus, task.name);
+          html += `
+            <td class="px-4 py-3 text-center">
+              <span class="status-circle ${taskStatus}" title="${task.name}"></span>
+            </td>
+          `;
+        });
+        
+        html += `
+            <td class="px-4 py-3 text-center">
+              <a href="checking_system_4_student.html?coreId=${encodeURIComponent(student.coreId)}" 
+                 class="text-xs text-[color:var(--primary)] hover:underline">
+                View →
+              </a>
+            </td>
+          </tr>
+        `;
+      });
+    }
+    
+    html += `
+        </tbody>
+      </table>
+    `;
+    
+    container.innerHTML = html;
+  }
+  
+  /**
+   * Get task status for a specific task
+   */
+  function getTaskStatus(setStatus, taskName) {
+    if (!setStatus) return 'status-grey';
+    
+    const taskId = taskName.toLowerCase();
+    
+    // Search through all sets for this task
+    for (const setId of ['set1', 'set2', 'set3', 'set4']) {
+      const set = setStatus[setId];
+      if (!set || !set.tasks) continue;
+      
+      const task = set.tasks.find(t => 
+        t.taskId === taskId || 
+        t.taskId.includes(taskId) || 
+        taskId.includes(t.taskId)
+      );
+      
+      if (task) {
+        if (task.complete) return 'status-green';
+        if (task.answered > 0) return 'status-yellow';
+        return 'status-red';
+      }
+    }
+    
+    return 'status-grey';
+  }
 
-    lucide.createIcons();
+  /**
+   * Get set status color based on validation cache
+   */
+  function getSetStatusColor(setStatus, setId) {
+    if (!setStatus || !setStatus[setId]) return 'grey';
+    
+    const set = setStatus[setId];
+    
+    // Determine color based on set status
+    if (set.status === 'complete') return 'green';
+    if (set.status === 'incomplete') return 'red';
+    if (set.status === 'in-progress') return 'yellow';
+    
+    return 'grey';
   }
 
   /**

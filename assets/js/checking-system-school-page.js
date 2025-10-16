@@ -243,6 +243,17 @@
   }
 
   /**
+   * Get display label for grade number
+   */
+  function getGradeLabel(gradeNumber) {
+    if (gradeNumber === 1) return 'K1';
+    if (gradeNumber === 2) return 'K2';
+    if (gradeNumber === 3) return 'K3';
+    if (gradeNumber === 0) return 'Other';
+    return '—';
+  }
+
+  /**
    * Render classes table with status lights (PRD-compliant)
    */
   function renderClassesTable() {
@@ -322,7 +333,7 @@
                   ${cls.classId}
                 </td>
                 <td class="px-3 py-3 text-[color:var(--muted-foreground)]">
-                  ${cls.grade || '—'}
+                  ${getGradeLabel(cls.grade)}
                 </td>
                 <td class="px-3 py-3">
                   <button onclick="window.openStudentListModal('${cls.classId}')" class="text-[color:var(--primary)] hover:underline font-medium">
@@ -335,7 +346,7 @@
                 <td class="px-3 py-3 text-center">${setStatuses[3]}</td>
                 <td class="px-3 py-3 text-center">
                   ${outstandingSets > 0 ? 
-                    `<a href="checking_system_3_class.html?classId=${encodeURIComponent(cls.classId)}" class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-medium hover:bg-red-200 transition-colors">${outstandingSets}</a>` :
+                    `<button onclick="window.showOutstandingClassesModal('${cls.classId}')" class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-medium hover:bg-red-200 transition-colors cursor-pointer">${outstandingSets}</button>` :
                     `<span class="text-[color:var(--muted-foreground)] text-xs">—</span>`
                   }
                 </td>
@@ -448,6 +459,7 @@
 
   /**
    * Apply grade filter to classes table
+   * Now uses numeric grades: 1 (K1), 2 (K2), 3 (K3), 0 (Other)
    */
   function applyGradeFilter(grade) {
     const rows = document.querySelectorAll('[data-class-row]');
@@ -455,7 +467,17 @@
 
     rows.forEach(row => {
       const rowGrade = row.getAttribute('data-grade');
-      let shouldShow = grade === 'all' || rowGrade === grade || (grade === 'Others' && !['K1', 'K2', 'K3'].includes(rowGrade));
+      let shouldShow = false;
+      
+      if (grade === 'all') {
+        shouldShow = true;
+      } else if (grade === '1' || grade === '2' || grade === '3') {
+        // Filter by specific grade number
+        shouldShow = rowGrade === grade;
+      } else if (grade === '0' || grade === 'Others') {
+        // Filter by "Other" grade
+        shouldShow = rowGrade === '0';
+      }
       
       if (shouldShow) {
         row.style.removeProperty('display');
@@ -468,8 +490,12 @@
     // Update class count display
     const classCountEl = document.getElementById('class-count');
     if (classCountEl) {
-      const filterText = grade === 'all' ? '' : ` (${grade} only)`;
-      classCountEl.textContent = `${visibleCount} ${visibleCount === 1 ? 'class' : 'classes'}${filterText}`;
+      const gradeLabel = grade === 'all' ? '' : 
+                         grade === '1' ? ' (K1 only)' :
+                         grade === '2' ? ' (K2 only)' :
+                         grade === '3' ? ' (K3 only)' :
+                         ' (Others only)';
+      classCountEl.textContent = `${visibleCount} ${visibleCount === 1 ? 'class' : 'classes'}${gradeLabel}`;
     }
   }
 
@@ -552,11 +578,96 @@
     }
   }
 
+  /**
+   * Show outstanding classes modal for a specific class
+   */
+  function showOutstandingClassesModal(classId) {
+    const cls = classes.find(c => c.classId === classId);
+    if (!cls) return;
+
+    const metrics = classMetrics.get(classId);
+    if (!metrics) return;
+
+    // Update modal title
+    const modalClassName = document.getElementById('modal-outstanding-class-name');
+    if (modalClassName) {
+      modalClassName.textContent = `${cls.actualClassName} (${cls.classId})`;
+    }
+
+    // Build outstanding sets list
+    const modalOutstandingList = document.getElementById('modal-outstanding-list');
+    if (modalOutstandingList) {
+      let html = '';
+      
+      for (const setId of ['set1', 'set2', 'set3', 'set4']) {
+        const setData = metrics.setCompletion[setId];
+        const complete = setData?.complete || 0;
+        const incomplete = setData?.incomplete || 0;
+        const total = setData?.total || 0;
+        const notStarted = total - complete - incomplete;
+        
+        // Only show if there are incomplete or not started
+        if (incomplete > 0 || notStarted > 0 || complete < total) {
+          const setName = `Set ${setId.replace('set', '')}`;
+          const completionPercent = total > 0 ? Math.round((complete / total) * 100) : 0;
+          
+          html += `
+            <div class="border border-[color:var(--border)] rounded-md p-3 bg-[color:var(--muted)]/10">
+              <div class="flex items-center justify-between mb-2">
+                <h4 class="text-sm font-semibold text-[color:var(--foreground)]">${setName}</h4>
+                <span class="text-xs font-mono text-[color:var(--muted-foreground)]">${completionPercent}% complete</span>
+              </div>
+              <div class="grid grid-cols-3 gap-2 text-xs">
+                <div class="flex items-center gap-1.5">
+                  <span class="status-circle status-green" title="Complete"></span>
+                  <span class="text-[color:var(--muted-foreground)]">${complete} complete</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span class="status-circle status-yellow" title="In Progress"></span>
+                  <span class="text-[color:var(--muted-foreground)]">${incomplete} in progress</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span class="status-circle status-grey" title="Not Started"></span>
+                  <span class="text-[color:var(--muted-foreground)]">${notStarted} not started</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      }
+      
+      if (html === '') {
+        html = '<p class="text-sm text-[color:var(--muted-foreground)]">All sets are complete!</p>';
+      }
+      
+      modalOutstandingList.innerHTML = html;
+    }
+
+    // Show modal
+    const modal = document.getElementById('outstanding-classes-modal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      lucide.createIcons();
+    }
+  }
+
+  /**
+   * Close outstanding classes modal
+   */
+  function closeOutstandingClassesModal() {
+    const modal = document.getElementById('outstanding-classes-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+    }
+  }
+
   // Expose modal functions globally
   window.openGradeFilterModal = openGradeFilterModal;
   window.closeGradeFilterModal = closeGradeFilterModal;
   window.openStudentListModal = openStudentListModal;
   window.closeStudentListModal = closeStudentListModal;
+  window.showOutstandingClassesModal = showOutstandingClassesModal;
+  window.closeOutstandingClassesModal = closeOutstandingClassesModal;
 
   // Initialize on DOM ready
   if (document.readyState === 'loading') {
