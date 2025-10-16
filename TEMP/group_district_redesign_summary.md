@@ -65,7 +65,7 @@ Enhanced Group and District export to include comprehensive metadata:
 ```
 School Name (中文校名)
 School ID · District
-[�� 5] [🟡 2] [⚪1] / 8 classes
+[🟢 5] [🟡 2] [⚪1] / 8 classes
 ```
 
 **Color Codes:**
