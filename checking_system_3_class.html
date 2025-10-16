@@ -273,7 +273,6 @@
             }
         })();
     </script>
-    
     <script>
       // Load background animation config and render
       (async () => {
@@ -326,7 +325,7 @@
             container.innerHTML = html;
           }
         } catch (error) {
-          console.warn('[Background] Failed to load animation config:', error);
+          console.error('[ClassPage] Failed to load background animation config:', error);
         }
       })();
     </script>
