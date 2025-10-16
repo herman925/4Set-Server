@@ -136,24 +136,32 @@
         const classData = {
           students: classStudents,
           setCompletion: {
-            set1: { complete: 0, total: 0 },
-            set2: { complete: 0, total: 0 },
-            set3: { complete: 0, total: 0 },
-            set4: { complete: 0, total: 0 }
+            set1: { complete: 0, incomplete: 0, total: 0 },
+            set2: { complete: 0, incomplete: 0, total: 0 },
+            set3: { complete: 0, incomplete: 0, total: 0 },
+            set4: { complete: 0, incomplete: 0, total: 0 }
           }
         };
 
         // Aggregate completion status from validation cache
         for (const student of classStudents) {
           const cache = validationCache.get(student.coreId);
-          if (!cache || cache.error) continue;
-
-          // Count set completion
+          
+          // Count all students in total, regardless of whether they have data
           for (const setId of ['set1', 'set2', 'set3', 'set4']) {
             classData.setCompletion[setId].total++;
-            const setStatus = cache.setStatus[setId];
-            if (setStatus && setStatus.status === 'complete') {
-              classData.setCompletion[setId].complete++;
+            
+            // Only count complete/incomplete if student has cache
+            if (cache && !cache.error) {
+              const setStatus = cache.setStatus[setId];
+              if (setStatus) {
+                if (setStatus.status === 'complete') {
+                  classData.setCompletion[setId].complete++;
+                } else if (setStatus.status === 'incomplete') {
+                  classData.setCompletion[setId].incomplete++;
+                }
+                // notstarted status means neither complete nor incomplete
+              }
             }
           }
         }
@@ -272,18 +280,29 @@
             for (const setId of ['set1', 'set2', 'set3', 'set4']) {
               const setData = metrics?.setCompletion[setId];
               const complete = setData?.complete || 0;
+              const incomplete = setData?.incomplete || 0;
               const total = setData?.total || 0;
-              const incomplete = total - complete;
               
-              if (incomplete > 0) outstandingSets++;
+              if (incomplete > 0 || complete < total) outstandingSets++;
               
-              // Determine status light color per PRD
-              // Green = all complete, Red = some incomplete, Grey = not started
+              // Determine status light color per actual student data
+              // Green = all complete, Yellow = some in progress (incomplete), Red = mix of complete and incomplete, Grey = not started
               let statusClass = 'status-grey';
-              if (complete === total && total > 0) statusClass = 'status-green';
-              else if (complete > 0) statusClass = 'status-red';
+              if (complete === total && total > 0) {
+                statusClass = 'status-green';
+              } else if (complete > 0 && incomplete > 0) {
+                // Some complete, some incomplete - Red
+                statusClass = 'status-red';
+              } else if (complete > 0 && incomplete === 0) {
+                // Some complete, rest not started - Red
+                statusClass = 'status-red';
+              } else if (incomplete > 0 && complete === 0) {
+                // None complete, but some in progress - Yellow
+                statusClass = 'status-yellow';
+              }
               
-              setStatuses.push(`<span class="status-circle ${statusClass}" title="${complete}/${total} complete"></span>`);
+              const title = `${complete} complete, ${incomplete} in progress, ${total - complete - incomplete} not started`;
+              setStatuses.push(`<span class="status-circle ${statusClass}" title="${title}"></span>`);
             }
             
             return `
