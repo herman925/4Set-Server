@@ -44,5 +44,39 @@
   "taskView": {
     "defaultFilter": "all",
     "defaultExpandState": false
+  },
+  "backgroundAnimation": {
+    "circles": [
+      {
+        "position": { "left": "-24px", "top": "96px" },
+        "size": { "width": "192px", "height": "192px" },
+        "color": "rgba(43, 57, 144, 0.2)",
+        "animation": "glow-ring",
+        "animationDuration": "4s",
+        "animationDelay": "0s"
+      },
+      {
+        "position": { "right": "48px", "bottom": "80px" },
+        "size": { "width": "160px", "height": "160px" },
+        "color": "rgba(249, 157, 51, 0.3)",
+        "animation": "glow-ring-secondary",
+        "animationDuration": "4s",
+        "animationDelay": "1.6s"
+      }
+    ],
+    "blobs": [
+      {
+        "position": { "left": "33.333%", "top": "50%" },
+        "size": { "width": "80px", "height": "80px" },
+        "color": "rgba(249, 157, 51, 0.2)",
+        "blur": "48px"
+      },
+      {
+        "position": { "right": "25%", "top": "33.333%" },
+        "size": { "width": "96px", "height": "96px" },
+        "color": "rgba(43, 57, 144, 0.2)",
+        "blur": "48px"
+      }
+    ]
   }
 }

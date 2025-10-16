@@ -1744,6 +1744,167 @@ GET https://api.jotform.com/form/123456/submissions?filter=%7B%227%3Aeq%22%3A%22
 - Use consistent colour semantics for alerts (info/ warning/critical) aligned with theme CSS.
 - Demonstrate traffic-light states (green/yellow/red) across breakpoints to match legacy TOC expectations, including tooltips explaining completion reasons.
 
+## Group and District Drilldown Pages
+
+### Overview
+Group and District pages provide hierarchical views of task progress across multiple schools, enabling administrators to monitor completion status at organizational levels.
+
+### Design Principles
+1. **Consistent Architecture**: Use same validation logic (TaskValidator) as School/Class/Student pages
+2. **Collapsible Sections**: All major sections start collapsed by default (configurable via `taskView.defaultExpandState`)
+3. **Filterable Views**: Support filtering by completion status and grade level
+4. **Animated Background**: Dynamic background elements configured in `checking_system_config.json`
+
+### Group Page (`checking_system_1_group.html`)
+
+#### Breadcrumb Navigation
+- **Format**: `Group X` (no preceding dash or district reference)
+- **Rationale**: District and Group are both Level 1 entities; breadcrumb shouldn't suggest hierarchy
+- **Optional District Context**: When filtering by district, show district in separate breadcrumb element
+
+#### Key Sections
+
+**1. Group Overview (Collapsible)**
+- Total Schools, Total Students, Average Completion, Districts
+- Starts collapsed to reduce cognitive load
+- Summary metrics use same validation cache as student-level pages
+
+**2. Task Progress (Schools)**
+- **Title Change**: Renamed from "Schools in Group" to "Task Progress (Schools)"
+- **Layout**: Schools grouped by assignment with nested collapsible sections
+- **Status Indicators**: Color-coded circles showing:
+  - 🟢 Green: Complete classes
+  - 🟡 Yellow: Incomplete classes  
+  - ⚪ Grey: Not started classes
+  - Format: `Green count | Yellow count | Grey count / Total classes`
+
+**3. View Filter**
+- Dropdown options: All, Complete, Incomplete, Not Started
+- Filters schools based on class completion status
+
+**4. Grade Filter Modal**
+- Checkbox options: K1, K2, K3, Others
+- Modal design consistent with other system modals
+- Badge shows active filter count
+- Filters classes within schools by grade level
+
+#### School Status Calculation
+A school's classes are categorized as:
+- **Complete**: All 4 sets complete for all students in class
+- **Incomplete**: Some sets complete/incomplete but not all complete
+- **Not Started**: All 4 sets not started for all students in class
+
+#### Export Functionality
+Group export includes comprehensive metadata for comparison with School/Class/Student level exports:
+- Group number and district context
+- School-level aggregations (set status summaries)
+- Class and student counts per school
+- Completion metrics formatted consistently with other export levels
+
+### District Page (`checking_system_1_district.html`)
+
+#### Design Pattern
+Mirrors Group page design with district-specific context:
+- **Breadcrumb**: `District Name` (single element)
+- **Layout**: Schools grouped by Group number (collapsible sections)
+- **Filters**: Same view and grade filters as Group page
+- **Metrics**: Districts list replaced with Groups list
+
+#### Key Differences from Group Page
+- Groups schools by Group number instead of showing flat list
+- Optional group filtering (when both district and group selected)
+- Export includes group-level aggregations within district
+
+### Background Animation Configuration
+
+Moved to `config/checking_system_config.json` for centralized management:
+
+```json
+{
+  "backgroundAnimation": {
+    "circles": [
+      {
+        "position": { "left": "-24px", "top": "96px" },
+        "size": { "width": "192px", "height": "192px" },
+        "color": "rgba(43, 57, 144, 0.2)",
+        "animation": "glow-ring",
+        "animationDuration": "4s",
+        "animationDelay": "0s"
+      },
+      {
+        "position": { "right": "48px", "bottom": "80px" },
+        "size": { "width": "160px", "height": "160px" },
+        "color": "rgba(249, 157, 51, 0.3)",
+        "animation": "glow-ring-secondary",
+        "animationDuration": "4s",
+        "animationDelay": "1.6s"
+      }
+    ],
+    "blobs": [
+      {
+        "position": { "left": "33.333%", "top": "50%" },
+        "size": { "width": "80px", "height": "80px" },
+        "color": "rgba(249, 157, 51, 0.2)",
+        "blur": "48px"
+      },
+      {
+        "position": { "right": "25%", "top": "33.333%" },
+        "size": { "width": "96px", "height": "96px" },
+        "color": "rgba(43, 57, 144, 0.2)",
+        "blur": "48px"
+      }
+    ]
+  }
+}
+```
+
+**Benefits:**
+- Consistent animations across all pages
+- Easy to adjust colors, sizes, and animation parameters
+- No hardcoded values in HTML/CSS
+- Supports multiple circles and blur effects
+
+### Implementation Files
+
+**JavaScript**
+- `assets/js/checking-system-group-page.js` - Group page logic
+- `assets/js/checking-system-district-page.js` - District page logic
+- Both use shared `ExportUtils` for consistent export format
+
+**Validation Architecture**
+Both pages use `TaskValidator.js` as core validation skeleton:
+1. Load survey structure
+2. Build task-to-set mapping
+3. Call `JotFormCache.buildStudentValidationCache()`
+4. Aggregate validation results by class, then school
+5. Calculate completion percentages using same rules as student page
+
+**HTML Templates**
+- `checking_system_1_group.html` - Group drilldown page
+- `checking_system_1_district.html` - District drilldown page
+- Both load background animation dynamically from config
+
+### Consistency with Other Pages
+
+**Student Page Pattern**
+Group/District pages adopt collapsible sections pattern from Student page:
+- `<details>` elements for collapsible sections
+- Chevron rotation on expand/collapse
+- "Tap to expand/collapse" helper text
+
+**Class Page Pattern**
+Task progress display similar to Class page student list:
+- Status circles with counts
+- Inline metrics in grid layout
+- Filter dropdown and modal for refinement
+
+**School Page Pattern**
+Export functionality consistent with School page:
+- Same markdown format
+- Set status summaries
+- Task validation tables (ANS/COR/TOT format)
+- Hierarchical organization (Group > School > Class > Student)
+
 ## Telemetry & Logging
 - Log fetch durations, API responses, error rates, and rule violations.
 - Emit structured events (`checking_run_started`, `checking_run_completed`, `checking_violation_detected`).
