@@ -301,7 +301,7 @@
               if (incomplete > 0 || complete < total) outstandingSets++;
               
               // Determine status light color per actual student data
-              // Green = all complete, Yellow = some in progress (incomplete), Red = mix of complete and incomplete, Grey = not started
+              // Green = all complete, Red = incomplete/partial progress, Grey = not started
               let statusClass = 'status-grey';
               if (complete === total && total > 0) {
                 statusClass = 'status-green';
