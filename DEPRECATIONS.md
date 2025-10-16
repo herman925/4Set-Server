@@ -160,6 +160,32 @@ Some configuration files are example-only:
 
 ---
 
+## Directory Structure Note: `assets/id_mapping/`
+
+### Status: **DOCUMENTATION vs. ACTUAL STRUCTURE DISCREPANCY**
+
+**Issue:** Many PRD files reference `assets/id_mapping/` directory, but in the current repository structure, mapping files are located directly in `assets/`.
+
+**Current File Locations:**
+- `assets/jotformquestions.json` (not in id_mapping subdirectory)
+- `assets/coreid.enc` (not in id_mapping subdirectory)
+- `assets/schoolid.enc` (not in id_mapping subdirectory)
+- `assets/classid.enc` (not in id_mapping subdirectory)
+
+**Code References:**
+- `parser/pdf_tools.py` line 294: `ID_MAPPING_DIR = ASSETS_DIR / "id_mapping"` - Code EXPECTS id_mapping subdirectory
+
+**Resolution:**
+This appears to be a forward-looking structure where the code is prepared for an `id_mapping/` subdirectory, but files haven't been reorganized yet. The documentation references `assets/id_mapping/` consistently, suggesting this is the intended structure.
+
+**Recommendation:**
+- Either: Create `assets/id_mapping/` directory and move mapping files into it
+- Or: Update code and documentation to reference `assets/` directly
+
+For now, documentation uses `assets/id_mapping/` references to match code expectations.
+
+---
+
 ## Recommendations for Maintainers
 
 ### Immediate Actions:
