@@ -584,19 +584,30 @@
       // Merge all submission answers BY FIELD NAME (not QID)
       // JotForm stores answers with QID as key, but each answer has a 'name' field
       // TaskValidator looks up answers by field name (e.g., "ERV_P1")
+      // Merge strategy: Sort by created_at (earliest first), only process non-empty values, first wins
+      
+      // Sort submissions by created_at (earliest first)
+      const sortedSubmissions = submissions.sort((a, b) => 
+        new Date(a.created_at) - new Date(b.created_at)
+      );
+      
       const mergedAnswers = {};
-      for (const submission of submissions) {
+      for (const submission of sortedSubmissions) {
         if (submission.answers) {
           // Convert from QID-keyed to name-keyed
           for (const [qid, answerObj] of Object.entries(submission.answers)) {
-            if (answerObj.name) {
+            // Skip if no field name or no actual value (match student page logic)
+            if (!answerObj.name || !answerObj.answer) continue;
+            
+            // Only set if not already present (earliest non-empty value wins)
+            if (!mergedAnswers[answerObj.name]) {
               mergedAnswers[answerObj.name] = answerObj;
             }
           }
         }
       }
       
-      // Run TaskValidator
+      // Run task validation
       const taskValidation = await window.TaskValidator.validateAllTasks(mergedAnswers);
       
       // Build task-to-set mapping
@@ -604,16 +615,56 @@
       for (const set of surveyStructure.sets) {
         for (const section of set.sections) {
           const taskName = section.file.replace('.json', '');
-          const taskKey = taskName.toLowerCase();
-          taskToSetMap.set(taskKey, set.id);
-          
           const metadata = surveyStructure.taskMetadata[taskName];
-          if (metadata?.aliases) {
-            metadata.aliases.forEach(alias => {
-              taskToSetMap.set(alias.toLowerCase(), set.id);
-            });
+          if (metadata) {
+            taskToSetMap.set(metadata.id, set.id);
+            
+            if (metadata.aliases) {
+              metadata.aliases.forEach(alias => {
+                taskToSetMap.set(alias.toLowerCase(), set.id);
+              });
+            }
           }
         }
+      }
+      
+      /**
+       * Helper function to check if a task is applicable to a student
+       * (handles gender-conditional tasks like TEC_Male vs TEC_Female)
+       * 
+       * CRITICAL: Gender normalization required!
+       * - Student data may use single-letter codes: "M", "F"
+       * - Survey-structure.json uses full words: "male", "female"
+       * - Must normalize M→male, F→female before comparison
+       */
+      function isTaskApplicableToStudent(taskId, student, surveyStructure) {
+        // Find the section for this task in survey structure
+        for (const set of surveyStructure.sets) {
+          const section = set.sections.find(s => {
+            const fileName = s.file.replace('.json', '');
+            const metadata = surveyStructure.taskMetadata[fileName];
+            return metadata && metadata.id === taskId;
+          });
+          
+          if (section) {
+            // Check showIf conditions
+            if (!section.showIf) return true; // No condition = always applicable
+            
+            if (section.showIf.gender) {
+              // Normalize gender: convert single letters (M/F) to full words
+              let studentGender = (student.gender || '').toLowerCase();
+              if (studentGender === 'm' || studentGender === 'male') studentGender = 'male';
+              if (studentGender === 'f' || studentGender === 'female') studentGender = 'female';
+              
+              const requiredGender = section.showIf.gender.toLowerCase();
+              return studentGender === requiredGender;
+            }
+            
+            return true; // No matching condition = applicable
+          }
+        }
+        
+        return true; // Task not found in structure = assume applicable
       }
       
       // Calculate set status
@@ -624,39 +675,69 @@
         set4: { status: 'notstarted', tasksComplete: 0, tasksTotal: 0, tasks: [] }
       };
       
-      // Analyze each task and build task lists per set
+      // Count tasks per set (accounting for gender-conditional tasks like TEC)
+      for (const set of surveyStructure.sets) {
+        const applicableSections = set.sections.filter(section => {
+          // Check if section has showIf conditions
+          if (!section.showIf) return true; // No condition = always applicable
+          
+          // Check gender condition
+          if (section.showIf.gender) {
+            // Normalize gender: convert single letters (M/F) to full words
+            let studentGender = (student.gender || '').toLowerCase();
+            if (studentGender === 'm' || studentGender === 'male') studentGender = 'male';
+            if (studentGender === 'f' || studentGender === 'female') studentGender = 'female';
+            
+            const requiredGender = section.showIf.gender.toLowerCase();
+            const matches = studentGender === requiredGender;
+            console.log(`[JotFormCache] Set ${set.id}, File ${section.file}: student.gender="${student.gender}"→"${studentGender}", required="${requiredGender}", match=${matches}`);
+            return matches;
+          }
+          
+          return true; // No matching condition = applicable by default
+        });
+        
+        setStatus[set.id].tasksTotal = applicableSections.length;
+        console.log(`[JotFormCache] ${student.coreId} (${student.gender}): Set ${set.id} tasksTotal = ${applicableSections.length}`);
+      }
+      
+      // Analyze each task
       let totalTasks = 0;
       let completeTasks = 0;
       const terminationTasks = [];
       let hasPostTerminationData = false;
       
       for (const [taskId, validation] of Object.entries(taskValidation)) {
-        if (validation.error) {
-          console.warn(`[JotFormCache] Task ${taskId} has error: ${validation.error}`);
-          continue;
-        }
-        if (taskId === 'nonsym') continue;
+        if (validation.error || taskId === 'nonsym') continue;
         
-        totalTasks++;
         const setId = taskToSetMap.get(taskId);
-        if (!setId) {
-          console.warn(`[JotFormCache] Task ${taskId} not found in taskToSetMap`);
-          continue;
+        if (!setId) continue;
+        
+        // Check if this task is applicable to this student (gender-conditional tasks)
+        const taskApplicable = isTaskApplicableToStudent(taskId, student, surveyStructure);
+        if (!taskApplicable) {
+          console.log(`[JotFormCache] Skipping ${taskId} - not applicable for ${student.gender} student`);
+          continue; // Skip gender-inappropriate tasks
         }
+        
+        // Only count tasks that are applicable to this student
+        totalTasks++;
         
         // TaskValidator returns answeredQuestions/totalQuestions, not totals.answered/total
         const answered = validation.answeredQuestions || 0;
         const total = validation.totalQuestions || 0;
         
-        const isComplete = answered === total && total > 0;
+        // A task is complete if:
+        // 1. All questions are answered (answered === total), OR
+        // 2. It's properly terminated/timed out without post-termination issues
+        const isComplete = (answered === total && total > 0) || 
+                           (validation.terminated && !validation.hasPostTerminationAnswers) ||
+                           (validation.timedOut && !validation.hasPostTerminationAnswers);
         
         if (isComplete) {
           completeTasks++;
           setStatus[setId].tasksComplete++;
         }
-        
-        // Increment tasksTotal for this set (only count tasks that actually exist for this student)
-        setStatus[setId].tasksTotal++;
         
         if (validation.terminated) {
           terminationTasks.push(taskId);
@@ -674,18 +755,10 @@
         });
       }
       
-      // Log summary for debugging
-      if (completeTasks > 0) {
-        console.log(`[JotFormCache] Student ${student.coreId}: ${completeTasks}/${totalTasks} tasks complete`);
-      }
-      
-      // Calculate set status based on ACTUAL task counts (not section counts)
+      // Calculate set status
       for (const setId in setStatus) {
         const set = setStatus[setId];
-        if (set.tasksTotal === 0) {
-          set.status = 'notstarted';
-          continue;
-        }
+        if (set.tasksTotal === 0) continue;
         
         const completionRate = set.tasksComplete / set.tasksTotal;
         if (completionRate === 1) {

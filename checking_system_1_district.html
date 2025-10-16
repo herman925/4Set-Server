@@ -23,14 +23,24 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-16">
                     <div class="flex items-center gap-3">
-                        <a href="index.html" class="p-2 rounded-full hover:bg-[color:var(--muted)] text-[color:var(--muted-foreground)] hover:text-[color:var(--primary)] transition-colors">
+                        <a href="index.html" title="Return to 4Set Entry Point" class="p-2 rounded-full hover:bg-[color:var(--muted)] text-[color:var(--muted-foreground)] hover:text-[color:var(--primary)] transition-colors">
                             <i data-lucide="home" class="w-4 h-4"></i>
                         </a>
-                        <nav id="breadcrumbs" class="text-sm text-[color:var(--muted-foreground)] flex items-center gap-2 font-noto">
-                            <span class="text-[color:var(--foreground)] font-medium" id="district-name">District</span>
+                        <button onclick="window.history.back()" class="hero-button secondary-button text-xs font-medium rounded-md px-3 py-1.5 inline-flex items-center gap-1.5">
+                            <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+                            <span>Back</span>
+                        </button>
+                        <nav class="breadcrumb-nav text-xs text-[color:var(--muted-foreground)] flex items-center gap-1.5 font-mono">
+                            <span class="breadcrumb-district px-2 py-1 rounded bg-blue-50 text-blue-700 font-semibold" id="district-name">—</span>
                         </nav>
                     </div>
-                    <a href="checking_system_home.html" class="text-sm text-[color:var(--primary)] hover:underline">New Search</a>
+                    <div class="flex items-center gap-2">
+                        <button id="export-button" class="hero-button secondary-button text-xs font-medium rounded-md px-3 py-1.5 inline-flex items-center gap-1.5">
+                            <i data-lucide="download" class="w-3.5 h-3.5 flex-shrink-0"></i>
+                            <span>Export</span>
+                        </button>
+                        <a href="checking_system_home.html" class="text-sm text-[color:var(--primary)] hover:underline">New Search</a>
+                    </div>
                 </div>
             </div>
         </header>
@@ -124,13 +134,7 @@
             document.getElementById('district-groups').textContent = groups.join(', ');
             document.title = `${district} Overview · 4Set Checking System`;
 
-            // Build breadcrumbs
-            const breadcrumbs = [`<span class="font-medium text-[color:var(--foreground)]">${district}</span>`];
-            if (group) {
-                breadcrumbs.push(`<span class="text-[color:var(--border)]">/</span>`);
-                breadcrumbs.push(`<a href="checking_system_1_group.html?group=${group}" class="hover:text-[color:var(--primary)] transition-colors">Group ${group}</a>`);
-            }
-            document.getElementById('breadcrumbs').innerHTML = breadcrumbs.join(' ');
+            // Breadcrumb is already in HTML, no need to build dynamically
 
             // Render schools
             document.getElementById('schools-list').innerHTML = districtSchools.map(school => `

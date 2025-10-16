@@ -14,6 +14,28 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&family=Noto+Sans+TC&display=swap" rel="stylesheet" />
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+        .status-circle {
+            width: 14px;
+            height: 14px;
+            border-radius: 9999px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+        .status-circle::after {
+            content: '';
+            width: 6px;
+            height: 6px;
+            border-radius: 9999px;
+            background-color: rgba(255, 255, 255, 0.85);
+        }
+        .status-green { background-color: #22c55e; }
+        .status-yellow { background-color: #fbbf24; }
+        .status-red { background-color: #ef4444; }
+        .status-grey { background-color: #cbd5e1; }
+    </style>
 </head>
 <body class="min-h-screen hero-background">
     <div class="relative overflow-hidden">
@@ -23,152 +45,125 @@
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="flex items-center justify-between h-16">
                     <div class="flex items-center gap-3">
-                        <a href="index.html" class="p-2 rounded-full hover:bg-[color:var(--muted)] text-[color:var(--muted-foreground)] hover:text-[color:var(--primary)] transition-colors">
+                        <a href="index.html" title="Return to 4Set Entry Point" class="p-2 rounded-full hover:bg-[color:var(--muted)] text-[color:var(--muted-foreground)] hover:text-[color:var(--primary)] transition-colors">
                             <i data-lucide="home" class="w-4 h-4"></i>
                         </a>
-                        <nav id="breadcrumbs" class="text-sm text-[color:var(--muted-foreground)] flex items-center gap-2 font-noto"></nav>
+                        <button onclick="window.history.back()" class="hero-button secondary-button text-xs font-medium rounded-md px-3 py-1.5 inline-flex items-center gap-1.5">
+                            <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+                            <span>Back</span>
+                        </button>
+                        <nav class="breadcrumb-nav text-xs text-[color:var(--muted-foreground)] flex items-center gap-1.5 font-mono">
+                            <a href="#" class="breadcrumb-district px-2 py-1 rounded bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors">—</a>
+                            <i data-lucide="chevron-right" class="w-3 h-3 text-slate-400"></i>
+                            <a href="#" class="breadcrumb-group px-2 py-1 rounded bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors">—</a>
+                            <i data-lucide="chevron-right" class="w-3 h-3 text-slate-400"></i>
+                            <span class="breadcrumb-school px-2 py-1 rounded bg-blue-50 text-blue-700 font-semibold">—</span>
+                        </nav>
                     </div>
-                    <a href="checking_system_home.html" class="text-sm text-[color:var(--primary)] hover:underline">New Search</a>
+                    <div class="flex items-center gap-2">
+                        <button id="export-button" class="hero-button secondary-button text-xs font-medium rounded-md px-3 py-1.5 inline-flex items-center gap-1.5">
+                            <i data-lucide="download" class="w-3.5 h-3.5 flex-shrink-0"></i>
+                            <span>Export</span>
+                        </button>
+                        <a href="checking_system_home.html" class="text-sm text-[color:var(--primary)] hover:underline">New Search</a>
+                    </div>
                 </div>
             </div>
         </header>
 
         <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4">
+            
             <!-- School Profile -->
-            <div class="entry-card p-6 lg:p-8">
-                <div class="flex items-start justify-between">
+            <details class="entry-card" open>
+                <summary class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between px-6 py-4 cursor-pointer list-none">
                     <div>
-                        <h1 class="text-2xl font-bold text-[color:var(--foreground)] font-noto" id="school-name-chinese">Loading...</h1>
-                        <p class="text-lg text-[color:var(--muted-foreground)] mt-1" id="school-name-english">School Name</p>
+                        <h2 class="text-sm font-semibold text-[color:var(--foreground)] font-noto" id="school-name-chinese">Loading...</h2>
+                        <p class="text-xs text-[color:var(--muted-foreground)]" id="school-name-english">Tap to expand school details</p>
                     </div>
-                    <div class="text-right text-sm">
-                        <p class="text-[color:var(--muted-foreground)]">School ID</p>
-                        <p class="font-mono font-semibold" id="school-id">—</p>
+                    <span class="text-[11px] text-[color:var(--muted-foreground)]">Last synced · Today</span>
+                </summary>
+                <div class="px-6 pb-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-5 gap-2 text-xs">
+                        <div class="border border-[color:var(--border)] rounded-md p-2.5 bg-[color:var(--muted)]/30">
+                            <p class="text-[10px] uppercase text-[color:var(--muted-foreground)] tracking-wide">Classes</p>
+                            <p class="text-base font-semibold" id="total-classes">0</p>
+                        </div>
+                        <div class="border border-[color:var(--border)] rounded-md p-2.5 bg-[color:var(--muted)]/30">
+                            <p class="text-[10px] uppercase text-[color:var(--muted-foreground)] tracking-wide">Students (with Core ID)</p>
+                            <p class="text-base font-semibold" id="total-students">0</p>
+                        </div>
+                        <div class="border border-[color:var(--border)] rounded-md p-2.5 bg-[color:var(--muted)]/30">
+                            <p class="text-[10px] uppercase text-[color:var(--muted-foreground)] tracking-wide">School ID</p>
+                            <p class="text-xs font-mono font-semibold" id="school-id">—</p>
+                        </div>
+                        <div class="border border-[color:var(--border)] rounded-md p-2.5 bg-[color:var(--muted)]/30">
+                            <p class="text-[10px] uppercase text-[color:var(--muted-foreground)] tracking-wide">District</p>
+                            <p class="text-base font-semibold" id="school-district">—</p>
+                        </div>
+                        <div class="border border-[color:var(--border)] rounded-md p-2.5 bg-[color:var(--muted)]/30">
+                            <p class="text-[10px] uppercase text-[color:var(--muted-foreground)] tracking-wide">Group</p>
+                            <p class="text-base font-semibold" id="school-group">—</p>
+                        </div>
                     </div>
                 </div>
+            </details>
 
-                <!-- School Info -->
-                <div class="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                        <p class="text-[color:var(--muted-foreground)]">District</p>
-                        <p class="font-medium" id="school-district">—</p>
+            <!-- School Metrics -->
+            <details class="entry-card" open>
+                <summary class="flex items-center justify-between px-6 py-4 cursor-pointer list-none">
+                    <h2 class="text-sm font-semibold text-[color:var(--foreground)]">School-level Task Status Overview</h2>
+                    <span class="text-[11px] text-[color:var(--muted-foreground)]">Quick statistics</span>
+                </summary>
+                <div class="px-6 pb-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                    <div class="bg-gradient-to-br from-white to-blue-50 rounded-lg border border-blue-200 px-4 py-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-medium text-blue-700">Set 1</span>
+                            <span class="text-xs text-[color:var(--muted-foreground)]" id="set1-count">—</span>
+                        </div>
+                        <p class="text-2xl font-bold text-blue-900" id="set1-completion">—%</p>
                     </div>
-                    <div>
-                        <p class="text-[color:var(--muted-foreground)]">Group</p>
-                        <p class="font-medium" id="school-group">—</p>
+                    <div class="bg-gradient-to-br from-white to-green-50 rounded-lg border border-green-200 px-4 py-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-medium text-green-700">Set 2</span>
+                            <span class="text-xs text-[color:var(--muted-foreground)]" id="set2-count">—</span>
+                        </div>
+                        <p class="text-2xl font-bold text-green-900" id="set2-completion">—%</p>
                     </div>
-                    <div>
-                        <p class="text-[color:var(--muted-foreground)]">Classes</p>
-                        <p class="font-medium" id="total-classes">0</p>
+                    <div class="bg-gradient-to-br from-white to-purple-50 rounded-lg border border-purple-200 px-4 py-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-medium text-purple-700">Set 3</span>
+                            <span class="text-xs text-[color:var(--muted-foreground)]" id="set3-count">—</span>
+                        </div>
+                        <p class="text-2xl font-bold text-purple-900" id="set3-completion">—%</p>
                     </div>
-                    <div>
-                        <p class="text-[color:var(--muted-foreground)]">Students</p>
-                        <p class="font-medium" id="total-students">0</p>
+                    <div class="bg-gradient-to-br from-white to-amber-50 rounded-lg border border-amber-200 px-4 py-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-medium text-amber-700">Set 4</span>
+                            <span class="text-xs text-[color:var(--muted-foreground)]" id="set4-count">—</span>
+                        </div>
+                        <p class="text-2xl font-bold text-amber-900" id="set4-completion">—%</p>
                     </div>
                 </div>
-
-                <!-- Completion Metrics -->
-                <div class="mt-6 pt-6 border-t border-[color:var(--border)]">
-                    <h3 class="text-sm font-semibold mb-4">Completion Overview</h3>
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <div class="bg-gradient-to-br from-white to-green-50 rounded-lg border border-green-200 p-4">
-                            <p class="text-xs text-[color:var(--muted-foreground)]">Set 1</p>
-                            <p class="text-xl font-semibold">—%</p>
-                        </div>
-                        <div class="bg-gradient-to-br from-white to-blue-50 rounded-lg border border-blue-200 p-4">
-                            <p class="text-xs text-[color:var(--muted-foreground)]">Set 2</p>
-                            <p class="text-xl font-semibold">—%</p>
-                        </div>
-                        <div class="bg-gradient-to-br from-white to-purple-50 rounded-lg border border-purple-200 p-4">
-                            <p class="text-xs text-[color:var(--muted-foreground)]">Set 3</p>
-                            <p class="text-xl font-semibold">—%</p>
-                        </div>
-                        <div class="bg-gradient-to-br from-white to-amber-50 rounded-lg border border-amber-200 p-4">
-                            <p class="text-xs text-[color:var(--muted-foreground)]">Set 4</p>
-                            <p class="text-xl font-semibold">—%</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            </details>
 
             <!-- Classes List -->
             <div class="entry-card p-6">
-                <h2 class="text-lg font-semibold mb-4">Classes</h2>
-                <div id="classes-list" class="space-y-3"></div>
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-sm font-semibold text-[color:var(--foreground)]">Classes in this School</h2>
+                    <span class="text-xs text-[color:var(--muted-foreground)]" id="class-count">0 classes</span>
+                </div>
+                <div id="classes-table"></div>
             </div>
         </main>
     </div>
 
+    <!-- JavaScript Modules -->
+    <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
     <script src="assets/js/encryption.js"></script>
     <script src="assets/js/checking-system-data-loader.js"></script>
-    <script>
-        (async () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const schoolId = urlParams.get('schoolId'); // Only param needed
-            
-            if (!schoolId) {
-                alert('No school specified');
-                window.location.href = 'checking_system_home.html';
-                return;
-            }
-
-            const cachedData = window.CheckingSystemData?.getCachedData();
-            if (!cachedData) {
-                alert('Please go through home page first');
-                window.location.href = 'checking_system_home.html';
-                return;
-            }
-
-            const school = cachedData.schoolIdMap.get(schoolId);
-            if (!school) {
-                alert('School not found');
-                return;
-            }
-
-            // Derive child data
-            const classes = cachedData.classes.filter(c => c.schoolId === schoolId);
-            const students = cachedData.students.filter(s => s.schoolId === schoolId);
-
-            // Update UI
-            document.getElementById('school-name-chinese').textContent = school.schoolNameChinese;
-            document.getElementById('school-name-english').textContent = school.schoolName;
-            document.getElementById('school-id').textContent = school.schoolId;
-            document.getElementById('school-district').textContent = school.district;
-            document.getElementById('school-group').textContent = school.group;
-            document.getElementById('total-classes').textContent = classes.length;
-            document.getElementById('total-students').textContent = students.length;
-            document.title = `${school.schoolNameChinese} · 4Set Checking System`;
-
-            // Build breadcrumbs (derive from school data)
-            const breadcrumbs = [];
-            if (school.district) {
-                breadcrumbs.push(`<a href="checking_system_1_district.html?district=${encodeURIComponent(school.district)}" class="hover:text-[color:var(--primary)]">${school.district}</a>`);
-            }
-            if (school.group) {
-                breadcrumbs.push(`<a href="checking_system_1_group.html?group=${school.group}" class="hover:text-[color:var(--primary)]">Group ${school.group}</a>`);
-            }
-            breadcrumbs.push(`<span class="font-medium text-[color:var(--foreground)]">${school.schoolNameChinese}</span>`);
-            document.getElementById('breadcrumbs').innerHTML = breadcrumbs.join(' <span class="text-[color:var(--border)]">/</span> ');
-
-            // Render classes
-            document.getElementById('classes-list').innerHTML = classes.map(cls => {
-                const classStudents = cachedData.students.filter(s => s.classId === cls.classId);
-                return `
-                    <a href="checking_system_3_class.html?classId=${encodeURIComponent(cls.classId)}" 
-                       class="block p-4 border border-[color:var(--border)] rounded-lg hover:border-[color:var(--primary)] transition-colors">
-                        <div class="flex items-center justify-between">
-                            <div class="font-noto">
-                                <h3 class="font-semibold">${cls.actualClassName}</h3>
-                                <p class="text-sm text-[color:var(--muted-foreground)]">${classStudents.length} students · ${cls.teacherNames || 'No teacher assigned'}</p>
-                            </div>
-                            <i data-lucide="chevron-right" class="w-5 h-5 text-[color:var(--muted-foreground)]"></i>
-                        </div>
-                    </a>
-                `;
-            }).join('');
-
-            lucide.createIcons();
-        })();
-    </script>
+    <script src="assets/js/task-validator.js"></script>
+    <script src="assets/js/jotform-cache.js"></script>
+    <script src="assets/js/export-utils.js"></script><!-- Shared export utilities -->
+    <script src="assets/js/checking-system-school-page.js"></script>
 </body>
 </html>

@@ -1,20 +1,41 @@
 /**
  * Task Validator for 4Set Checking System
  * 
- * SINGLE SOURCE OF TRUTH for all task validation logic across the entire system.
+ * ============================================================================
+ * SINGLE SOURCE OF TRUTH for all task validation logic across the entire system
+ * ============================================================================
+ * 
+ * PURPOSE:
  * Acts as an auditor determining:
- * - Task completion status (all questions answered)
- * - Termination rules (e.g., 10 consecutive incorrect for CWR)
- * - Timeout detection (e.g., 2-minute timer for SYM/NONSYM)
- * - Question-level correctness
- * - Task-level statistics (answered/correct counts)
+ * - Task completion status (all questions answered up to termination/timeout)
+ * - Termination detection (stage-based, consecutive incorrect, threshold-based)
+ * - Timeout detection (SYM/NONSYM 2-minute timer with proper vs missing data)
+ * - Question-level correctness (with answer mapping for radio/image-choice)
+ * - Task-level statistics (answered/correct/total counts with termination exclusion)
+ * 
+ * CRITICAL CALCULATION RULE (Per PRD):
+ * When termination or timeout occurs, questions AFTER that point are COMPLETELY 
+ * EXCLUDED from total count. This ensures:
+ * - CWR terminated at Q24: total=24, answered=24 → 100% complete ✅
+ * - SYM timed out at Q53: total=53, answered=53 → 100% complete ✅
+ * - CM terminated at Q7: total=9 (P1,P2,Q1-Q7), answered=9 → 100% complete ✅
+ * 
+ * TERMINATION TYPES (Centralized in TERMINATION_RULES):
+ * 1. Stage-based: ERV (3 stages), CM (4 stages + 1 non-terminating)
+ * 2. Consecutive incorrect: CWR (10 consecutive threshold)
+ * 3. Threshold-based: Fine Motor (square-cutting items)
+ * 4. Timeout-based: SYM/NONSYM (2-minute timer for SYM and 2-minute timer for NONSYM, special handling)
+ * 
+ * ARCHITECTURE:
+ * - ID-based termination (robust against practice items like P1, P2, P3)
+ * - Generic handler functions (no task-specific duplication)
+ * - Uniform recalculation logic for all termination types
  * 
  * SCOPE: Operates at ALL hierarchical levels:
- * - Student level: validateAllTasks(mergedAnswers) for individual student
- * - Class level: Call validateAllTasks() for each student, aggregate results
- * - School level: Aggregate validation results for all classes in school
- * - Group level: Aggregate validation results across school groups
- * - District level: Aggregate validation results across districts
+ * - Student: validateAllTasks(mergedAnswers) for individual student
+ * - Class: Call validateAllTasks() for each student, aggregate results
+ * - School: Aggregate across classes (accounting for gender-conditional tasks)
+ * - Group/District: Further aggregation
  * 
  * NO OTHER FILE should implement validation logic - all pages must use TaskValidator.
  */
@@ -242,6 +263,275 @@ window.TaskValidator = (() => {
   }
 
   /**
+   * ============================================================================
+   * CENTRALIZED TERMINATION RULES CONFIGURATION
+   * ============================================================================
+   * 
+   * Single source of truth for all task termination logic.
+   * Uses QUESTION IDs (not array indices) for robustness against task changes.
+   * 
+   * To add a new task with termination:
+   * 1. Add entry to this config object
+   * 2. Specify type: 'stage_based', 'consecutive_incorrect', or 'threshold_based'
+   * 3. Define parameters (stages with question ID ranges, or thresholds)
+   * 4. Generic handlers will automatically apply the rules
+   * 
+   * Note: Practice items (P1, P2, P3) are automatically handled by ID-based lookup.
+   */
+  const TERMINATION_RULES = {
+    'erv': {
+      type: 'stage_based',
+      stages: [
+        { startId: 'ERV_Q1', endId: 'ERV_Q12', threshold: 5, stageNum: 1 },
+        { startId: 'ERV_Q13', endId: 'ERV_Q24', threshold: 5, stageNum: 2 },
+        { startId: 'ERV_Q25', endId: 'ERV_Q36', threshold: 5, stageNum: 3 }
+      ]
+    },
+    'cm': {
+      type: 'stage_based',
+      stages: [
+        { startId: 'CM_Q1', endId: 'CM_Q7', threshold: 4, stageNum: 1 },
+        { startId: 'CM_Q8', endId: 'CM_Q12', threshold: 4, stageNum: 2 },
+        { startId: 'CM_Q13', endId: 'CM_Q17', threshold: 4, stageNum: 3 },
+        { startId: 'CM_Q18', endId: 'CM_Q22', threshold: 4, stageNum: 4 }
+        // Stage 5 (CM_Q23-CM_Q27) has no termination
+      ]
+    },
+    'chinesewordreading': {
+      type: 'consecutive_incorrect',
+      consecutiveThreshold: 10
+    },
+    'finemotor': {
+      type: 'threshold_based',
+      questionIds: ['FM_squ_1', 'FM_squ_2', 'FM_squ_3'],
+      threshold: 1, // At least 1 must be correct (score > 0)
+      description: 'All square-cutting items must score 0 to terminate'
+    }
+  };
+
+  /**
+   * Apply stage-based termination (ERV, CM)
+   * 
+   * Stage-based tasks require a minimum number of correct answers in each stage
+   * to proceed to the next stage. If the threshold is not met, the task terminates.
+   * 
+   * Logic:
+   * 1. Find stage start/end questions by ID (robust against practice items)
+   * 2. Count correct answers in stage
+   * 3. Check if threshold can still be reached (accounting for unanswered)
+   * 4. Terminate if: (correct < threshold) AND (all stage questions answered OR impossible to reach)
+   * 
+   * @param {Object} taskResult - Validation result from validateTask()
+   * @param {Object} config - Stage configuration from TERMINATION_RULES
+   * @returns {Object} { terminationIndex, terminationStage }
+   */
+  function applyStageBasedTermination(taskResult, config) {
+    let terminationIndex = -1;
+    let terminationStage = -1;
+    
+    for (const stage of config.stages) {
+      // Find actual indices in questions array by ID
+      const startIdx = taskResult.questions.findIndex(q => q.id === stage.startId);
+      const endIdx = taskResult.questions.findIndex(q => q.id === stage.endId);
+      
+      if (startIdx === -1 || endIdx === -1) {
+        console.warn(`[TaskValidator] Stage ${stage.stageNum} questions not found (${stage.startId} - ${stage.endId})`);
+        continue;
+      }
+      
+      const stageQuestions = taskResult.questions.slice(startIdx, endIdx + 1);
+      
+      // Count correct answers in this stage
+      const correctCount = stageQuestions.filter(q => q.isCorrect).length;
+      const answeredCount = stageQuestions.filter(q => q.studentAnswer !== null).length;
+      const unansweredCount = stageQuestions.length - answeredCount;
+      const maxPossible = correctCount + unansweredCount;
+      
+      // Check if termination is certain (can't reach threshold even if all remaining are correct)
+      if (maxPossible < stage.threshold) {
+        terminationIndex = endIdx;
+        terminationStage = stage.stageNum;
+        console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()} terminated at Stage ${terminationStage} (${stage.endId}): ${correctCount} correct, need ≥${stage.threshold}`);
+        break;
+      }
+      
+      // If stage not fully answered, check if already failed
+      if (answeredCount < stageQuestions.length) {
+        if (correctCount < stage.threshold && unansweredCount === 0) {
+          terminationIndex = endIdx;
+          terminationStage = stage.stageNum;
+          console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()} terminated at Stage ${terminationStage} (${stage.endId}): ${correctCount} correct, need ≥${stage.threshold}`);
+          break;
+        }
+        // Otherwise, can't determine termination yet
+        break;
+      }
+      
+      // Stage fully answered - check if passed
+      if (correctCount < stage.threshold) {
+        terminationIndex = endIdx;
+        terminationStage = stage.stageNum;
+        console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()} terminated at Stage ${terminationStage} (${stage.endId}): ${correctCount} correct, need ≥${stage.threshold}`);
+        break;
+      }
+    }
+    
+    return { terminationIndex, terminationStage };
+  }
+
+  /**
+   * Apply consecutive incorrect termination (CWR - Chinese Word Reading)
+   * 
+   * Terminates after N consecutive incorrect responses (default: 10).
+   * Streak resets when student answers correctly or skips a question.
+   * 
+   * Logic:
+   * 1. Iterate through questions in order
+   * 2. Increment counter for each consecutive incorrect answer
+   * 3. Reset counter on correct answer or unanswered question
+   * 4. Terminate when counter reaches threshold
+   * 
+   * @param {Object} taskResult - Validation result from validateTask()
+   * @param {Object} config - Configuration with consecutiveThreshold
+   * @returns {Object} { terminationIndex }
+   */
+  function applyConsecutiveIncorrectTermination(taskResult, config) {
+    let consecutiveIncorrect = 0;
+    let terminationIndex = -1;
+    
+    for (let i = 0; i < taskResult.questions.length; i++) {
+      const q = taskResult.questions[i];
+      
+      if (q.studentAnswer === null) {
+        consecutiveIncorrect = 0;
+      } else if (q.isCorrect) {
+        consecutiveIncorrect = 0;
+      } else {
+        consecutiveIncorrect++;
+        
+        if (consecutiveIncorrect >= config.consecutiveThreshold && terminationIndex === -1) {
+          terminationIndex = i;
+          console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()} terminated at question ${i + 1} (${q.id}) after ${config.consecutiveThreshold} consecutive incorrect`);
+          break;
+        }
+      }
+    }
+    
+    return { terminationIndex };
+  }
+
+  /**
+   * Apply threshold-based termination (Fine Motor - Square Cutting)
+   * 
+   * Terminates if a specific set of questions fails to meet a threshold.
+   * Used for FM: if all square-cutting items score 0, tree-cutting is skipped.
+   * 
+   * Logic:
+   * 1. Find target questions by ID (e.g., FM_squ_1, FM_squ_2, FM_squ_3)
+   * 2. Check if all are answered
+   * 3. Count correct (score > 0)
+   * 4. Terminate at last target question if below threshold
+   * 
+   * @param {Object} taskResult - Validation result from validateTask()
+   * @param {Object} config - Configuration with questionIds and threshold
+   * @returns {Object} { terminationIndex }
+   */
+  function applyThresholdBasedTermination(taskResult, config) {
+    // Find the specified questions by ID
+    const targetQuestions = taskResult.questions.filter(q => config.questionIds.includes(q.id));
+    
+    if (targetQuestions.length === 0) {
+      console.warn(`[TaskValidator] Threshold questions not found: ${config.questionIds.join(', ')}`);
+      return { terminationIndex: -1 };
+    }
+    
+    // Check if all are answered
+    const allAnswered = targetQuestions.every(q => q.studentAnswer !== null);
+    if (!allAnswered) {
+      return { terminationIndex: -1 };
+    }
+    
+    // Count correct (score > 0)
+    const correctCount = targetQuestions.filter(q => q.isCorrect).length;
+    
+    // If below threshold, terminate at last question in the set
+    if (correctCount < config.threshold) {
+      const lastQuestion = targetQuestions[targetQuestions.length - 1];
+      const terminationIndex = taskResult.questions.findIndex(q => q.id === lastQuestion.id);
+      console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()} terminated: ${correctCount} correct in ${config.questionIds.join(', ')}, need ≥${config.threshold}`);
+      return { terminationIndex };
+    }
+    
+    return { terminationIndex: -1 };
+  }
+
+  /**
+   * Apply termination rules and recalculate totals
+   * 
+   * CRITICAL: This function implements the PRD-mandated exclusion rule:
+   * "Questions after termination point are COMPLETELY EXCLUDED from ALL calculations"
+   * 
+   * Process:
+   * 1. Route to appropriate handler based on config.type
+   * 2. Get terminationIndex from handler
+   * 3. Recalculate totals: only count questions up to terminationIndex + 1
+   * 4. Detect post-termination answers (data quality issue - yellow flag)
+   * 5. Return adjusted validation result with termination metadata
+   * 
+   * This ensures task completion is calculated correctly:
+   * - Before: CWR 24/55 = 43% incomplete ❌
+   * - After:  CWR 24/24 = 100% complete ✅
+   * 
+   * @param {Object} taskResult - Validation result from validateTask()
+   * @param {Object} config - Termination configuration from TERMINATION_RULES
+   * @returns {Object} Adjusted validation result with termination applied
+   */
+  function applyTerminationRules(taskResult, config) {
+    let terminationData = {};
+    
+    if (config.type === 'stage_based') {
+      terminationData = applyStageBasedTermination(taskResult, config);
+    } else if (config.type === 'consecutive_incorrect') {
+      terminationData = applyConsecutiveIncorrectTermination(taskResult, config);
+    } else if (config.type === 'threshold_based') {
+      terminationData = applyThresholdBasedTermination(taskResult, config);
+    }
+    
+    const { terminationIndex, terminationStage } = terminationData;
+    
+    // Recalculate totals excluding ignored questions after termination
+    let adjustedTotal = taskResult.totalQuestions;
+    let adjustedAnswered = taskResult.answeredQuestions;
+    let hasPostTerminationAnswers = false;
+    
+    if (terminationIndex >= 0) {
+      // Only count questions up to and including termination point
+      adjustedTotal = terminationIndex + 1;
+      adjustedAnswered = taskResult.questions.slice(0, terminationIndex + 1).filter(q => q.studentAnswer !== null).length;
+      
+      // Check for post-termination answers
+      for (let i = terminationIndex + 1; i < taskResult.questions.length; i++) {
+        if (taskResult.questions[i].studentAnswer !== null) {
+          hasPostTerminationAnswers = true;
+          break;
+        }
+      }
+    }
+    
+    return {
+      ...taskResult,
+      totalQuestions: adjustedTotal,
+      answeredQuestions: adjustedAnswered,
+      completionPercentage: adjustedTotal > 0 ? Math.round((adjustedAnswered / adjustedTotal) * 100) : 0,
+      terminated: terminationIndex >= 0,
+      terminationIndex,
+      terminationStage,
+      terminationType: config.type,
+      hasPostTerminationAnswers
+    };
+  }
+
+  /**
    * Validate all tasks for a student
    */
   async function validateAllTasks(mergedAnswers) {
@@ -264,11 +554,18 @@ window.TaskValidator = (() => {
     for (const taskId of taskIds) {
       // Special handling for SYM: merge with NONSYM
       if (taskId === 'sym') {
+        // ========================================================================
+        // SPECIAL HANDLING: SYM/NONSYM Timeout Detection
+        // ========================================================================
+        // SYM and NONSYM are merged into a single task with independent 2-minute timers.
+        // Must distinguish between:
+        // - Proper timeout: Continuous progress then timer expired (green ✅)
+        // - Missing data: Non-continuous gaps indicating data quality issue (red ❌)
+        
         const symResult = await validateTask('sym', mergedAnswers);
         const nonsymResult = await validateTask('nonsym', mergedAnswers);
         
-        // Detect timeout vs missing data
-        // Timeout: continuous sequence of answers then all empty
+        // Timeout detection: continuous sequence of answers then all empty
         // Missing data: non-continuous gaps (answered, gap, answered again)
         const analyzeCompletionPattern = (questions) => {
           // Find index of last answered question
@@ -290,51 +587,89 @@ window.TaskValidator = (() => {
             return { timedOut: false, hasMissingData: false, complete: true };
           }
           
-          // Check if all questions after the last answered are empty (continuous gap)
-          let hasGapAfter = false;
+          // Check if all questions after the last answered are empty (consecutive gap to end)
+          let hasConsecutiveGapToEnd = false;
           for (let i = lastAnsweredIndex + 1; i < questions.length; i++) {
             if (questions[i].studentAnswer !== null) {
-              // Found an answer after gap → non-continuous, missing data problem
-              return { timedOut: false, hasMissingData: true, complete: false };
+              // Found an answer after the gap → not a timeout, just incomplete
+              hasConsecutiveGapToEnd = false;
+              break;
             }
-            hasGapAfter = true;
+            hasConsecutiveGapToEnd = true;
           }
           
-          // Check for gaps BEFORE last answered (spotty pattern)
+          // If there's a consecutive gap from lastAnswered to the end → TIMED OUT
+          if (hasConsecutiveGapToEnd) {
+            // Check for gaps in the middle (like Q19 blank but Q20 has answer)
+            let hasGapsInMiddle = false;
+            for (let i = 0; i < lastAnsweredIndex; i++) {
+              if (questions[i].studentAnswer === null) {
+                hasGapsInMiddle = true;
+                break;
+              }
+            }
+            
+            // Return timeout WITH hasMissingData flag if there are gaps in middle
+            return { 
+              timedOut: true, 
+              hasMissingData: hasGapsInMiddle, 
+              complete: false, 
+              lastAnsweredIndex 
+            };
+          }
+          
+          // No consecutive gap to end, so check if there are ANY gaps (missing data)
           for (let i = 0; i < lastAnsweredIndex; i++) {
             if (questions[i].studentAnswer === null) {
-              // Gap found before last answer → missing data
+              // Gap found in the middle → missing data (not timed out)
               return { timedOut: false, hasMissingData: true, complete: false };
             }
           }
           
-          // Continuous from start to lastAnswered, then all empty → proper timeout
-          if (hasGapAfter) {
-            return { timedOut: true, hasMissingData: false, complete: false, lastAnsweredIndex };
-          }
-          
+          // All questions before lastAnswered are filled, no gap to end → complete (shouldn't reach here)
           return { timedOut: false, hasMissingData: false, complete: true };
         };
         
         const symAnalysis = analyzeCompletionPattern(symResult.questions);
         const nonsymAnalysis = analyzeCompletionPattern(nonsymResult.questions);
         
+        // Recalculate totals based on timeout (same exclusion logic as termination)
+        // This ensures timeout is treated identically to termination:
+        // - Before timeout adjustment: 53/68 = 78% incomplete ❌
+        // - After timeout adjustment:  53/53 = 100% complete ✅
+        let adjustedSymTotal = symResult.totalQuestions;
+        let adjustedSymAnswered = symResult.answeredQuestions;
+        let adjustedNonsymTotal = nonsymResult.totalQuestions;
+        let adjustedNonsymAnswered = nonsymResult.answeredQuestions;
+        
+        if (symAnalysis.timedOut && symAnalysis.lastAnsweredIndex !== undefined) {
+          // Only count questions up to timeout point
+          adjustedSymTotal = symAnalysis.lastAnsweredIndex + 1;
+          adjustedSymAnswered = symResult.questions.slice(0, symAnalysis.lastAnsweredIndex + 1)
+                                .filter(q => q.studentAnswer !== null).length;
+        }
+        
+        if (nonsymAnalysis.timedOut && nonsymAnalysis.lastAnsweredIndex !== undefined) {
+          // Only count questions up to timeout point
+          adjustedNonsymTotal = nonsymAnalysis.lastAnsweredIndex + 1;
+          adjustedNonsymAnswered = nonsymResult.questions.slice(0, nonsymAnalysis.lastAnsweredIndex + 1)
+                                   .filter(q => q.studentAnswer !== null).length;
+        }
+        
+        const totalAdjusted = adjustedSymTotal + adjustedNonsymTotal;
+        const answeredAdjusted = adjustedSymAnswered + adjustedNonsymAnswered;
+        const totalCorrect = symResult.correctAnswers + nonsymResult.correctAnswers;
+        
         // Merge NONSYM into SYM
         results[taskId] = {
           taskId: 'sym',
           title: `${symResult.title} / ${nonsymResult.title}`, // "SYM / NONSYM"
           questions: [...symResult.questions, ...nonsymResult.questions],
-          totalQuestions: symResult.totalQuestions + nonsymResult.totalQuestions,
-          answeredQuestions: symResult.answeredQuestions + nonsymResult.answeredQuestions,
-          correctAnswers: symResult.correctAnswers + nonsymResult.correctAnswers,
-          completionPercentage: Math.round(
-            ((symResult.answeredQuestions + nonsymResult.answeredQuestions) / 
-             (symResult.totalQuestions + nonsymResult.totalQuestions)) * 100
-          ),
-          accuracyPercentage: Math.round(
-            ((symResult.correctAnswers + nonsymResult.correctAnswers) / 
-             (symResult.answeredQuestions + nonsymResult.answeredQuestions)) * 100
-          ),
+          totalQuestions: totalAdjusted,
+          answeredQuestions: answeredAdjusted,
+          correctAnswers: totalCorrect,
+          completionPercentage: totalAdjusted > 0 ? Math.round((answeredAdjusted / totalAdjusted) * 100) : 0,
+          accuracyPercentage: answeredAdjusted > 0 ? Math.round((totalCorrect / answeredAdjusted) * 100) : 0,
           // Store individual results and analysis
           symResult,
           nonsymResult,
@@ -349,43 +684,12 @@ window.TaskValidator = (() => {
         
         console.log(`[TaskValidator] SYM: timeout=${symAnalysis.timedOut}, missingData=${symAnalysis.hasMissingData}`);
         console.log(`[TaskValidator] NONSYM: timeout=${nonsymAnalysis.timedOut}, missingData=${nonsymAnalysis.hasMissingData}`);
-      } else if (taskId === 'chinesewordreading') {
-        // Special handling for CWR: detect 10 consecutive incorrect responses
-        const cwrResult = await validateTask(taskId, mergedAnswers);
-        
-        // Detect 10 consecutive incorrect
-        let consecutiveIncorrect = 0;
-        let terminationIndex = -1;
-        
-        for (let i = 0; i < cwrResult.questions.length; i++) {
-          const q = cwrResult.questions[i];
-          
-          if (q.studentAnswer === null) {
-            // No answer - break streak
-            consecutiveIncorrect = 0;
-          } else if (q.isCorrect) {
-            // Correct answer - reset streak
-            consecutiveIncorrect = 0;
-          } else {
-            // Incorrect answer - increment streak
-            consecutiveIncorrect++;
-            
-            if (consecutiveIncorrect >= 10 && terminationIndex === -1) {
-              // Found termination point
-              terminationIndex = i;
-              console.log(`[TaskValidator] CWR terminated at question ${i + 1} (${q.id}) after 10 consecutive incorrect`);
-              break;
-            }
-          }
-        }
-        
-        results[taskId] = {
-          ...cwrResult,
-          terminated: terminationIndex >= 0,
-          terminationIndex,
-          terminationType: 'consecutive_incorrect'
-        };
+      } else if (TERMINATION_RULES[taskId]) {
+        // Apply centralized termination rules
+        const taskResult = await validateTask(taskId, mergedAnswers);
+        results[taskId] = applyTerminationRules(taskResult, TERMINATION_RULES[taskId]);
       } else {
+        // No termination rules - standard validation
         results[taskId] = await validateTask(taskId, mergedAnswers);
       }
     }

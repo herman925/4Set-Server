@@ -45,13 +45,13 @@
     } else if (classData) {
       // Level 3: Class Drilldown
       // Only pass classId - page can derive school, district, group from class data
-      if (!resolvedSchoolId) {
-        throw new Error('Class selection requires a school. Please select a school first.');
-      }
-
+      // No school selection required - class data contains all parent context
       level = 3;
       url = `checking_system_3_class.html?classId=${encodeURIComponent(classData.classId)}`;
-      displayLabel = `${classData.displayName} · ${resolvedSchoolData?.schoolNameChinese || resolvedSchoolData?.schoolName}`;
+      // Display class name with school if available, otherwise just class
+      displayLabel = resolvedSchoolData 
+        ? `${classData.displayName} · ${resolvedSchoolData.schoolNameChinese || resolvedSchoolData.schoolName}`
+        : classData.displayName;
 
     } else if (resolvedSchoolData) {
       // Level 2: School Drilldown

@@ -763,10 +763,10 @@
         nonsymTimeoutIndex = validation.nonsymAnalysis.lastAnsweredIndex;
       }
       
-      // Detect termination for CWR (10 consecutive incorrect)
-      let cwrTerminationIndex = -1;
-      if (taskId === 'chinesewordreading' && validation.terminated) {
-        cwrTerminationIndex = validation.terminationIndex;
+      // Detect termination for various tasks
+      let terminationIndex = -1;
+      if (validation.terminated && validation.terminationIndex !== undefined) {
+        terminationIndex = validation.terminationIndex;
       }
       
       // Populate with real questions
@@ -787,9 +787,9 @@
             const nonsymIndex = i - symQuestionCount;
             isIgnoredDueToTimeout = nonsymTimeoutIndex >= 0 && nonsymIndex > nonsymTimeoutIndex;
           }
-        } else if (taskId === 'chinesewordreading') {
-          // CWR: questions after 10 consecutive incorrect are ignored
-          isIgnoredDueToTimeout = cwrTerminationIndex >= 0 && i > cwrTerminationIndex;
+        } else if (terminationIndex >= 0) {
+          // All other tasks with termination (CWR, ERV, CM, FM): questions after termination are ignored
+          isIgnoredDueToTimeout = i > terminationIndex;
         }
         
         // Set data-state based on whether the question is scored
@@ -1198,14 +1198,20 @@
       checklistDiv.querySelector('span').textContent = 'Timeout Status · SYM/NONSYM (2-minute timer each)';
       
       // Helper to determine card styling
+      // PRIORITY: timedOut > complete > hasMissingData > in progress
+      // A task can be BOTH timedOut AND hasMissingData (gaps in middle)
       const getCardStyle = (analysis) => {
-        if (analysis.hasMissingData) {
-          return { border: 'border-red-400', bg: 'bg-red-50', color: 'text-red-600', icon: 'alert-triangle', status: 'Missing Data' };
-        } else if (analysis.timedOut) {
+        if (analysis.timedOut) {
+          // Green: Properly timed out (may have gaps in middle)
           return { border: 'border-green-400', bg: 'bg-green-50', color: 'text-green-600', icon: 'clock-alert', status: 'Timed Out' };
         } else if (analysis.complete) {
+          // Green: All questions completed
           return { border: 'border-green-400', bg: 'bg-green-50', color: 'text-green-600', icon: 'check-circle', status: 'Complete' };
+        } else if (analysis.hasMissingData) {
+          // Red: Missing data without timeout (gaps but no consecutive end gap)
+          return { border: 'border-red-400', bg: 'bg-red-50', color: 'text-red-600', icon: 'alert-triangle', status: 'Missing Data' };
         } else {
+          // Gray: In progress
           return { border: 'border-gray-400', bg: 'bg-gray-50', color: 'text-gray-600', icon: 'info', status: 'In Progress' };
         }
       };
@@ -1224,14 +1230,15 @@
         const calculatedTimedOut = analysis.timedOut;
         const hasMissingData = analysis.hasMissingData;
         
-        // Card styling: Green for proper timeout/complete, Red for missing data
+        // Card styling: Prioritize timeout over missing data
+        // If timed out (even with gaps), show green. Gaps shown as secondary warning.
         let statusClass;
-        if (hasMissingData) {
-          statusClass = 'border-red-400 bg-red-50';
-        } else if (calculatedTimedOut) {
+        if (calculatedTimedOut) {
           statusClass = 'border-green-400 bg-green-50';
         } else if (analysis.complete) {
           statusClass = 'border-green-400 bg-green-50';
+        } else if (hasMissingData) {
+          statusClass = 'border-red-400 bg-red-50';
         } else {
           statusClass = 'border-gray-300 bg-gray-50';
         }
@@ -1242,37 +1249,45 @@
               <div>
                 <p class="font-medium text-[color:var(--foreground)]">${name}</p>
                 <p class="text-[color:var(--muted-foreground)] text-xs mt-0.5">
-                  ${hasMissingData ? 'Non-continuous data gaps detected' : 
+                  ${calculatedTimedOut && hasMissingData ? 'Timed out · Non-continuous data gaps detected' :
                     calculatedTimedOut ? 'Timed out after continuous progress' : 
+                    hasMissingData ? 'Non-continuous data gaps detected' :
                     analysis.complete ? 'All questions completed' : 'In progress'}
                 </p>
               </div>
               <span class="text-xs font-mono font-semibold ${
-                hasMissingData ? 'text-red-700' : 
                 calculatedTimedOut ? 'text-green-600' : 
-                analysis.complete ? 'text-green-600' : 'text-gray-600'
+                analysis.complete ? 'text-green-600' : 
+                hasMissingData ? 'text-red-700' : 'text-gray-600'
               }">${summary}</span>
             </div>
             
             <div class="grid grid-cols-2 gap-2 text-xs mt-2">
               <!-- Recorded Status -->
               <div class="flex items-center gap-1.5 ${
-                hasMissingData ? 'text-red-600' : 
-                calculatedTimedOut ? 'text-green-600' : 'text-green-600'
+                calculatedTimedOut ? 'text-green-600' : 
+                analysis.complete ? 'text-green-600' : 
+                hasMissingData ? 'text-red-600' : 'text-gray-600'
               }">
                 <i data-lucide="${
-                  hasMissingData ? 'alert-triangle' : 
-                  calculatedTimedOut ? 'clock-alert' : 'check-circle'
+                  calculatedTimedOut ? 'clock-alert' : 
+                  analysis.complete ? 'check-circle' : 
+                  hasMissingData ? 'alert-triangle' : 'info'
                 }" class="w-3.5 h-3.5"></i>
                 <span>Terminated: <strong>${
-                  hasMissingData ? 'Missing Data' : 
-                  calculatedTimedOut ? 'Timed Out' : 'Complete'
+                  calculatedTimedOut ? 'Timed Out' : 
+                  analysis.complete ? 'Complete' : 
+                  hasMissingData ? 'Missing Data' : 'In Progress'
                 }</strong></span>
               </div>
               
               <!-- Verification Status -->
-              <div class="flex items-center gap-1.5 text-blue-600">
-                <i data-lucide="check-circle" class="w-3.5 h-3.5"></i>
+              <div class="flex items-center gap-1.5 ${
+                hasMissingData ? 'text-yellow-600' : 'text-blue-600'
+              }">
+                <i data-lucide="${
+                  hasMissingData ? 'alert-triangle' : 'check-circle'
+                }" class="w-3.5 h-3.5"></i>
                 <span>${hasMissingData ? 'Requires investigation' : 'Calculation Verified.'}</span>
               </div>
             </div>
@@ -1628,6 +1643,9 @@
 
   /**
    * Calculate task statistics excluding ignored questions
+   * @param {Object} validation - Task validation result from TaskValidator
+   * @param {HTMLElement} taskElement - Task DOM element
+   * @returns {Object} Statistics including total, answered, correct, hasTerminated, timedOut, etc.
    */
   function calculateTaskStatistics(validation, taskElement) {
     const tbody = taskElement.querySelector('table tbody');
@@ -1683,7 +1701,8 @@
       scoredTotal,
       scoredAnswered,
       hasTerminated,
-      hasPostTerminationAnswers, // NEW: Include in return
+      hasPostTerminationAnswers,
+      timedOut: validation?.timedOut || false,  // Include timeout flag from validation
       answeredPercent: total > 0 ? Math.round((answered / total) * 100) : 0,
       correctPercent: scoredTotal > 0 ? Math.round((correct / scoredTotal) * 100) : 0
     };
@@ -1794,12 +1813,12 @@
       // Yellow: Post-termination data detected (terminated BUT has answers after termination)
       statusCircle.classList.add('status-yellow');
       statusCircle.title = 'Post-termination data detected';
-    } else if (stats.hasTerminated && stats.answered > 0) {
-      // Green: Properly terminated (terminated and NO post-termination answers)
+    } else if ((stats.hasTerminated || stats.timedOut) && stats.answered > 0) {
+      // Green: Properly terminated/timed out (NO post-termination answers)
       statusCircle.classList.add('status-green');
-      statusCircle.title = 'Terminated correctly';
-    } else if (stats.answeredPercent === 100 && !stats.hasTerminated) {
-      // Green: Complete - all questions answered, no termination
+      statusCircle.title = stats.timedOut ? 'Timed out correctly' : 'Terminated correctly';
+    } else if (stats.answeredPercent === 100 && !stats.hasTerminated && !stats.timedOut) {
+      // Green: Complete - all questions answered, no termination/timeout
       statusCircle.classList.add('status-green');
       statusCircle.title = 'Complete';
     } else if (stats.answered > 0) {
@@ -2352,93 +2371,20 @@
   }
   
   /**
-   * Export student-level cache data (filtered to this student only)
+   * Export student-level validation report as Markdown
+   * Uses centralized ExportUtils.exportReport orchestrator
    */
   async function exportStudentCache() {
-    try {
-      console.log('[StudentPage] Exporting student-level cache data...');
-      
-      if (!studentData) {
-        alert('No student data to export');
-        return;
-      }
-
-      const coreId = studentData.coreId;
-      
-      // Filter submissions cache
-      const submissionsCache = await window.JotFormCache.loadFromCache();
-      const numericCoreId = coreId.startsWith('C') ? coreId.substring(1) : coreId;
-      const filteredSubmissions = submissionsCache?.submissions.filter(submission => {
-        const studentIdAnswer = submission.answers?.['20'];
-        const studentId = studentIdAnswer?.answer || studentIdAnswer?.text;
-        return studentId === numericCoreId;
-      }) || [];
-      
-      // Get validation cache for this student
-      const validationCache = await window.JotFormCache.loadValidationCache();
-      const studentValidation = validationCache?.get(coreId) || null;
-      
-      // Create compact validation summary (exclude full question details)
-      let validationSummary = null;
-      if (studentValidation) {
-        validationSummary = {
-          setStatus: studentValidation.setStatus,
-          lastValidated: studentValidation.lastValidated,
-          taskSummaries: {}
-        };
-        
-        // Include only task summaries (not full question details)
-        if (studentValidation.taskValidation) {
-          for (const [taskId, taskData] of Object.entries(studentValidation.taskValidation)) {
-            validationSummary.taskSummaries[taskId] = {
-              taskId: taskData.taskId,
-              title: taskData.title,
-              totalQuestions: taskData.totalQuestions,
-              answeredQuestions: taskData.answeredQuestions,
-              correctAnswers: taskData.correctAnswers,
-              completionPercentage: taskData.completionPercentage,
-              accuracyPercentage: taskData.accuracyPercentage,
-              terminated: taskData.terminated,
-              error: taskData.error
-            };
-          }
-        }
-      }
-      
-      // Create export data
-      const exportData = {
-        metadata: {
-          exportTime: new Date().toISOString(),
-          coreId: studentData.coreId,
-          studentId: studentData.studentId,
-          studentName: studentData.studentName,
-          classId: studentData.classId,
-          schoolId: studentData.schoolId,
-          submissionsCount: filteredSubmissions.length,
-          hasValidation: !!studentValidation
-        },
-        student: studentData,
-        submissions: filteredSubmissions,
-        validationSummary: validationSummary
-      };
-      
-      // Download as JSON
-      const filename = `student-cache_${coreId}_${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
-      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-      
-      console.log(`[StudentPage] Exported ${filteredSubmissions.length} submissions and validation data for ${coreId}`);
-    } catch (error) {
-      console.error('[StudentPage] Export failed:', error);
-      alert('Export failed: ' + error.message);
+    if (!studentData) {
+      alert('No student data to export');
+      return;
     }
+    
+    await window.ExportUtils.exportReport({
+      type: 'student',
+      data: { studentData },
+      loadValidationCache: () => window.JotFormCache.loadValidationCache()
+    });
   }
 
   /**
