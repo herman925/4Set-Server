@@ -452,8 +452,9 @@
   /**
    * Show sync modal (for building cache)
    */
-  async function showSyncModal() {
+  async function showSyncModal(showProgressNow = false) {
     console.log('[CacheUI] showSyncModal called');
+    console.trace('[CacheUI] showSyncModal call stack:');
     
     // Remove any existing modal first
     const existingModal = document.getElementById('cache-sync-modal');
@@ -475,8 +476,10 @@
     modal.id = 'cache-sync-modal';
     modal.className = 'modal-overlay';
     
-    // Check if sync is in progress - show progress immediately
-    const showProgressNow = isSyncing;
+    // If showProgressNow not explicitly set, check if sync is in progress
+    if (showProgressNow === false && isSyncing) {
+      showProgressNow = true;
+    }
     console.log('[CacheUI] Creating modal, showProgressNow:', showProgressNow);
     
     modal.innerHTML = `
@@ -564,7 +567,7 @@
     
     if (!showProgressNow) {
       // Only set up confirm listener if not already syncing
-      confirmBtn.addEventListener('click', async () => {
+      const syncHandler = async () => {
       // Hide buttons, show progress
       cancelBtn.textContent = 'Close';
       cancelBtn.classList.remove('hidden');
@@ -714,6 +717,14 @@
         cancelBtn.classList.add('hidden');
         confirmBtn.textContent = 'Close';
         confirmBtn.classList.remove('hidden');
+        
+        // CRITICAL: Remove the sync handler before setting close handler!
+        if (confirmBtn.syncHandler) {
+          confirmBtn.removeEventListener('click', confirmBtn.syncHandler);
+          confirmBtn.syncHandler = null;
+          console.log('[CacheUI] Removed sync handler, setting close handler');
+        }
+        
         confirmBtn.onclick = () => {
           modal.remove();
           // No need to update pill - already updated at line 585
@@ -731,6 +742,12 @@
         // Update pill back to red (error)
         updateStatusPill();
         
+        // Remove sync handler before setting retry/close handlers
+        if (confirmBtn.syncHandler) {
+          confirmBtn.removeEventListener('click', confirmBtn.syncHandler);
+          confirmBtn.syncHandler = null;
+        }
+        
         // Show retry button
         confirmBtn.textContent = 'Retry';
         confirmBtn.classList.remove('hidden');
@@ -740,7 +757,13 @@
         cancelBtn.classList.remove('hidden');
         cancelBtn.onclick = () => modal.remove();
       }
-      }); // End of confirmBtn.addEventListener
+      }; // End of syncHandler
+      
+      confirmBtn.addEventListener('click', syncHandler);
+      
+      // Store handler reference so we can remove it later
+      confirmBtn.dataset.hasSyncHandler = 'true';
+      confirmBtn.syncHandler = syncHandler;
     } // End of if (!showProgressNow)
   } // End of showSyncModal
 
