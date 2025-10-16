@@ -346,7 +346,7 @@
                 <td class="px-3 py-3 text-center">${setStatuses[3]}</td>
                 <td class="px-3 py-3 text-center">
                   ${outstandingSets > 0 ? 
-                    `<a href="checking_system_3_class.html?classId=${encodeURIComponent(cls.classId)}" class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-medium hover:bg-red-200 transition-colors">${outstandingSets}</a>` :
+                    `<button onclick="window.showOutstandingClassesModal('${cls.classId}')" class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-medium hover:bg-red-200 transition-colors cursor-pointer">${outstandingSets}</button>` :
                     `<span class="text-[color:var(--muted-foreground)] text-xs">—</span>`
                   }
                 </td>
@@ -578,11 +578,96 @@
     }
   }
 
+  /**
+   * Show outstanding classes modal for a specific class
+   */
+  function showOutstandingClassesModal(classId) {
+    const cls = classes.find(c => c.classId === classId);
+    if (!cls) return;
+
+    const metrics = classMetrics.get(classId);
+    if (!metrics) return;
+
+    // Update modal title
+    const modalClassName = document.getElementById('modal-outstanding-class-name');
+    if (modalClassName) {
+      modalClassName.textContent = `${cls.actualClassName} (${cls.classId})`;
+    }
+
+    // Build outstanding sets list
+    const modalOutstandingList = document.getElementById('modal-outstanding-list');
+    if (modalOutstandingList) {
+      let html = '';
+      
+      for (const setId of ['set1', 'set2', 'set3', 'set4']) {
+        const setData = metrics.setCompletion[setId];
+        const complete = setData?.complete || 0;
+        const incomplete = setData?.incomplete || 0;
+        const total = setData?.total || 0;
+        const notStarted = total - complete - incomplete;
+        
+        // Only show if there are incomplete or not started
+        if (incomplete > 0 || notStarted > 0 || complete < total) {
+          const setName = `Set ${setId.replace('set', '')}`;
+          const completionPercent = total > 0 ? Math.round((complete / total) * 100) : 0;
+          
+          html += `
+            <div class="border border-[color:var(--border)] rounded-md p-3 bg-[color:var(--muted)]/10">
+              <div class="flex items-center justify-between mb-2">
+                <h4 class="text-sm font-semibold text-[color:var(--foreground)]">${setName}</h4>
+                <span class="text-xs font-mono text-[color:var(--muted-foreground)]">${completionPercent}% complete</span>
+              </div>
+              <div class="grid grid-cols-3 gap-2 text-xs">
+                <div class="flex items-center gap-1.5">
+                  <span class="status-circle status-green" title="Complete"></span>
+                  <span class="text-[color:var(--muted-foreground)]">${complete} complete</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span class="status-circle status-yellow" title="In Progress"></span>
+                  <span class="text-[color:var(--muted-foreground)]">${incomplete} in progress</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <span class="status-circle status-grey" title="Not Started"></span>
+                  <span class="text-[color:var(--muted-foreground)]">${notStarted} not started</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }
+      }
+      
+      if (html === '') {
+        html = '<p class="text-sm text-[color:var(--muted-foreground)]">All sets are complete!</p>';
+      }
+      
+      modalOutstandingList.innerHTML = html;
+    }
+
+    // Show modal
+    const modal = document.getElementById('outstanding-classes-modal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      lucide.createIcons();
+    }
+  }
+
+  /**
+   * Close outstanding classes modal
+   */
+  function closeOutstandingClassesModal() {
+    const modal = document.getElementById('outstanding-classes-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+    }
+  }
+
   // Expose modal functions globally
   window.openGradeFilterModal = openGradeFilterModal;
   window.closeGradeFilterModal = closeGradeFilterModal;
   window.openStudentListModal = openStudentListModal;
   window.closeStudentListModal = closeStudentListModal;
+  window.showOutstandingClassesModal = showOutstandingClassesModal;
+  window.closeOutstandingClassesModal = closeOutstandingClassesModal;
 
   // Initialize on DOM ready
   if (document.readyState === 'loading') {

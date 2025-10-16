@@ -39,6 +39,9 @@
 </head>
 <body class="min-h-screen hero-background">
     <div class="relative overflow-hidden">
+        <!-- Animated Background Elements -->
+        <div id="background-circles"></div>
+        
         <div class="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/70 to-transparent"></div>
 
         <header class="relative z-20 bg-white/80 backdrop-blur-md border-b border-[color:var(--border)] shadow-sm sticky top-0">
@@ -115,28 +118,28 @@
                     <span class="text-[11px] text-[color:var(--muted-foreground)]">Quick statistics</span>
                 </summary>
                 <div class="px-6 pb-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
-                    <div class="bg-gradient-to-br from-white to-blue-50 rounded-lg border border-blue-200 px-4 py-3">
+                    <div class="bg-gradient-to-br from-white to-blue-50 rounded-lg border border-blue-200 px-4 py-3" title="Percentage of Set 1 tasks completed across all students in this school">
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-xs font-medium text-blue-700">Set 1</span>
                             <span class="text-xs text-[color:var(--muted-foreground)]" id="set1-count">—</span>
                         </div>
                         <p class="text-2xl font-bold text-blue-900" id="set1-completion">—%</p>
                     </div>
-                    <div class="bg-gradient-to-br from-white to-green-50 rounded-lg border border-green-200 px-4 py-3">
+                    <div class="bg-gradient-to-br from-white to-green-50 rounded-lg border border-green-200 px-4 py-3" title="Percentage of Set 2 tasks completed across all students in this school">
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-xs font-medium text-green-700">Set 2</span>
                             <span class="text-xs text-[color:var(--muted-foreground)]" id="set2-count">—</span>
                         </div>
                         <p class="text-2xl font-bold text-green-900" id="set2-completion">—%</p>
                     </div>
-                    <div class="bg-gradient-to-br from-white to-purple-50 rounded-lg border border-purple-200 px-4 py-3">
+                    <div class="bg-gradient-to-br from-white to-purple-50 rounded-lg border border-purple-200 px-4 py-3" title="Percentage of Set 3 tasks completed across all students in this school">
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-xs font-medium text-purple-700">Set 3</span>
                             <span class="text-xs text-[color:var(--muted-foreground)]" id="set3-count">—</span>
                         </div>
                         <p class="text-2xl font-bold text-purple-900" id="set3-completion">—%</p>
                     </div>
-                    <div class="bg-gradient-to-br from-white to-amber-50 rounded-lg border border-amber-200 px-4 py-3">
+                    <div class="bg-gradient-to-br from-white to-amber-50 rounded-lg border border-amber-200 px-4 py-3" title="Percentage of Set 4 tasks completed across all students in this school">
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-xs font-medium text-amber-700">Set 4</span>
                             <span class="text-xs text-[color:var(--muted-foreground)]" id="set4-count">—</span>
@@ -184,9 +187,9 @@
                             <option value="with-data">With Data Only</option>
                             <option value="incomplete">Incomplete Only</option>
                         </select>
-                        <button id="grade-filter-button" class="px-3 py-1 border border-[color:var(--border)] rounded-md bg-white text-xs font-medium hover:bg-[color:var(--muted)] transition-colors inline-flex items-center gap-1.5">
+                        <button id="grade-filter-button" class="hero-button secondary-button px-3 py-1.5 rounded-lg text-xs font-medium inline-flex items-center gap-1.5">
                             <i data-lucide="filter" class="w-3.5 h-3.5"></i>
-                            <span>Filter</span>
+                            <span>Filter by Grade</span>
                         </button>
                     </div>
                 </div>
@@ -253,6 +256,29 @@
         </div>
     </div>
 
+    <!-- Outstanding Classes Modal -->
+    <div id="outstanding-classes-modal" class="modal-backdrop hidden">
+        <div class="modal-panel max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-lg font-semibold text-[color:var(--foreground)]">Outstanding Sets</h3>
+                    <p class="text-xs text-[color:var(--muted-foreground)] mt-1" id="modal-outstanding-class-name">—</p>
+                </div>
+                <button onclick="window.closeOutstandingClassesModal()" class="modal-close">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto">
+                <div id="modal-outstanding-list" class="space-y-3"></div>
+            </div>
+            <div class="pt-4 border-t border-[color:var(--border)] mt-4">
+                <button onclick="window.closeOutstandingClassesModal()" class="hero-button secondary-button text-sm font-medium rounded-md px-4 py-2 w-full">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- JavaScript Modules -->
     <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
     <script src="assets/js/encryption.js"></script>
@@ -261,5 +287,63 @@
     <script src="assets/js/jotform-cache.js"></script>
     <script src="assets/js/export-utils.js"></script><!-- Shared export utilities -->
     <script src="assets/js/checking-system-school-page.js"></script>
+    
+    <!-- Background Animation -->
+    <script>
+        // Load background animation config and render
+        (async () => {
+            try {
+                const response = await fetch('config/checking_system_config.json');
+                const config = await response.json();
+                
+                if (config.backgroundAnimation) {
+                    const container = document.getElementById('background-circles');
+                    if (!container) return;
+                    
+                    let html = '<div class="fixed inset-0 pointer-events-none z-0">';
+                    
+                    // Add circles
+                    if (config.backgroundAnimation.circles) {
+                        config.backgroundAnimation.circles.forEach(circle => {
+                            const positionStyles = Object.entries(circle.position)
+                                .map(([key, value]) => `${key}: ${value}`)
+                                .join('; ');
+                            const sizeStyles = Object.entries(circle.size)
+                                .map(([key, value]) => `${key}: ${value}`)
+                                .join('; ');
+                            
+                            html += `<div class="absolute rounded-full border ${circle.animation}" 
+                                     style="${positionStyles}; ${sizeStyles}; 
+                                            border-color: ${circle.color}; 
+                                            animation-duration: ${circle.animationDuration}; 
+                                            animation-delay: ${circle.animationDelay};"></div>`;
+                        });
+                    }
+                    
+                    // Add blobs
+                    if (config.backgroundAnimation.blobs) {
+                        config.backgroundAnimation.blobs.forEach(blob => {
+                            const positionStyles = Object.entries(blob.position)
+                                .map(([key, value]) => `${key}: ${value}`)
+                                .join('; ');
+                            const sizeStyles = Object.entries(blob.size)
+                                .map(([key, value]) => `${key}: ${value}`)
+                                .join('; ');
+                            
+                            html += `<div class="absolute rounded-full" 
+                                     style="${positionStyles}; ${sizeStyles}; 
+                                            background-color: ${blob.color}; 
+                                            filter: blur(${blob.blur});"></div>`;
+                        });
+                    }
+                    
+                    html += '</div>';
+                    container.innerHTML = html;
+                }
+            } catch (error) {
+                console.warn('[Background] Failed to load animation config:', error);
+            }
+        })();
+    </script>
 </body>
 </html>

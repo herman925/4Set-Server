@@ -17,14 +17,10 @@
 </head>
 <body class="min-h-screen hero-background">
     <div class="relative overflow-hidden">
-        <!-- Decorative Background Elements -->
+        <!-- Animated Background Elements -->
+        <div id="background-circles"></div>
+        
         <div class="fixed inset-x-0 top-0 h-32 bg-gradient-to-b from-white/70 to-transparent pointer-events-none"></div>
-        <div class="fixed inset-0 pointer-events-none z-0">
-            <div class="absolute -left-24 top-24 w-48 h-48 rounded-full border border-primary/20 glow-ring"></div>
-            <div class="absolute right-12 bottom-20 w-40 h-40 rounded-full border border-secondary/30 glow-ring-secondary"></div>
-            <div class="absolute left-1/3 top-1/2 w-20 h-20 rounded-full bg-secondary/20 blur-3xl"></div>
-            <div class="absolute right-1/4 top-1/3 w-24 h-24 rounded-full bg-primary/20 blur-3xl"></div>
-        </div>
 
         <!-- Persistent Navigation Bar -->
         <header class="relative z-20 bg-white/80 backdrop-blur-md border-b border-[color:var(--border)] shadow-sm sticky top-0">
@@ -273,6 +269,64 @@
                 console.error('[Main] Failed to initialize icons:', error);
             }
         }
+    </script>
+    
+    <!-- Background Animation -->
+    <script>
+        // Load background animation config and render
+        (async () => {
+            try {
+                const response = await fetch('config/checking_system_config.json');
+                const config = await response.json();
+                
+                if (config.backgroundAnimation) {
+                    const container = document.getElementById('background-circles');
+                    if (!container) return;
+                    
+                    let html = '<div class="fixed inset-0 pointer-events-none z-0">';
+                    
+                    // Add circles
+                    if (config.backgroundAnimation.circles) {
+                        config.backgroundAnimation.circles.forEach(circle => {
+                            const positionStyles = Object.entries(circle.position)
+                                .map(([key, value]) => `${key}: ${value}`)
+                                .join('; ');
+                            const sizeStyles = Object.entries(circle.size)
+                                .map(([key, value]) => `${key}: ${value}`)
+                                .join('; ');
+                            
+                            html += `<div class="absolute rounded-full border ${circle.animation}" 
+                                     style="${positionStyles}; ${sizeStyles}; 
+                                            border-color: ${circle.color}; 
+                                            animation-duration: ${circle.animationDuration}; 
+                                            animation-delay: ${circle.animationDelay};"></div>`;
+                        });
+                    }
+                    
+                    // Add blobs
+                    if (config.backgroundAnimation.blobs) {
+                        config.backgroundAnimation.blobs.forEach(blob => {
+                            const positionStyles = Object.entries(blob.position)
+                                .map(([key, value]) => `${key}: ${value}`)
+                                .join('; ');
+                            const sizeStyles = Object.entries(blob.size)
+                                .map(([key, value]) => `${key}: ${value}`)
+                                .join('; ');
+                            
+                            html += `<div class="absolute rounded-full" 
+                                     style="${positionStyles}; ${sizeStyles}; 
+                                            background-color: ${blob.color}; 
+                                            filter: blur(${blob.blur});"></div>`;
+                        });
+                    }
+                    
+                    html += '</div>';
+                    container.innerHTML = html;
+                }
+            } catch (error) {
+                console.warn('[Background] Failed to load animation config:', error);
+            }
+        })();
     </script>
 </body>
 </html>
