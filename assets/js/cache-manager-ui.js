@@ -162,8 +162,8 @@
       // Set loading state (orange) while checking cache
       badge.classList.remove('badge-success', 'badge-error', 'badge-warning');
       badge.classList.add('badge-warning');
-      statusText.textContent = 'Checking cache...';
-      badge.title = 'Checking cache status';
+      statusText.textContent = config.cache.statusLabels.checking;
+      badge.title = config.cache.statusLabels.checking;
       badge.style.cursor = 'default';
       
       const checkStartTime = Date.now();
