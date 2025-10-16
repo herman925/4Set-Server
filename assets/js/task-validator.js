@@ -214,7 +214,7 @@ window.TaskValidator = (() => {
         const optionIndex = parseInt(studentAnswer);
         if (!isNaN(optionIndex) && optionIndex >= 1 && optionIndex <= question.options.length) {
           const mappedValue = question.options[optionIndex - 1].value;
-          console.log(`[TaskValidator] Mapped ${questionId}: ${studentAnswer} → ${mappedValue}`);
+          // console.log(`[TaskValidator] Mapped ${questionId}: ${studentAnswer} → ${mappedValue}`);
           studentAnswer = mappedValue;
         }
       }

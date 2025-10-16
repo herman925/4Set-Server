@@ -137,6 +137,7 @@
         // Normalize grade from K1/K2/K3/Other to numeric 1/2/3/0
         const rawGrade = classItem['Grade'] || '';
         let normalizedGrade = 0; // Default to 0 for "Other"
+        
         if (rawGrade.toString().toUpperCase().includes('K1') || rawGrade.toString().toUpperCase().includes('N1')) {
           normalizedGrade = 1;
         } else if (rawGrade.toString().toUpperCase().includes('K2') || rawGrade.toString().toUpperCase().includes('N2')) {
@@ -255,7 +256,7 @@
         groups: data.groups,
         credentials: data.credentials, // Include Jotform API credentials
         metadata: data.metadata,
-        version: '1.2' // Cache version updated to include credentials
+        version: '1.3' // Cache version updated to include normalized grade indexing
       };
       sessionStorage.setItem('checking_system_data', JSON.stringify(cacheData));
     } catch (error) {
@@ -275,7 +276,7 @@
       const data = JSON.parse(cached);
       
       // Check cache version - invalidate if outdated
-      if (data.version !== '1.2') {
+      if (data.version !== '1.3') {
         console.log('Cache version mismatch, clearing old cache');
         sessionStorage.removeItem('checking_system_data');
         return null;

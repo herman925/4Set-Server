@@ -13,8 +13,8 @@
     // Check if data is cached in session
     appData = window.CheckingSystemData.getCachedData();
     
-    // Validate cached data has credentials (version 1.2+)
-    if (appData && appData.credentials && appData.version === '1.2') {
+    // Validate cached data has credentials (version 1.3+)
+    if (appData && appData.credentials && appData.version === '1.3') {
       // Data already loaded with credentials, skip password prompt
       hidePasswordModal();
       initializeUI();
@@ -22,7 +22,7 @@
     }
 
     // Clear old/invalid cache
-    if (appData && (!appData.credentials || appData.version !== '1.2')) {
+    if (appData && (!appData.credentials || appData.version !== '1.3')) {
       console.log('Cache outdated or missing credentials, clearing...');
       sessionStorage.removeItem('checking_system_data');
       appData = null;

@@ -11,6 +11,7 @@
   let surveyStructure = null; // Task-to-set mapping
   let taskToSetMap = new Map(); // taskKey -> setId
   let currentViewMode = 'set'; // 'set' or 'task'
+  let systemConfig = null; // Checking system config for column names
 
   /**
    * Initialize the page
@@ -28,6 +29,9 @@
       return;
     }
 
+    // Load system config
+    await loadSystemConfig();
+    
     // Load cached data
     const cachedData = window.CheckingSystemData?.getCachedData();
     if (!cachedData) {
@@ -78,7 +82,26 @@
   }
 
   /**
-   * Load survey structure and build task-to-set mapping
+   * Load system configuration
+   */
+  async function loadSystemConfig() {
+    if (systemConfig) return systemConfig;
+    
+    try {
+      const response = await fetch('config/checking_system_config.json');
+      systemConfig = await response.json();
+      console.log('[ClassPage] System config loaded');
+      return systemConfig;
+    } catch (error) {
+      console.error('[ClassPage] Failed to load system config:', error);
+      systemConfig = { taskView: { taskColumnNames: {}, equalWidthColumns: false } };
+      return systemConfig;
+    }
+  }
+
+  /**
+   * Load survey structure from tasks/survey-structure.json
+   * Builds a map of task IDs to set IDs
    */
   async function loadSurveyStructure() {
     try {
@@ -378,18 +401,38 @@
     if (!viewBySetBtn || !viewByTaskBtn) return;
     
     if (currentViewMode === 'set') {
-      viewBySetBtn.classList.add('bg-white', 'shadow-sm', 'text-[color:var(--foreground)]');
-      viewBySetBtn.classList.remove('text-[color:var(--muted-foreground)]', 'hover:text-[color:var(--foreground)]');
+      // By Set active - blue (primary)
+      viewBySetBtn.classList.add('bg-[color:var(--primary)]', 'text-white', 'shadow-sm');
+      viewBySetBtn.classList.remove('text-[color:var(--muted-foreground)]', 'hover:bg-[color:var(--secondary)]', 'hover:text-[color:var(--secondary-foreground)]');
       
-      viewByTaskBtn.classList.remove('bg-white', 'shadow-sm', 'text-[color:var(--foreground)]');
-      viewByTaskBtn.classList.add('text-[color:var(--muted-foreground)]', 'hover:text-[color:var(--foreground)]');
+      // By Task inactive - grey with orange hover
+      viewByTaskBtn.classList.remove('bg-[color:var(--primary)]', 'text-white', 'shadow-sm', 'bg-[color:var(--secondary)]', 'text-[color:var(--secondary-foreground)]');
+      viewByTaskBtn.classList.add('text-[color:var(--muted-foreground)]', 'hover:bg-[color:var(--secondary)]', 'hover:text-[color:var(--secondary-foreground)]');
     } else {
-      viewByTaskBtn.classList.add('bg-white', 'shadow-sm', 'text-[color:var(--foreground)]');
-      viewByTaskBtn.classList.remove('text-[color:var(--muted-foreground)]', 'hover:text-[color:var(--foreground)]');
+      // By Task active - orange (secondary)
+      viewByTaskBtn.classList.add('bg-[color:var(--secondary)]', 'text-[color:var(--secondary-foreground)]', 'shadow-sm');
+      viewByTaskBtn.classList.remove('text-[color:var(--muted-foreground)]', 'hover:bg-[color:var(--secondary)]', 'hover:text-[color:var(--secondary-foreground)]');
       
-      viewBySetBtn.classList.remove('bg-white', 'shadow-sm', 'text-[color:var(--foreground)]');
-      viewBySetBtn.classList.add('text-[color:var(--muted-foreground)]', 'hover:text-[color:var(--foreground)]');
+      // By Set inactive - grey with blue hover
+      viewBySetBtn.classList.remove('bg-[color:var(--primary)]', 'text-white', 'shadow-sm', 'bg-[color:var(--secondary)]', 'text-[color:var(--secondary-foreground)]');
+      viewBySetBtn.classList.add('text-[color:var(--muted-foreground)]', 'hover:bg-[color:var(--primary)]', 'hover:text-white');
     }
+  }
+
+  /**
+   * Calculate outstanding task count from setStatus
+   */
+  function calculateOutstandingCount(setStatus) {
+    if (!setStatus) return 0;
+    
+    let count = 0;
+    ['set1', 'set2', 'set3', 'set4'].forEach(setId => {
+      if (setStatus[setId]?.status === 'incomplete') {
+        count += setStatus[setId].outstandingTasks?.length || 0;
+      }
+    });
+    
+    return count;
   }
 
   /**
@@ -484,7 +527,6 @@
             <th class="px-4 py-3 text-left font-medium">Set 3</th>
             <th class="px-4 py-3 text-left font-medium">Set 4</th>
             <th class="px-4 py-3 text-left font-medium">Outstanding</th>
-            <th class="px-4 py-3 text-center font-medium">Actions</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-[color:var(--border)]">
@@ -493,7 +535,7 @@
     if (filteredStudents.length === 0) {
       html += `
         <tr>
-          <td colspan="9" class="px-4 py-8 text-center text-[color:var(--muted-foreground)]">
+          <td colspan="8" class="px-4 py-8 text-center text-[color:var(--muted-foreground)]">
             <p>No students match the current filter</p>
           </td>
         </tr>
@@ -529,12 +571,6 @@
                 `<span class="text-[color:var(--muted-foreground)] text-xs">—</span>`
               }
             </td>
-            <td class="px-4 py-3 text-center">
-              <a href="checking_system_4_student.html?coreId=${encodeURIComponent(student.coreId)}" 
-                 class="text-xs text-[color:var(--primary)] hover:underline">
-                View →
-              </a>
-            </td>
           </tr>
         `;
       });
@@ -553,35 +589,110 @@
    */
   function renderStudentTableByTask(container, filteredStudents) {
     // Get all tasks from survey structure in order
+    // NOTE: Gender-conditional tasks (TEC_Male, TEC_Female) are merged into single "TEC" column
     const allTasks = [];
+    const genderTasksProcessed = new Set();
+    
     if (surveyStructure && surveyStructure.sets) {
       surveyStructure.sets.forEach(set => {
         set.sections.forEach(section => {
           const taskName = section.file.replace('.json', '');
+          
+          // Handle gender-conditional tasks (TEC_Male, TEC_Female)
+          if (section.showIf && section.showIf.gender) {
+            // Use generic name "TEC" for both male and female versions
+            const baseTaskName = taskName.replace(/_Male|_Female/i, '');
+            
+            // Only add once (avoid duplicate TEC columns)
+            if (!genderTasksProcessed.has(baseTaskName)) {
+              genderTasksProcessed.add(baseTaskName);
+              allTasks.push({
+                name: baseTaskName,
+                originalNames: [taskName], // Track original for lookup
+                setId: set.id,
+                order: section.order,
+                isGenderConditional: true
+              });
+            } else {
+              // Add to existing entry's originalNames
+              const existing = allTasks.find(t => t.name === baseTaskName);
+              if (existing && !existing.originalNames.includes(taskName)) {
+                existing.originalNames.push(taskName);
+              }
+            }
+            return;
+          }
+          
+          // Regular tasks
           allTasks.push({
             name: taskName,
+            originalNames: [taskName],
             setId: set.id,
-            order: section.order
+            order: section.order,
+            isGenderConditional: false
           });
         });
       });
     }
     
+    // Get column width settings from config
+    const taskColumnWidth = systemConfig?.taskView?.taskColumnWidth || '120px';
+    const studentNameColumnWidth = systemConfig?.taskView?.studentNameColumnWidth || '200px';
+    const coreIdColumnWidth = systemConfig?.taskView?.coreIdColumnWidth || '120px';
+    const useEqualWidth = systemConfig?.taskView?.equalWidthColumns !== false;
+    const columnNames = systemConfig?.taskView?.taskColumnNames || {};
+    
+    // Group tasks by set for the set header row
+    const setGroups = {};
+    allTasks.forEach(task => {
+      if (!setGroups[task.setId]) {
+        setGroups[task.setId] = [];
+      }
+      setGroups[task.setId].push(task);
+    });
+    
+    // Define light background colors for each set (using permitted theme colors)
+    const setColors = {
+      'set1': 'rgba(43, 57, 144, 0.06)',      // Light blue (primary)
+      'set2': 'rgba(141, 190, 80, 0.08)',     // Light green (success)
+      'set3': 'rgba(147, 51, 234, 0.06)',     // Light purple
+      'set4': 'rgba(249, 157, 51, 0.08)'      // Light orange (secondary)
+    };
+    
     let html = `
       <table class="min-w-full text-sm">
         <thead class="bg-[color:var(--muted)]/30 text-xs text-[color:var(--muted-foreground)]">
-          <tr>
-            <th class="px-4 py-3 text-left font-medium sticky left-0 bg-[color:var(--muted)]/30 z-10">Student Name</th>
-            <th class="px-4 py-3 text-left font-medium">Core ID</th>
+          <!-- Set grouping row -->
+          <tr class="border-b border-[color:var(--border)]">
+            <th rowspan="2" class="px-4 py-3 text-left font-medium sticky left-0 bg-white z-20" style="width: ${studentNameColumnWidth}; min-width: ${studentNameColumnWidth}; max-width: ${studentNameColumnWidth};">Student Name</th>
+            <th rowspan="2" class="px-4 py-3 text-left font-medium" style="width: ${coreIdColumnWidth}; min-width: ${coreIdColumnWidth}; max-width: ${coreIdColumnWidth};">Core ID</th>
     `;
     
-    // Add column headers for each task
-    allTasks.forEach(task => {
-      html += `<th class="px-4 py-3 text-center font-medium" title="${task.name}">${task.name}</th>`;
+    // Add set headers with merged cells and background colors
+    ['set1', 'set2', 'set3', 'set4'].forEach(setId => {
+      const tasksInSet = setGroups[setId] || [];
+      if (tasksInSet.length > 0) {
+        const setLabel = setId.replace('set', 'Set ');
+        const bgColor = setColors[setId];
+        html += `<th colspan="${tasksInSet.length}" class="px-2 py-2 text-center font-semibold text-[color:var(--foreground)]" style="background-color: ${bgColor};">${setLabel}</th>`;
+      }
     });
     
     html += `
-            <th class="px-4 py-3 text-center font-medium">Actions</th>
+          </tr>
+          <!-- Task name row -->
+          <tr>
+    `;
+    
+    // Add column headers for each task with set background colors
+    allTasks.forEach(task => {
+      const displayName = columnNames[task.name] || task.name;
+      const bgColor = setColors[task.setId];
+      const widthStyle = useEqualWidth ? `width: ${taskColumnWidth}; min-width: ${taskColumnWidth}; max-width: ${taskColumnWidth}; ` : '';
+      html += `<th class="px-4 py-3 text-center font-medium" style="${widthStyle}background-color: ${bgColor};" title="${task.name}">${displayName}</th>`;
+    });
+    
+    html += `
           </tr>
         </thead>
         <tbody class="divide-y divide-[color:var(--border)]">
@@ -590,7 +701,7 @@
     if (filteredStudents.length === 0) {
       html += `
         <tr>
-          <td colspan="${allTasks.length + 3}" class="px-4 py-8 text-center text-[color:var(--muted-foreground)]">
+          <td colspan="${allTasks.length + 2}" class="px-4 py-8 text-center text-[color:var(--muted-foreground)]">
             <p>No students match the current filter</p>
           </td>
         </tr>
@@ -602,7 +713,7 @@
         
         html += `
           <tr class="hover:bg-[color:var(--muted)]/20 transition-colors">
-            <td class="px-4 py-3 sticky left-0 bg-white z-10">
+            <td class="px-4 py-3 sticky left-0 bg-white z-20">
               <a href="checking_system_4_student.html?coreId=${encodeURIComponent(student.coreId)}" 
                  class="font-medium text-[color:var(--primary)] hover:underline font-noto">
                 ${student.studentName}
@@ -611,23 +722,18 @@
             <td class="px-4 py-3 text-xs font-mono text-[color:var(--muted-foreground)]">${student.coreId}</td>
         `;
         
-        // Add status for each task
+        // Add status for each task with set background colors
         allTasks.forEach(task => {
-          const taskStatus = getTaskStatus(setStatus, task.name);
+          const taskStatus = getTaskStatus(setStatus, task, student);
+          const bgColor = setColors[task.setId];
           html += `
-            <td class="px-4 py-3 text-center">
+            <td class="px-4 py-3 text-center" style="background-color: ${bgColor};">
               <span class="status-circle ${taskStatus}" title="${task.name}"></span>
             </td>
           `;
         });
         
         html += `
-            <td class="px-4 py-3 text-center">
-              <a href="checking_system_4_student.html?coreId=${encodeURIComponent(student.coreId)}" 
-                 class="text-xs text-[color:var(--primary)] hover:underline">
-                View →
-              </a>
-            </td>
           </tr>
         `;
       });
@@ -643,27 +749,50 @@
   
   /**
    * Get task status for a specific task
+   * Handles gender-conditional tasks (TEC) by checking student gender
    */
-  function getTaskStatus(setStatus, taskName) {
+  function getTaskStatus(setStatus, task, student) {
     if (!setStatus) return 'status-grey';
     
-    const taskId = taskName.toLowerCase();
+    // For gender-conditional tasks, determine which version to look for based on student gender
+    let searchTaskIds = [];
+    
+    if (task.isGenderConditional && task.originalNames) {
+      // Normalize student gender
+      let studentGender = (student.gender || '').toLowerCase();
+      if (studentGender === 'm') studentGender = 'male';
+      if (studentGender === 'f') studentGender = 'female';
+      
+      // Find the appropriate task based on gender
+      const appropriateTask = task.originalNames.find(name => {
+        const nameLower = name.toLowerCase();
+        if (studentGender === 'male' && nameLower.includes('male') && !nameLower.includes('female')) return true;
+        if (studentGender === 'female' && nameLower.includes('female')) return true;
+        return false;
+      });
+      
+      searchTaskIds = appropriateTask ? [appropriateTask.toLowerCase()] : task.originalNames.map(n => n.toLowerCase());
+    } else {
+      searchTaskIds = task.originalNames.map(n => n.toLowerCase());
+    }
     
     // Search through all sets for this task
     for (const setId of ['set1', 'set2', 'set3', 'set4']) {
       const set = setStatus[setId];
       if (!set || !set.tasks) continue;
       
-      const task = set.tasks.find(t => 
-        t.taskId === taskId || 
-        t.taskId.includes(taskId) || 
-        taskId.includes(t.taskId)
-      );
-      
-      if (task) {
-        if (task.complete) return 'status-green';
-        if (task.answered > 0) return 'status-yellow';
-        return 'status-red';
+      for (const searchId of searchTaskIds) {
+        const foundTask = set.tasks.find(t => 
+          t.taskId === searchId || 
+          t.taskId.includes(searchId) || 
+          searchId.includes(t.taskId)
+        );
+        
+        if (foundTask) {
+          if (foundTask.complete) return 'status-green';
+          if (foundTask.answered > 0) return 'status-yellow';
+          return 'status-red';
+        }
       }
     }
     

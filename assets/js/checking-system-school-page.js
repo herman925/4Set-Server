@@ -281,7 +281,6 @@
             <th class="px-3 py-2 font-semibold text-[color:var(--foreground)] text-center">Set 3</th>
             <th class="px-3 py-2 font-semibold text-[color:var(--foreground)] text-center">Set 4</th>
             <th class="px-3 py-2 font-semibold text-[color:var(--foreground)] text-center">Outstanding</th>
-            <th class="px-3 py-2 font-semibold text-[color:var(--foreground)]">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -322,7 +321,7 @@
             }
             
             return `
-              <tr class="border-b border-[color:var(--border)] hover:bg-[color:var(--muted)]/30 transition-colors" data-class-row data-grade="${cls.grade || ''}" data-has-data="${classStudents.length > 0}" data-is-incomplete="${outstandingSets > 0}">
+              <tr class="border-b border-[color:var(--border)] hover:bg-[color:var(--muted)]/30 transition-colors" data-class-row data-grade="${String(cls.grade || 0)}" data-has-data="${classStudents.length > 0}" data-is-incomplete="${outstandingSets > 0}">
                 <td class="px-3 py-3">
                   <a href="checking_system_3_class.html?classId=${encodeURIComponent(cls.classId)}" class="font-semibold font-noto text-[color:var(--foreground)] hover:text-[color:var(--primary)]">
                     ${cls.actualClassName}
@@ -349,12 +348,6 @@
                     `<button onclick="window.showOutstandingClassesModal('${cls.classId}')" class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-medium hover:bg-red-200 transition-colors cursor-pointer">${outstandingSets}</button>` :
                     `<span class="text-[color:var(--muted-foreground)] text-xs">—</span>`
                   }
-                </td>
-                <td class="px-3 py-3">
-                  <a href="checking_system_3_class.html?classId=${encodeURIComponent(cls.classId)}" 
-                     class="text-xs text-[color:var(--primary)] hover:underline">
-                    View Details →
-                  </a>
                 </td>
               </tr>
             `;
@@ -472,11 +465,11 @@
       if (grade === 'all') {
         shouldShow = true;
       } else if (grade === '1' || grade === '2' || grade === '3') {
-        // Filter by specific grade number
-        shouldShow = rowGrade === grade;
-      } else if (grade === '0' || grade === 'Others') {
-        // Filter by "Other" grade
-        shouldShow = rowGrade === '0';
+        // Filter by specific grade number (numeric comparison)
+        shouldShow = String(rowGrade) === grade;
+      } else if (grade === '0') {
+        // Filter by "Other" grade (numeric 0)
+        shouldShow = String(rowGrade) === '0';
       }
       
       if (shouldShow) {

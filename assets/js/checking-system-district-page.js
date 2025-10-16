@@ -460,14 +460,14 @@
   }
 
   /**
-   * Extract grade category from grade string
+   * Extract grade category from numeric grade value
+   * Grades are stored as: 1=K1, 2=K2, 3=K3, 0=Others
    */
-  function extractGrade(gradeStr) {
-    if (!gradeStr) return 'Others';
-    const grade = gradeStr.toString().toUpperCase();
-    if (grade.includes('K1') || grade.includes('N1')) return 'K1';
-    if (grade.includes('K2') || grade.includes('N2')) return 'K2';
-    if (grade.includes('K3') || grade.includes('N3')) return 'K3';
+  function extractGrade(gradeNum) {
+    const grade = parseInt(gradeNum) || 0;
+    if (grade === 1) return 'K1';
+    if (grade === 2) return 'K2';
+    if (grade === 3) return 'K3';
     return 'Others';
   }
 

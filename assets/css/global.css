@@ -195,6 +195,25 @@ body {
     box-shadow: 0 16px 32px -12px rgba(249, 157, 51, 0.48) !important;
 }
 
+/* Orange Filter/Config Button - Matches Task Config on Student Page */
+.filter-button {
+    /* Inherits from hero-button and btn-secondary in theme */
+    padding: 0.5rem 1rem !important;
+    border-radius: 0.5rem !important;
+    font-size: 0.75rem !important;
+    font-weight: 500 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    border: none !important;
+    cursor: pointer !important;
+}
+
+.filter-button .lucide {
+    width: 0.875rem !important;
+    height: 0.875rem !important;
+}
+
 /* Modal Styles */
 .modal-backdrop {
     position: fixed !important;
