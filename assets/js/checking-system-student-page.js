@@ -641,7 +641,20 @@
         completionEl.textContent = `${data.metrics.completionPercentage}%`;
       }
 
-      // Validate all tasks using the merged answers
+      // VALIDATION ARCHITECTURE NOTE:
+      // The student page uses TaskValidator as the SINGLE SOURCE OF TRUTH for all
+      // task validation. TaskValidator.js contains centralized termination rules,
+      // question counting logic, and completion calculations that ensure consistency
+      // across the entire checking system.
+      //
+      // This direct call to TaskValidator provides the most accurate, real-time
+      // validation for individual student assessment data.
+      //
+      // Key features:
+      // - Centralized termination rules (ERV, CM, CWR, Fine Motor, SYM/NONSYM)
+      // - Question exclusion after termination (PRD-mandated)
+      // - Post-termination answer detection (data quality flags)
+      // - Timeout detection with gap analysis
       console.log('[StudentPage] Validating tasks with TaskValidator...');
       
       if (!window.TaskValidator) {

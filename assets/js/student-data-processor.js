@@ -1,6 +1,39 @@
 /**
- * Student Data Processor for 4Set Checking System
+ * ⚠️ DEPRECATED - DO NOT USE IN NEW CODE
+ * 
+ * This file contains legacy validation logic that has been superseded by
+ * TaskValidator.js (assets/js/task-validator.js). All pages now use TaskValidator
+ * as the single source of truth for validation.
+ * 
+ * This file is kept for historical reference only and should not be included
+ * in new pages.
+ * 
+ * WHY DEPRECATED:
+ * - TaskValidator.js is the single source of truth
+ * - More comprehensive termination rules in TaskValidator
+ * - Better post-termination answer detection
+ * - Consistent validation across all pages (student, class, school)
+ * - All current pages use JotFormCache + TaskValidator pattern
+ * 
+ * MIGRATION GUIDE:
+ * Instead of StudentDataProcessor, use:
+ * 
+ * For student page:
+ *   const validation = await window.TaskValidator.validateAllTasks(mergedAnswers);
+ * 
+ * For class/school pages:
+ *   const cache = await window.JotFormCache.buildStudentValidationCache(students, surveyStructure);
+ * 
+ * @deprecated Since 2024-10-16 - Use TaskValidator.js instead
+ * @see assets/js/task-validator.js - Single source of truth for validation
+ * @see assets/js/jotform-cache.js - Caching layer for class/school aggregation
+ */
+
+/**
+ * Student Data Processor for 4Set Checking System (LEGACY)
  * Fetches, merges, validates, and displays student assessment data
+ * 
+ * @deprecated This class is no longer used. See deprecation notice above.
  */
 
 class StudentDataProcessor {

@@ -575,6 +575,22 @@
 
     /**
      * Validate a single student using TaskValidator
+     * 
+     * VALIDATION ARCHITECTURE:
+     * This function is the bridge between class/school aggregation and the
+     * TaskValidator single source of truth. It:
+     * 
+     * 1. Merges multiple submissions (earliest non-empty value wins)
+     * 2. Calls TaskValidator.validateAllTasks() for accurate validation
+     * 3. Builds task-to-set mapping from survey structure
+     * 4. Handles gender-conditional tasks (TEC_Male vs TEC_Female)
+     * 5. Calculates set completion status
+     * 6. Returns comprehensive validation cache entry
+     * 
+     * This ensures that class and school pages use the SAME validation rules
+     * as the student drilldown page, maintaining consistency across all
+     * hierarchical levels of the checking system.
+     * 
      * @param {Object} student - Student object
      * @param {Array} submissions - Student's submissions
      * @param {Object} surveyStructure - Survey structure

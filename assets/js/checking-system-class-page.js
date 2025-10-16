@@ -123,7 +123,20 @@
     try {
       console.log('[ClassPage] Building student validation cache...');
       
-      // Build validation cache using TaskValidator
+      // VALIDATION ARCHITECTURE NOTE:
+      // The class page uses JotFormCache.buildStudentValidationCache() which internally
+      // calls TaskValidator.validateAllTasks() for each student. This ensures that
+      // class-level aggregation uses the SAME validation logic as the student page.
+      //
+      // The validation cache:
+      // 1. Merges submissions for each student (earliest wins)
+      // 2. Calls TaskValidator for accurate validation
+      // 3. Calculates set completion status
+      // 4. Handles gender-conditional tasks (TEC_Male vs TEC_Female)
+      // 5. Caches results in IndexedDB for performance
+      //
+      // Result: Class-level metrics are aggregated from individual student validations
+      // using the exact same rules as the student drilldown page.
       const validationCache = await window.JotFormCache.buildStudentValidationCache(
         students,
         surveyStructure
