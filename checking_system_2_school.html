@@ -147,13 +147,50 @@
             </details>
 
             <!-- Classes List -->
-            <div class="entry-card p-6">
-                <div class="flex items-center justify-between mb-4">
-                    <h2 class="text-sm font-semibold text-[color:var(--foreground)]">Classes in this School</h2>
+            <details class="entry-card" open>
+                <summary class="flex items-center justify-between px-6 py-4 cursor-pointer list-none border-b border-[color:var(--border)]">
+                    <div>
+                        <h2 class="text-sm font-semibold text-[color:var(--foreground)]">Classes in this School</h2>
+                        <p class="text-xs text-[color:var(--muted-foreground)]">Click to expand/collapse class list</p>
+                    </div>
                     <span class="text-xs text-[color:var(--muted-foreground)]" id="class-count">0 classes</span>
+                </summary>
+                
+                <!-- Legend and Filters -->
+                <div class="px-6 py-3 border-b border-[color:var(--border)] bg-[color:var(--muted)]/20 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <div class="flex items-center gap-4 text-xs text-[color:var(--muted-foreground)]">
+                        <span class="font-medium text-[color:var(--foreground)]">Legend:</span>
+                        <span class="inline-flex items-center gap-1.5">
+                            <span class="status-circle status-green"></span>
+                            <span>Complete</span>
+                        </span>
+                        <span class="inline-flex items-center gap-1.5">
+                            <span class="status-circle status-yellow"></span>
+                            <span>In Progress</span>
+                        </span>
+                        <span class="inline-flex items-center gap-1.5">
+                            <span class="status-circle status-red"></span>
+                            <span>Incomplete</span>
+                        </span>
+                        <span class="inline-flex items-center gap-1.5">
+                            <span class="status-circle status-grey"></span>
+                            <span>Not started</span>
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <label for="class-view-filter" class="text-xs font-medium text-[color:var(--foreground)]">View:</label>
+                        <select id="class-view-filter" class="px-2 py-1 border border-[color:var(--border)] rounded-md bg-white text-xs focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]">
+                            <option value="all" selected>All Classes</option>
+                            <option value="with-data">With Data Only</option>
+                            <option value="incomplete">Incomplete Only</option>
+                        </select>
+                    </div>
                 </div>
-                <div id="classes-table"></div>
-            </div>
+                
+                <div class="px-6 pb-6 pt-3">
+                    <div id="classes-table"></div>
+                </div>
+            </details>
         </main>
     </div>
 
