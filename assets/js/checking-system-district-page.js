@@ -4,7 +4,8 @@
  */
 
 (() => {
-  let districtData = null;
+  let district = null;
+  let group = null;
   let schools = [];
   let classes = [];
   let students = [];
@@ -22,8 +23,8 @@
     
     // Get district from URL
     const urlParams = new URLSearchParams(window.location.search);
-    const district = urlParams.get('district');
-    const group = urlParams.get('group'); // Optional
+    district = urlParams.get('district');
+    group = urlParams.get('group'); // Optional
     
     if (!district) {
       alert('No district specified');
@@ -51,14 +52,6 @@
     students = cachedData.students.filter(s => schoolIds.has(s.schoolId) && s.coreId && s.coreId.trim() !== '');
 
     console.log(`[DistrictPage] District ${district}: ${schools.length} schools, ${classes.length} classes, ${students.length} students`);
-
-    districtData = {
-      district,
-      group,
-      schools,
-      classes,
-      students
-    };
 
     // Load survey structure
     await loadSurveyStructure();
@@ -236,12 +229,12 @@
    */
   function renderPage() {
     // Update header
-    document.getElementById('district-name').textContent = districtData.district;
-    document.getElementById('district-title').textContent = districtData.district;
-    document.title = `${districtData.district} Overview · 4Set Checking System`;
+    document.getElementById('district-name').textContent = district;
+    document.getElementById('district-title').textContent = district;
+    document.title = `${district} Overview · 4Set Checking System`;
 
-    if (districtData.group) {
-      document.getElementById('district-context').textContent = `Schools in ${districtData.district} district within Group ${districtData.group}`;
+    if (group) {
+      document.getElementById('district-context').textContent = `Schools in ${district} district within Group ${group}`;
     }
 
     // Update summary metrics
@@ -493,8 +486,8 @@
           type: 'district',
           data: {
             districtData: {
-              district: districtData.district,
-              group: districtData.group
+              district: district,
+              group: group
             },
             groups: groups,
             schools: schools,

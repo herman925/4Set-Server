@@ -4,7 +4,8 @@
  */
 
 (() => {
-  let groupData = null;
+  let group = null;
+  let district = null;
   let schools = [];
   let classes = [];
   let students = [];
@@ -22,8 +23,8 @@
     
     // Get group from URL
     const urlParams = new URLSearchParams(window.location.search);
-    const group = parseInt(urlParams.get('group'));
-    const district = urlParams.get('district'); // Optional
+    group = parseInt(urlParams.get('group'));
+    district = urlParams.get('district'); // Optional
     
     if (!group) {
       alert('No group specified');
@@ -51,14 +52,6 @@
     students = cachedData.students.filter(s => schoolIds.has(s.schoolId) && s.coreId && s.coreId.trim() !== '');
 
     console.log(`[GroupPage] Group ${group}: ${schools.length} schools, ${classes.length} classes, ${students.length} students`);
-
-    groupData = {
-      group,
-      district,
-      schools,
-      classes,
-      students
-    };
 
     // Load survey structure
     await loadSurveyStructure();
@@ -236,33 +229,18 @@
    */
   function renderPage() {
     // Update header
-    document.getElementById('group-number').textContent = groupData.group;
-    document.title = `Group ${groupData.group} Overview · 4Set Checking System`;
+    document.getElementById('group-number').textContent = group;
+    document.title = `Group ${group} Overview · 4Set Checking System`;
 
-    // Update breadcrumb
+    // Update breadcrumb - just show group name
     const groupName = document.getElementById('group-name');
     if (groupName) {
-      groupName.textContent = `Group ${groupData.group}`;
+      groupName.textContent = `Group ${group}`;
     }
 
-    if (groupData.district) {
-      const districtLink = document.getElementById('district-name');
-      if (districtLink) {
-        districtLink.textContent = groupData.district;
-        districtLink.href = `checking_system_1_district.html?district=${encodeURIComponent(groupData.district)}`;
-      }
-      document.getElementById('group-context').textContent = `Schools in Group ${groupData.group} within ${groupData.district} district`;
-    } else {
-      // Hide district breadcrumb if not filtering by district
-      const breadcrumbNav = document.querySelector('.breadcrumb-nav');
-      if (breadcrumbNav) {
-        const districtElements = breadcrumbNav.querySelectorAll('.breadcrumb-district, .breadcrumb-nav > i');
-        districtElements.forEach(el => {
-          if (el.classList.contains('breadcrumb-district') || (el.previousElementSibling && el.previousElementSibling.classList.contains('breadcrumb-district'))) {
-            el.style.display = 'none';
-          }
-        });
-      }
+    // Update context message if district filter applied
+    if (district) {
+      document.getElementById('group-context').textContent = `Schools in Group ${group} within ${district} district`;
     }
 
     // Update summary metrics
@@ -511,8 +489,8 @@
           type: 'group',
           data: {
             groupData: {
-              group: groupData.group,
-              district: groupData.district
+              group: group,
+              district: district
             },
             schools: schools,
             classes: classes,
