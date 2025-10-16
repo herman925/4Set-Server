@@ -2,7 +2,7 @@
 
 **Version:** 1.2  
 **Created:** October 16, 2025  
-**Last Updated:** October 16, 2025 (Validation architecture consistency verification)  
+**Last Updated:** October 16, 2025 (Added validation architecture)  
 **Author:** System Architecture Team  
 **Status:** ✅ Implemented
 
@@ -431,46 +431,27 @@ if (questionIndex <= terminationIndex || !terminated) {
 
 ---
 
-## Validation Architecture Consistency
+## Validation Architecture
 
-**Status:** ✅ All pages use TaskValidator as single source of truth
+### Implementation by Page
 
-### Page-Level Implementation
+| Page | File | Method |
+|------|------|--------|
+| Student | `checking-system-student-page.js` | `TaskValidator.validateAllTasks()` |
+| Class | `checking-system-class-page.js` | `JotFormCache.buildStudentValidationCache()` |
+| School | `checking-system-school-page.js` | `JotFormCache.buildStudentValidationCache()` |
+| District | `checking_system_1_district.html` | `JotFormCache.buildStudentValidationCache()` |
+| Group | `checking_system_1_group.html` | `JotFormCache.buildStudentValidationCache()` |
 
-All checking system pages use consistent validation logic:
+**Note:** `JotFormCache.buildStudentValidationCache()` internally calls `TaskValidator.validateAllTasks()` for each student.
 
-| Page | Implementation | Validation Method |
-|------|----------------|-------------------|
-| **Student** (Level 4) | `checking-system-student-page.js` | Direct `TaskValidator.validateAllTasks()` call |
-| **Class** (Level 3) | `checking-system-class-page.js` | `JotFormCache.buildStudentValidationCache()` → TaskValidator |
-| **School** (Level 2) | `checking-system-school-page.js` | `JotFormCache.buildStudentValidationCache()` → TaskValidator |
-| **District** (Level 1a) | `checking_system_1_district.html` | `JotFormCache.buildStudentValidationCache()` → TaskValidator |
-| **Group** (Level 1b) | `checking_system_1_group.html` | `JotFormCache.buildStudentValidationCache()` → TaskValidator |
+### Required Scripts
 
-### Validation Flow
-
-```
-TaskValidator.js (Single Source of Truth)
-    ↓
-    ├─→ Student Page (Direct call)
-    │
-    └─→ JotFormCache.buildStudentValidationCache()
-            ↓
-            ├─→ Class Page
-            ├─→ School Page
-            ├─→ District Page
-            └─→ Group Page
-```
-
-**Key Principle:** All termination rules, question counting, and completion calculations use the same centralized logic in `TaskValidator.js`, ensuring 100% consistency across all hierarchical levels.
-
-### Scripts Required
-
-Pages using validation cache must load:
-- `localforage` (IndexedDB caching)
-- `task-validator.js` (validation engine)
-- `jotform-cache.js` (cache builder)
-- `assets/tasks/survey-structure.json` (task metadata)
+Pages using validation cache need:
+- `localforage` (IndexedDB)
+- `task-validator.js`
+- `jotform-cache.js`
+- `assets/tasks/survey-structure.json`
 
 ---
 
@@ -547,4 +528,4 @@ isComplete = true ✅
 |---------|------|---------|--------|
 | 1.0 | 2025-10-16 | Initial extraction from checking_system_prd.md | System Team |
 | 1.1 | 2025-10-16 | **Critical Update:** Timeout detection logic - consecutive-gap-to-end principle. Added C10207 example showing timeout with middle gaps. | System Team |
-| 1.2 | 2025-10-16 | Added validation architecture consistency section. Verified all pages (student, class, school, district, group) use TaskValidator as single source of truth. | System Team |
+| 1.2 | 2025-10-16 | Added validation architecture section documenting page implementations. | System Team |

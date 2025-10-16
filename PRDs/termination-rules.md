@@ -1,7 +1,7 @@
 # Task Termination Rules
 
 **Version:** 2.2  
-**Last Updated:** October 16, 2025 (Validation architecture consistency)  
+**Last Updated:** October 16, 2025 (Added page usage info)  
 **Maintainer:** Curriculum Team
 
 ---
