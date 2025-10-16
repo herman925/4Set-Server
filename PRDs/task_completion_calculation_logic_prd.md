@@ -1,8 +1,8 @@
 # Task Completion Calculation Logic - PRD
 
-**Version:** 1.1  
+**Version:** 1.2  
 **Created:** October 16, 2025  
-**Last Updated:** October 16, 2025 (Timeout detection logic fix)  
+**Last Updated:** October 16, 2025 (Added validation architecture)  
 **Author:** System Architecture Team  
 **Status:** ✅ Implemented
 
@@ -431,6 +431,30 @@ if (questionIndex <= terminationIndex || !terminated) {
 
 ---
 
+## Validation Architecture
+
+### Implementation by Page
+
+| Page | File | Method |
+|------|------|--------|
+| Student | `checking-system-student-page.js` | `TaskValidator.validateAllTasks()` |
+| Class | `checking-system-class-page.js` | `JotFormCache.buildStudentValidationCache()` |
+| School | `checking-system-school-page.js` | `JotFormCache.buildStudentValidationCache()` |
+| District | `checking_system_1_district.html` | `JotFormCache.buildStudentValidationCache()` |
+| Group | `checking_system_1_group.html` | `JotFormCache.buildStudentValidationCache()` |
+
+**Note:** `JotFormCache.buildStudentValidationCache()` internally calls `TaskValidator.validateAllTasks()` for each student.
+
+### Required Scripts
+
+Pages using validation cache need:
+- `localforage` (IndexedDB)
+- `task-validator.js`
+- `jotform-cache.js`
+- `assets/tasks/survey-structure.json`
+
+---
+
 ## Calculation Examples
 
 ### Example 1: Complete with Termination
@@ -504,3 +528,4 @@ isComplete = true ✅
 |---------|------|---------|--------|
 | 1.0 | 2025-10-16 | Initial extraction from checking_system_prd.md | System Team |
 | 1.1 | 2025-10-16 | **Critical Update:** Timeout detection logic - consecutive-gap-to-end principle. Added C10207 example showing timeout with middle gaps. | System Team |
+| 1.2 | 2025-10-16 | Added validation architecture section documenting page implementations. | System Team |
