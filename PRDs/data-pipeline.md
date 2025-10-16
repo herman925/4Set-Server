@@ -114,6 +114,9 @@ flowchart TD
 - Enrichment: join with encrypted CSVs via secure loaders to fill `child-name`, `school-id`, `district`, `class-id`, `class-name`; do not overwrite non-empty values.
 - Output: write CSV with preserved order; include `computerno` and optional school context.
 
+### Data Structure Notes
+- **classid.enc**: Contains class metadata including a `Grade` column (values: K1, K2, K3, or Others) that indicates the grade level of each class. This is used for filtering in the checking system's school drilldown page.
+
 ## Uploads
 
 Qualtrics

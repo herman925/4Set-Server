@@ -263,6 +263,7 @@
     document.getElementById('school-name').textContent = schoolData ? 
       `${schoolData.schoolNameChinese} · ${schoolData.schoolName}` : '';
     
+    document.getElementById('class-grade').textContent = classData.grade || 'N/A';
     document.getElementById('teacher-name').textContent = classData.teacherNames || 'N/A';
     document.getElementById('district-name').textContent = schoolData?.district || 'N/A';
     document.getElementById('group-number').textContent = schoolData?.group || 'N/A';
