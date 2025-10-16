@@ -6,13 +6,15 @@ last-updated: 2025-10-14
 
 # Data Pipeline
 
-Single source for parse → merge → upload across CSV, Qualtrics, Supabase, and Jotform. Replaces fragmented specs under the same domain.
+> **Documentation Note:** This document consolidates specifications from several legacy PRD files that have been merged into this single source. The original separate documents are no longer maintained.
 
-Consolidated from
-- PRDs/csv-export-and-qualtrics-upload-prd.md
-- PRDs/data_tool-uploader-spec.md
-- PRDs/merge-dialog-csv-merge-prd.md
-- PRDs/data_tool-file-timestamps.md
+Single source for parse → merge → upload across CSV, Qualtrics, Supabase, and Jotform.
+
+**Originally consolidated from** (now deprecated):
+- `csv-export-and-qualtrics-upload-prd.md`
+- `data_tool-uploader-spec.md`
+- `merge-dialog-csv-merge-prd.md`
+- `data_tool-file-timestamps.md`
 
 ## Conventions
 - Primary key: `sessionkey` (lowercase). Keep naming consistent across JS, Python, SQL to avoid PostgreSQL casing pitfalls.

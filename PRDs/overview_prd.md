@@ -1,5 +1,7 @@
 # 4set Web Successor — Overview PRD
 
+> **Documentation Status:** This PRD has been updated (2025-10-16) to remove references to non-existent `TEMP/` documentation. See `DEPRECATIONS.md` for details on documentation evolution.
+
 ## Context
 - The system has evolved from a legacy desktop tool to a hybrid model: a Windows-based processor agent handles ingestion and processing, while a lightweight web dashboard (GitHub Pages) monitors status, surfacing telemetry and controls.
 - Security model and mappings are governed by `PRDs/data_security_prd.md` and `assets/id_mapping/` artifacts.

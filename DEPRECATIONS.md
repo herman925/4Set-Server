@@ -193,6 +193,36 @@ If you find additional deprecated or broken references:
 
 ---
 
+## Consolidated/Deprecated PRD Files
+
+### Status: **CONSOLIDATED INTO SINGLE DOCUMENTS**
+
+Several PRD files were consolidated into comprehensive documents to reduce redundancy and improve maintainability.
+
+### Data Pipeline Consolidation
+
+**Consolidated Into:** `PRDs/data-pipeline.md`
+
+**Deprecated Files** (no longer exist):
+- `PRDs/csv-export-and-qualtrics-upload-prd.md`
+- `PRDs/data_tool-uploader-spec.md`
+- `PRDs/merge-dialog-csv-merge-prd.md`
+- `PRDs/data_tool-file-timestamps.md`
+
+All content from these files has been merged into `data-pipeline.md` as the single source of truth.
+
+### Jotform Integration Consolidation
+
+**Consolidated Into:** `PRDs/jotform-integration.md`
+
+**Deprecated Files** (no longer exist):
+- `PRDs/sessionkey-jotform-pipeline-plan.md`
+- `PRDs/jotform-api.md`
+
+All Jotform-related specifications are now in `jotform-integration.md`.
+
+---
+
 ## Version History
 
-- **2025-10-16:** Initial creation - Documented TEMP/ references, TestWatchFolder, and legacy system references
+- **2025-10-16:** Initial creation - Documented TEMP/ references, TestWatchFolder, legacy system references, and consolidated PRD files

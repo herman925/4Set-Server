@@ -1,5 +1,7 @@
 # 4set Web Successor — Processor Agent PRD
 
+> **Documentation Status:** Updated (2025-10-16) to replace legacy TEMP/ documentation references with current implementations. See `DEPRECATIONS.md` for migration details.
+
 ## Purpose
 Define the autonomous Windows-based agent that ingests PDFs from a watched OneDrive folder, executes the validation/parsing/merge/upload pipeline, and publishes telemetry for the monitoring web app.
 
