@@ -85,24 +85,24 @@
                 <div class="px-6 pb-4">
                     <div class="grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-5 gap-2 text-xs">
                         <div class="border border-[color:var(--border)] rounded-md p-2.5 bg-[color:var(--muted)]/30">
-                            <p class="text-[10px] uppercase text-[color:var(--muted-foreground)] tracking-wide">Classes</p>
-                            <p class="text-base font-semibold" id="total-classes">0</p>
-                        </div>
-                        <div class="border border-[color:var(--border)] rounded-md p-2.5 bg-[color:var(--muted)]/30">
-                            <p class="text-[10px] uppercase text-[color:var(--muted-foreground)] tracking-wide">Students (with Core ID)</p>
-                            <p class="text-base font-semibold" id="total-students">0</p>
-                        </div>
-                        <div class="border border-[color:var(--border)] rounded-md p-2.5 bg-[color:var(--muted)]/30">
-                            <p class="text-[10px] uppercase text-[color:var(--muted-foreground)] tracking-wide">School ID</p>
-                            <p class="text-xs font-mono font-semibold" id="school-id">—</p>
+                            <p class="text-[10px] uppercase text-[color:var(--muted-foreground)] tracking-wide">Group</p>
+                            <p class="text-base font-semibold" id="school-group">—</p>
                         </div>
                         <div class="border border-[color:var(--border)] rounded-md p-2.5 bg-[color:var(--muted)]/30">
                             <p class="text-[10px] uppercase text-[color:var(--muted-foreground)] tracking-wide">District</p>
                             <p class="text-base font-semibold" id="school-district">—</p>
                         </div>
                         <div class="border border-[color:var(--border)] rounded-md p-2.5 bg-[color:var(--muted)]/30">
-                            <p class="text-[10px] uppercase text-[color:var(--muted-foreground)] tracking-wide">Group</p>
-                            <p class="text-base font-semibold" id="school-group">—</p>
+                            <p class="text-[10px] uppercase text-[color:var(--muted-foreground)] tracking-wide">School ID</p>
+                            <p class="text-base font-mono font-semibold" id="school-id">—</p>
+                        </div>
+                        <div class="border border-[color:var(--border)] rounded-md p-2.5 bg-[color:var(--muted)]/30">
+                            <p class="text-[10px] uppercase text-[color:var(--muted-foreground)] tracking-wide">Classes</p>
+                            <p class="text-base font-semibold" id="total-classes">0</p>
+                        </div>
+                        <div class="border border-[color:var(--border)] rounded-md p-2.5 bg-[color:var(--muted)]/30">
+                            <p class="text-[10px] uppercase text-[color:var(--muted-foreground)] tracking-wide">Students (with Core ID)</p>
+                            <p class="text-base font-semibold" id="total-students">0</p>
                         </div>
                     </div>
                 </div>
@@ -184,6 +184,10 @@
                             <option value="with-data">With Data Only</option>
                             <option value="incomplete">Incomplete Only</option>
                         </select>
+                        <button id="grade-filter-button" class="px-3 py-1 border border-[color:var(--border)] rounded-md bg-white text-xs font-medium hover:bg-[color:var(--muted)] transition-colors inline-flex items-center gap-1.5">
+                            <i data-lucide="filter" class="w-3.5 h-3.5"></i>
+                            <span>Filter</span>
+                        </button>
                     </div>
                 </div>
                 
@@ -192,6 +196,65 @@
                 </div>
             </details>
         </main>
+    </div>
+
+    <!-- Grade Filter Modal -->
+    <div id="grade-filter-modal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-[color:var(--border)]">
+                <h3 class="text-lg font-semibold text-[color:var(--foreground)]">Filter by Grade</h3>
+                <button onclick="window.closeGradeFilterModal()" class="p-1 rounded-full hover:bg-[color:var(--muted)] text-[color:var(--muted-foreground)] hover:text-[color:var(--primary)] transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="px-6 py-4">
+                <div class="flex flex-wrap gap-2" id="grade-pills-container">
+                    <button class="grade-pill px-4 py-2 rounded-full border-2 border-[color:var(--border)] bg-white text-sm font-medium hover:border-[color:var(--primary)] hover:bg-blue-50 transition-colors" data-grade="all">
+                        All Grades
+                    </button>
+                    <button class="grade-pill px-4 py-2 rounded-full border-2 border-[color:var(--border)] bg-white text-sm font-medium hover:border-[color:var(--primary)] hover:bg-blue-50 transition-colors" data-grade="K1">
+                        K1
+                    </button>
+                    <button class="grade-pill px-4 py-2 rounded-full border-2 border-[color:var(--border)] bg-white text-sm font-medium hover:border-[color:var(--primary)] hover:bg-blue-50 transition-colors" data-grade="K2">
+                        K2
+                    </button>
+                    <button class="grade-pill px-4 py-2 rounded-full border-2 border-[color:var(--border)] bg-white text-sm font-medium hover:border-[color:var(--primary)] hover:bg-blue-50 transition-colors" data-grade="K3">
+                        K3
+                    </button>
+                    <button class="grade-pill px-4 py-2 rounded-full border-2 border-[color:var(--border)] bg-white text-sm font-medium hover:border-[color:var(--primary)] hover:bg-blue-50 transition-colors" data-grade="Others">
+                        Others
+                    </button>
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t border-[color:var(--border)] bg-[color:var(--muted)]/20">
+                <button onclick="window.closeGradeFilterModal()" class="hero-button secondary-button text-sm font-medium rounded-md px-4 py-2 w-full">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Student List Modal -->
+    <div id="student-list-modal" class="fixed inset-0 z-50 hidden bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div class="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col">
+            <div class="flex items-center justify-between px-6 py-4 border-b border-[color:var(--border)]">
+                <div>
+                    <h3 class="text-lg font-semibold text-[color:var(--foreground)]">Students in Class</h3>
+                    <p class="text-xs text-[color:var(--muted-foreground)] mt-1" id="modal-class-name">—</p>
+                </div>
+                <button onclick="window.closeStudentListModal()" class="p-1 rounded-full hover:bg-[color:var(--muted)] text-[color:var(--muted-foreground)] hover:text-[color:var(--primary)] transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto px-6 py-4">
+                <div id="modal-students-list" class="space-y-2"></div>
+            </div>
+            <div class="px-6 py-4 border-t border-[color:var(--border)] bg-[color:var(--muted)]/20">
+                <button onclick="window.closeStudentListModal()" class="hero-button secondary-button text-sm font-medium rounded-md px-4 py-2 w-full">
+                    Close
+                </button>
+            </div>
+        </div>
     </div>
 
     <!-- JavaScript Modules -->

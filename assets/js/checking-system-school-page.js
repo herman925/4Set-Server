@@ -263,6 +263,7 @@
           <tr class="text-left">
             <th class="px-3 py-2 font-semibold text-[color:var(--foreground)]">Class</th>
             <th class="px-3 py-2 font-semibold text-[color:var(--foreground)]">Class ID</th>
+            <th class="px-3 py-2 font-semibold text-[color:var(--foreground)]">Grade</th>
             <th class="px-3 py-2 font-semibold text-[color:var(--foreground)]">Students</th>
             <th class="px-3 py-2 font-semibold text-[color:var(--foreground)] text-center">Set 1</th>
             <th class="px-3 py-2 font-semibold text-[color:var(--foreground)] text-center">Set 2</th>
@@ -310,7 +311,7 @@
             }
             
             return `
-              <tr class="border-b border-[color:var(--border)] hover:bg-[color:var(--muted)]/30 transition-colors" data-class-row data-has-data="${classStudents.length > 0}" data-is-incomplete="${outstandingSets > 0}">
+              <tr class="border-b border-[color:var(--border)] hover:bg-[color:var(--muted)]/30 transition-colors" data-class-row data-grade="${cls.grade || ''}" data-has-data="${classStudents.length > 0}" data-is-incomplete="${outstandingSets > 0}">
                 <td class="px-3 py-3">
                   <a href="checking_system_3_class.html?classId=${encodeURIComponent(cls.classId)}" class="font-semibold font-noto text-[color:var(--foreground)] hover:text-[color:var(--primary)]">
                     ${cls.actualClassName}
@@ -321,7 +322,12 @@
                   ${cls.classId}
                 </td>
                 <td class="px-3 py-3 text-[color:var(--muted-foreground)]">
-                  ${classStudents.length}
+                  ${cls.grade || '—'}
+                </td>
+                <td class="px-3 py-3">
+                  <button onclick="window.openStudentListModal('${cls.classId}')" class="text-[color:var(--primary)] hover:underline font-medium">
+                    ${classStudents.length}
+                  </button>
                 </td>
                 <td class="px-3 py-3 text-center">${setStatuses[0]}</td>
                 <td class="px-3 py-3 text-center">${setStatuses[1]}</td>
@@ -329,7 +335,7 @@
                 <td class="px-3 py-3 text-center">${setStatuses[3]}</td>
                 <td class="px-3 py-3 text-center">
                   ${outstandingSets > 0 ? 
-                    `<span class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-medium">${outstandingSets}</span>` :
+                    `<a href="checking_system_3_class.html?classId=${encodeURIComponent(cls.classId)}" class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-medium hover:bg-red-200 transition-colors">${outstandingSets}</a>` :
                     `<span class="text-[color:var(--muted-foreground)] text-xs">—</span>`
                   }
                 </td>
@@ -377,6 +383,30 @@
     viewFilter.addEventListener('change', () => {
       applyClassFilter(viewFilter.value);
     });
+
+    // Setup grade filter button
+    const gradeFilterButton = document.getElementById('grade-filter-button');
+    if (gradeFilterButton) {
+      gradeFilterButton.addEventListener('click', () => {
+        openGradeFilterModal();
+      });
+    }
+
+    // Setup grade pills
+    document.querySelectorAll('.grade-pill').forEach(pill => {
+      pill.addEventListener('click', (e) => {
+        const grade = e.currentTarget.getAttribute('data-grade');
+        applyGradeFilter(grade);
+        
+        // Update active state
+        document.querySelectorAll('.grade-pill').forEach(p => {
+          p.classList.remove('border-[color:var(--primary)]', 'bg-blue-50', 'text-[color:var(--primary)]');
+          p.classList.add('border-[color:var(--border)]', 'bg-white');
+        });
+        e.currentTarget.classList.remove('border-[color:var(--border)]', 'bg-white');
+        e.currentTarget.classList.add('border-[color:var(--primary)]', 'bg-blue-50', 'text-[color:var(--primary)]');
+      });
+    });
   }
 
   /**
@@ -415,6 +445,118 @@
       classCountEl.textContent = `${visibleCount} ${visibleCount === 1 ? 'class' : 'classes'}${visibleCount !== classes.length ? ` (of ${classes.length} total)` : ''}`;
     }
   }
+
+  /**
+   * Apply grade filter to classes table
+   */
+  function applyGradeFilter(grade) {
+    const rows = document.querySelectorAll('[data-class-row]');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+      const rowGrade = row.getAttribute('data-grade');
+      let shouldShow = grade === 'all' || rowGrade === grade || (grade === 'Others' && !['K1', 'K2', 'K3'].includes(rowGrade));
+      
+      if (shouldShow) {
+        row.style.removeProperty('display');
+        visibleCount++;
+      } else {
+        row.style.display = 'none';
+      }
+    });
+
+    // Update class count display
+    const classCountEl = document.getElementById('class-count');
+    if (classCountEl) {
+      const filterText = grade === 'all' ? '' : ` (${grade} only)`;
+      classCountEl.textContent = `${visibleCount} ${visibleCount === 1 ? 'class' : 'classes'}${filterText}`;
+    }
+  }
+
+  /**
+   * Open grade filter modal
+   */
+  function openGradeFilterModal() {
+    const modal = document.getElementById('grade-filter-modal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      lucide.createIcons();
+    }
+  }
+
+  /**
+   * Close grade filter modal
+   */
+  function closeGradeFilterModal() {
+    const modal = document.getElementById('grade-filter-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+    }
+  }
+
+  /**
+   * Open student list modal for a specific class
+   */
+  function openStudentListModal(classId) {
+    const cls = classes.find(c => c.classId === classId);
+    if (!cls) return;
+
+    const metrics = classMetrics.get(classId);
+    const classStudents = metrics?.students || [];
+
+    // Update modal title
+    const modalClassName = document.getElementById('modal-class-name');
+    if (modalClassName) {
+      modalClassName.textContent = `${cls.actualClassName} (${cls.classId})`;
+    }
+
+    // Render student list
+    const modalStudentsList = document.getElementById('modal-students-list');
+    if (modalStudentsList) {
+      if (classStudents.length === 0) {
+        modalStudentsList.innerHTML = '<p class="text-[color:var(--muted-foreground)] text-sm">No students with Core IDs found in this class.</p>';
+      } else {
+        modalStudentsList.innerHTML = classStudents.map((student, index) => `
+          <div class="flex items-center justify-between p-3 rounded-md border border-[color:var(--border)] hover:bg-[color:var(--muted)]/30 transition-colors">
+            <div class="flex items-center gap-3">
+              <span class="text-xs font-mono text-[color:var(--muted-foreground)] w-8">${index + 1}</span>
+              <div>
+                <p class="font-medium font-noto text-[color:var(--foreground)]">${student.studentName}</p>
+                <p class="text-xs text-[color:var(--muted-foreground)]">Core ID: ${student.coreId}</p>
+              </div>
+            </div>
+            <a href="checking_system_4_student.html?coreId=${encodeURIComponent(student.coreId)}" 
+               class="text-xs text-[color:var(--primary)] hover:underline">
+              View Details →
+            </a>
+          </div>
+        `).join('');
+      }
+    }
+
+    // Show modal
+    const modal = document.getElementById('student-list-modal');
+    if (modal) {
+      modal.classList.remove('hidden');
+      lucide.createIcons();
+    }
+  }
+
+  /**
+   * Close student list modal
+   */
+  function closeStudentListModal() {
+    const modal = document.getElementById('student-list-modal');
+    if (modal) {
+      modal.classList.add('hidden');
+    }
+  }
+
+  // Expose modal functions globally
+  window.openGradeFilterModal = openGradeFilterModal;
+  window.closeGradeFilterModal = closeGradeFilterModal;
+  window.openStudentListModal = openStudentListModal;
+  window.closeStudentListModal = closeStudentListModal;
 
   // Initialize on DOM ready
   if (document.readyState === 'loading') {
