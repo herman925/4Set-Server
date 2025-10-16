@@ -39,6 +39,9 @@
 </head>
 <body class="min-h-screen hero-background">
     <div class="relative overflow-hidden">
+        <!-- Animated Background Elements -->
+        <div id="background-circles"></div>
+        
         <div class="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/70 to-transparent"></div>
 
         <header class="relative z-20 bg-white/80 backdrop-blur-md border-b border-[color:var(--border)] shadow-sm sticky top-0">
@@ -265,5 +268,61 @@
     <script src="assets/js/jotform-cache.js"></script>
     <script src="assets/js/export-utils.js"></script><!-- Shared export utilities -->
     <script src="assets/js/checking-system-school-page.js"></script>
+    <script>
+      // Load background animation config and render
+      (async () => {
+        try {
+          const response = await fetch('config/checking_system_config.json');
+          const config = await response.json();
+          
+          if (config.backgroundAnimation) {
+            const container = document.getElementById('background-circles');
+            if (!container) return;
+            
+            let html = '<div class="fixed inset-0 pointer-events-none z-0">';
+            
+            // Add circles
+            if (config.backgroundAnimation.circles) {
+              config.backgroundAnimation.circles.forEach(circle => {
+                const positionStyles = Object.entries(circle.position)
+                  .map(([key, value]) => `${key}: ${value}`)
+                  .join('; ');
+                const sizeStyles = Object.entries(circle.size)
+                  .map(([key, value]) => `${key}: ${value}`)
+                  .join('; ');
+                
+                html += `<div class="absolute rounded-full border ${circle.animation}" 
+                         style="${positionStyles}; ${sizeStyles}; 
+                                border-color: ${circle.color}; 
+                                animation-duration: ${circle.animationDuration}; 
+                                animation-delay: ${circle.animationDelay};"></div>`;
+              });
+            }
+            
+            // Add blobs
+            if (config.backgroundAnimation.blobs) {
+              config.backgroundAnimation.blobs.forEach(blob => {
+                const positionStyles = Object.entries(blob.position)
+                  .map(([key, value]) => `${key}: ${value}`)
+                  .join('; ');
+                const sizeStyles = Object.entries(blob.size)
+                  .map(([key, value]) => `${key}: ${value}`)
+                  .join('; ');
+                
+                html += `<div class="absolute rounded-full" 
+                         style="${positionStyles}; ${sizeStyles}; 
+                                background-color: ${blob.color}; 
+                                filter: blur(${blob.blur});"></div>`;
+              });
+            }
+            
+            html += '</div>';
+            container.innerHTML = html;
+          }
+        } catch (error) {
+          console.error('[SchoolPage] Failed to load background animation config:', error);
+        }
+      })();
+    </script>
 </body>
 </html>
