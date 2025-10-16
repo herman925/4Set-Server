@@ -49,8 +49,8 @@
 ### Monitoring Dashboard (front page successor)
 - Authenticate via system password, probe processor agent connectivity, display OneDrive sync status.
 - Surface live metrics (active queue count, last processed file, health indicators) and activity feed.
-- Provide detailed modals for each stage (validation, parsing, merge, upload) mirroring `.superdesign/design_iterations/*.html` screens as informational views.
-- Offer drilldown navigation from district → group → school → class → student with parity across desktop (`checking_system_drilldown_desktop_[1-5].html`) and mobile (`checking_system_drilldown_mobile_[1-5].html`) reference layouts.
+- Provide detailed modals for each stage (validation, parsing, merge, upload) following design patterns documented in the "Design TBC" section.
+- Offer drilldown navigation from district → group → school → class → student with parity across desktop and mobile reference layouts (see "Design TBC" section).
 - Offer operational controls (open upload folder, download logs, trigger retry) by invoking agent endpoints.
 - Highlight rejections with remediation guidance and links to naming rules.
 
@@ -78,6 +78,41 @@
 - Agent captures structured logs (JSON Lines) per day, emits heartbeats, and optionally forwards metrics to monitoring systems.
 - Dashboard offers log download controls and surfaces outstanding rejections.
 - Proxy endpoints emit metrics (success counts, latency, error codes) for operational monitoring.
+
+## Design TBC (To Be Considered)
+
+The following design iterations were prototyped in `.superdesign/design_iterations/` and may inform future enhancements. Most design elements have been integrated into the current active HTML files; these prototypes are archived here for reference.
+
+### Checking System Design Iterations
+- **checking_system_desktop_entry_1.html** — Entry point design for desktop checking system
+- **checking_system_drilldown_desktop_1.html** — Student-level drilldown (desktop iteration)
+- **checking_system_drilldown_desktop_2.html** — Class-level drilldown (desktop)
+- **checking_system_drilldown_desktop_3.html** — School-level drilldown (desktop)
+- **checking_system_drilldown_desktop_4.html** — Group-level drilldown (desktop)
+- **checking_system_drilldown_desktop_5.html** — District-level drilldown (desktop)
+- **checking_system_drilldown_desktop_task_visibility_modal_1.html** — Task visibility modal prototype
+- **checking_system_drilldown_mobile_1.html** — Student-level drilldown (mobile)
+- **checking_system_drilldown_mobile_2.html** — Class-level drilldown (mobile)
+- **checking_system_drilldown_mobile_3.html** — School-level drilldown (mobile)
+- **checking_system_drilldown_mobile_4.html** — Group-level drilldown (mobile)
+- **checking_system_drilldown_mobile_5.html** — District-level drilldown (mobile)
+- **checking_system_entry_mobile_1.html** — Entry point design for mobile checking system
+- **home.html** — System entry page prototype
+
+### Pipeline Monitoring Design Iterations
+- **pipeline_1_entry_confirmation.html** — Session verification and credentials confirmation screen
+- **pipeline_2_file_intake.html** — File watcher status dashboard
+- **pipeline_3_validation_gate.html** — Validation details and gate status view
+- **pipeline_4_parsing_and_merge.html** — Parsing and merge telemetry interface
+- **pipeline_5_upload_engine.html** — Jotform upload queue monitoring
+- **pipeline_6_rejected_retry.html** — Remediation board for rejected files
+- **pipeline_7_responsive_modal.html** — Responsive modal design pattern
+
+### Design Assets
+- **theme_pantone_light_1.css** — Pantone-inspired light theme stylesheet
+- **default_ui_darkmode.css** — Dark mode UI stylesheet
+
+**Note:** These design iterations served as exploratory prototypes. Key patterns and components have been incorporated into the production HTML files (`checking_system_*.html`, `index.html`, `upload.html`). The `.superdesign/` directory can be retired once this documentation is reviewed and approved.
 
 ## Open Questions
 - Preferred identity provider for operator authentication on GitHub Pages (GitHub OAuth vs. enterprise SSO).
