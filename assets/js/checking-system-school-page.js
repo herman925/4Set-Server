@@ -60,6 +60,9 @@
     // Setup export button
     setupExportButton();
 
+    // Setup filters
+    setupFilters();
+
     lucide.createIcons();
   }
 
@@ -259,6 +262,7 @@
         <thead class="border-b border-[color:var(--border)]">
           <tr class="text-left">
             <th class="px-3 py-2 font-semibold text-[color:var(--foreground)]">Class</th>
+            <th class="px-3 py-2 font-semibold text-[color:var(--foreground)]">Class ID</th>
             <th class="px-3 py-2 font-semibold text-[color:var(--foreground)]">Students</th>
             <th class="px-3 py-2 font-semibold text-[color:var(--foreground)] text-center">Set 1</th>
             <th class="px-3 py-2 font-semibold text-[color:var(--foreground)] text-center">Set 2</th>
@@ -306,12 +310,15 @@
             }
             
             return `
-              <tr class="border-b border-[color:var(--border)] hover:bg-[color:var(--muted)]/30 transition-colors">
+              <tr class="border-b border-[color:var(--border)] hover:bg-[color:var(--muted)]/30 transition-colors" data-class-row data-has-data="${classStudents.length > 0}" data-is-incomplete="${outstandingSets > 0}">
                 <td class="px-3 py-3">
                   <a href="checking_system_3_class.html?classId=${encodeURIComponent(cls.classId)}" class="font-semibold font-noto text-[color:var(--foreground)] hover:text-[color:var(--primary)]">
                     ${cls.actualClassName}
                   </a>
                   ${cls.teacherNames ? `<p class="text-xs text-[color:var(--muted-foreground)] mt-0.5">${cls.teacherNames}</p>` : ''}
+                </td>
+                <td class="px-3 py-3 text-xs font-mono text-[color:var(--muted-foreground)]">
+                  ${cls.classId}
                 </td>
                 <td class="px-3 py-3 text-[color:var(--muted-foreground)]">
                   ${classStudents.length}
@@ -358,6 +365,55 @@
         loadValidationCache: () => window.JotFormCache.loadValidationCache()
       });
     });
+  }
+
+  /**
+   * Setup view filter for classes table
+   */
+  function setupFilters() {
+    const viewFilter = document.getElementById('class-view-filter');
+    if (!viewFilter) return;
+
+    viewFilter.addEventListener('change', () => {
+      applyClassFilter(viewFilter.value);
+    });
+  }
+
+  /**
+   * Apply view filter to classes table
+   */
+  function applyClassFilter(filterValue) {
+    const rows = document.querySelectorAll('[data-class-row]');
+    let visibleCount = 0;
+
+    rows.forEach(row => {
+      const hasData = row.getAttribute('data-has-data') === 'true';
+      const isIncomplete = row.getAttribute('data-is-incomplete') === 'true';
+      
+      let shouldShow = true;
+      
+      switch (filterValue) {
+        case 'with-data':
+          shouldShow = hasData;
+          break;
+        case 'incomplete':
+          shouldShow = isIncomplete;
+          break;
+        case 'all':
+        default:
+          shouldShow = true;
+          break;
+      }
+      
+      row.style.display = shouldShow ? '' : 'none';
+      if (shouldShow) visibleCount++;
+    });
+
+    // Update class count display
+    const classCountEl = document.getElementById('class-count');
+    if (classCountEl) {
+      classCountEl.textContent = `${visibleCount} ${visibleCount === 1 ? 'class' : 'classes'}${visibleCount !== classes.length ? ` (of ${classes.length} total)` : ''}`;
+    }
   }
 
   // Initialize on DOM ready
