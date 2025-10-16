@@ -1,13 +1,13 @@
 # 4set Web Successor — Overview PRD
 
 ## Context
-- Legacy desktop workflow documented in `TEMP/README.md` delivers secure `parse → merge → upload` processing for offline survey PDFs.
-- New initiative evolves into a hybrid model: a Windows-based processor agent handles ingestion and processing, while a lightweight web dashboard (GitHub Pages) monitors status, surfacing telemetry and controls.
-- Security model and mappings remain governed by `TEMP/architecture/security-architecture.md` and `assets/id_mapping/` artifacts.
+- The system has evolved from a legacy desktop tool to a hybrid model: a Windows-based processor agent handles ingestion and processing, while a lightweight web dashboard (GitHub Pages) monitors status, surfacing telemetry and controls.
+- Security model and mappings are governed by `PRDs/data_security_prd.md` and `assets/id_mapping/` artifacts.
+- Historical desktop workflow context is available in `DEPRECATIONS.md` for reference.
 
 ## Goals
 - Deliver an unsupervised pipeline that reacts to OneDrive uploads without manual triggers.
-- Preserve the lenient filename and cross-field safeguards from `TEMP/data-tool/parser-panel-enhancements.md` and reject malformed records with actionable reasons.
+- Preserve lenient filename and cross-field validation safeguards (documented in `PRDs/data-pipeline.md`) and reject malformed records with actionable reasons.
 - Provide a live status dashboard consuming telemetry emitted by the processor agent (queue state, health, recent activity).
 - Maintain predictable performance and transparency comparable to the desktop app for large batch uploads.
 

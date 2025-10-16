@@ -6,7 +6,7 @@ Provide operational procedures to install, upgrade, and maintain the processor a
 ## References
 - `PRDs/processor_agent_prd.md`
 - `PRDs/pdfpipeline_prd.md`
-- `TEMP/data-tool/filing-protocol.md`
+- `processor_agent.ps1 implementation`
 
 ## 1. Prerequisites
 - Agent package bundle (`processor-agent.zip`) containing PowerShell scripts, parsing modules, configuration templates.
@@ -129,7 +129,7 @@ Provide operational procedures to install, upgrade, and maintain the processor a
 - **Cannot read secrets**: check Credential Manager entry or Docker Secret mount. Ensure service account matches credential scope.
 - **Watch folder not clearing**: verify file lock polling threshold; inspect logs for `FileLockTimeout` warnings.
 - **Slow throughput**: adjust worker count in config; confirm CPU availability (DS923+ may require RAM upgrade).
-- **Failed filings**: review `PDF Form Data\Unsorted\` diagnostics; compare with rules in `TEMP/data-tool/filing-protocol.md`.
+- **Failed filings**: review `PDF Form Data\Unsorted\` diagnostics; compare with rules in `processor_agent.ps1 implementation`.
 
 ## 8. Rollback
 - **Windows**: stop service, restore previous install backup, restart service.

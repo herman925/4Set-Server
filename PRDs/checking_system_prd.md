@@ -65,7 +65,7 @@ This approach provides a **holistic and accurate view** because:
 
 - Poll Jotform APIs to retrieve submission snapshots for configured forms.
 - Enforce task completion checks per student (all required PDFs/tasks submitted, mandatory fields populated).
-- Apply `TEMP/tasks/termination-rules.md` to detect early termination scenarios and extra/unexpected inputs.
+- Apply termination rules from `PRDs/termination-rules.md` to detect early termination scenarios and extra/unexpected inputs.
 - Generate summaries (counts, percentages, KPI scores) per school, district, project group, and overall.
 - Expose status via dashboard modules and downloadable reports.
 - Consume metadata from `assets/id_mapping/schoolid.enc` to map submissions to schools (`School ID`, `School Name`, `School Name (Chinese)`), districts (`District Cleaned`), and project groups (`Group`).
@@ -1419,7 +1419,7 @@ Total:             ~25 MB (well within IndexedDB's 50+ MB limit per origin)
    - Reproduce legacy `renderToc()` logic to derive status lights: compute answered/total, evaluate `_Com` completion summaries, and apply termination flags to classify each task as `status-green`, `status-yellow`, or `status-red` with `completionReason()` text.
    - Differentiate between acceptable optional data vs unexpected inputs; emit severity levels (info/warn/critical) and capture completion reasons (full coverage vs termination-driven completion).
    - Evaluate each task’s question set using survey JSON definitions to identify completion thresholds.
-   - Apply `TEMP/tasks/termination-rules.md` logic (e.g., `ERV_Ter1`, `ERV_Ter2`, gender-conditional TEC rules) and surface yellow status lights when responses continue post-termination.
+   - Apply termination rules from `PRDs/termination-rules.md` (e.g., `ERV_Ter1`, `ERV_Ter2`, gender-conditional TEC rules) and surface yellow status lights when responses continue post-termination.
    - Flag matrix questions with partial answers, misordered overrides (e.g., Math Pattern text overrides), and non-numeric timer anomalies for SYM/NONSYM.
    - Persist termination reasons alongside completion summaries for reporting/export.
 
@@ -1460,7 +1460,7 @@ Total:             ~25 MB (well within IndexedDB's 50+ MB limit per origin)
      - **Class scope**: columns represent sets, rows list individual students (student ID or name), each cell showing completion status/light per student (click drills down to student detail).
 {{ ... }}
    - Matrix cells are interactive; clicking drills down to the next hierarchy level (District → Group → School → Student). Breadcrumbs should allow stepping back up the hierarchy.
-   - Student-level drilldowns must be the only place termination rule outcomes are enumerated; aggregate views may show counts but not detailed rule breakdowns. Surface termination context within each task row’s expansion panel (no standalone summary section) and render compact stage chips (e.g., `Stage 1 · N`, `Stage 2 · Y`, `Stage 3 · N`) beside the task headers to highlight triggering stages. Rule descriptions and thresholds must mirror `TEMP/tasks/termination-rules.md` and the corresponding entries in `assets/tasks/*` so the UI stays synchronized with underlying content.
+   - Student-level drilldowns must be the only place termination rule outcomes are enumerated; aggregate views may show counts but not detailed rule breakdowns. Surface termination context within each task row’s expansion panel (no standalone summary section) and render compact stage chips (e.g., `Stage 1 · N`, `Stage 2 · Y`, `Stage 3 · N`) beside the task headers to highlight triggering stages. Rule descriptions and thresholds must mirror `PRDs/termination-rules.md` and the corresponding entries in `assets/tasks/*` so the UI stays synchronized with underlying content.
    - Status lights follow revised semantics: green = complete without termination anomalies, yellow = responses captured after a termination gate was crossed (post-termination activity worth flagging but not critical), red = incomplete/outstanding work remaining, grey = not yet started/not assigned. Apply colours consistently across legends, task rows, and question filters.
    - Within the student `Task Progress` table, keep columns consistently aligned (task, status, answered/total, last updated) and rely on row expansion panels to reveal question-level data, termination checklists, and supporting notes. Provide a `Question view` selector allowing operators to toggle between all questions, completed only, correct only, incorrect only, and missing only; filter states apply to expanded question rows without collapsing the parent task. Replace the inline visible-task multi-select with a `Configure visible tasks` button that launches the modal prototype in `.superdesign/design_iterations/task_visibility_modal_1.html`; the modal must preserve set ordering from `assets/id_mapping/survey-structure.json`, support quick select/clear, and present bilingual task labels.
    - Organise task rows beneath four collapsible set headers (Set 1–4) defined in `assets/id_mapping/survey-structure.json`. Each set summary surface should show a compact roll-up of task status counts using the revised status colours.
@@ -1484,7 +1484,7 @@ Total:             ~25 MB (well within IndexedDB's 50+ MB limit per origin)
   - `Task Status Overview` (hero metrics) reads completion %, termination note, answered count, and outstanding focus from `/api/checking/detail` summarised payload.
   - `Task Progress` set accordion uses `assets/id_mapping/survey-structure.json` to determine set ordering and task roster. Each task row consumes `/api/checking/status` to render status light, completion counts, and termination annotations. The `Question view` filter adjusts question-level collections pulled from `/api/checking/detail?studentId=...`.
 - **Termination chips**
-  - Stage chips map to `TEMP/tasks/termination-rules.md` definitions; display values provided by evaluation engine (`Stage1Hit`, etc.).
+  - Stage chips map to `PRDs/termination-rules.md` definitions; display values provided by evaluation engine (`Stage1Hit`, etc.).
 - **Task configuration modal trigger**
   - `data-open-modal="visible-tasks"` must load the modal in `.superdesign/design_iterations/task_visibility_modal_1.html`; modal defaults derived from `survey-structure.json` plus gender gating.
 - **Status legend**
@@ -1718,7 +1718,7 @@ GET https://api.jotform.com/form/123456/submissions?filter=%7B%227%3Aeq%22%3A%22
 3. Merge answers: latest submission wins for each question
 4. Map question IDs to readable names using `jotformquestions.json`
 5. Calculate completion percentage per set
-6. Apply termination rules from `TEMP/tasks/termination-rules.md`
+6. Apply termination rules from `PRDs/termination-rules.md`
 
 **Caching Strategy**:
 - Cache merged student data in `localStorage` with key: `student_jotform_{coreId}`
@@ -1736,7 +1736,7 @@ GET https://api.jotform.com/form/123456/submissions?filter=%7B%227%3Aeq%22%3A%22
 - Jotform REST API access and API key permissions.
 - Mapping assets (`assets/jotformquestions.json`, `assets/*.enc`).
 - Existing dashboard framework for new UI modules.
-- `TEMP/tasks/termination-rules.md` maintained by curriculum team.
+- `PRDs/termination-rules.md` maintained by curriculum team.
 
 ## UI/UX Considerations
 - Introduce a dashboard tab with cards and data tables mirroring pipeline styling.

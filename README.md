@@ -1,37 +1,42 @@
-# Processor Agent PoC
+# 4Set-Server: Processor Agent
 
-This folder contains a lightweight proof of concept for the processor agent described in `PRDs/processor_agent_prd.md` and `PRDs/processor_agent_runbook_prd.md`.
+> **Note:** This repository has evolved from a desktop-based proof of concept to a production-ready PowerShell service. See `DEPRECATIONS.md` for information about outdated references.
+
+This repository contains the processor agent system described in `PRDs/processor_agent_prd.md` and `PRDs/processor_agent_runbook_prd.md`. The agent monitors folders for PDF uploads, validates and processes them, then uploads data to Jotform.
 
 ## Contents
 
 - `config/agent.json` – Local paths, logging and polling settings.
-- `config/jotform_config.json` – Minimal upload throttling profile.
+- `config/jotform_config.json` – Upload throttling and retry configuration.
 - `queue_manifest.json` – Tracks queued files for restart recovery.
-- `processor_agent.ps1` – PowerShell watcher that stages, parses, validates, and files PDFs with JSON.
+- `processor_agent.ps1` – PowerShell service that stages, parses, validates, and files PDFs with JSON.
+- `worker.ps1` – Worker process for parallel PDF processing.
 - `assets/credentials.enc` – Encrypted bundle (API keys, systemPassword) unlocked via Windows Credential Manager.
 - `assets/coreid.enc` – Encrypted student mappings (Core ID → School, Class, Name).
 - `assets/schoolid.enc` – Encrypted school metadata.
-- `incoming/`, `processing/`, `filed/`, `unsorted/` – Working directories used by the script.
+- `assets/id_mapping/` – Mapping files (pdfmapping.json, jotformquestions.json, etc.).
+- `parser/` – PDF parsing tools (parse_pdf_cli.py, pdf_tools.py).
+- `incoming/`, `processing/`, `filed/`, `unsorted/` – Working directories used by the processor.
 - `logs/` – Rolling CSV log files (`YYYYMMDD_processing_agent.csv`).
 
-## Running the PoC
+## Running the Processor Agent
 
 1. Open a PowerShell window.
-2. Navigate to the repository root (where `TestWatchFolder/` resides).
+2. Navigate to the repository root.
 3. Run the agent:
 
    ```powershell
-   pwsh -File .\TestWatchFolder\processor_agent.ps1
+   pwsh -File .\processor_agent.ps1
    ```
 
    - Use `-SingleRun` to process current files once and exit.
    - Use `-ConfigPath` to point at an alternate config JSON if required.
 
-4. Drop a sample PDF (or any file) into `TestWatchFolder/incoming/`.
+4. Drop a sample PDF (or any file) into the configured incoming folder (default: `incoming/`).
    - The script moves it to `processing/`, parses to JSON, validates, then files both PDF + JSON under `filed/{schoolId}/`.
    - Validation failures move both files into `unsorted/`.
 
-5. Review logs in `TestWatchFolder/logs/YYYYMMDD_processing_agent.csv` and queue state in `queue_manifest.json`.
+5. Review logs in `logs/YYYYMMDD_processing_agent.csv` and queue state in `queue_manifest.json`.
 
 Stop the agent with `Ctrl+C` in the PowerShell session.
 
