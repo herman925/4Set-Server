@@ -118,9 +118,6 @@
     // Update timestamp regardless of pill state
     await updateLastSyncedTimestamp();
 
-    // Remove all status classes
-    badge.classList.remove('badge-success', 'badge-error', 'badge-warning');
-    
     // Remove any existing progress bar
     const existingProgress = badge.querySelector('.pill-progress');
     if (existingProgress) {
@@ -129,6 +126,7 @@
 
     if (progress !== null && progress < 100) {
       // Orange: Syncing with progress bar
+      badge.classList.remove('badge-success', 'badge-error', 'badge-warning');
       badge.classList.add('badge-warning');
       statusText.textContent = config.cache.statusLabels.syncing;
       badge.title = `Syncing... ${Math.round(progress)}%`;
@@ -161,6 +159,13 @@
       }
       
     } else {
+      // Set loading state (orange) while checking cache
+      badge.classList.remove('badge-success', 'badge-error', 'badge-warning');
+      badge.classList.add('badge-warning');
+      statusText.textContent = 'Checking cache...';
+      badge.title = 'Checking cache status';
+      badge.style.cursor = 'default';
+      
       const checkStartTime = Date.now();
       console.log(`[SYNC-TIMING] ⏱️ updateStatusPill: Starting cache readiness check at ${new Date(checkStartTime).toISOString()}`);
       console.log('[CacheUI] updateStatusPill checking cache readiness...');
@@ -170,6 +175,9 @@
       const checkEndTime = Date.now();
       console.log(`[SYNC-TIMING] ⏱️ updateStatusPill: Cache check took ${checkEndTime - checkStartTime}ms`);
       console.log('[CacheUI] isCacheReady returned:', isReady);
+      
+      // Remove all status classes before applying the final state
+      badge.classList.remove('badge-success', 'badge-error', 'badge-warning');
       
       if (isReady) {
         // Green: System Ready (clickable to show cache info)
