@@ -1953,11 +1953,12 @@ This section analyzes **actual and potential bugs, flaws, and discrepancies** be
 |--------|------------|------------------|
 | **Core Validation Logic** | ✅ **CONSISTENT** | High (95%) |
 | **Merge Strategy** | ✅ **CONSISTENT** | High (98%) |
+| **Task Completion Logic** | 🔴 **CRITICAL BUG** | High (100%) |
 | **Data Filtering** | ⚠️ **POTENTIAL ISSUE** | Medium (70%) |
 | **Cache Staleness** | ⚠️ **KNOWN ISSUE** | High (100%) |
 | **Timestamp Handling** | ✅ **CONSISTENT** | High (90%) |
 
-**Overall Verdict:** Both mechanisms are **fundamentally sound** and use the same core validation (TaskValidator), but there are **2 critical areas** where discrepancies could occur.
+**Overall Verdict:** Both mechanisms use the same core validation (TaskValidator), but there is **1 CRITICAL BUG** in the task completion logic that causes different status colors between pages, plus **2 additional areas** where discrepancies could occur.
 
 ---
 
@@ -2039,7 +2040,103 @@ new Date(a.created_at) - new Date(b.created_at)
 
 ### ⚠️ Potential Issues and Discrepancies
 
-#### Issue 1: Answer Object Structure Differences
+#### Issue 1: Task Completion Logic Mismatch
+
+**Status:** 🔴 **CRITICAL BUG** - **CONFIRMED** - Causes different status colors
+
+**The Problem:**
+
+Student Page (A) and Class Page (B) use **different logic** to determine if a task is "complete", leading to different status circles for the same task.
+
+**Root Cause:**
+
+The two mechanisms have **slightly different** conditions for marking a task as complete, specifically around terminated/timed-out tasks.
+
+**Code Comparison Table:**
+
+| Mechanism | File | Line | Completion Logic |
+|-----------|------|------|------------------|
+| Student Page (A) | `checking-system-student-page.js` | 1831-1838 | `(hasTerminated OR timedOut) AND answered > 0` → Green<br>`answeredPercent === 100 AND NOT terminated` → Green |
+| Class Cache (B) | `jotform-cache.js` | 749-751 | `(terminated AND NOT hasPostTerm) OR (timedOut AND NOT hasPostTerm)` → Complete<br>**MISSING: `answered > 0` check** |
+
+**The Critical Difference:**
+
+```javascript
+// Student Page (A) - CORRECT
+if ((stats.hasTerminated || stats.timedOut) && stats.answered > 0) {
+  statusCircle.classList.add('status-green');  // Green if terminated WITH answers
+}
+
+// Class Cache (B) - BUG
+const isComplete = (answered === total && total > 0) || 
+                   (validation.terminated && !validation.hasPostTerminationAnswers) ||  // ❌ Missing && answered > 0
+                   (validation.timedOut && !validation.hasPostTerminationAnswers);       // ❌ Missing && answered > 0
+```
+
+**Discrepancy Scenarios:**
+
+| Scenario | Student Page (A) | Class Page (B) | Match? |
+|----------|------------------|----------------|--------|
+| **Task terminated, 0 answers** | ⚪ Grey (not started) | 🟢 Green (complete) | 🔴 **NO** |
+| **Task terminated, has answers** | 🟢 Green (complete) | 🟢 Green (complete) | ✅ Yes |
+| **Task timed out, 0 answers** | ⚪ Grey (not started) | 🟢 Green (complete) | 🔴 **NO** |
+| **Task 100% complete, no termination** | 🟢 Green (complete) | 🟢 Green (complete) | ✅ Yes |
+| **Task 50% complete** | 🔴 Red (incomplete) | 🔴 Red (incomplete) | ✅ Yes |
+
+**Real-World Example:**
+
+```
+Scenario: ERV task where student didn't answer ANY questions (total=0, answered=0)
+but the system recorded terminated=true (perhaps from a test upload).
+
+Student Page (A):
+  - stats.hasTerminated = true
+  - stats.answered = 0
+  - Condition: (hasTerminated || timedOut) && answered > 0
+  - Result: answered > 0 is FALSE
+  - Status: ⚪ Grey "Not started"
+
+Class Page (B):
+  - validation.terminated = true
+  - validation.hasPostTerminationAnswers = false
+  - Condition: (validation.terminated && !validation.hasPostTerminationAnswers)
+  - Result: TRUE (missing answered > 0 check)
+  - Status: 🟢 Green "Complete"
+  
+User sees: Grey on Student page, Green on Class page! ❌
+```
+
+**Impact Assessment:**
+
+| Impact | Severity |
+|--------|----------|
+| **Frequency** | 🟡 Medium (only when terminated task has 0 answers) |
+| **User Confusion** | 🔴 High (contradictory status colors) |
+| **Data Accuracy** | 🔴 Critical (misrepresents task completion) |
+| **Trust in System** | 🔴 Critical (users notice inconsistency) |
+
+**Fix Required:**
+
+```javascript
+// In jotform-cache.js Line 749-751
+// BEFORE (WRONG):
+const isComplete = (answered === total && total > 0) || 
+                   (validation.terminated && !validation.hasPostTerminationAnswers) ||
+                   (validation.timedOut && !validation.hasPostTerminationAnswers);
+
+// AFTER (CORRECT):
+const isComplete = (answered === total && total > 0) || 
+                   (validation.terminated && !validation.hasPostTerminationAnswers && answered > 0) ||
+                   (validation.timedOut && !validation.hasPostTerminationAnswers && answered > 0);
+```
+
+**Risk Level:** 🔴 **CRITICAL** - Confirmed bug causing user-reported discrepancies
+
+**Recommendation:** 🚨 **IMMEDIATE FIX REQUIRED** - Add `&& answered > 0` to termination conditions in jotform-cache.js
+
+---
+
+#### Issue 2: Answer Object Structure Differences
 
 **Status:** ⚠️ **LOW RISK** - Could cause discrepancies in edge cases
 
@@ -2082,7 +2179,7 @@ mergedAnswers[answerObj.name] = answerObj;
 
 **Recommendation:** ✅ **No action required** - Current implementation is robust
 
-#### Issue 2: Cache Staleness Causing Temporal Discrepancies
+#### Issue 3: Cache Staleness Causing Temporal Discrepancies
 
 **Status:** 🔴 **HIGH RISK** - **CONFIRMED ISSUE** - Can cause discrepancies
 
@@ -2138,7 +2235,7 @@ User sees different results for same student!
 
 **Recommendation:** See "Recommendations" section below
 
-#### Issue 3: SessionStorage vs IndexedDB Cache Invalidation
+#### Issue 4: SessionStorage vs IndexedDB Cache Invalidation
 
 **Status:** ⚠️ **MEDIUM RISK** - Different cache lifetimes
 
@@ -2207,6 +2304,7 @@ TaskValidator handles all question counting, termination exclusion, and completi
 
 | Issue Type | Likelihood | Impact | User Visibility | Fix Priority |
 |------------|-----------|--------|-----------------|--------------|
+| **Task Completion Logic Bug** | 🔴 **CRITICAL** (100%) | 🔴 Critical | 🔴 Very visible | P0 - **URGENT** |
 | **Cache Staleness** | 🔴 **HIGH** (90%) | 🔴 Critical | 🔴 Very visible | P0 - Urgent |
 | Answer structure edge cases | 🟡 Low (10%) | 🟡 Minor | 🟡 Rare | P2 - Monitor |
 | Cache invalidation timing | 🟡 Medium (30%) | 🟡 Moderate | 🟡 Visible | P1 - Important |
@@ -2377,15 +2475,33 @@ Cache Health Dashboard:
 |--------|-------------|------------|-----------------|
 | **Core Validation** | ✅ Identical | 🟢 None | None |
 | **Merge Strategy** | ✅ Identical | 🟢 None | None |
+| **Task Completion Logic** | 🔴 **BUG FOUND** | 🔴 **CRITICAL** | **FIX IMMEDIATELY (P0)** |
 | **Answer Filtering** | ✅ Identical | 🟡 Low | Monitor |
 | **Cache Freshness** | ⚠️ Different by design | 🔴 High | Improve UX (P0) |
 | **Cache Lifecycle** | ⚠️ Different by design | 🟡 Medium | Improve UX (P1) |
 
 **Overall Assessment:** 
 
-The system is **architecturally sound** with **intentional trade-offs**. The main "issue" (cache staleness) is a **feature, not a bug** - it's the price paid for performance. With proper user communication (P0) and smart refresh (P1), the current architecture is **optimal**.
+The system has **1 CRITICAL BUG** in the task completion logic (jotform-cache.js lines 749-751) that causes tasks with termination but zero answers to show as complete (green) on class pages but not started (grey) on student pages.
 
-**Final Recommendation:** ✅ **Keep both mechanisms** with UX improvements to make cache staleness more transparent.
+**Immediate Action Required:**
+
+🚨 **P0 CRITICAL BUG FIX:** Add `&& answered > 0` condition to termination checks in jotform-cache.js:
+
+```javascript
+// Line 749-751 - ADD answered > 0 check
+const isComplete = (answered === total && total > 0) || 
+                   (validation.terminated && !validation.hasPostTerminationAnswers && answered > 0) ||
+                   (validation.timedOut && !validation.hasPostTerminationAnswers && answered > 0);
+```
+
+This bug explains the user-reported discrepancies between class page task view and student view even with fresh cache.
+
+**Final Recommendation:** 
+
+1. ✅ **Fix the critical bug immediately** (P0)
+2. ✅ **Keep both mechanisms** after bug fix (optimal architecture)
+3. ✅ **Add UX improvements** for cache staleness transparency (P0-P1)
 
 ---
 
