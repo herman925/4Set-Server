@@ -6,6 +6,7 @@
 - The system has evolved from a legacy desktop tool to a hybrid model: a Windows-based processor agent handles ingestion and processing, while a lightweight web dashboard (GitHub Pages) monitors status, surfacing telemetry and controls.
 - Security model and mappings are governed by `PRDs/data_security_prd.md` and `assets/id_mapping/` artifacts.
 - Historical desktop workflow context is available in `DEPRECATIONS.md` for reference.
+- **NEW**: Complete API call process documentation including upload and create submission workflows is available in `PRDs/jotform-integration.md` (see "Complete API Call Process Documentation" section).
 
 ## Goals
 - Deliver an unsupervised pipeline that reacts to OneDrive uploads without manual triggers.

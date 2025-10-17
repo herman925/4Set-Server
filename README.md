@@ -1402,6 +1402,9 @@ type(scope): description
 - **Agent.md**: Development roadmap and priorities
 - **Security Architecture**: `PRDs/data_security_prd.md`
 - **Termination Rules**: `PRDs/termination-rules.md`
+- **JotForm API Integration**: `PRDs/jotform-integration.md`
+  - **NEW**: Complete API call process documentation (see "Complete API Call Process Documentation" section)
+  - Includes upload workflow, create submission process, troubleshooting, and best practices
 
 **Note**: All documentation has been consolidated into the `/PRDs/` directory. Legacy references to `TEMP/` subdirectories should use the following paths:
 - `TEMP/tasks/termination-rules.md` → `PRDs/termination-rules.md`
