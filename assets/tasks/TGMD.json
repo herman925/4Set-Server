@@ -16,15 +16,15 @@
       "label": "慣用腳",
       "options": [
         {
-          "value": "left",
+          "value": "Left",
           "label": "左腳"
         },
         {
-          "value": "right",
+          "value": "Right",
           "label": "右腳"
         },
         {
-          "value": "undetermined",
+          "value": "Undetermined",
           "label": "未形成"
         }
       ]

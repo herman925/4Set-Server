@@ -109,10 +109,14 @@
                                 Browse Files
                             </button>
 
-                            <div class="mt-4 text-xs sm:text-sm text-[color:var(--muted-foreground)]">
-                                <p class="flex items-center gap-2 justify-center">
+                            <div class="mt-4 space-y-1.5 text-[color:var(--muted-foreground)]">
+                                <p class="flex items-center gap-2 justify-center text-xs sm:text-sm">
                                     <i data-lucide="info" class="w-3 h-3 sm:w-4 sm:h-4"></i>
                                     Only PDF files are supported
+                                </p>
+                                <p class="flex items-center gap-2 justify-center text-[10px] sm:text-xs">
+                                    <i data-lucide="shield-alert" class="w-3 h-3"></i>
+                                    <span>For security, system folders (e.g., <code class="font-mono">C:\Windows</code>, <code class="font-mono">Program Files</code>) cannot be selected</span>
                                 </p>
                             </div>
                         </div>
@@ -810,6 +814,13 @@
         async function storeDirectoryHandle(handle) {
             try {
                 const database = await openDB();
+                
+                // Verify object store exists before creating transaction
+                if (!database.objectStoreNames.contains('handles')) {
+                    console.error('[IndexedDB] handles object store not found in database');
+                    return; // Graceful degradation - continue without persistence
+                }
+                
                 const tx = database.transaction('handles', 'readwrite');
                 const store = tx.objectStore('handles');
                 const request = store.put(handle, 'incomingFolder');
@@ -824,7 +835,8 @@
                 });
             } catch (error) {
                 console.error('[IndexedDB] Error storing handle:', error);
-                throw error;
+                // Don't throw - allow app to continue without persistence
+                console.warn('[IndexedDB] Continuing without handle persistence');
             }
         }
         
@@ -832,6 +844,13 @@
         async function restoreDirectoryHandle() {
             try {
                 const database = await openDB();
+                
+                // Verify object store exists before creating transaction
+                if (!database.objectStoreNames.contains('handles')) {
+                    console.log('[File Access] No handles object store, skipping restore');
+                    return null;
+                }
+                
                 const tx = database.transaction('handles', 'readonly');
                 const store = tx.objectStore('handles');
                 const getRequest = store.get('incomingFolder');
@@ -874,17 +893,32 @@
         // Open IndexedDB
         function openDB() {
             return new Promise((resolve, reject) => {
-                const request = indexedDB.open('4SetUploader', 1);
+                const request = indexedDB.open('4SetUploader', 2);
                 
                 request.onupgradeneeded = (event) => {
                     const db = event.target.result;
+                    console.log('[IndexedDB] Upgrading database schema...');
+                    
+                    // Create handles object store if it doesn't exist
                     if (!db.objectStoreNames.contains('handles')) {
                         db.createObjectStore('handles');
+                        console.log('[IndexedDB] ✓ Created handles object store');
                     }
                 };
                 
-                request.onsuccess = () => resolve(request.result);
-                request.onerror = () => reject(request.error);
+                request.onsuccess = () => {
+                    console.log('[IndexedDB] ✓ Database opened successfully');
+                    resolve(request.result);
+                };
+                
+                request.onerror = () => {
+                    console.error('[IndexedDB] Failed to open database:', request.error);
+                    reject(request.error);
+                };
+                
+                request.onblocked = () => {
+                    console.warn('[IndexedDB] Database upgrade blocked - please close other tabs');
+                };
             });
         }
 

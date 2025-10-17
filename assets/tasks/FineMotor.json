@@ -28,15 +28,15 @@
       "label": "慣用手",
       "options": [
         {
-          "value": "left",
+          "value": "Left",
           "label": "左手"
         },
         {
-          "value": "right",
+          "value": "Right",
           "label": "右手"
         },
         {
-          "value": "undetermined",
+          "value": "Undetermined",
           "label": "未形成"
         }
       ]
@@ -66,7 +66,10 @@
               "value": "1",
               "label": "成功"
             }
-          ]
+          ],
+          "scoring": {
+            "correctAnswer": "1"
+          }
         },
         {
           "id": "FM_side_2",
@@ -85,7 +88,10 @@
               "value": "1",
               "label": "成功"
             }
-          ]
+          ],
+          "scoring": {
+            "correctAnswer": "1"
+          }
         },
         {
           "id": "FM_side_3",
@@ -104,7 +110,10 @@
               "value": "1",
               "label": "成功"
             }
-          ]
+          ],
+          "scoring": {
+            "correctAnswer": "1"
+          }
         }
       ]
     },
@@ -222,7 +231,10 @@
               "value": "1",
               "label": "成功"
             }
-          ]
+          ],
+          "scoring": {
+            "correctAnswer": "1"
+          }
         },
         {
           "id": "FM_tree_2",
@@ -241,7 +253,10 @@
               "value": "1",
               "label": "成功"
             }
-          ]
+          ],
+          "scoring": {
+            "correctAnswer": "1"
+          }
         },
         {
           "id": "FM_tree_3",
@@ -260,7 +275,10 @@
               "value": "1",
               "label": "成功"
             }
-          ]
+          ],
+          "scoring": {
+            "correctAnswer": "1"
+          }
         }
       ]
     },
