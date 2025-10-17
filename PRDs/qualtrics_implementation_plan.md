@@ -1447,117 +1447,376 @@ if (tgmdFields.length > 0 && tgmdFields.length < 45) {
 
 ---
 
-## Hybrid Cache Strategy: User-Selectable Loading Mode
+## Hybrid Cache Strategy: Integrated Toggle on Filter Home Page
 
 ### Overview
 
-To accommodate different device capabilities and user preferences, implement a **hybrid loading strategy** where users can choose between:
-1. **Full Cache Mode** (default for desktop): Pre-load all data, instant navigation
-2. **Fetch-on-Request Mode** (default for mobile): Load data as needed, minimal storage
+To accommodate different device capabilities and user preferences, implement a **cache toggle** directly on the filter home page. This provides immediate control over caching behavior without requiring a separate configuration screen.
 
-### Home Page: Loading Mode Selection
+### Design Rationale
+
+**Why integrate into filter home page:**
+1. **Contextual Control**: Users configure filters and caching in one place
+2. **Immediate Feedback**: See cache status alongside filter options
+3. **Simplified Workflow**: No separate mode selection screen to navigate
+4. **Visual Clarity**: Cache toggle sits near system status pills for coherent UX
+5. **Mobile-Friendly**: Compact toggle instead of large radio cards
+
+**Key Principle**: The cache toggle determines behavior for the entire checking session. Once set, it applies to all subsequent drilldown navigations until the user changes it or closes the browser.
+
+### Home Page: Cache Toggle Integration
+
+**Location**: Place toggle immediately below system status pills (decryption, JotForm sync status)
 
 **UI Implementation:**
 ```html
 <!-- In checking_system_home.html -->
-<div class="cache-strategy-selector">
-  <h3>Data Loading Strategy</h3>
-  <p class="text-sm text-muted">Choose how to load checking system data</p>
-  
-  <div class="strategy-options">
-    <!-- Full Cache Option -->
-    <label class="strategy-card">
-      <input type="radio" name="cacheStrategy" value="full" checked>
-      <div class="card-content">
-        <div class="card-icon">🚀</div>
-        <h4>Full Cache (Recommended for Desktop)</h4>
-        <ul class="pros">
-          <li>✅ Instant page loads after initial sync</li>
-          <li>✅ Offline browsing support</li>
-          <li>✅ Best for frequent use</li>
-        </ul>
-        <ul class="cons">
-          <li>⚠️ Initial load: ~90 seconds</li>
-          <li>⚠️ Storage: ~93 MB</li>
-        </ul>
-        <div class="device-recommendation">Best for: Desktop, High-performance laptops</div>
-      </div>
-    </label>
+<!-- Insert after System Status Pills section -->
+
+<div class="entry-card mb-6 p-4">
+  <!-- Cache Strategy Toggle Header -->
+  <div class="flex items-center justify-between mb-3">
+    <div class="flex items-center gap-2">
+      <i data-lucide="database" class="w-4 h-4 text-[color:var(--muted-foreground)]"></i>
+      <h3 class="text-sm font-semibold text-[color:var(--foreground)]">Cache Strategy</h3>
+    </div>
     
-    <!-- Fetch-on-Request Option -->
-    <label class="strategy-card">
-      <input type="radio" name="cacheStrategy" value="on-demand">
-      <div class="card-content">
-        <div class="card-icon">📡</div>
-        <h4>Fetch-on-Request (Recommended for Mobile)</h4>
-        <ul class="pros">
-          <li>✅ Fast initial load: <5 seconds</li>
-          <li>✅ Minimal storage: ~1-5 MB</li>
-          <li>✅ Always fresh data</li>
-        </ul>
-        <ul class="cons">
-          <li>⚠️ 2-4s per student page load</li>
-          <li>⚠️ Requires active internet</li>
-          <li>⚠️ Higher battery usage</li>
-        </ul>
-        <div class="device-recommendation">Best for: Mobile, Tablets, Low-power laptops</div>
-      </div>
+    <!-- Toggle Switch -->
+    <label class="toggle-switch">
+      <input type="checkbox" id="cache-strategy-toggle" checked>
+      <span class="toggle-slider"></span>
     </label>
   </div>
   
-  <!-- Auto-detect suggestion -->
-  <div class="auto-detect-banner" id="autoDetectBanner">
-    <i data-lucide="info"></i>
-    <span id="autoDetectMessage">Detected mobile device - Fetch-on-Request mode recommended</span>
+  <!-- Current Mode Display -->
+  <div id="cache-mode-display" class="flex items-start gap-3 p-3 rounded-lg bg-[color:var(--muted)]/30">
+    <div class="flex-shrink-0 mt-0.5">
+      <i data-lucide="zap" class="w-5 h-5 text-[color:var(--primary)]"></i>
+    </div>
+    <div class="flex-1 min-w-0">
+      <div class="flex items-center gap-2 mb-1">
+        <span id="cache-mode-label" class="text-sm font-medium text-[color:var(--foreground)]">Full Cache Mode</span>
+        <span id="cache-mode-badge" class="badge-success text-[10px] px-2 py-0.5 rounded-full">Recommended</span>
+      </div>
+      <p id="cache-mode-description" class="text-xs text-[color:var(--muted-foreground)] leading-relaxed">
+        Pre-loads all data (~93 MB) for instant navigation. Best for desktop and frequent use. Initial sync takes ~90 seconds.
+      </p>
+      
+      <!-- Quick Stats -->
+      <div class="flex items-center gap-4 mt-2 text-[11px] text-[color:var(--muted-foreground)]">
+        <span class="flex items-center gap-1">
+          <i data-lucide="gauge" class="w-3 h-3"></i>
+          Load: <span id="cache-load-time" class="font-mono">90s initial</span>
+        </span>
+        <span class="flex items-center gap-1">
+          <i data-lucide="hard-drive" class="w-3 h-3"></i>
+          Storage: <span id="cache-storage-size" class="font-mono">~93 MB</span>
+        </span>
+        <span class="flex items-center gap-1">
+          <i data-lucide="activity" class="w-3 h-3"></i>
+          Pages: <span id="cache-page-speed" class="font-mono">&lt;100ms</span>
+        </span>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Auto-Detection Banner (conditional) -->
+  <div id="cache-recommendation-banner" class="hidden mt-3 p-3 rounded-lg border border-amber-200 bg-amber-50 dark:bg-amber-900/10">
+    <div class="flex items-start gap-2">
+      <i data-lucide="alert-circle" class="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5"></i>
+      <div class="flex-1 text-xs">
+        <p class="text-amber-800 dark:text-amber-200" id="cache-recommendation-text">
+          Mobile device detected. Consider using Fetch-on-Request mode to save storage and battery.
+        </p>
+        <button id="apply-recommendation-btn" class="mt-2 text-amber-700 dark:text-amber-300 underline hover:no-underline font-medium">
+          Switch to Fetch-on-Request
+        </button>
+      </div>
+    </div>
   </div>
 </div>
 ```
 
-**Auto-Detection Logic:**
-```javascript
-// In cache-manager-ui.js
-function detectDeviceCapability() {
-  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-  const isLowPower = navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4;
-  const hasLimitedMemory = navigator.deviceMemory && navigator.deviceMemory < 4; // GB
-  
-  // Recommend fetch-on-request if:
-  // 1. Mobile device detected
-  // 2. Low CPU cores (<4)
-  // 3. Limited RAM (<4 GB)
-  const recommendOnDemand = isMobile || isLowPower || hasLimitedMemory;
-  
-  if (recommendOnDemand) {
-    document.querySelector('input[value="on-demand"]').checked = true;
-    document.getElementById('autoDetectMessage').textContent = 
-      'Detected limited device - Fetch-on-Request mode recommended for best performance';
-  }
-  
-  return {
-    isMobile,
-    isLowPower,
-    hasLimitedMemory,
-    recommendOnDemand
-  };
+**CSS Styles:**
+```css
+/* Toggle Switch Styling */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 24px;
+  cursor: pointer;
+}
+
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: var(--muted);
+  transition: 0.3s;
+  border-radius: 24px;
+}
+
+.toggle-slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.3s;
+  border-radius: 50%;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+  background-color: var(--primary);
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+  transform: translateX(24px);
 }
 ```
 
-**Strategy Persistence:**
+**JavaScript Implementation:**
 ```javascript
-// Save user preference
-function saveCacheStrategy(strategy) {
-  localStorage.setItem('cacheStrategy', strategy);
-  console.log('[CacheStrategy] User selected:', strategy);
+// In cache-manager-ui.js
+
+class CacheStrategyManager {
+  constructor() {
+    this.toggle = document.getElementById('cache-strategy-toggle');
+    this.modeDisplay = document.getElementById('cache-mode-display');
+    this.modeLabel = document.getElementById('cache-mode-label');
+    this.modeBadge = document.getElementById('cache-mode-badge');
+    this.modeDescription = document.getElementById('cache-mode-description');
+    this.loadTime = document.getElementById('cache-load-time');
+    this.storageSize = document.getElementById('cache-storage-size');
+    this.pageSpeed = document.getElementById('cache-page-speed');
+    this.recommendationBanner = document.getElementById('cache-recommendation-banner');
+    
+    this.init();
+  }
+  
+  init() {
+    // Load saved preference or detect default
+    const savedStrategy = this.loadStrategy();
+    const isFullCache = savedStrategy === 'full';
+    this.toggle.checked = isFullCache;
+    this.updateDisplay(isFullCache);
+    
+    // Auto-detect and show recommendation
+    this.detectDevice();
+    
+    // Event listener
+    this.toggle.addEventListener('change', (e) => {
+      const isFullCache = e.target.checked;
+      this.saveStrategy(isFullCache ? 'full' : 'on-demand');
+      this.updateDisplay(isFullCache);
+      this.showStrategyChangeConfirmation(isFullCache);
+    });
+    
+    // Apply recommendation button
+    document.getElementById('apply-recommendation-btn')?.addEventListener('click', () => {
+      this.toggle.checked = false;
+      this.toggle.dispatchEvent(new Event('change'));
+      this.recommendationBanner.classList.add('hidden');
+    });
+  }
+  
+  detectDevice() {
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const isLowPower = navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4;
+    const hasLimitedMemory = navigator.deviceMemory && navigator.deviceMemory < 4; // GB
+    
+    const recommendOnDemand = isMobile || isLowPower || hasLimitedMemory;
+    
+    if (recommendOnDemand && this.toggle.checked) {
+      // Show recommendation only if currently on full cache
+      this.recommendationBanner.classList.remove('hidden');
+      
+      let reason = 'Limited device detected';
+      if (isMobile) reason = 'Mobile device detected';
+      else if (isLowPower) reason = 'Low-power device detected';
+      else if (hasLimitedMemory) reason = 'Limited memory detected';
+      
+      document.getElementById('cache-recommendation-text').textContent = 
+        `${reason}. Consider using Fetch-on-Request mode to save storage (~90 MB) and battery.`;
+    }
+  }
+  
+  updateDisplay(isFullCache) {
+    const icon = this.modeDisplay.querySelector('i[data-lucide]');
+    
+    if (isFullCache) {
+      // Full Cache Mode
+      this.modeLabel.textContent = 'Full Cache Mode';
+      this.modeBadge.className = 'badge-success text-[10px] px-2 py-0.5 rounded-full';
+      this.modeBadge.textContent = 'Recommended';
+      this.modeDescription.textContent = 
+        'Pre-loads all data (~93 MB) for instant navigation. Best for desktop and frequent use. Initial sync takes ~90 seconds.';
+      this.loadTime.textContent = '90s initial';
+      this.storageSize.textContent = '~93 MB';
+      this.pageSpeed.textContent = '<100ms';
+      icon.setAttribute('data-lucide', 'zap');
+      this.modeDisplay.className = 'flex items-start gap-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/10';
+    } else {
+      // Fetch-on-Request Mode
+      this.modeLabel.textContent = 'Fetch-on-Request Mode';
+      this.modeBadge.className = 'badge-warning text-[10px] px-2 py-0.5 rounded-full';
+      this.modeBadge.textContent = 'Mobile-Friendly';
+      this.modeDescription.textContent = 
+        'Loads data as needed with minimal storage (~1-5 MB). Best for mobile devices and single lookups. School/District views not supported.';
+      this.loadTime.textContent = '<5s start';
+      this.storageSize.textContent = '~1-5 MB';
+      this.pageSpeed.textContent = '2-4s/page';
+      icon.setAttribute('data-lucide', 'wifi');
+      this.modeDisplay.className = 'flex items-start gap-3 p-3 rounded-lg bg-amber-50 dark:bg-amber-900/10';
+    }
+    
+    // Re-initialize Lucide icons
+    lucide.createIcons();
+  }
+  
+  saveStrategy(strategy) {
+    localStorage.setItem('cacheStrategy', strategy);
+    console.log('[CacheStrategy] User selected:', strategy);
+  }
+  
+  loadStrategy() {
+    const saved = localStorage.getItem('cacheStrategy');
+    if (saved) return saved;
+    
+    // Default to full cache for desktop, on-demand for mobile
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    return isMobile ? 'on-demand' : 'full';
+  }
+  
+  showStrategyChangeConfirmation(isFullCache) {
+    const mode = isFullCache ? 'Full Cache' : 'Fetch-on-Request';
+    const message = isFullCache 
+      ? 'Full Cache enabled. Click "Refresh with Qualtrics" to load all data.'
+      : 'Fetch-on-Request enabled. Data will load as you navigate. School/District views disabled.';
+    
+    // Show toast notification
+    this.showToast(message, isFullCache ? 'success' : 'info');
+  }
+  
+  showToast(message, type = 'info') {
+    // Simple toast implementation
+    const toast = document.createElement('div');
+    toast.className = `fixed bottom-4 right-4 p-4 rounded-lg shadow-lg z-50 animate-slide-in ${
+      type === 'success' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+    }`;
+    toast.innerHTML = `
+      <div class="flex items-center gap-2">
+        <i data-lucide="${type === 'success' ? 'check-circle' : 'info'}" class="w-4 h-4"></i>
+        <span class="text-sm font-medium">${message}</span>
+      </div>
+    `;
+    document.body.appendChild(toast);
+    lucide.createIcons();
+    
+    setTimeout(() => {
+      toast.classList.add('animate-slide-out');
+      setTimeout(() => toast.remove(), 300);
+    }, 4000);
+  }
 }
 
-// Load user preference
-function loadCacheStrategy() {
-  return localStorage.getItem('cacheStrategy') || detectDefaultStrategy();
-}
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', () => {
+  const cacheManager = new CacheStrategyManager();
+  window.cacheStrategyManager = cacheManager;
+});
+```
 
-function detectDefaultStrategy() {
-  const deviceInfo = detectDeviceCapability();
-  return deviceInfo.recommendOnDemand ? 'on-demand' : 'full';
+### Visual Layout
+
+**Filter Home Page Structure:**
+```
+┌─────────────────────────────────────────────────────────┐
+│ Checking System                                    Back │
+├─────────────────────────────────────────────────────────┤
+│ ● Not Decrypted  ● System Not Ready  Last Synced: —    │ <- Status Pills
+├─────────────────────────────────────────────────────────┤
+│ Cache Strategy                            [●─────────○] │ <- NEW: Cache Toggle
+│ ⚡ Full Cache Mode                      Recommended     │
+│ Pre-loads all data (~93 MB) for instant navigation...  │
+│ ⏱ 90s initial  💾 ~93 MB  ⚡ <100ms                    │
+├─────────────────────────────────────────────────────────┤
+│ No filters applied                      0 filters       │ <- Filter Chips
+├─────────────────────────────────────────────────────────┤
+│ Configure Filters                                       │
+│ [District ▼] [School Search...] [+ Add filter]         │ <- Filter Config
+└─────────────────────────────────────────────────────────┘
+```
+
+### Toggle Behavior & State Management
+
+**Toggle States:**
+- **ON (Checked)**: Full Cache Mode enabled
+- **OFF (Unchecked)**: Fetch-on-Request Mode enabled
+
+**State Persistence:**
+- Saved to `localStorage.cacheStrategy`
+- Persists across browser sessions
+- Can be changed anytime on home page
+- Applies to all subsequent navigation
+
+**Impact on Navigation:**
+```javascript
+// In all drilldown pages (student, class, school, etc.)
+async function loadPageData(identifier) {
+  const strategy = localStorage.getItem('cacheStrategy') || 'full';
+  
+  if (strategy === 'full') {
+    // Use pre-computed cache
+    return await loadFromCache(identifier);
+  } else {
+    // Fetch on demand
+    return await fetchOnDemand(identifier);
+  }
+}
+```
+
+**Blocking for Unsupported Views:**
+```javascript
+// In school/group/district pages
+function checkCacheRequirement() {
+  const strategy = localStorage.getItem('cacheStrategy');
+  
+  if (strategy === 'on-demand') {
+    // Block page load
+    showModal({
+      title: 'Full Cache Required',
+      message: 'School, Group, and District views require Full Cache mode due to data volume (200-1000+ students).',
+      actions: [
+        { 
+          label: 'Enable Full Cache', 
+          onClick: () => {
+            localStorage.setItem('cacheStrategy', 'full');
+            window.location.href = 'checking_system_home.html?autoSync=true';
+          }
+        },
+        { 
+          label: 'Search Student/Class', 
+          onClick: () => showSearchModal() 
+        }
+      ]
+    });
+    return false;
+  }
+  
+  return true;
 }
 ```
 
@@ -1899,40 +2158,50 @@ class HybridCacheManager {
 }
 ```
 
-### Summary: Fetch-on-Request by Page Level
+### Summary: Integrated Toggle Approach
 
-| Page Level | Full Cache | Fetch-on-Request | Recommendation |
+**Key Benefits of Filter Page Integration:**
+1. **Single Control Point**: Users configure caching once, applies everywhere
+2. **Visual Feedback**: Toggle shows current mode and stats in real-time
+3. **Contextual**: Cache strategy sits alongside filters and status pills
+4. **No Extra Screens**: Eliminates need for separate mode selection page
+5. **Mobile-Optimized**: Compact toggle works well on small screens
+
+**Fetch-on-Request by Page Level:**
+
+| Page Level | Full Cache | Fetch-on-Request | Support Status |
 |-----------|-----------|-----------------|----------------|
 | **Student (Level 4)** | <100ms instant | 2-4s per load | ✅ **Supported** - Acceptable UX |
 | **Class (Level 3)** | <100ms instant | 60-120s per load | ⚠️ **Supported with warning** - Show progress bar |
-| **School (Level 2)** | <100ms instant | 8-10 min per load | ❌ **Not supported** - Require full cache |
-| **Group (Level 1)** | <100ms instant | 15-20 min per load | ❌ **Not supported** - Require full cache |
-| **District (Level 1)** | <100ms instant | 20-30 min per load | ❌ **Not supported** - Require full cache |
+| **School (Level 2)** | <100ms instant | 8-10 min per load | ❌ **Blocked** - Require full cache mode |
+| **Group (Level 1)** | <100ms instant | 15-20 min per load | ❌ **Blocked** - Require full cache mode |
+| **District (Level 1)** | <100ms instant | 20-30 min per load | ❌ **Blocked** - Require full cache mode |
 
-### Recommendations by Device Type
+**Default Settings by Device:**
 
-**Desktop / High-Performance Laptops:**
-- Default: **Full Cache Mode**
-- Why: 93 MB is negligible, instant navigation is critical for frequent use
-- Allow: User can switch to fetch-on-request if needed
+| Device Type | Default Mode | Rationale |
+|------------|-------------|-----------|
+| **Desktop / High-Performance Laptops** | Full Cache ON | 93 MB negligible, instant navigation critical |
+| **Low-Power Laptops / Older Devices** | Full Cache ON | Balance performance vs storage, show recommendation banner |
+| **Mobile / Tablets** | Fetch-on-Request OFF | Limited storage/battery, typically single-student lookup |
 
-**Low-Power Laptops / Older Devices:**
-- Default: **Full Cache Mode** (with warning about initial load time)
-- Alternative: Fetch-on-request for student/class-only workflow
-- Why: Balance between performance and storage
-
-**Mobile Devices / Tablets:**
-- Default: **Fetch-on-Request Mode**
-- Why: Limited storage, battery concerns, typically used for single-student lookup
-- Limitation: Disable school/group/district views
-- Workflow: Use student search → direct to student page
+**User Experience Flow:**
+1. User visits `checking_system_home.html`
+2. Page auto-detects device type
+3. Toggle defaults to appropriate mode
+4. Recommendation banner shows if mismatch detected
+5. User can override with single toggle click
+6. Strategy persists in localStorage
+7. All navigation respects selected strategy
+8. Blocking modal appears if accessing School/District in fetch-on-request mode
 
 **Production Recommendation:**
-- Implement both modes
-- Auto-detect device and suggest appropriate mode
-- Allow manual override
-- Show clear warnings when fetch-on-request limits are reached
-- Provide "Switch to Full Cache" button on blocking screens
+- ✅ Implement toggle on filter home page
+- ✅ Auto-detect device and show recommendation banner (non-intrusive)
+- ✅ Allow manual override via toggle
+- ✅ Show clear blocking modals for unsupported views
+- ✅ Provide "Enable Full Cache" quick action button
+- ✅ Persist preference across sessions
 
 ### Optimization Strategies
 
