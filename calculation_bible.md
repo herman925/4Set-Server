@@ -1129,25 +1129,300 @@ Termination values are set **ONLY when mathematically certain**:
 
 ## Page-Specific Implementation
 
-### Student Page
+### Two Validation Mechanisms Comparison
+
+The 4Set system uses **two different validation mechanisms** depending on the page:
+
+1. **Direct TaskValidator** (Student Page only)
+2. **Cached Validation via JotFormCache** (Class, School, District, Group pages)
+
+Both mechanisms ultimately use TaskValidator as the single source of truth, but differ in **caching strategy** and **data flow**.
+
+#### Mechanism Comparison Table
+
+| Aspect | Student Page (Direct) | Class/School/District/Group (Cached) |
+|--------|----------------------|-------------------------------------|
+| **Primary Method** | `TaskValidator.validateAllTasks()` | `JotFormCache.buildStudentValidationCache()` |
+| **Validation Source** | TaskValidator.js (direct call) | TaskValidator.js (via JotFormCache wrapper) |
+| **Caching Strategy** | SessionStorage (merged answers only) | IndexedDB (full validation results) |
+| **Cache Duration** | 1 hour | 1 hour |
+| **Cache Size** | Small (~50-100KB per student) | Large (~500KB-5MB for all students) |
+| **Cache Location** | `sessionStorage` key: `jotform_merged_${coreId}` | IndexedDB: `JotFormCacheDB.student_validation` |
+| **Data Fetched** | Single student submissions | All student submissions (bulk) |
+| **API Calls** | 1 per student visit | 1 for entire dataset |
+| **Validation Timing** | On-demand (real-time) | Pre-computed (batch) |
+| **Performance** | Fast for single student | Fast for multiple students |
+| **Use Case** | Individual student detail view | Aggregated class/school views |
+
+#### Architecture Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    JotForm API (Cloud)                          │
+│                All Student Submissions                           │
+└────────────────────┬────────────────────────────────────────────┘
+                     │
+        ┌────────────┴────────────┐
+        │                         │
+        ▼                         ▼
+┌────────────────┐      ┌──────────────────────┐
+│ Student Page   │      │ Class/School/District│
+│ (Direct)       │      │ /Group Pages (Cached)│
+└────────────────┘      └──────────────────────┘
+        │                         │
+        │                         ▼
+        │               ┌──────────────────────┐
+        │               │  JotFormCache        │
+        │               │  (Wrapper Layer)     │
+        │               │  - Bulk validation   │
+        │               │  - IndexedDB cache   │
+        │               └──────────────────────┘
+        │                         │
+        └────────────┬────────────┘
+                     │
+                     ▼
+           ┌──────────────────────┐
+           │   TaskValidator.js   │
+           │  (Single Source of   │
+           │      Truth)          │
+           └──────────────────────┘
+```
+
+#### Mechanism 1: Direct TaskValidator (Student Page)
+
+**File:** `checking-system-student-page.js`
+
+**Location:** Lines 640-687
+
+**Process Flow:**
+
+```javascript
+// 1. Fetch submissions for single student from JotForm
+const submissions = await JotFormCache.filterByCoreId(allSubmissions, coreId);
+
+// 2. Merge multiple submissions (earliest wins)
+const mergedAnswers = mergeSubmissions(submissions, questionsData);
+
+// 3. Cache merged answers in SessionStorage
+sessionStorage.setItem(cacheKey, JSON.stringify({
+  coreId,
+  mergedAnswers,
+  timestamp: new Date().toISOString()
+}));
+
+// 4. DIRECT validation with TaskValidator
+const taskValidation = await window.TaskValidator.validateAllTasks(mergedAnswers);
+
+// 5. Render with detailed question-level data
+populateTaskTables(taskValidation, mergedAnswers);
+```
+
+**Advantages:**
+
+| Advantage | Description |
+|-----------|-------------|
+| **Real-time accuracy** | Always uses fresh validation logic |
+| **Detailed output** | Question-level data with termination details |
+| **Small cache** | Only stores merged answers (50-100KB) |
+| **Simple debugging** | Direct console logs from TaskValidator |
+| **No stale data** | Validation runs on every page load |
+
+**Disadvantages:**
+
+| Disadvantage | Description |
+|--------------|-------------|
+| **Repeated calculations** | Re-validates on every page visit |
+| **No bulk optimization** | Cannot pre-compute for multiple students |
+| **SessionStorage limitation** | Limited to ~5-10MB total |
+
+**Code Reference:**
+
+```javascript
+// Location: checking-system-student-page.js Lines 658-664
+console.log('[StudentPage] Validating tasks with TaskValidator...');
+
+if (!window.TaskValidator) {
+  throw new Error('TaskValidator not loaded');
+}
+
+const taskValidation = await window.TaskValidator.validateAllTasks(data.mergedAnswers);
+```
+
+#### Mechanism 2: Cached Validation (Class/School/District/Group Pages)
+
+**File:** `jotform-cache.js`
+
+**Function:** `buildStudentValidationCache()`
+
+**Location:** Lines 400-800
+
+**Process Flow:**
+
+```javascript
+// 1. Check IndexedDB cache first
+const cached = await loadValidationCache();
+if (cached && isCacheValid(cached)) {
+  return cached; // Return pre-computed validations
+}
+
+// 2. Fetch all submissions once (bulk)
+const allSubmissions = await getAllSubmissions(credentials);
+
+// 3. Group by student
+const submissionsByStudent = groupSubmissionsByStudent(allSubmissions);
+
+// 4. Validate each student (calls TaskValidator internally)
+const validationCache = new Map();
+for (const [coreId, submissions] of submissionsByStudent.entries()) {
+  const validation = await validateStudent(student, submissions, surveyStructure);
+  validationCache.set(coreId, validation);
+}
+
+// 5. Save to IndexedDB
+await saveValidationCache(validationCache);
+
+// 6. Return cached results
+return validationCache;
+```
+
+**validateStudent() Internal Process:**
+
+**Location:** `jotform-cache.js` Lines 576-760
+
+```javascript
+async function validateStudent(student, submissions, surveyStructure) {
+  // 1. Merge submissions (earliest wins)
+  const mergedAnswers = mergeByFieldName(submissions);
+  
+  // 2. Call TaskValidator (SAME as student page)
+  const taskValidation = await window.TaskValidator.validateAllTasks(mergedAnswers);
+  
+  // 3. Build task-to-set mapping
+  const taskToSetMap = buildTaskToSetMapping(surveyStructure);
+  
+  // 4. Handle gender-conditional tasks
+  const applicableTasks = filterByGender(tasks, student.gender);
+  
+  // 5. Calculate set completion status
+  const setStatus = calculateSetStatus(taskValidation, taskToSetMap, applicableTasks);
+  
+  // 6. Return comprehensive cache entry
+  return {
+    coreId: student.coreId,
+    submissions,
+    taskValidation,
+    setStatus,
+    timestamp: Date.now()
+  };
+}
+```
+
+**Advantages:**
+
+| Advantage | Description |
+|-----------|-------------|
+| **Bulk performance** | Pre-compute for all students at once |
+| **Fast aggregation** | Class/school metrics from cached data |
+| **Large storage** | IndexedDB handles hundreds of MB |
+| **Reduced API calls** | 1 API call for entire dataset |
+| **Efficient navigation** | Instant drill-down between pages |
+
+**Disadvantages:**
+
+| Disadvantage | Description |
+|--------------|-------------|
+| **Cache staleness** | May show outdated data (1 hour TTL) |
+| **Complex invalidation** | Need to clear cache on data changes |
+| **Higher memory usage** | Stores validation for all students |
+| **Debugging complexity** | Cache layers add indirection |
+
+**Code Reference:**
+
+```javascript
+// Location: checking-system-class-page.js Lines 154-170
+// The class page uses JotFormCache.buildStudentValidationCache() which internally
+// calls TaskValidator.validateAllTasks() for each student. This ensures that
+// class-level aggregation uses the SAME validation logic as the student page.
+
+const validationCache = await window.JotFormCache.buildStudentValidationCache(
+  students,
+  surveyStructure
+);
+
+// Location: jotform-cache.js Lines 627
+const taskValidation = await window.TaskValidator.validateAllTasks(mergedAnswers);
+```
+
+#### Critical Consistency Points
+
+Both mechanisms **MUST** maintain consistency through:
+
+| Consistency Point | Implementation |
+|-------------------|----------------|
+| **Same validation rules** | Both call `TaskValidator.validateAllTasks()` |
+| **Same merge strategy** | Earliest submission wins for overlaps |
+| **Same termination logic** | Centralized in TaskValidator TERMINATION_RULES |
+| **Same timeout detection** | Consecutive-gap-to-end algorithm |
+| **Same gender handling** | M/F normalization to male/female |
+| **Same exclusion rules** | Post-termination questions excluded |
+
+#### When to Use Which Mechanism
+
+| Scenario | Use Mechanism | Reason |
+|----------|---------------|--------|
+| View single student detail | Direct (Student Page) | Real-time accuracy, detailed display |
+| View class summary | Cached (Class Page) | Bulk performance, aggregation |
+| View school/district stats | Cached (School/District) | Large-scale aggregation |
+| Debug validation issue | Direct (Student Page) | Clearer console logs |
+| Generate bulk reports | Cached (Export/API) | Pre-computed data |
+| Fresh data required | Direct + clear cache | Force re-validation |
+
+#### Cache Management
+
+**Student Page Cache:**
+
+```javascript
+// Location: SessionStorage
+// Key: jotform_merged_${coreId}
+// Data: { coreId, mergedAnswers, metrics, timestamp }
+// Size: ~50-100KB per student
+// TTL: 1 hour
+
+// Clear cache
+sessionStorage.removeItem(`jotform_merged_${coreId}`);
+```
+
+**Class/School Cache:**
+
+```javascript
+// Location: IndexedDB
+// Database: JotFormCacheDB
+// Store: student_validation
+// Key: validation_cache
+// Data: Map<coreId, validationEntry>
+// Size: ~500KB-5MB total
+// TTL: 1 hour
+
+// Clear cache
+await JotFormCache.clearValidationCache();
+```
+
+#### Performance Comparison
+
+| Metric | Student Page (Direct) | Class Page (Cached) |
+|--------|----------------------|---------------------|
+| **Initial load** | 2-3 seconds | 10-15 seconds (first time) |
+| **Subsequent loads** | 2-3 seconds | <1 second (from cache) |
+| **Memory usage** | Low (~50KB) | High (~5MB) |
+| **API calls** | 1 per visit | 1 per hour |
+| **Validation time** | ~500ms | ~20ms (cached) |
+| **Best for** | Single student | Multiple students |
+
+### Student Page (Mechanism 1: Direct)
 
 **File:** `checking-system-student-page.js`
 
 **Validation Method:** Direct call to `TaskValidator.validateAllTasks()`
-
-**Location:** Lines 440-460 (approximate)
-
-```javascript
-async function fetchAndPopulateJotformData(coreId) {
-  // ... fetch data from JotForm ...
-  
-  // Validate using TaskValidator
-  const validation = await window.TaskValidator.validateAllTasks(mergedAnswers);
-  
-  // Render tasks
-  await renderTasksWithValidation(validation, mergedAnswers);
-}
-```
 
 **Features:**
 - Per-question validation display
@@ -1155,27 +1430,23 @@ async function fetchAndPopulateJotformData(coreId) {
 - Post-termination answer detection
 - Timeout analysis for SYM/NONSYM
 - Detailed statistics per task
+- Real-time validation on every load
 
-### Class Page
+### Class Page (Mechanism 2: Cached)
 
 **File:** `checking-system-class-page.js`
 
 **Validation Method:** Via `JotFormCache.buildStudentValidationCache()`
-
-```javascript
-const validationCache = await window.JotFormCache.buildStudentValidationCache(
-  students, 
-  surveyStructure
-);
-```
 
 **Features:**
 - Aggregated task completion per student
 - Set-level status overview
 - Gender-conditional task handling
 - Cached validation for performance
+- Bulk pre-computation for all students
+- IndexedDB persistence
 
-### School/District/Group Pages
+### School/District/Group Pages (Mechanism 2: Cached)
 
 **Files:** 
 - `checking-system-school-page.js`
@@ -1189,59 +1460,97 @@ const validationCache = await window.JotFormCache.buildStudentValidationCache(
 - Drill-down navigation
 - Gender-conditional task counts
 - Cached validation for performance
+- Large-scale data handling
 
 ---
 
 ## Debugging Guide
 
+### Common Issues Reference Table
+
+| Issue # | Symptom | Likely Cause | Priority | Difficulty |
+|---------|---------|--------------|----------|------------|
+| 1 | Task shows incomplete despite full answers | Termination not detected | High | Medium |
+| 2 | Post-termination answers not flagged | Flag not set correctly | Medium | Easy |
+| 3 | SYM/NONSYM timeout not detected | Gap detection logic | High | Hard |
+| 4 | Gender-conditional tasks miscounted | Gender normalization | Medium | Easy |
+| 5 | Status circle wrong color | Priority logic issue | Low | Easy |
+
 ### Common Issues and Solutions
 
 #### Issue 1: Task Shows Incomplete Despite Full Answers
 
-**Symptoms:**
-- Task has all questions answered
-- Completion shows < 100%
-- Status circle is red
+**Symptoms Summary:**
+
+| What You See | Expected | Actual |
+|--------------|----------|--------|
+| Questions answered | All answered | All answered |
+| Completion % | 100% | < 100% |
+| Status circle | Green | Red |
+| Total count | Up to termination | All questions |
 
 **Likely Cause:** Termination not being detected
 
-**Debug Steps:**
+**Debug Steps Table:**
 
-1. Check console logs for termination detection:
+| Step | Action | Command/Location | Expected Output |
+|------|--------|------------------|-----------------|
+| 1 | Check termination logs | `task-validator.js` Line 354, 414, 461 | `[TaskValidator] ${taskId} terminated at Stage ${stageNum}` |
+| 2 | Verify termination index | Browser console | `terminationIndex: 11` (or similar) |
+| 3 | Check adjusted totals | Browser console | `adjustedTotal: 12` (matches termination) |
+| 4 | Compare question arrays | Browser console | `questions.length: 60` vs `totalQuestions: 12` |
+
+**Debug Commands:**
+
 ```javascript
+// 1. Check console logs for termination detection
 console.log(`[TaskValidator] ${taskId} terminated at Stage ${stageNum}`);
-```
 
-2. Verify termination index:
-```javascript
+// 2. Verify termination index
 console.log('Termination index:', validation.terminationIndex);
 console.log('Adjusted total:', validation.totalQuestions);
-```
 
-3. Check question counts:
-```javascript
+// 3. Check question counts
 console.log('Questions:', validation.questions.length);
 console.log('Total (adjusted):', validation.totalQuestions);
 ```
+
+**Solution Table:**
+
+| Condition | Fix | Code Location |
+|-----------|-----|---------------|
+| No termination logs | Check TERMINATION_RULES config | `task-validator.js` Lines 281-310 |
+| terminationIndex = -1 | Review termination logic for task type | `task-validator.js` Lines 328-466 |
+| Incorrect stage threshold | Verify stage configuration | `task-validator.js` Lines 283-298 |
 
 **Location:** `task-validator.js` Lines 354, 414, 461
 
 #### Issue 2: Post-Termination Answers Not Flagged
 
-**Symptoms:**
-- Task terminated properly
-- Answers exist after termination
-- No yellow warning shown
+**Symptoms Summary:**
 
-**Debug Steps:**
+| What You See | Expected | Actual |
+|--------------|----------|--------|
+| Task terminated | Yes | Yes |
+| Answers after termination | Exist | Exist |
+| Yellow warning | Shown | Not shown |
+| Status circle | Yellow | Green |
 
-1. Check `hasPostTerminationAnswers` flag:
+**Debug Steps Table:**
+
+| Step | Action | Console Command | What to Check |
+|------|--------|----------------|---------------|
+| 1 | Check flag | `console.log('Post-termination:', validation.hasPostTerminationAnswers)` | Should be `true` |
+| 2 | Verify question states | See code below | Questions after termination with answers |
+| 3 | Check status logic | `checking-system-student-page.js` Line 1827 | Yellow condition triggered |
+
+**Debug Commands:**
+
 ```javascript
+// 1. Check hasPostTerminationAnswers flag
 console.log('Post-termination answers:', validation.hasPostTerminationAnswers);
-```
 
-2. Verify question states:
-```javascript
+// 2. Verify question states
 validation.questions.forEach((q, i) => {
   if (i > validation.terminationIndex) {
     console.log(`Q${i}: ${q.id} = ${q.studentAnswer} (after termination)`);
@@ -1249,32 +1558,58 @@ validation.questions.forEach((q, i) => {
 });
 ```
 
+**Solution Table:**
+
+| If This | Then Do This | Code Location |
+|---------|--------------|---------------|
+| Flag is false but answers exist | Check detection logic | `task-validator.js` Lines 512-519 |
+| Flag is true but UI doesn't show | Check status color logic | `checking-system-student-page.js` Lines 1827-1830 |
+| Questions not marked ignored | Check data-ignored attribute | `checking-system-student-page.js` Lines 813 |
+
 **Location:** `task-validator.js` Lines 512-519
 
 #### Issue 3: SYM/NONSYM Timeout Not Detected
 
-**Symptoms:**
-- Task shows incomplete despite timeout
-- Red status instead of green
-- Missing "Timed Out" indicator
+**Symptoms Summary:**
 
-**Debug Steps:**
+| What You See | Expected | Actual |
+|--------------|----------|--------|
+| Task completion | 53/56 (incomplete) | 53/53 (complete) |
+| Status | Green "Timed Out" | Red "Incomplete" |
+| Indicator | Clock icon | Red circle |
+| Questions 54-56 | Marked "Ignored" | Shown as "Unanswered" |
 
-1. Check timeout analysis:
+**Timeout Detection States:**
+
+| State | lastAnswered | Blank After? | Result | Status |
+|-------|--------------|--------------|--------|--------|
+| Clean Timeout | Q41 | Q42-Q56 all blank | `timedOut=true` | Green ✅ |
+| Timeout + Gap | Q34 | Q19 blank, Q35-Q56 blank | `timedOut=true, hasMissingData=true` | Green ✅ + Warning ⚠️ |
+| Missing Data | Q20 | Q11-Q20 blank, Q21 has answer | `timedOut=false, hasMissingData=true` | Red ❌ |
+| Complete | Q56 | None | `complete=true` | Green ✅ |
+
+**Debug Steps Table:**
+
+| Step | Check | Console Command | Expected for Timeout |
+|------|-------|----------------|----------------------|
+| 1 | Analysis object | `console.log('[TaskValidator] SYM analysis:', symAnalysis)` | `{timedOut: true, ...}` |
+| 2 | Last answered | `console.log('Last answered:', analysis.lastAnsweredIndex)` | Index of last question |
+| 3 | Gap pattern | See code below | All blank after last |
+| 4 | Consecutive check | See code below | No answers after gap |
+
+**Debug Commands:**
+
 ```javascript
+// 1. Check timeout analysis
 console.log('[TaskValidator] SYM analysis:', symAnalysis);
 console.log('[TaskValidator] NONSYM analysis:', nonsymAnalysis);
-```
 
-2. Verify consecutive gap detection:
-```javascript
+// 2. Verify consecutive gap detection
 console.log('Last answered index:', analysis.lastAnsweredIndex);
 console.log('Timed out:', analysis.timedOut);
 console.log('Has missing data:', analysis.hasMissingData);
-```
 
-3. Check for answers after gap:
-```javascript
+// 3. Check for answers after gap
 for (let i = lastAnsweredIndex + 1; i < questions.length; i++) {
   if (questions[i].studentAnswer !== null) {
     console.log(`Answer found at Q${i} after gap: ${questions[i].studentAnswer}`);
@@ -1282,82 +1617,187 @@ for (let i = lastAnsweredIndex + 1; i < questions.length; i++) {
 }
 ```
 
+**Decision Tree:**
+
+```
+Is last question answered?
+├─ YES → complete=true ✅
+└─ NO → Continue
+    ├─ ALL questions after last are blank?
+    │   ├─ YES → timedOut=true ✅
+    │   │   └─ Any gaps BEFORE last?
+    │   │       ├─ YES → hasMissingData=true ⚠️
+    │   │       └─ NO → Clean timeout ✅
+    │   └─ NO → timedOut=false, hasMissingData=true ❌
+    └─ Not answered at all → notstarted ⚪
+```
+
 **Location:** `task-validator.js` Lines 570-631, 686
 
 #### Issue 4: Gender-Conditional Tasks Miscounted
 
-**Symptoms:**
-- Set 2 shows wrong task count
-- Female student has TEC_Male counted (or vice versa)
-- Set completion percentage incorrect
+**Symptoms Summary:**
 
-**Debug Steps:**
+| What You See | Expected | Actual |
+|--------------|----------|--------|
+| Set 2 task count | 3 (Female: TEC_F, MPT, CCM) | 4 (includes TEC_M) |
+| Set completion % | 100% (3/3) | 75% (3/4) |
+| Status circle | Green | Yellow/Red |
 
-1. Check gender normalization:
+**Gender Normalization Table:**
+
+| Student Data | Raw Value | Normalized Value | Survey Structure | Match? |
+|--------------|-----------|------------------|------------------|--------|
+| Gender field | "M" | "male" | "male" | ✅ |
+| Gender field | "F" | "female" | "female" | ✅ |
+| Gender field | "Male" | "male" | "male" | ✅ |
+| Gender field | "Female" | "female" | "female" | ✅ |
+| Gender field | "m" | "male" | "male" | ✅ |
+| Gender field | "f" | "female" | "female" | ✅ |
+
+**Debug Steps Table:**
+
+| Step | Check | Console Command | Expected Output |
+|------|-------|----------------|-----------------|
+| 1 | Raw gender | `console.log('Student gender:', student.gender)` | "M", "F", "Male", or "Female" |
+| 2 | Normalized | `console.log('Normalized:', studentGender)` | "male" or "female" |
+| 3 | Applicable tasks | See code below | 3 tasks for Set 2 (not 4) |
+
+**Debug Commands:**
+
 ```javascript
+// 1. Check gender normalization
 console.log('Student gender:', student.gender);
 console.log('Normalized:', studentGender); // Should be 'male' or 'female'
-```
 
-2. Verify applicable sections:
-```javascript
+// 2. Verify applicable sections
 console.log('Applicable sections:', applicableSections.length);
 applicableSections.forEach(s => {
   console.log(`- ${s.file} (${s.showIf ? JSON.stringify(s.showIf) : 'no condition'})`);
 });
 ```
 
+**Normalization Logic:**
+
+```javascript
+// Location: jotform-cache.js Lines 671-673
+let studentGender = (student.gender || '').toLowerCase();
+if (studentGender === 'm' || studentGender === 'male') studentGender = 'male';
+if (studentGender === 'f' || studentGender === 'female') studentGender = 'female';
+```
+
 **Location:** `jotform-cache.js` Lines 638-655 (approximate)
 
 #### Issue 5: Status Circle Wrong Color
 
-**Symptoms:**
-- Task complete but shows red
-- Terminated task shows yellow instead of green
-- Grey shown for tasks with progress
+**Symptoms Summary:**
 
-**Debug Steps:**
+| What You See | Expected | Actual | Priority |
+|--------------|----------|--------|----------|
+| Complete task | Green | Red | High |
+| Terminated task | Green | Yellow | Medium |
+| In-progress task | Red | Grey | Low |
 
-1. Check task statistics:
+**Status Priority Table:**
+
+| Priority | Color | Condition | Overrides |
+|----------|-------|-----------|-----------|
+| 1 (Highest) | 🟡 Yellow | `hasPostTerminationAnswers=true` | All others |
+| 2 | 🟢 Green | `hasTerminated=true && answered>0` | Red, Grey |
+| 3 | 🟢 Green | `timedOut=true && answered>0` | Red, Grey |
+| 4 | 🟢 Green | `answeredPercent=100` | Red, Grey |
+| 5 | 🔴 Red | `answered>0 && answeredPercent<100` | Grey |
+| 6 (Lowest) | ⚪ Grey | `total=0 || answered=0` | None |
+
+**Debug Steps Table:**
+
+| Step | Check | Console Command | What to Verify |
+|------|-------|----------------|----------------|
+| 1 | Task statistics | `console.log('Task stats:', taskStats)` | answered, total, percentages |
+| 2 | Termination flags | See code below | terminated, timedOut, hasPostTerm |
+| 3 | Color logic | See code below | Which condition triggered |
+
+**Debug Commands:**
+
 ```javascript
+// 1. Check task statistics
 console.log('Task stats:', taskStats);
 console.log('Answered %:', taskStats.answeredPercent);
 console.log('Has terminated:', taskStats.hasTerminated);
 console.log('Has post-term answers:', taskStats.hasPostTerminationAnswers);
-```
 
-2. Verify status logic execution:
-```javascript
+// 2. Verify status logic execution
 if (stats.hasPostTerminationAnswers) {
   console.log('→ YELLOW: Post-termination data detected');
 } else if ((stats.hasTerminated || stats.timedOut) && stats.answered > 0) {
   console.log('→ GREEN: Properly terminated/timed out');
+} else if (stats.answeredPercent === 100) {
+  console.log('→ GREEN: Complete');
+} else if (stats.answered > 0) {
+  console.log('→ RED: Incomplete');
+} else {
+  console.log('→ GREY: Not started');
 }
-// ... etc
+```
+
+**Color Decision Flowchart:**
+
+```
+Check hasPostTerminationAnswers
+├─ YES → 🟡 YELLOW (Priority 1)
+└─ NO → Check terminated/timedOut && answered>0
+    ├─ YES → 🟢 GREEN (Priority 2)
+    └─ NO → Check answeredPercent=100
+        ├─ YES → 🟢 GREEN (Priority 4)
+        └─ NO → Check answered>0
+            ├─ YES → 🔴 RED (Priority 5)
+            └─ NO → ⚪ GREY (Priority 6)
 ```
 
 **Location:** `checking-system-student-page.js` Lines 1815-1847
 
 ### Console Log Markers
 
-Key log markers to search for:
+Key log markers to search for when debugging:
 
-| Marker | Location | Purpose |
-|--------|----------|---------|
-| `[TaskValidator]` | `task-validator.js` | Core validation logic |
-| `[StudentPage]` | `checking-system-student-page.js` | Student page operations |
-| `[JotFormCache]` | `jotform-cache.js` | Caching layer operations |
-| `[StudentData]` | `student-data-processor.js` (deprecated) | Legacy processor |
+| Marker | File | Purpose | Example Output |
+|--------|------|---------|----------------|
+| `[TaskValidator]` | `task-validator.js` | Core validation logic | `[TaskValidator] Loaded task definition: erv` |
+| `[StudentPage]` | `checking-system-student-page.js` | Student page operations | `[StudentPage] Validating tasks with TaskValidator...` |
+| `[JotFormCache]` | `jotform-cache.js` | Caching layer operations | `[JotFormCache] Using cached data (valid)` |
+| `[ClassPage]` | `checking-system-class-page.js` | Class page operations | `[ClassPage] Building student validation cache...` |
+| `[StudentData]` | `student-data-processor.js` | Legacy processor (deprecated) | ⚠️ Should not appear |
+
+**Console Filter Quick Reference:**
+
+| To Debug | Filter String | Shows |
+|----------|---------------|-------|
+| All validation | `TaskValidator` | Core validation events |
+| Student page | `StudentPage` | Page-specific operations |
+| Cache operations | `JotFormCache` | Cache hits/misses/builds |
+| Termination | `terminated` | Termination detection logs |
+| Timeout | `timeout` or `timedOut` | Timeout detection logs |
+| Errors | `❌` or `Error` | All error messages |
+| Success | `✅` | Successful operations |
 
 ### Validation Flow Trace
 
 To trace validation flow for a specific student:
 
-1. **Open browser console** (F12)
+**Step-by-Step Debugging Table:**
 
-2. **Filter logs:** Enter `TaskValidator` in console filter
+| Step | Action | Console Filter | What to Look For |
+|------|--------|----------------|------------------|
+| 1 | Open browser console | F12 | Console tab open |
+| 2 | Set filter | `TaskValidator` | Clear view of validation |
+| 3 | Load student page | Navigate to student | Initial logs appear |
+| 4 | Check metadata load | Look for "metadata loaded" | Task count (15 tasks) |
+| 5 | Check task load | Look for "Loaded task definition" | Each task loaded |
+| 6 | Check termination | Look for "terminated at" | Termination events |
+| 7 | Check timeout | Look for "timeout=" | SYM/NONSYM analysis |
 
-3. **Look for key events:**
+**Key Events to Look For:**
+
 ```
 [TaskValidator] Task metadata loaded: 15 tasks
 [TaskValidator] Loaded task definition: erv
@@ -1365,32 +1805,83 @@ To trace validation flow for a specific student:
 [TaskValidator] SYM: timeout=true, missingData=false
 ```
 
-4. **Check final validation object:**
+**Validation Object Inspection:**
+
 ```javascript
-// In console:
+// In console after page loads
 console.log('Validation:', validation);
 console.log('ERV:', validation.erv);
+
+// Expected structure
+{
+  erv: {
+    taskId: 'erv',
+    totalQuestions: 15,
+    answeredQuestions: 15,
+    correctAnswers: 5,
+    terminated: true,
+    terminationIndex: 11,
+    terminationStage: 1
+  },
+  // ... other tasks
+}
 ```
 
 ### Data Inspection
 
-To inspect task validation data:
+**IndexedDB Inspection Table:**
+
+| What to Inspect | How to Access | What to Check |
+|----------------|---------------|---------------|
+| Cached submissions | IndexedDB → JotFormCacheDB → cache | Count, timestamp |
+| Validation cache | IndexedDB → JotFormCacheDB → student_validation | Students count, age |
+| Cache validity | Check timestamp vs current time | < 1 hour old? |
+| Cache structure | Check first entry | Has all required fields? |
+
+**Programmatic Cache Inspection:**
 
 ```javascript
 // Get validation cache from IndexedDB
-const db = await localforage.getItem('studentValidationCache');
-console.log('Cached students:', db.validationsByStudent.size);
+const db = await localforage.getItem('validation_cache');
+console.log('Cached students:', db.validations ? Object.keys(db.validations).length : 0);
 
 // Get specific student
-const studentValidation = db.validationsByStudent.get('C10001');
-console.log('Student tasks:', studentValidation);
+if (db.validations) {
+  const studentValidation = db.validations['C10001'];
+  console.log('Student tasks:', studentValidation);
+}
 
 // Get specific task
-const ervValidation = studentValidation.erv;
-console.log('ERV:', ervValidation);
-console.log('Questions:', ervValidation.questions);
-console.log('Termination:', ervValidation.terminated, ervValidation.terminationIndex);
+if (studentValidation && studentValidation.taskValidation) {
+  const ervValidation = studentValidation.taskValidation.erv;
+  console.log('ERV:', ervValidation);
+  console.log('Questions:', ervValidation.questions);
+  console.log('Termination:', ervValidation.terminated, ervValidation.terminationIndex);
+}
 ```
+
+**SessionStorage Inspection:**
+
+```javascript
+// Check student page cache
+const cacheKey = 'jotform_merged_C10001';
+const cached = sessionStorage.getItem(cacheKey);
+if (cached) {
+  const data = JSON.parse(cached);
+  console.log('Cached at:', data.timestamp);
+  console.log('Merged fields:', Object.keys(data.mergedAnswers).length);
+  console.log('Completion:', data.metrics.completionPercentage + '%');
+}
+```
+
+**Cache Validity Check Table:**
+
+| Cache Type | Location | Key | Max Age | Clear Command |
+|------------|----------|-----|---------|---------------|
+| Submissions | IndexedDB | `jotform_global_cache` | 1 hour | `await JotFormCache.clearCache()` |
+| Validation | IndexedDB | `validation_cache` | 1 hour | `await JotFormCache.clearValidationCache()` |
+| Student merged | SessionStorage | `jotform_merged_${coreId}` | 1 hour | `sessionStorage.removeItem(key)` |
+| Sync timestamp | LocalStorage | `jotform_last_sync_${coreId}` | N/A | `localStorage.removeItem(key)` |
 
 ---
 
