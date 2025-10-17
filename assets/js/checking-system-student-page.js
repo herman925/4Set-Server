@@ -1981,7 +1981,9 @@
         studentSubmissions.forEach(sub => {
           if (sub.created_at) {
             // Parse the created_at string (format: "YYYY-MM-DD HH:MM:SS")
-            // Issue #8: JotForm provides 24-hour format but browser may interpret incorrectly
+            // Issue #8: JotForm returns times in 24-hour format (e.g., "2025-10-17 15:00:20" for 3pm)
+            // The Date constructor correctly interprets this as 24-hour time
+            // Note: If timezone differences occur, they are handled by the browser's local timezone
             const timestamp = new Date(sub.created_at);
             if (!latestTimestamp || timestamp > latestTimestamp) {
               latestTimestamp = timestamp;
