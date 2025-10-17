@@ -99,8 +99,9 @@
   /**
    * Update status pill UI with optional progress
    * @param {number} progress - Optional progress percentage (0-100) for syncing state
+   * @param {boolean} skipCheck - Skip cache readiness check (use when we know cache is ready)
    */
-  async function updateStatusPill(progress = null) {
+  async function updateStatusPill(progress = null, skipCheck = false) {
     const badge = document.getElementById('system-health-badge');
     const statusText = document.getElementById('status-text');
     
@@ -159,22 +160,29 @@
       }
       
     } else {
-      // Set loading state (orange) while checking cache
-      badge.classList.remove('badge-success', 'badge-error', 'badge-warning');
-      badge.classList.add('badge-warning');
-      statusText.textContent = config.cache.statusLabels.checking;
-      badge.title = config.cache.statusLabels.checking;
-      badge.style.cursor = 'default';
+      // If skipCheck is true, directly set to green without checking
+      let isReady = skipCheck;
       
-      const checkStartTime = Date.now();
-      console.log(`[SYNC-TIMING] ⏱️ updateStatusPill: Starting cache readiness check at ${new Date(checkStartTime).toISOString()}`);
-      console.log('[CacheUI] updateStatusPill checking cache readiness...');
-      
-      const isReady = await isCacheReady();
-      
-      const checkEndTime = Date.now();
-      console.log(`[SYNC-TIMING] ⏱️ updateStatusPill: Cache check took ${checkEndTime - checkStartTime}ms`);
-      console.log('[CacheUI] isCacheReady returned:', isReady);
+      if (!skipCheck) {
+        // Set loading state (orange) while checking cache
+        badge.classList.remove('badge-success', 'badge-error', 'badge-warning');
+        badge.classList.add('badge-warning');
+        statusText.textContent = config.cache.statusLabels.checking;
+        badge.title = config.cache.statusLabels.checking;
+        badge.style.cursor = 'default';
+        
+        const checkStartTime = Date.now();
+        console.log(`[SYNC-TIMING] ⏱️ updateStatusPill: Starting cache readiness check at ${new Date(checkStartTime).toISOString()}`);
+        console.log('[CacheUI] updateStatusPill checking cache readiness...');
+        
+        isReady = await isCacheReady();
+        
+        const checkEndTime = Date.now();
+        console.log(`[SYNC-TIMING] ⏱️ updateStatusPill: Cache check took ${checkEndTime - checkStartTime}ms`);
+        console.log('[CacheUI] isCacheReady returned:', isReady);
+      } else {
+        console.log('[CacheUI] Skipping cache check (skipCheck=true), directly setting to GREEN');
+      }
       
       // Remove all status classes before applying the final state
       badge.classList.remove('badge-success', 'badge-error', 'badge-warning');
@@ -706,7 +714,8 @@
         console.log(`[SYNC-TIMING] ⏱️ Starting pill update at: ${new Date(pillUpdateStartTime).toISOString()}`);
         console.log(`[SYNC-TIMING] ⏱️ Time between progress bar 100% and pill update start: ${pillUpdateStartTime - progressBar100Time}ms`);
         
-        await updateStatusPill();
+        // Skip cache check - we KNOW it's ready (we just built it!)
+        await updateStatusPill(null, true);
         
         const pillUpdateEndTime = Date.now();
         console.log(`[SYNC-TIMING] ⏱️ Pill update completed at: ${new Date(pillUpdateEndTime).toISOString()}`);
