@@ -583,7 +583,6 @@
             <th class="px-4 py-3 text-left font-medium">Set 2</th>
             <th class="px-4 py-3 text-left font-medium">Set 3</th>
             <th class="px-4 py-3 text-left font-medium">Set 4</th>
-            <th class="px-4 py-3 text-left font-medium">Outstanding</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-[color:var(--border)]">
@@ -592,7 +591,7 @@
     if (filteredStudents.length === 0) {
       html += `
         <tr>
-          <td colspan="8" class="px-4 py-8 text-center text-[color:var(--muted-foreground)]">
+          <td colspan="7" class="px-4 py-8 text-center text-[color:var(--muted-foreground)]">
             <p>No students match the current filter</p>
           </td>
         </tr>
@@ -601,9 +600,6 @@
       filteredStudents.forEach(student => {
         const data = studentSubmissionData.get(student.coreId);
         const setStatus = data?.validationCache?.setStatus;
-        
-        // Calculate outstanding count
-        const outstanding = calculateOutstandingCount(setStatus);
         
         html += `
           <tr class="hover:bg-[color:var(--muted)]/20 transition-colors">
@@ -619,15 +615,6 @@
             ${renderSetStatus(getSetStatusColor(setStatus, 'set2'))}
             ${renderSetStatus(getSetStatusColor(setStatus, 'set3'))}
             ${renderSetStatus(getSetStatusColor(setStatus, 'set4'))}
-            <td class="px-4 py-3">
-              ${outstanding > 0 ? 
-                `<button onclick="window.showOutstandingModal('${student.coreId}')" 
-                         class="px-2 py-1 rounded-full bg-amber-100 text-amber-700 text-xs font-medium hover:bg-amber-200 transition-colors">
-                  ${outstanding}
-                </button>` :
-                `<span class="text-[color:var(--muted-foreground)] text-xs">—</span>`
-              }
-            </td>
           </tr>
         `;
       });

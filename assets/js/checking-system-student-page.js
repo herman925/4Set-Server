@@ -671,6 +671,9 @@
       // Update global sync timestamp in profile section
       updateGlobalSyncTimestamp();
       
+      // Update "Last Updated" timestamp in header from actual submission data
+      updateHeaderTimestamp(data);
+      
       // Update task status overview
       updateTaskStatusOverview();
       
@@ -759,12 +762,8 @@
       const isYNTask = validation.questions.length > 0 && 
                        validation.questions.every(q => q.isYNQuestion);
       
-      // Hide "Correct Answer" column header for Y/N tasks
-      const table = taskElement.querySelector('table');
-      const correctAnswerHeader = table?.querySelector('thead th:nth-child(3)');
-      if (correctAnswerHeader) {
-        correctAnswerHeader.style.display = isYNTask ? 'none' : '';
-      }
+      // Note: "Correct Answer" column remains visible for all tasks
+      // Y/N tasks (like TGMD) will show "N/A" instead of hiding the column
       
       // Detect timed-out questions for SYM/NONSYM
       let symTimeoutIndex = -1;
@@ -828,10 +827,13 @@
           statusPill = '<span class="answer-pill incorrect"><i data-lucide="x" class="w-3 h-3"></i>Incorrect</span>';
         }
         
+        // For Y/N tasks (like TGMD), show "N/A" instead of correct answer
+        const correctAnswerDisplay = isYNTask ? 'N/A' : (question.correctAnswer || '—');
+        
         row.innerHTML = `
           <td class="py-2 px-2 text-[color:var(--foreground)] font-mono">${question.id}</td>
           <td class="py-2 px-2 text-[color:var(--muted-foreground)]">${question.studentAnswer || '—'}</td>
-          <td class="py-2 px-2 text-[color:var(--muted-foreground)]" style="display: ${isYNTask ? 'none' : ''}">${question.correctAnswer || '—'}</td>
+          <td class="py-2 px-2 text-[color:var(--muted-foreground)]">${correctAnswerDisplay}</td>
           <td class="py-2 px-2">${statusPill}</td>
         `;
         
@@ -1932,6 +1934,102 @@
   }
 
   /**
+   * Update "Last Updated" timestamp in page header
+   * Uses the latest created_at from student's submissions
+   * Issue #7 and #9: Display format "Last Updated: dd/mm/yyyy HH:MM:SS" in 24-hour format
+   */
+  function updateHeaderTimestamp(data) {
+    const timestampElement = document.getElementById('last-updated-timestamp');
+    if (!timestampElement) {
+      console.warn('[StudentPage] last-updated-timestamp element not found');
+      return;
+    }
+    
+    try {
+      // Get latest created_at from cache - need to fetch from IndexedDB
+      const urlParams = new URLSearchParams(window.location.search);
+      const coreId = urlParams.get('coreId');
+      
+      if (!coreId) {
+        console.warn('[StudentPage] No coreId found for timestamp update');
+        return;
+      }
+      
+      // Use JotFormCache to get all submissions for this student
+      if (window.JotFormCache && window.JotFormCache.cache) {
+        const allSubmissions = window.JotFormCache.cache.submissions || [];
+        
+        // Filter submissions by student ID (from cache data)
+        const studentSubmissions = allSubmissions.filter(sub => {
+          // Get student-id from answers (QID 20)
+          const studentIdAnswer = sub.answers?.['20'];
+          const studentId = studentIdAnswer?.answer || studentIdAnswer?.text || '';
+          
+          // Match Core ID (remove "C" prefix if present)
+          const numericCoreId = coreId.startsWith('C') ? coreId.substring(1) : coreId;
+          return studentId === numericCoreId;
+        });
+        
+        if (studentSubmissions.length === 0) {
+          console.log('[StudentPage] No submissions found for timestamp');
+          timestampElement.textContent = 'Last Updated: No data';
+          return;
+        }
+        
+        // Find the latest created_at timestamp
+        let latestTimestamp = null;
+        studentSubmissions.forEach(sub => {
+          if (sub.created_at) {
+            // Parse the created_at string (format: "YYYY-MM-DD HH:MM:SS")
+            // Issue #8: JotForm provides 24-hour format but browser may interpret incorrectly
+            const timestamp = new Date(sub.created_at);
+            if (!latestTimestamp || timestamp > latestTimestamp) {
+              latestTimestamp = timestamp;
+            }
+          }
+        });
+        
+        if (latestTimestamp) {
+          // Format as dd/mm/yyyy HH:MM:SS in 24-hour format
+          const day = String(latestTimestamp.getDate()).padStart(2, '0');
+          const month = String(latestTimestamp.getMonth() + 1).padStart(2, '0');
+          const year = latestTimestamp.getFullYear();
+          const hours = String(latestTimestamp.getHours()).padStart(2, '0');
+          const minutes = String(latestTimestamp.getMinutes()).padStart(2, '0');
+          const seconds = String(latestTimestamp.getSeconds()).padStart(2, '0');
+          
+          const formattedDate = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+          timestampElement.textContent = `Last Updated: ${formattedDate}`;
+          
+          console.log(`[StudentPage] Updated header timestamp: ${formattedDate} (from ${studentSubmissions.length} submissions)`);
+        } else {
+          timestampElement.textContent = 'Last Updated: Invalid date';
+        }
+      } else {
+        // Fallback: use cached data timestamp if available
+        if (data && data.timestamp) {
+          const timestamp = new Date(data.timestamp);
+          const day = String(timestamp.getDate()).padStart(2, '0');
+          const month = String(timestamp.getMonth() + 1).padStart(2, '0');
+          const year = timestamp.getFullYear();
+          const hours = String(timestamp.getHours()).padStart(2, '0');
+          const minutes = String(timestamp.getMinutes()).padStart(2, '0');
+          const seconds = String(timestamp.getSeconds()).padStart(2, '0');
+          
+          const formattedDate = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+          timestampElement.textContent = `Last Updated: ${formattedDate} (cached)`;
+        } else {
+          timestampElement.textContent = 'Last Updated: —';
+        }
+      }
+    } catch (error) {
+      console.error('[StudentPage] Error updating header timestamp:', error);
+      timestampElement.textContent = 'Last Updated: Error';
+    }
+  }
+
+
+  /**
    * Mark questions beyond termination point as ignored in the table
    */
   function markQuestionsBeyondTermination(taskElement, ignoredQuestionIds) {
@@ -2299,7 +2397,7 @@
       });
     }
     
-    // Collapse All - Smart 2-level collapse
+    // Collapse All - Smart multi-level collapse with improved detection
     const collapseAllBtn = document.getElementById('collapse-all-tasks');
     if (collapseAllBtn) {
       collapseAllBtn.addEventListener('click', (e) => {
@@ -2309,19 +2407,26 @@
         
         // Check current state
         const anyTaskOpen = Array.from(allTasks).some(task => task.open);
-        const allSetsOpen = Array.from(allSets).every(set => set.open);
+        const allTasksOpen = Array.from(allTasks).every(task => task.open);
+        const anySetsOpen = Array.from(allSets).some(set => set.open);
+        
+        // Issue #3 requirement: improved collapse detection
+        // a) If no panels are expanded, nothing happens
+        // b) If some panels are expanded once (showing tasks, not questions) - collapse to Set 1, 2, 3, 4 only
+        // c) If some panels are expanded twice (showing questions) - collapse back to tasks
+        // d) If all panels are expanded twice - collapse back to tasks
         
         if (anyTaskOpen) {
-          // Level 1: Collapse all tasks (keep Sets open)
+          // Tasks are expanded (showing questions) - collapse to task level (hide questions)
           allTasks.forEach(task => task.open = false);
-          console.log('[StudentPage] Collapsed all Tasks (Level 1)');
-        } else if (allSetsOpen) {
-          // Level 2: Collapse all Sets
+          console.log('[StudentPage] Collapsed to task level (hiding questions)');
+        } else if (anySetsOpen) {
+          // Sets are open but tasks are closed - collapse sets
           allSets.forEach(set => set.open = false);
-          console.log('[StudentPage] Collapsed all Sets (Level 2)');
+          console.log('[StudentPage] Collapsed all sets');
         } else {
-          // Already collapsed, do nothing or reset
-          console.log('[StudentPage] Everything already collapsed');
+          // Nothing is open - do nothing
+          console.log('[StudentPage] Nothing to collapse');
         }
       });
     }

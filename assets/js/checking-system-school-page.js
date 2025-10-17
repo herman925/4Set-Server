@@ -280,7 +280,6 @@
             <th class="px-3 py-2 font-semibold text-[color:var(--foreground)] text-center">Set 2</th>
             <th class="px-3 py-2 font-semibold text-[color:var(--foreground)] text-center">Set 3</th>
             <th class="px-3 py-2 font-semibold text-[color:var(--foreground)] text-center">Set 4</th>
-            <th class="px-3 py-2 font-semibold text-[color:var(--foreground)] text-center">Outstanding</th>
           </tr>
         </thead>
         <tbody>
@@ -288,8 +287,6 @@
             const metrics = classMetrics.get(cls.classId);
             const classStudents = metrics?.students || [];
             
-            // Calculate outstanding sets for this class
-            let outstandingSets = 0;
             const setStatuses = [];
             
             for (const setId of ['set1', 'set2', 'set3', 'set4']) {
@@ -297,8 +294,6 @@
               const complete = setData?.complete || 0;
               const incomplete = setData?.incomplete || 0;
               const total = setData?.total || 0;
-              
-              if (incomplete > 0 || complete < total) outstandingSets++;
               
               // Determine status light color per actual student data
               // Green = all complete, Yellow = some in progress (incomplete), Red = mix of complete and incomplete, Grey = not started
@@ -321,7 +316,7 @@
             }
             
             return `
-              <tr class="border-b border-[color:var(--border)] hover:bg-[color:var(--muted)]/30 transition-colors" data-class-row data-grade="${String(cls.grade || 0)}" data-has-data="${classStudents.length > 0}" data-is-incomplete="${outstandingSets > 0}">
+              <tr class="border-b border-[color:var(--border)] hover:bg-[color:var(--muted)]/30 transition-colors" data-class-row data-grade="${String(cls.grade || 0)}" data-has-data="${classStudents.length > 0}">
                 <td class="px-3 py-3">
                   <a href="checking_system_3_class.html?classId=${encodeURIComponent(cls.classId)}" class="font-semibold font-noto text-[color:var(--foreground)] hover:text-[color:var(--primary)]">
                     ${cls.actualClassName}
@@ -343,12 +338,6 @@
                 <td class="px-3 py-3 text-center">${setStatuses[1]}</td>
                 <td class="px-3 py-3 text-center">${setStatuses[2]}</td>
                 <td class="px-3 py-3 text-center">${setStatuses[3]}</td>
-                <td class="px-3 py-3 text-center">
-                  ${outstandingSets > 0 ? 
-                    `<button onclick="window.showOutstandingClassesModal('${cls.classId}')" class="px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-medium hover:bg-red-200 transition-colors cursor-pointer">${outstandingSets}</button>` :
-                    `<span class="text-[color:var(--muted-foreground)] text-xs">—</span>`
-                  }
-                </td>
               </tr>
             `;
           }).join('')}
