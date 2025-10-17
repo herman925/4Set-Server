@@ -286,15 +286,15 @@
       groupSchools.sort((a, b) => a.schoolId.localeCompare(b.schoolId));
 
       html += `
-        <details class="group-section" data-group="${groupNum}">
-          <summary class="flex items-center justify-between px-4 py-3 cursor-pointer bg-gradient-to-r from-blue-50 to-white border-b border-blue-200 hover:from-blue-100 hover:to-blue-50 transition-colors">
+        <details class="group-section border-b border-[color:var(--border)]" data-group="${groupNum}">
+          <summary class="px-4 py-3 bg-[color:var(--muted)]/40 cursor-pointer hover:bg-[color:var(--muted)]/60 transition-colors flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <i data-lucide="chevron-right" class="w-4 h-4 text-blue-600 group-chevron"></i>
-              <h3 class="text-sm font-semibold text-blue-900">Group ${groupNum}</h3>
-              <span class="text-xs text-blue-600 font-mono">${groupSchools.length} schools</span>
+              <i data-lucide="chevron-right" class="w-4 h-4 text-[color:var(--muted-foreground)] transition-transform group-chevron"></i>
+              <h3 class="text-sm font-semibold text-[color:var(--foreground)]">Group ${groupNum}</h3>
+              <span class="text-xs text-[color:var(--muted-foreground)] font-mono">${groupSchools.length} schools</span>
             </div>
           </summary>
-          <div class="pl-8 pr-4 py-2 space-y-2 bg-gradient-to-r from-blue-50/30 to-white">
+          <div class="divide-y divide-[color:var(--border)] bg-white">
             ${renderSchoolsList(groupSchools)}
           </div>
         </details>
@@ -325,7 +325,7 @@
     const filteredSchools = filterSchools(schoolsList);
     
     if (filteredSchools.length === 0) {
-      return '<div class="text-sm text-slate-500 italic py-2">No schools match the current filter</div>';
+      return '<div class="px-4 py-6 text-center text-sm text-[color:var(--muted-foreground)] italic">No schools match the current filter</div>';
     }
 
     let html = '';
@@ -337,11 +337,16 @@
       const { complete, incomplete, notstarted } = calculateSchoolStatus(schoolData);
 
       html += `
-        <div class="school-item border border-slate-200 rounded-lg p-3 bg-white hover:shadow-md transition-shadow" data-school-id="${school.schoolId}">
+        <div class="school-item px-4 py-3 hover:bg-[color:var(--muted)]/20 transition-colors" data-school-id="${school.schoolId}">
           <div class="flex items-center justify-between">
             <div class="flex-1">
-              <h4 class="text-sm font-semibold text-slate-900 font-noto">${school.schoolNameChinese || school.schoolName}</h4>
-              <p class="text-xs text-slate-600">${school.schoolName} · Group ${school.group}</p>
+              <a href="checking_system_2_school.html?schoolId=${encodeURIComponent(school.schoolId)}" 
+                 class="text-sm font-semibold text-[color:var(--foreground)] hover:text-[color:var(--primary)] font-noto transition-colors">
+                ${school.schoolNameChinese || school.schoolName}
+              </a>
+              <p class="text-xs text-[color:var(--muted-foreground)] mt-0.5">
+                <span class="font-mono">${school.schoolId}</span> · ${school.schoolName} · Group ${school.group}
+              </p>
             </div>
             <div class="flex items-center gap-4">
               <div class="text-xs font-mono space-x-2">
@@ -357,10 +362,10 @@
                   <span class="status-circle status-grey"></span>
                   <span>${notstarted}</span>
                 </span>
-                <span class="text-slate-500">/ ${eligibleClasses}</span>
+                <span class="text-[color:var(--muted-foreground)]">/ ${eligibleClasses}</span>
               </div>
               <a href="checking_system_2_school.html?schoolId=${encodeURIComponent(school.schoolId)}" 
-                 class="p-2 rounded-full hover:bg-blue-100 text-blue-600 transition-colors">
+                 class="p-2 rounded-full hover:bg-[color:var(--muted)] text-[color:var(--muted-foreground)] hover:text-[color:var(--primary)] transition-colors">
                 <i data-lucide="chevron-right" class="w-4 h-4"></i>
               </a>
             </div>
