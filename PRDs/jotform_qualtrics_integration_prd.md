@@ -1,14 +1,14 @@
 ---
-title: Jotform Integration
+title: JotForm & Qualtrics Integration
 owner: Project Maintainers
 last-updated: 2025-10-17
 ---
 
-# Jotform Integration
+# JotForm & Qualtrics Integration
 
-> **Documentation Note:** This document consolidates Jotform-related specifications from several legacy PRD files into a single comprehensive source.
+> **Documentation Note:** This document consolidates JotForm and Qualtrics integration specifications into a single comprehensive source for the 4Set data caching pipeline.
 
-Single source for Jotform upload/upsert, sessionkey handling, field mapping, retries/backoff, and verification across the web app and desktop tools.
+Single source for JotForm upload/upsert, Qualtrics data extraction, sessionkey handling, field mapping, retries/backoff, data merging, and verification across the web app and desktop tools.
 
 **Originally consolidated from** (now deprecated):
 - `sessionkey-jotform-pipeline-plan.md`
@@ -1144,3 +1144,1472 @@ Minimal response handling (pseudo):
 - QIDs are form-specific; always refresh or verify after form edits.
 - Always URL-encode JSON `filter` values in requests.
 - Keep `sessionkey` lowercase across systems (JS, Python, SQL) to avoid case mismatches.
+
+---
+
+# Qualtrics Integration
+
+## Overview
+
+The 4Set system integrates with **Qualtrics** to retrieve TGMD (Test of Gross Motor Development) assessment data, which supplements the primary JotForm data pipeline. Unlike other tasks that exclusively use JotForm, TGMD data can originate from either Qualtrics OR JotForm, requiring a dual-source data merging strategy.
+
+**Key Characteristics:**
+- **Primary Use Case**: TGMD task assessment data collection
+- **Data Source Priority**: Qualtrics is the preferred source; JotForm serves as fallback/override
+- **Integration Point**: Checking System (IndexedDB cache layer)
+- **Authentication**: API token-based (stored in encrypted `credentials.enc`)
+- **Survey Configuration**: Centralized survey ID and datacenter region in credentials
+
+**Credentials Structure (in `credentials.enc`):**
+```json
+{
+  "qualtricsApiToken": "<API_TOKEN>",
+  "qualtricsDatacenter": "au1",
+  "qualtricsSurveyId": "SV_23Qbs14soOkGo9E"
+}
+```
+
+---
+
+## Qualtrics API Architecture
+
+### API Fundamentals
+
+**Base URL Structure:**
+```
+https://{datacenter}.qualtrics.com/API/v3/
+```
+- Example: `https://au1.qualtrics.com/API/v3/` (Australia datacenter)
+- Datacenter value stored in `qualtricsDatacenter` credential field
+
+**Authentication:**
+- Method: HTTP Header `X-API-TOKEN`
+- Token stored in encrypted credentials: `qualtricsApiToken`
+- All requests require token authentication
+
+**Common Headers:**
+```http
+X-API-TOKEN: {api_token}
+Content-Type: application/json
+Accept: application/json
+```
+
+### Core API Endpoints
+
+#### 1. List Surveys
+**Purpose**: Retrieve list of surveys accessible to the API token
+
+**Endpoint:**
+```
+GET /API/v3/surveys
+```
+
+**Response Structure:**
+```json
+{
+  "result": {
+    "elements": [
+      {
+        "id": "SV_23Qbs14soOkGo9E",
+        "name": "TGMD Assessment Survey",
+        "ownerId": "UR_...",
+        "lastModified": "2025-09-15T10:30:00Z",
+        "isActive": true
+      }
+    ],
+    "nextPage": null
+  },
+  "meta": {
+    "requestId": "...",
+    "httpStatus": "200 - OK"
+  }
+}
+```
+
+**Key Fields:**
+- `id`: Survey identifier (used in subsequent API calls)
+- `name`: Human-readable survey name
+- `isActive`: Survey availability status
+
+#### 2. Get Survey Definition
+**Purpose**: Retrieve survey structure, questions, and metadata
+
+**Endpoint:**
+```
+GET /API/v3/surveys/{surveyId}
+```
+
+**Response Structure:**
+```json
+{
+  "result": {
+    "SurveyID": "SV_23Qbs14soOkGo9E",
+    "SurveyName": "TGMD Assessment",
+    "questions": {
+      "QID126166418": {
+        "questionText": "Preferred Hand",
+        "questionType": "MC",
+        "questionName": "TGMD_Hand"
+      },
+      "QID126166420": {
+        "questionText": "Hopping Performance",
+        "questionType": "Matrix",
+        "subQuestions": {
+          "1": "Trial 1",
+          "2": "Trial 2"
+        },
+        "choices": {
+          "1": "Criterion 1",
+          "2": "Criterion 2",
+          "3": "Criterion 3",
+          "4": "Criterion 4"
+        }
+      }
+    },
+    "flow": [
+      {
+        "type": "EmbeddedData",
+        "field": "student-id"
+      },
+      {
+        "type": "EmbeddedData",
+        "field": "sessionkey"
+      }
+    ]
+  }
+}
+```
+
+**Key Components:**
+- `questions`: Map of QID → question metadata
+- `flow`: Survey flow including embedded data fields
+- `questionType`: Question format (MC, Matrix, TE, etc.)
+- `subQuestions` & `choices`: For matrix questions (TGMD uses extensively)
+
+#### 3. Start Response Export
+**Purpose**: Initiate asynchronous export of survey responses
+
+**Endpoint:**
+```
+POST /API/v3/surveys/{surveyId}/export-responses
+```
+
+**Request Payload:**
+```json
+{
+  "format": "json",
+  "compress": false,
+  "useLabels": false,
+  "questionIds": [
+    "QID126166418",
+    "QID126166419",
+    "QID126166420"
+  ],
+  "embeddedDataIds": [
+    "student-id",
+    "sessionkey",
+    "school-id"
+  ],
+  "surveyMetadataIds": [
+    "startDate",
+    "endDate",
+    "recordedDate"
+  ]
+}
+```
+
+**Request Parameters:**
+- `format`: Export format (`json`, `csv`, `spss`, `xml`)
+- `compress`: Whether to ZIP the export (recommend `false` for JSON)
+- `useLabels`: Use choice labels vs numeric values (recommend `false` for raw data)
+- `questionIds`: Array of specific QIDs to include (or omit for all)
+- `embeddedDataIds`: Custom embedded data fields to include
+- `surveyMetadataIds`: Standard metadata fields to include
+
+**Response:**
+```json
+{
+  "result": {
+    "progressId": "ES_abcd1234xyz",
+    "percentComplete": 0.0,
+    "status": "inProgress"
+  },
+  "meta": {
+    "requestId": "...",
+    "httpStatus": "200 - OK"
+  }
+}
+```
+
+**Key Fields:**
+- `progressId`: Unique identifier for polling progress (save this!)
+- `percentComplete`: Initial value (0.0)
+- `status`: Export status (`inProgress`, `complete`, `failed`)
+
+#### 4. Check Export Progress
+**Purpose**: Poll export job status until completion
+
+**Endpoint:**
+```
+GET /API/v3/surveys/{surveyId}/export-responses/{progressId}
+```
+
+**Response (In Progress):**
+```json
+{
+  "result": {
+    "progressId": "ES_abcd1234xyz",
+    "percentComplete": 45.0,
+    "status": "inProgress"
+  }
+}
+```
+
+**Response (Complete):**
+```json
+{
+  "result": {
+    "progressId": "ES_abcd1234xyz",
+    "percentComplete": 100.0,
+    "status": "complete",
+    "fileId": "abcd1234-5678-90ef-ghij-klmnopqrstuv"
+  }
+}
+```
+
+**Key Fields:**
+- `percentComplete`: Progress percentage (0.0 - 100.0)
+- `status`: Current status
+- `fileId`: Only present when `status === "complete"` (use for download)
+
+**Polling Strategy:**
+- Initial delay: 2-3 seconds
+- Poll interval: 2-5 seconds
+- Timeout: 120 seconds (exports typically complete in 10-30 seconds)
+- Exponential backoff on repeated failures
+
+#### 5. Download Export File
+**Purpose**: Retrieve completed export file
+
+**Endpoint:**
+```
+GET /API/v3/surveys/{surveyId}/export-responses/{fileId}/file
+```
+
+**Response:**
+- **Content-Type**: `application/json` (if format=json), `application/zip` (if compressed)
+- **Body**: Raw file content (JSON array or ZIP archive)
+
+**JSON Response Structure:**
+```json
+{
+  "responses": [
+    {
+      "responseId": "R_abc123",
+      "values": {
+        "QID126166418": "1",
+        "QID126166419": "2",
+        "QID126166420": {
+          "1_1": "1",
+          "1_2": "0",
+          "1_3": "1",
+          "1_4": "1",
+          "2_1": "1",
+          "2_2": "1",
+          "2_3": "0",
+          "2_4": "1"
+        },
+        "student-id": "10261",
+        "sessionkey": "10261_20251005_10_30",
+        "startDate": "2025-10-05T10:30:15Z",
+        "endDate": "2025-10-05T10:45:22Z"
+      },
+      "labels": {},
+      "displayedFields": [],
+      "displayedValues": {}
+    }
+  ]
+}
+```
+
+**Key Response Fields:**
+- `responseId`: Unique Qualtrics response identifier
+- `values`: Map of QID/fieldName → answer
+- `labels`: Choice labels (if `useLabels: true`)
+- Matrix questions: Nested object with `{rowId}_{columnId}` keys
+
+**ZIP Handling:**
+If `compress: true` in export request:
+1. Download ZIP archive
+2. Extract first file from archive (usually named `{surveyId}.json`)
+3. Parse extracted JSON content
+
+---
+
+## Data Structure & Field Mapping
+
+### Qualtrics Response Format
+
+**Standard Fields (Always Present):**
+```json
+{
+  "responseId": "R_abc123def456",
+  "startDate": "2025-10-05T10:30:15Z",
+  "endDate": "2025-10-05T10:45:22Z",
+  "recordedDate": "2025-10-05T10:45:30Z",
+  "status": "IP_Complete",
+  "ipAddress": "203.123.45.67",
+  "progress": 100,
+  "duration": 907,
+  "finished": true,
+  "distributionChannel": "anonymous"
+}
+```
+
+**Embedded Data Fields (Custom):**
+```json
+{
+  "student-id": "10261",
+  "sessionkey": "10261_20251005_10_30",
+  "school-id": "S003",
+  "class-id": "C-003-05"
+}
+```
+
+**Question Responses (TGMD Example):**
+```json
+{
+  "QID126166418": "1",
+  "QID126166419": "2",
+  "QID126166420": {
+    "1_1": "1",
+    "1_2": "0",
+    "1_3": "1",
+    "1_4": "1"
+  }
+}
+```
+
+### Field Mapping Strategy
+
+**Mapping File**: `assets/qualtrics-mapping.json`
+
+**Purpose**: Translate Qualtrics QIDs to standardized field names compatible with JotForm
+
+**Structure:**
+```json
+{
+  "sessionkey": "sessionkey",
+  "student-id": "QID125287935_TEXT",
+  "school-id": "QID125287936_TEXT",
+  "TGMD_Hand": "QID126166418",
+  "TGMD_Leg": "QID126166419",
+  "TGMD_111_Hop_t1": "QID126166420#1_1",
+  "TGMD_112_Hop_t1": "QID126166420#1_2"
+}
+```
+
+**Mapping Patterns:**
+
+1. **Simple Fields**: Direct QID mapping
+   ```json
+   "TGMD_Hand": "QID126166418"
+   ```
+   Maps to: `response.values.QID126166418`
+
+2. **Text Entry Sub-fields**: QID with `_TEXT` suffix
+   ```json
+   "student-id": "QID125287935_TEXT"
+   ```
+   Maps to: `response.values.QID125287935.text` or `response.values.QID125287935_TEXT`
+
+3. **Matrix Sub-questions**: QID with `#{rowId}_{columnId}` syntax
+   ```json
+   "TGMD_111_Hop_t1": "QID126166420#1_1"
+   ```
+   Maps to: `response.values.QID126166420['1_1']`
+
+4. **Embedded Data**: Direct field name (no QID)
+   ```json
+   "sessionkey": "sessionkey"
+   ```
+   Maps to: `response.values.sessionkey`
+
+5. **Metadata Fields**: Special notation with timezone
+   ```json
+   "Start Date": "startDate;timeZone;Z"
+   ```
+   Maps to: `response.startDate` with ISO8601/UTC conversion
+
+### TGMD Field Coverage
+
+**All TGMD Fields in Qualtrics** (lines 534-580 in `qualtrics-mapping.json`):
+- **Hand/Leg Preference**: `TGMD_Hand`, `TGMD_Leg`
+- **Hopping (111-114)**: 4 criteria × 2 trials = 8 fields
+- **Jumping (211-214)**: 4 criteria × 2 trials = 8 fields
+- **Sliding (311-314)**: 4 criteria × 2 trials = 8 fields
+- **Dribbling (411-413)**: 3 criteria × 2 trials = 6 fields
+- **Catching (511-513)**: 3 criteria × 2 trials = 6 fields
+- **Throwing (611-614)**: 4 criteria × 2 trials = 8 fields
+- **Comment Field**: `TGMD_Com`
+- **Total**: 45 TGMD-specific fields
+
+**Field Name Pattern**: `TGMD_{test}{criterion}{trial}`
+- Test: 1=Hop, 2=Jump, 3=Slide, 4=Dribble, 5=Catch, 6=Throw
+- Criterion: 11-14 (varies by test)
+- Trial: t1 or t2
+
+---
+
+## Data Extraction Workflow
+
+### Complete Export Process
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                   STEP 1: Retrieve Credentials                   │
+├─────────────────────────────────────────────────────────────────┤
+│ • Decrypt credentials.enc using system password                 │
+│ • Extract:                                                       │
+│   - qualtricsApiToken                                            │
+│   - qualtricsDatacenter                                          │
+│   - qualtricsSurveyId                                            │
+│ • Validate token format and datacenter value                    │
+│ • Cache credentials in sessionStorage for reuse                 │
+└────────────────────────────┬────────────────────────────────────┘
+                             ↓
+┌─────────────────────────────────────────────────────────────────┐
+│               STEP 2: Load Field Mapping Configuration           │
+├─────────────────────────────────────────────────────────────────┤
+│ • Load: assets/qualtrics-mapping.json                           │
+│ • Parse field name → QID mappings                               │
+│ • Build reverse map: QID → field name (for transformation)      │
+│ • Identify TGMD-specific fields (TGMD_* prefix)                 │
+│ • Extract embedded data field names (student-id, sessionkey)    │
+└────────────────────────────┬────────────────────────────────────┘
+                             ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                  STEP 3: Start Export Request                    │
+├─────────────────────────────────────────────────────────────────┤
+│ POST /API/v3/surveys/{surveyId}/export-responses               │
+│                                                                  │
+│ Payload Configuration:                                           │
+│   {                                                              │
+│     "format": "json",                                            │
+│     "compress": false,                                           │
+│     "useLabels": false,                                          │
+│     "questionIds": [                                             │
+│       "QID126166418",  // TGMD_Hand                             │
+│       "QID126166419",  // TGMD_Leg                              │
+│       "QID126166420",  // Hopping matrix                        │
+│       ... all TGMD QIDs ...                                      │
+│     ],                                                           │
+│     "embeddedDataIds": [                                         │
+│       "student-id",                                              │
+│       "sessionkey",                                              │
+│       "school-id",                                               │
+│       "class-id"                                                 │
+│     ],                                                           │
+│     "surveyMetadataIds": [                                       │
+│       "startDate",                                               │
+│       "endDate",                                                 │
+│       "recordedDate"                                             │
+│     ]                                                            │
+│   }                                                              │
+│                                                                  │
+│ Response: { progressId: "ES_...", status: "inProgress" }       │
+└────────────────────────────┬────────────────────────────────────┘
+                             ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                   STEP 4: Poll Export Progress                   │
+├─────────────────────────────────────────────────────────────────┤
+│ Loop:                                                            │
+│   1. Wait 2-3 seconds (initial), then 2 seconds per poll        │
+│   2. GET /API/v3/surveys/{surveyId}/export-responses/           │
+│       {progressId}                                               │
+│   3. Check response.result.status:                              │
+│      • "inProgress": Continue polling                           │
+│      • "complete": Extract fileId, proceed to download          │
+│      • "failed": Log error, retry or abort                      │
+│   4. Update UI progress indicator (optional)                    │
+│   5. Timeout after 120 seconds if not complete                  │
+│                                                                  │
+│ Progress Updates (Logged):                                       │
+│   - "Export started (progressId: ES_...)"                       │
+│   - "Export progress: 25%..."                                   │
+│   - "Export progress: 50%..."                                   │
+│   - "Export complete! (fileId: ...)"                            │
+└────────────────────────────┬────────────────────────────────────┘
+                             ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                  STEP 5: Download Export File                    │
+├─────────────────────────────────────────────────────────────────┤
+│ GET /API/v3/surveys/{surveyId}/export-responses/{fileId}/file  │
+│                                                                  │
+│ Response Handling:                                               │
+│   • Check Content-Type header                                   │
+│   • If application/json: Parse directly                         │
+│   • If application/zip:                                         │
+│     - Extract ZIP to memory (BytesIO)                           │
+│     - Read first file from archive                              │
+│     - Parse JSON content                                        │
+│   • Validate JSON structure (responses array)                   │
+│   • Log: "Downloaded {N} responses"                             │
+└────────────────────────────┬────────────────────────────────────┘
+                             ↓
+┌─────────────────────────────────────────────────────────────────┐
+│              STEP 6: Transform Qualtrics to Standard Format      │
+├─────────────────────────────────────────────────────────────────┤
+│ For each response in export:                                    │
+│                                                                  │
+│ 1. Extract Core Identifiers:                                    │
+│    • sessionkey = response.values.sessionkey                    │
+│    • student-id = response.values["student-id"]                 │
+│    • school-id = response.values["school-id"]                   │
+│                                                                  │
+│ 2. Transform QIDs to Field Names:                               │
+│    • Simple fields: Use mapping directly                        │
+│      QID126166418 → "TGMD_Hand"                                 │
+│    • Matrix fields: Parse nested object                         │
+│      response.values.QID126166420["1_1"] → "TGMD_111_Hop_t1"   │
+│    • Text fields: Extract .text property                        │
+│      response.values.QID125287935.text → "student-id"          │
+│                                                                  │
+│ 3. Format Standardization:                                       │
+│    • Dates: Convert ISO8601 to YYYYMMDD or keep ISO            │
+│    • Numeric values: Ensure string type for consistency        │
+│    • Empty values: Convert null/undefined to ""                 │
+│                                                                  │
+│ 4. Add Metadata:                                                 │
+│    • source: "qualtrics"                                         │
+│    • qualtricsResponseId: response.responseId                   │
+│    • retrievedAt: new Date().toISOString()                      │
+│                                                                  │
+│ Output Structure (per response):                                 │
+│   {                                                              │
+│     "sessionkey": "10261_20251005_10_30",                       │
+│     "student-id": "10261",                                       │
+│     "school-id": "S003",                                         │
+│     "TGMD_Hand": "1",                                            │
+│     "TGMD_111_Hop_t1": "1",                                      │
+│     ... all TGMD fields ...,                                     │
+│     "_meta": {                                                   │
+│       "source": "qualtrics",                                     │
+│       "qualtricsResponseId": "R_abc123",                         │
+│       "retrievedAt": "2025-10-17T09:30:00Z"                     │
+│     }                                                            │
+│   }                                                              │
+└────────────────────────────┬────────────────────────────────────┘
+                             ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                 STEP 7: Merge with JotForm Data                  │
+├─────────────────────────────────────────────────────────────────┤
+│ (See "Data Merging Strategy" section below)                     │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Implementation Pseudo-Code
+
+```javascript
+async function fetchQualtricsData() {
+  // Step 1: Get credentials
+  const credentials = await decryptCredentials();
+  const { qualtricsApiToken, qualtricsDatacenter, qualtricsSurveyId } = credentials;
+  const baseUrl = `https://${qualtricsDatacenter}.qualtrics.com/API/v3`;
+  
+  // Step 2: Load field mapping
+  const mapping = await fetch('assets/qualtrics-mapping.json').then(r => r.json());
+  const tgmdQids = Object.entries(mapping)
+    .filter(([key]) => key.startsWith('TGMD_'))
+    .map(([_, qid]) => qid.split('#')[0]) // Extract base QID
+    .filter((v, i, a) => a.indexOf(v) === i); // Unique
+  
+  // Step 3: Start export
+  const exportPayload = {
+    format: 'json',
+    compress: false,
+    useLabels: false,
+    questionIds: tgmdQids,
+    embeddedDataIds: ['student-id', 'sessionkey', 'school-id', 'class-id'],
+    surveyMetadataIds: ['startDate', 'endDate', 'recordedDate']
+  };
+  
+  const startResponse = await fetch(
+    `${baseUrl}/surveys/${qualtricsSurveyId}/export-responses`,
+    {
+      method: 'POST',
+      headers: {
+        'X-API-TOKEN': qualtricsApiToken,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(exportPayload)
+    }
+  );
+  
+  const { result: { progressId } } = await startResponse.json();
+  console.log('[Qualtrics] Export started:', progressId);
+  
+  // Step 4: Poll progress
+  let fileId = null;
+  let attempts = 0;
+  const maxAttempts = 60; // 2 minutes
+  
+  while (!fileId && attempts < maxAttempts) {
+    await sleep(attempts === 0 ? 3000 : 2000);
+    
+    const progressResponse = await fetch(
+      `${baseUrl}/surveys/${qualtricsSurveyId}/export-responses/${progressId}`,
+      { headers: { 'X-API-TOKEN': qualtricsApiToken } }
+    );
+    
+    const { result } = await progressResponse.json();
+    console.log(`[Qualtrics] Progress: ${result.percentComplete}%`);
+    
+    if (result.status === 'complete') {
+      fileId = result.fileId;
+    } else if (result.status === 'failed') {
+      throw new Error('Qualtrics export failed');
+    }
+    
+    attempts++;
+  }
+  
+  if (!fileId) {
+    throw new Error('Qualtrics export timeout after 2 minutes');
+  }
+  
+  // Step 5: Download file
+  const fileResponse = await fetch(
+    `${baseUrl}/surveys/${qualtricsSurveyId}/export-responses/${fileId}/file`,
+    { headers: { 'X-API-TOKEN': qualtricsApiToken } }
+  );
+  
+  const exportData = await fileResponse.json();
+  console.log('[Qualtrics] Downloaded', exportData.responses.length, 'responses');
+  
+  // Step 6: Transform responses
+  const transformedData = exportData.responses.map(response => 
+    transformQualtricsResponse(response, mapping)
+  );
+  
+  return transformedData;
+}
+
+function transformQualtricsResponse(response, mapping) {
+  const result = {
+    sessionkey: response.values.sessionkey || '',
+    'student-id': response.values['student-id'] || '',
+    'school-id': response.values['school-id'] || '',
+    _meta: {
+      source: 'qualtrics',
+      qualtricsResponseId: response.responseId,
+      retrievedAt: new Date().toISOString()
+    }
+  };
+  
+  // Transform each mapped field
+  for (const [fieldName, qidSpec] of Object.entries(mapping)) {
+    if (!fieldName.startsWith('TGMD_')) continue;
+    
+    if (qidSpec.includes('#')) {
+      // Matrix sub-question: "QID126166420#1_1"
+      const [qid, subKey] = qidSpec.split('#');
+      const matrixData = response.values[qid];
+      result[fieldName] = matrixData?.[subKey] || '';
+    } else if (qidSpec.endsWith('_TEXT')) {
+      // Text entry sub-field
+      const qid = qidSpec.replace('_TEXT', '');
+      const textData = response.values[qid];
+      result[fieldName] = textData?.text || textData || '';
+    } else {
+      // Simple field
+      result[fieldName] = response.values[qidSpec] || '';
+    }
+  }
+  
+  return result;
+}
+```
+
+---
+
+## Data Merging Strategy
+
+### Problem Context
+
+**Dual-Source Challenge**: TGMD data can exist in:
+1. **Qualtrics** (primary source - administered via web survey)
+2. **JotForm** (secondary source - PDF form upload pipeline)
+
+**Scenarios:**
+- **Scenario A**: Student has TGMD in Qualtrics only → Use Qualtrics data
+- **Scenario B**: Student has TGMD in JotForm only → Use JotForm data
+- **Scenario C**: Student has TGMD in BOTH → Merge with conflict resolution
+- **Scenario D**: Student has no TGMD → Mark as missing
+
+### Merging Algorithm
+
+#### Phase 1: Sessionkey Alignment
+
+**Objective**: Match Qualtrics and JotForm records by `sessionkey`
+
+```javascript
+function mergeDataSources(jotformData, qualtricsData) {
+  const merged = new Map(); // sessionkey → merged record
+  
+  // Step 1: Add all JotForm records as base
+  for (const record of jotformData) {
+    const key = record.sessionkey;
+    merged.set(key, {
+      ...record,
+      _sources: ['jotform']
+    });
+  }
+  
+  // Step 2: Merge Qualtrics records
+  for (const record of qualtricsData) {
+    const key = record.sessionkey;
+    
+    if (merged.has(key)) {
+      // Existing record - merge TGMD fields
+      const existing = merged.get(key);
+      const mergedRecord = mergeTGMDFields(existing, record);
+      merged.set(key, mergedRecord);
+    } else {
+      // New record from Qualtrics
+      merged.set(key, {
+        ...record,
+        _sources: ['qualtrics']
+      });
+    }
+  }
+  
+  return Array.from(merged.values());
+}
+```
+
+#### Phase 2: Field-Level Merging
+
+**TGMD Field Merge Rules** (when both sources have data):
+
+1. **Priority Rule**: Qualtrics data takes precedence for TGMD fields
+   - Rationale: Qualtrics is the native TGMD platform
+   - JotForm serves as fallback/manual override
+
+2. **Selective Merge**: Only TGMD_* fields are merged
+   - Other fields (ERV, CM, etc.) remain from JotForm
+
+3. **Conflict Resolution**: If values differ:
+   - Use Qualtrics value by default
+   - Mark conflict in metadata: `_tgmdConflicts: [field1, field2]`
+   - Optionally log for admin review
+
+```javascript
+function mergeTGMDFields(jotformRecord, qualtricsRecord) {
+  const merged = { ...jotformRecord };
+  const conflicts = [];
+  
+  // Extract TGMD fields from Qualtrics
+  for (const [key, value] of Object.entries(qualtricsRecord)) {
+    if (!key.startsWith('TGMD_')) continue;
+    
+    const jotformValue = jotformRecord[key];
+    const qualtricsValue = value;
+    
+    if (jotformValue && qualtricsValue && jotformValue !== qualtricsValue) {
+      // Conflict detected
+      conflicts.push({
+        field: key,
+        jotform: jotformValue,
+        qualtrics: qualtricsValue,
+        resolution: 'qualtrics' // Using Qualtrics value
+      });
+    }
+    
+    // Always use Qualtrics value for TGMD fields
+    merged[key] = qualtricsValue;
+  }
+  
+  // Update metadata
+  merged._sources = ['jotform', 'qualtrics'];
+  merged._tgmdSource = 'qualtrics';
+  if (conflicts.length > 0) {
+    merged._tgmdConflicts = conflicts;
+  }
+  
+  // Preserve Qualtrics metadata
+  merged._meta = {
+    ...merged._meta,
+    qualtricsResponseId: qualtricsRecord._meta.qualtricsResponseId,
+    qualtricsRetrievedAt: qualtricsRecord._meta.retrievedAt
+  };
+  
+  return merged;
+}
+```
+
+#### Phase 3: Completeness Validation
+
+**Post-Merge Checks**:
+
+```javascript
+function validateMergedData(mergedRecords) {
+  const validation = {
+    total: mergedRecords.length,
+    withTGMD: 0,
+    tgmdFromQualtrics: 0,
+    tgmdFromJotform: 0,
+    tgmdConflicts: 0,
+    missingTGMD: []
+  };
+  
+  for (const record of mergedRecords) {
+    const hasTGMD = record['TGMD_Hand'] || record['TGMD_Leg'];
+    
+    if (hasTGMD) {
+      validation.withTGMD++;
+      
+      if (record._tgmdSource === 'qualtrics') {
+        validation.tgmdFromQualtrics++;
+      } else if (record._sources.includes('jotform')) {
+        validation.tgmdFromJotform++;
+      }
+      
+      if (record._tgmdConflicts) {
+        validation.tgmdConflicts++;
+      }
+    } else {
+      validation.missingTGMD.push(record.sessionkey);
+    }
+  }
+  
+  console.log('[Data Merge] Validation:', validation);
+  return validation;
+}
+```
+
+---
+
+## IndexedDB Integration
+
+### Cache Architecture
+
+**Objective**: Store merged JotForm + Qualtrics dataset in browser IndexedDB for offline access and performance
+
+**Storage Structure**:
+```
+Database: JotFormCacheDB
+├─ Store: cache (JotForm + merged Qualtrics data)
+│  └─ Key: CACHE_KEY = 'jotform_global_cache'
+│  └─ Value: {
+│       timestamp: number,
+│       submissions: Array<MergedSubmission>,
+│       qualtricsLastSync: string (ISO8601),
+│       version: number
+│     }
+└─ Store: qualtrics_cache (Qualtrics-only data for refresh)
+   └─ Key: 'qualtrics_responses'
+   └─ Value: {
+        timestamp: number,
+        responses: Array<QualtricsResponse>,
+        surveyId: string
+      }
+```
+
+### Cache Refresh Workflow
+
+```javascript
+class MergedDataCache {
+  constructor() {
+    this.jotformCache = window.JotFormCache; // Existing cache
+    this.qualtricsStorage = localforage.createInstance({
+      name: 'JotFormCacheDB',
+      storeName: 'qualtrics_cache'
+    });
+  }
+  
+  async refreshCache() {
+    console.log('[MergedCache] Starting full refresh...');
+    
+    // Step 1: Fetch JotForm data (use existing cache system)
+    const jotformData = await this.jotformCache.getOrFetchSubmissions();
+    console.log('[MergedCache] JotForm:', jotformData.length, 'submissions');
+    
+    // Step 2: Fetch Qualtrics data
+    const qualtricsData = await fetchQualtricsData();
+    console.log('[MergedCache] Qualtrics:', qualtricsData.length, 'responses');
+    
+    // Step 3: Merge datasets
+    const mergedData = mergeDataSources(jotformData, qualtricsData);
+    console.log('[MergedCache] Merged:', mergedData.length, 'records');
+    
+    // Step 4: Validate merge
+    const validation = validateMergedData(mergedData);
+    console.log('[MergedCache] Validation:', validation);
+    
+    // Step 5: Cache Qualtrics data separately (for incremental refresh)
+    await this.qualtricsStorage.setItem('qualtrics_responses', {
+      timestamp: Date.now(),
+      responses: qualtricsData,
+      surveyId: credentials.qualtricsSurveyId
+    });
+    
+    // Step 6: Update main cache with merged data
+    await this.jotformCache.saveToCache(mergedData);
+    console.log('[MergedCache] ✅ Cache refresh complete');
+    
+    return {
+      success: true,
+      stats: validation
+    };
+  }
+  
+  async incrementalRefresh() {
+    // Option: Fetch only new Qualtrics responses since last sync
+    // Implementation: Use recordedDate filter in export request
+    // Trade-off: More complex, but reduces API bandwidth
+    
+    const lastSync = await this.getLastQualtricsSync();
+    if (!lastSync) {
+      return this.refreshCache(); // Full refresh if no history
+    }
+    
+    console.log('[MergedCache] Incremental refresh since', lastSync);
+    
+    // Modify export request to filter by date
+    const exportPayload = {
+      ...standardExportPayload,
+      startDate: lastSync,
+      endDate: new Date().toISOString()
+    };
+    
+    // ... fetch and merge incrementally ...
+  }
+  
+  async getLastQualtricsSync() {
+    const cache = await this.qualtricsStorage.getItem('qualtrics_responses');
+    return cache ? new Date(cache.timestamp).toISOString() : null;
+  }
+}
+```
+
+### Cache Invalidation Strategy
+
+**Triggers for Cache Refresh**:
+1. **Manual**: User clicks "Refresh Data" button in UI
+2. **Scheduled**: Auto-refresh every 6-12 hours (configurable)
+3. **On-Demand**: When filtering by student with missing TGMD data
+4. **After Upload**: When new JotForm submissions are uploaded
+
+**Cache Expiry**:
+- **JotForm Cache**: 1 hour (existing behavior)
+- **Qualtrics Cache**: 1 hour (align with JotForm)
+- **Merged Cache**: Inherited from JotForm cache expiry
+
+**Version Control**:
+```javascript
+const CACHE_VERSION = 2; // Increment when schema changes
+
+async function loadCache() {
+  const cache = await storage.getItem(CACHE_KEY);
+  
+  if (!cache || cache.version !== CACHE_VERSION) {
+    console.log('[Cache] Version mismatch or missing, clearing...');
+    await storage.removeItem(CACHE_KEY);
+    return null;
+  }
+  
+  return cache;
+}
+```
+
+---
+
+## Error Handling & Rate Limiting
+
+### Common Qualtrics API Errors
+
+#### 1. Authentication Errors
+
+**Error Response:**
+```json
+{
+  "meta": {
+    "httpStatus": "401 - Unauthorized",
+    "error": {
+      "errorCode": "AUTH_1",
+      "errorMessage": "Invalid API Token"
+    }
+  }
+}
+```
+
+**Handling:**
+- Verify `qualtricsApiToken` in credentials
+- Check token has not expired
+- Prompt user to re-enter credentials
+- Do NOT retry automatically (credential issue)
+
+#### 2. Survey Not Found
+
+**Error Response:**
+```json
+{
+  "meta": {
+    "httpStatus": "404 - Not Found",
+    "error": {
+      "errorCode": "RESOURCE_1",
+      "errorMessage": "Survey not found"
+    }
+  }
+}
+```
+
+**Handling:**
+- Verify `qualtricsSurveyId` in credentials
+- Check survey still exists and is active
+- Fallback to JotForm-only mode
+- Alert admin to update configuration
+
+#### 3. Rate Limiting
+
+**Error Response:**
+```json
+{
+  "meta": {
+    "httpStatus": "429 - Too Many Requests",
+    "error": {
+      "errorCode": "RATE_1",
+      "errorMessage": "Rate limit exceeded. Try again in 60 seconds."
+    }
+  }
+}
+```
+
+**Qualtrics Rate Limits**:
+- **API Calls**: 20-60 requests per minute (varies by plan)
+- **Concurrent Exports**: 2-5 simultaneous exports
+- **Export File Size**: Limited by survey response count
+
+**Handling:**
+```javascript
+async function fetchWithRetry(url, options, maxRetries = 3) {
+  let attempt = 0;
+  const retryDelays = [10000, 30000, 60000]; // 10s, 30s, 60s
+  
+  while (attempt < maxRetries) {
+    try {
+      const response = await fetch(url, options);
+      
+      if (response.status === 429) {
+        const retryAfter = response.headers.get('Retry-After') || retryDelays[attempt];
+        console.warn(`[Qualtrics] Rate limited. Retrying in ${retryAfter}ms...`);
+        await sleep(retryAfter);
+        attempt++;
+        continue;
+      }
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.meta.error.errorMessage);
+      }
+      
+      return response;
+    } catch (error) {
+      if (attempt === maxRetries - 1) throw error;
+      
+      console.warn(`[Qualtrics] Request failed (attempt ${attempt + 1}/${maxRetries}):`, error.message);
+      await sleep(retryDelays[attempt]);
+      attempt++;
+    }
+  }
+}
+```
+
+#### 4. Export Timeout/Failure
+
+**Error Response:**
+```json
+{
+  "result": {
+    "progressId": "ES_...",
+    "status": "failed",
+    "percentComplete": 45.0
+  }
+}
+```
+
+**Handling:**
+- Log failure with progressId
+- Retry export from beginning (start new export)
+- If repeated failures (3+), fallback to JotForm-only mode
+- Alert admin to check survey configuration
+
+### Logging Strategy
+
+**Console Logging Levels**:
+```javascript
+// INFO: Standard workflow messages
+console.log('[Qualtrics] Export started:', progressId);
+console.log('[Qualtrics] Downloaded', responses.length, 'responses');
+
+// WARN: Recoverable errors
+console.warn('[Qualtrics] Rate limited. Retrying in 30s...');
+console.warn('[Qualtrics] No TGMD data for student:', sessionkey);
+
+// ERROR: Unrecoverable errors
+console.error('[Qualtrics] Export failed after 3 retries');
+console.error('[Qualtrics] Authentication error:', error.message);
+```
+
+**Structured Logging Object**:
+```javascript
+const log = {
+  timestamp: new Date().toISOString(),
+  module: 'qualtrics',
+  action: 'export',
+  status: 'success',
+  details: {
+    progressId: 'ES_...',
+    responseCount: 156,
+    duration: 12500
+  }
+};
+console.log(JSON.stringify(log));
+```
+
+---
+
+## Implementation Roadmap
+
+### Phase 1: Foundation (1-2 weeks)
+
+**Deliverables:**
+- [ ] Create `assets/js/qualtrics-api.js` module
+  - Wrap Qualtrics API endpoints
+  - Export/poll/download functions
+  - Error handling and retries
+  - Based on `Qualtrics Test/qualtrics_api.py` logic
+
+- [ ] Create `assets/js/qualtrics-transformer.js` module
+  - Load qualtrics-mapping.json
+  - Transform QID responses to standard fields
+  - Handle matrix sub-questions
+
+- [ ] Update credentials structure in `credentials.enc`
+  - Add `qualtricsApiToken` (already has datacenter/surveyId)
+  - Validate on checking system home page
+
+- [ ] Add Qualtrics cache store to IndexedDB
+  - Create `qualtrics_cache` store in localforage
+  - Store raw responses separately from merged data
+
+**Testing:**
+- Fetch survey definition from Qualtrics
+- Start export and poll until complete
+- Download and parse JSON responses
+- Transform sample responses using mapping
+
+### Phase 2: Data Merging (1 week)
+
+**Deliverables:**
+- [ ] Create `assets/js/data-merger.js` module
+  - Implement mergeDataSources() function
+  - Implement mergeTGMDFields() with conflict resolution
+  - Implement validateMergedData() validation
+
+- [ ] Extend `assets/js/jotform-cache.js`
+  - Add fetchQualtricsData() method
+  - Add refreshWithQualtrics() method
+  - Integrate merge logic into cache refresh
+
+- [ ] Update cache structure
+  - Add _sources, _tgmdSource metadata fields
+  - Add _tgmdConflicts for conflict tracking
+  - Store qualtricsLastSync timestamp
+
+**Testing:**
+- Merge test datasets with TGMD conflicts
+- Validate conflict resolution logic
+- Test cache persistence after merge
+- Verify Qualtrics data precedence
+
+### Phase 3: UI Integration (1 week)
+
+**Deliverables:**
+- [ ] Update `checking_system_home.html`
+  - Add "Refresh Qualtrics Data" button
+  - Show Qualtrics sync status/timestamp
+  - Display merge statistics (conflicts, sources)
+
+- [ ] Update `assets/js/cache-manager-ui.js`
+  - Add Qualtrics refresh progress indicator
+  - Show "X records from Qualtrics" in stats
+  - Display conflict count and details
+
+- [ ] Update student detail pages
+  - Add TGMD data source indicator
+  - Show Qualtrics response ID if applicable
+  - Highlight conflicted fields (if any)
+
+- [ ] Add debug/diagnostic tools
+  - "View Qualtrics Raw Data" for admin
+  - "Force Re-merge" button to re-run merge logic
+  - Export merge conflicts to CSV for review
+
+**Testing:**
+- UI responsiveness during long exports
+- Error message display for failures
+- Cache status indicators update correctly
+- Conflict visualization in student view
+
+### Phase 4: Production Deployment (1 week)
+
+**Deliverables:**
+- [ ] Documentation updates
+  - This PRD (complete)
+  - User guide: "Refreshing TGMD Data from Qualtrics"
+  - Admin guide: "Resolving TGMD Data Conflicts"
+
+- [ ] Security audit
+  - Validate API token encryption
+  - Ensure no token logging in console
+  - Test credential rotation procedure
+
+- [ ] Performance optimization
+  - Benchmark large exports (1000+ responses)
+  - Optimize IndexedDB writes for merge
+  - Add export cancellation support
+
+- [ ] Error recovery testing
+  - Test rate limiting scenarios
+  - Test network failures mid-export
+  - Test corrupted response handling
+
+**Testing:**
+- Full end-to-end workflow with production data
+- Load testing with maximum expected responses
+- Security penetration testing
+- User acceptance testing with operators
+
+### Phase 5: Monitoring & Maintenance (Ongoing)
+
+**Deliverables:**
+- [ ] Implement logging dashboard
+  - Track Qualtrics API usage
+  - Monitor merge conflict rates
+  - Alert on repeated failures
+
+- [ ] Create runbook procedures
+  - "Qualtrics Export Fails" troubleshooting
+  - "High Conflict Rate" investigation steps
+  - "API Token Rotation" process
+
+- [ ] Scheduled maintenance tasks
+  - Weekly: Review merge conflict reports
+  - Monthly: Validate qualtrics-mapping.json accuracy
+  - Quarterly: API token rotation
+
+---
+
+## Security Considerations
+
+### API Token Protection
+
+**Storage:**
+- Store in `credentials.enc` with AES-256-GCM encryption
+- Never log token in console or network logs
+- Mask token in error messages: `...9gpl5XK***`
+
+**Transmission:**
+- Always use HTTPS for API requests
+- Include token in `X-API-TOKEN` header (not query params)
+- Validate TLS certificates
+
+**Access Control:**
+- Decrypt credentials only on checking system home page
+- Cache in `sessionStorage` (cleared on tab close)
+- Require system password for decryption
+
+### Data Privacy
+
+**Student Data Protection:**
+- All responses contain PII (student IDs, names)
+- Encrypt IndexedDB cache using Web Crypto API (future enhancement)
+- Clear cache on browser close (configurable)
+
+**Audit Logging:**
+- Log all Qualtrics API calls with timestamps
+- Record merge conflicts for review
+- Track credential decryption events
+
+---
+
+## Troubleshooting Guide
+
+### Issue: "Qualtrics Export Timeout"
+
+**Symptoms:**
+- Export progress stuck at same percentage
+- Polling exceeds 120 seconds
+
+**Diagnosis:**
+1. Check export progressId in logs
+2. Verify survey response count (large surveys take longer)
+3. Test direct API call to progress endpoint
+
+**Solutions:**
+- Increase polling timeout to 300 seconds
+- Reduce `questionIds` array (fetch only TGMD fields)
+- Contact Qualtrics support if survey has >10,000 responses
+
+### Issue: "TGMD Fields Missing After Merge"
+
+**Symptoms:**
+- Student has Qualtrics data but TGMD fields empty in UI
+- Merge validation shows 0 TGMD records
+
+**Diagnosis:**
+1. Check qualtrics-mapping.json loaded correctly
+2. Verify QID format matches Qualtrics export
+3. Inspect raw Qualtrics response structure
+
+**Solutions:**
+- Refresh qualtrics-mapping.json from survey definition
+- Update QID mapping if survey structure changed
+- Run `transformQualtricsResponse()` with sample data
+
+### Issue: "High Conflict Rate in Merge"
+
+**Symptoms:**
+- >10% of records show TGMD conflicts
+- Operators report data discrepancies
+
+**Diagnosis:**
+1. Export conflict report from cache-manager-ui
+2. Compare Qualtrics vs JotForm values
+3. Check data entry timing (which was entered first)
+
+**Solutions:**
+- If Qualtrics is newer: Keep current merge priority
+- If JotForm overrides are intentional: Add manual override flag
+- If data entry errors: Correct at source and re-merge
+
+### Issue: "Authentication Failed (401)"
+
+**Symptoms:**
+- All Qualtrics API calls return 401
+- Token was working previously
+
+**Diagnosis:**
+1. Verify token in credentials.enc is correct
+2. Check token expiration in Qualtrics admin
+3. Test token with direct API call (curl)
+
+**Solutions:**
+- Generate new API token in Qualtrics
+- Update credentials.enc with new token
+- Re-encrypt and deploy updated credentials file
+
+---
+
+## API Reference Quick Guide
+
+### Key Endpoints
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/API/v3/surveys` | GET | List accessible surveys |
+| `/API/v3/surveys/{surveyId}` | GET | Get survey definition |
+| `/API/v3/surveys/{surveyId}/export-responses` | POST | Start response export |
+| `/API/v3/surveys/{surveyId}/export-responses/{progressId}` | GET | Check export progress |
+| `/API/v3/surveys/{surveyId}/export-responses/{fileId}/file` | GET | Download export file |
+
+### Configuration Values
+
+| Field | Location | Example Value |
+|-------|----------|---------------|
+| API Token | `credentials.enc` → `qualtricsApiToken` | `raV8YenlxaFux...` |
+| Datacenter | `credentials.enc` → `qualtricsDatacenter` | `au1` |
+| Survey ID | `credentials.enc` → `qualtricsSurveyId` | `SV_23Qbs14soOkGo9E` |
+| Field Mapping | `assets/qualtrics-mapping.json` | QID → field name map |
+
+### Export Timing
+
+| Stage | Duration | Notes |
+|-------|----------|-------|
+| Start Export | <2 seconds | Returns progressId |
+| Export Processing | 5-30 seconds | Varies by response count |
+| Polling Interval | 2 seconds | Check every 2s |
+| Download File | 1-5 seconds | Depends on file size |
+| **Total** | **10-40 seconds** | For typical surveys (<500 responses) |
+
+---
+
+## Appendix: TGMD Field Reference
+
+### Complete TGMD Field List
+
+**Preference Fields (2):**
+- `TGMD_Hand`: Preferred hand (1=Right, 2=Left)
+- `TGMD_Leg`: Preferred leg (1=Right, 2=Left)
+
+**Hopping (8 fields):**
+- `TGMD_111_Hop_t1`, `TGMD_112_Hop_t1`, `TGMD_113_Hop_t1`, `TGMD_114_Hop_t1`
+- `TGMD_111_Hop_t2`, `TGMD_112_Hop_t2`, `TGMD_113_Hop_t2`, `TGMD_114_Hop_t2`
+
+**Jumping (8 fields):**
+- `TGMD_211_Jum_t1`, `TGMD_212_Jum_t1`, `TGMD_213_Jum_t1`, `TGMD_214_Jum_t1`
+- `TGMD_211_Jum_t2`, `TGMD_212_Jum_t2`, `TGMD_213_Jum_t2`, `TGMD_214_Jum_t2`
+
+**Sliding (8 fields):**
+- `TGMD_311_Sli_t1`, `TGMD_312_Sli_t1`, `TGMD_313_Sli_t1`, `TGMD_314_Sli_t1`
+- `TGMD_311_Sli_t2`, `TGMD_312_Sli_t2`, `TGMD_313_Sli_t2`, `TGMD_314_Sli_t2`
+
+**Dribbling (6 fields):**
+- `TGMD_411_Dri_t1`, `TGMD_412_Dri_t1`, `TGMD_413_Dri_t1`
+- `TGMD_411_Dri_t2`, `TGMD_412_Dri_t2`, `TGMD_413_Dri_t2`
+
+**Catching (6 fields):**
+- `TGMD_511_Cat_t1`, `TGMD_512_Cat_t1`, `TGMD_513_Cat_t1`
+- `TGMD_511_Cat_t2`, `TGMD_512_Cat_t2`, `TGMD_513_Cat_t2`
+
+**Throwing (8 fields):**
+- `TGMD_611_Thr_t1`, `TGMD_612_Thr_t1`, `TGMD_613_Thr_t1`, `TGMD_614_Thr_t1`
+- `TGMD_611_Thr_t2`, `TGMD_612_Thr_t2`, `TGMD_613_Thr_t2`, `TGMD_614_Thr_t2`
+
+**Metadata (1):**
+- `TGMD_Com`: Administrator comments
+
+**Total**: 47 fields
+
+### Matrix Question Mapping
+
+Qualtrics uses matrix questions for TGMD tests. Each test has:
+- **Rows**: Trials (1=First, 2=Second)
+- **Columns**: Criteria (1-4, varies by test)
+
+**Example - Hopping (QID126166420):**
+```
+Matrix Structure:
+        Criterion 1  Criterion 2  Criterion 3  Criterion 4
+Trial 1    [1_1]       [1_2]       [1_3]       [1_4]
+Trial 2    [2_1]       [2_2]       [2_3]       [2_4]
+```
+
+**Mapping to Standard Fields:**
+- `QID126166420#1_1` → `TGMD_111_Hop_t1`
+- `QID126166420#1_2` → `TGMD_112_Hop_t1`
+- `QID126166420#2_1` → `TGMD_111_Hop_t2`
+- ... etc
+
+**Value Encoding:**
+- `1` = Criterion met
+- `0` = Criterion not met
+- `""` (empty) = Not assessed
+
+---
+
+**Document Version**: 1.0  
+**Last Updated**: 2025-10-17  
+**Next Review**: 2025-11-17
