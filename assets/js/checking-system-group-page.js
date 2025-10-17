@@ -273,6 +273,13 @@
     const container = document.getElementById('schools-by-group-container');
     if (!container) return;
 
+    // Store the current open/closed state of each details element
+    const openStates = new Map();
+    container.querySelectorAll('details.group-section').forEach(details => {
+      const groupNum = details.getAttribute('data-group');
+      openStates.set(groupNum, details.open);
+    });
+
     // Group schools by group (even though we're in a single group page, maintain structure)
     const groups = new Map();
     for (const school of schools) {
@@ -291,8 +298,12 @@
       // Sort schools by schoolId
       groupSchools.sort((a, b) => a.schoolId.localeCompare(b.schoolId));
 
+      // Restore previous open state if it exists
+      const wasOpen = openStates.get(groupNum.toString());
+      const openAttr = wasOpen ? ' open' : '';
+
       html += `
-        <details class="group-section border-b border-[color:var(--border)]" data-group="${groupNum}">
+        <details class="group-section border-b border-[color:var(--border)]" data-group="${groupNum}"${openAttr}>
           <summary class="px-4 py-3 bg-[color:var(--muted)]/40 cursor-pointer hover:bg-[color:var(--muted)]/60 transition-colors flex items-center justify-between">
             <div class="flex items-center gap-3">
               <i data-lucide="chevron-right" class="w-4 h-4 text-[color:var(--muted-foreground)] transition-transform group-chevron"></i>
@@ -309,10 +320,15 @@
 
     container.innerHTML = html;
 
-    // Add event listeners for chevron rotation
+    // Add event listeners for chevron rotation and sync rotation state
     container.querySelectorAll('details.group-section').forEach(details => {
+      const chevron = details.querySelector('.group-chevron');
+      // Set initial chevron rotation based on whether details is open
+      if (chevron && details.open) {
+        chevron.style.transform = 'rotate(90deg)';
+      }
+      
       details.addEventListener('toggle', () => {
-        const chevron = details.querySelector('.group-chevron');
         if (chevron) {
           if (details.open) {
             chevron.style.transform = 'rotate(90deg)';
