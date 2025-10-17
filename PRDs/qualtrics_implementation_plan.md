@@ -1396,7 +1396,43 @@ if (tgmdFields.length > 0 && tgmdFields.length < 45) {
 - **Total: ~93 MB**
 
 **Storage Limit:** IndexedDB supports 50+ MB to several GB (browser-dependent)
-**Conclusion:** Well within limits
+**Conclusion:** Well within limits for desktop, but see "Cache Strategy Considerations" below for mobile/low-power devices
+
+### Cache Strategy Considerations
+
+#### Device Performance Analysis
+
+**Desktop/High-Performance Laptops:**
+- ✅ **93 MB cache**: No issues
+- ✅ **IndexedDB**: Fast read/write performance
+- ✅ **Validation cache**: Pre-computation worthwhile (instant page loads)
+- **Recommendation**: Use full caching strategy as designed
+
+**Low-Power Laptops/Older Devices:**
+- ⚠️ **93 MB cache**: Acceptable but noticeable initial load
+- ⚠️ **IndexedDB**: Slower write performance (5-10s for full cache)
+- ⚠️ **Validation cache**: Pre-computation still beneficial
+- **Recommendation**: Provide user choice between full cache and fetch-on-request
+
+**Mobile Devices (Tablets/Phones):**
+- ❌ **93 MB cache**: Significant storage pressure
+- ❌ **IndexedDB**: Limited quota (often 50 MB, may prompt user)
+- ❌ **Validation cache**: Battery impact from pre-computation
+- ❌ **Network**: Slower API calls, higher latency
+- **Recommendation**: Default to fetch-on-request mode with optional caching
+
+#### Cache vs Fetch-on-Request Comparison
+
+| Aspect | Full Cache (Current) | Fetch-on-Request (Alternative) |
+|--------|---------------------|-------------------------------|
+| **Initial Load** | 90s (fetch all data) | <5s (fetch metadata only) |
+| **Memory Usage** | 93 MB (persistent) | 1-5 MB (current page only) |
+| **Student Page** | <100ms (instant) | 2-4s (fetch + validate) |
+| **Class Page (30 students)** | <100ms (pre-computed) | 60-120s (fetch all, validate) |
+| **School Page (200 students)** | <100ms (aggregate cache) | 8-15 minutes (impractical) |
+| **Network Dependency** | Once per hour | Every navigation |
+| **Offline Support** | ✅ Full offline browsing | ❌ No offline capability |
+| **Battery Impact** | Low (rare refreshes) | High (constant API calls) |
 
 ### Performance Targets
 
@@ -1408,6 +1444,495 @@ if (tgmdFields.length > 0 && tgmdFields.length < 45) {
 | Cache Write | <5s | Write 32 MB to IndexedDB |
 | Student Page Load | <100ms | Read from validation cache |
 | Cache Refresh (Full) | <90s | JotForm + Qualtrics + merge |
+
+---
+
+## Hybrid Cache Strategy: User-Selectable Loading Mode
+
+### Overview
+
+To accommodate different device capabilities and user preferences, implement a **hybrid loading strategy** where users can choose between:
+1. **Full Cache Mode** (default for desktop): Pre-load all data, instant navigation
+2. **Fetch-on-Request Mode** (default for mobile): Load data as needed, minimal storage
+
+### Home Page: Loading Mode Selection
+
+**UI Implementation:**
+```html
+<!-- In checking_system_home.html -->
+<div class="cache-strategy-selector">
+  <h3>Data Loading Strategy</h3>
+  <p class="text-sm text-muted">Choose how to load checking system data</p>
+  
+  <div class="strategy-options">
+    <!-- Full Cache Option -->
+    <label class="strategy-card">
+      <input type="radio" name="cacheStrategy" value="full" checked>
+      <div class="card-content">
+        <div class="card-icon">🚀</div>
+        <h4>Full Cache (Recommended for Desktop)</h4>
+        <ul class="pros">
+          <li>✅ Instant page loads after initial sync</li>
+          <li>✅ Offline browsing support</li>
+          <li>✅ Best for frequent use</li>
+        </ul>
+        <ul class="cons">
+          <li>⚠️ Initial load: ~90 seconds</li>
+          <li>⚠️ Storage: ~93 MB</li>
+        </ul>
+        <div class="device-recommendation">Best for: Desktop, High-performance laptops</div>
+      </div>
+    </label>
+    
+    <!-- Fetch-on-Request Option -->
+    <label class="strategy-card">
+      <input type="radio" name="cacheStrategy" value="on-demand">
+      <div class="card-content">
+        <div class="card-icon">📡</div>
+        <h4>Fetch-on-Request (Recommended for Mobile)</h4>
+        <ul class="pros">
+          <li>✅ Fast initial load: <5 seconds</li>
+          <li>✅ Minimal storage: ~1-5 MB</li>
+          <li>✅ Always fresh data</li>
+        </ul>
+        <ul class="cons">
+          <li>⚠️ 2-4s per student page load</li>
+          <li>⚠️ Requires active internet</li>
+          <li>⚠️ Higher battery usage</li>
+        </ul>
+        <div class="device-recommendation">Best for: Mobile, Tablets, Low-power laptops</div>
+      </div>
+    </label>
+  </div>
+  
+  <!-- Auto-detect suggestion -->
+  <div class="auto-detect-banner" id="autoDetectBanner">
+    <i data-lucide="info"></i>
+    <span id="autoDetectMessage">Detected mobile device - Fetch-on-Request mode recommended</span>
+  </div>
+</div>
+```
+
+**Auto-Detection Logic:**
+```javascript
+// In cache-manager-ui.js
+function detectDeviceCapability() {
+  const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+  const isLowPower = navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4;
+  const hasLimitedMemory = navigator.deviceMemory && navigator.deviceMemory < 4; // GB
+  
+  // Recommend fetch-on-request if:
+  // 1. Mobile device detected
+  // 2. Low CPU cores (<4)
+  // 3. Limited RAM (<4 GB)
+  const recommendOnDemand = isMobile || isLowPower || hasLimitedMemory;
+  
+  if (recommendOnDemand) {
+    document.querySelector('input[value="on-demand"]').checked = true;
+    document.getElementById('autoDetectMessage').textContent = 
+      'Detected limited device - Fetch-on-Request mode recommended for best performance';
+  }
+  
+  return {
+    isMobile,
+    isLowPower,
+    hasLimitedMemory,
+    recommendOnDemand
+  };
+}
+```
+
+**Strategy Persistence:**
+```javascript
+// Save user preference
+function saveCacheStrategy(strategy) {
+  localStorage.setItem('cacheStrategy', strategy);
+  console.log('[CacheStrategy] User selected:', strategy);
+}
+
+// Load user preference
+function loadCacheStrategy() {
+  return localStorage.getItem('cacheStrategy') || detectDefaultStrategy();
+}
+
+function detectDefaultStrategy() {
+  const deviceInfo = detectDeviceCapability();
+  return deviceInfo.recommendOnDemand ? 'on-demand' : 'full';
+}
+```
+
+### Fetch-on-Request Implementation
+
+#### Level 4: Student Detail Page
+
+**Current (Full Cache):**
+```javascript
+// Instant load from validation cache
+const validation = await validationStorage.getItem(coreId);
+displayStudentData(validation); // <100ms
+```
+
+**Fetch-on-Request:**
+```javascript
+async function loadStudentDataOnDemand(coreId) {
+  const strategy = loadCacheStrategy();
+  
+  if (strategy === 'full') {
+    // Use existing cache system
+    const validation = await validationStorage.getItem(coreId);
+    return validation;
+  }
+  
+  // Fetch-on-request mode
+  console.log('[OnDemand] Fetching data for student:', coreId);
+  showLoadingIndicator('Loading student data...');
+  
+  try {
+    // Step 1: Fetch student's submissions only (filtered API call)
+    const submissions = await fetchStudentSubmissions(coreId);
+    
+    // Step 2: Merge submissions
+    const mergedAnswers = mergeStudentSubmissions(submissions);
+    
+    // Step 3: Validate with TaskValidator
+    const taskValidation = await window.TaskValidator.validateAllTasks(mergedAnswers);
+    
+    // Step 4: Calculate status
+    const setStatus = calculateSetStatus(taskValidation);
+    const overallStatus = calculateOverallStatus(setStatus);
+    
+    // Optional: Cache this student only (lightweight cache)
+    await cacheStudentOnly(coreId, {
+      taskValidation,
+      setStatus,
+      overallStatus,
+      timestamp: Date.now()
+    });
+    
+    hideLoadingIndicator();
+    
+    return {
+      coreId,
+      taskValidation,
+      setStatus,
+      overallStatus
+    };
+    
+  } catch (error) {
+    hideLoadingIndicator();
+    showError('Failed to load student data: ' + error.message);
+    throw error;
+  }
+}
+```
+
+**Performance:**
+- API call: ~1-2s (filter by student ID)
+- Validation: ~500ms (TaskValidator on 14 tasks)
+- Display: ~100ms
+- **Total: 2-4 seconds per student**
+
+**Benefits:**
+- ✅ No upfront cache building
+- ✅ Minimal storage (only current student)
+- ✅ Always fresh data
+
+**Drawbacks:**
+- ❌ 2-4s wait per student navigation
+- ❌ Requires active internet
+- ❌ Multiple API calls (rate limiting risk)
+
+#### Level 3: Class Detail Page (30 Students)
+
+**Current (Full Cache):**
+```javascript
+// Read from pre-computed aggregates
+const classData = await classStorage.getItem(classId);
+displayClassSummary(classData); // <100ms
+```
+
+**Fetch-on-Request:**
+```javascript
+async function loadClassDataOnDemand(classId) {
+  const strategy = loadCacheStrategy();
+  
+  if (strategy === 'full') {
+    return await classStorage.getItem(classId);
+  }
+  
+  // Fetch-on-request mode
+  console.log('[OnDemand] Fetching data for class:', classId);
+  showLoadingIndicator('Loading class data for 30 students...');
+  
+  try {
+    // Step 1: Get student list from encrypted mapping
+    const students = await getStudentsInClass(classId);
+    
+    // Step 2: Fetch submissions for ALL students in class
+    // Option A: Parallel fetch (fast but high API load)
+    const studentDataPromises = students.map(s => loadStudentDataOnDemand(s.coreId));
+    const studentData = await Promise.all(studentDataPromises);
+    
+    // Option B: Sequential fetch (slower but API-friendly)
+    // const studentData = [];
+    // for (const student of students) {
+    //   studentData.push(await loadStudentDataOnDemand(student.coreId));
+    //   await sleep(200); // Rate limiting delay
+    // }
+    
+    // Step 3: Aggregate student data into class summary
+    const classStats = aggregateClassData(studentData);
+    
+    hideLoadingIndicator();
+    
+    return classStats;
+    
+  } catch (error) {
+    hideLoadingIndicator();
+    showError('Failed to load class data: ' + error.message);
+    throw error;
+  }
+}
+```
+
+**Performance:**
+- **Parallel Fetch:**
+  - 30 API calls × ~2s = ~60-90s (with some parallelization)
+  - Risk: Rate limiting (429 errors)
+  - **Total: 60-120 seconds**
+
+- **Sequential Fetch:**
+  - 30 students × 2.5s (with 200ms delay) = ~75s
+  - Safe: Respects rate limits
+  - **Total: 75-90 seconds**
+
+**Benefits:**
+- ✅ No upfront cache building
+- ✅ Always fresh data
+
+**Drawbacks:**
+- ❌ 1-2 minute wait for class page
+- ❌ 30 API calls per page load
+- ❌ High rate limiting risk
+- ❌ Not practical for frequent use
+
+**Mitigation:**
+- Cache class data after first load (30-minute TTL)
+- Show progress indicator: "Loading student 15/30..."
+- Allow cancellation if user navigates away
+
+#### Level 2: School Detail Page (8 Classes, 200 Students)
+
+**Current (Full Cache):**
+```javascript
+// Read from pre-computed school aggregate
+const schoolData = await schoolStorage.getItem(schoolId);
+displaySchoolSummary(schoolData); // <100ms
+```
+
+**Fetch-on-Request:**
+```javascript
+async function loadSchoolDataOnDemand(schoolId) {
+  const strategy = loadCacheStrategy();
+  
+  if (strategy === 'full') {
+    return await schoolStorage.getItem(schoolId);
+  }
+  
+  // Fetch-on-request mode
+  console.log('[OnDemand] Fetching data for school:', schoolId);
+  showLoadingIndicator('Loading school data for 8 classes (200 students)...');
+  
+  try {
+    // Step 1: Get class list
+    const classes = await getClassesInSchool(schoolId);
+    
+    // Step 2: Fetch data for all classes
+    const classDataPromises = classes.map(c => loadClassDataOnDemand(c.classId));
+    const classData = await Promise.all(classDataPromises);
+    
+    // Step 3: Aggregate into school summary
+    const schoolStats = aggregateSchoolData(classData);
+    
+    hideLoadingIndicator();
+    
+    return schoolStats;
+    
+  } catch (error) {
+    hideLoadingIndicator();
+    showError('Failed to load school data: ' + error.message);
+    throw error;
+  }
+}
+```
+
+**Performance:**
+- 8 classes × 75s (sequential class load) = ~600s = **10 minutes**
+- OR 200 students × 2.5s = ~500s = **8 minutes** (if fetching students directly)
+
+**Benefits:**
+- ✅ Always fresh data
+
+**Drawbacks:**
+- ❌ 8-10 minute wait time
+- ❌ 200 API calls
+- ❌ **Impractical for real use**
+- ❌ Very high rate limiting risk
+
+**Recommendation:**
+- **Do NOT support fetch-on-request for School level and above**
+- Display message: "School-level view requires Full Cache Mode. Please refresh with Full Cache enabled."
+- Redirect to student/class search instead
+
+#### Level 1: Group/District Pages (Multiple Schools)
+
+**Current (Full Cache):**
+```javascript
+// Read from district/group aggregate
+const districtData = await districtStorage.getItem(district);
+displayDistrictSummary(districtData); // <100ms
+```
+
+**Fetch-on-Request:**
+```javascript
+// NOT SUPPORTED
+function loadDistrictDataOnDemand(district) {
+  throw new Error('District/Group views require Full Cache Mode. Please enable caching.');
+}
+```
+
+**Reasoning:**
+- 1000+ students per district
+- 20-30 minute load time
+- Hundreds of API calls
+- **Completely impractical**
+
+**User Experience:**
+```html
+<!-- Show blocking modal -->
+<div class="modal modal-error">
+  <h2>Full Cache Required</h2>
+  <p>District and Group-level views require the Full Cache loading strategy.</p>
+  <p>Current mode: <strong>Fetch-on-Request</strong></p>
+  <p>Please return to the home page and switch to Full Cache mode, or use Student/Class search instead.</p>
+  <div class="actions">
+    <button onclick="window.location.href='checking_system_home.html'">Go to Home</button>
+    <button onclick="showSearchModal()">Search Student/Class</button>
+  </div>
+</div>
+```
+
+### Hybrid Cache: Best of Both Worlds
+
+**Implementation Strategy:**
+```javascript
+class HybridCacheManager {
+  constructor() {
+    this.strategy = loadCacheStrategy();
+    this.lightweightCache = new Map(); // In-memory cache for recent pages
+    this.cacheSize = 0;
+    this.maxCacheSize = 10 * 1024 * 1024; // 10 MB limit for on-demand mode
+  }
+  
+  async loadData(level, identifier) {
+    // Full cache mode: Use existing system
+    if (this.strategy === 'full') {
+      return this.loadFromFullCache(level, identifier);
+    }
+    
+    // Fetch-on-request mode with lightweight caching
+    
+    // Check in-memory cache first
+    const cacheKey = `${level}:${identifier}`;
+    if (this.lightweightCache.has(cacheKey)) {
+      const cached = this.lightweightCache.get(cacheKey);
+      if (Date.now() - cached.timestamp < 30 * 60 * 1000) { // 30 min TTL
+        console.log('[Hybrid] Using lightweight cache:', cacheKey);
+        return cached.data;
+      }
+    }
+    
+    // Fetch fresh data
+    let data;
+    switch (level) {
+      case 'student':
+        data = await this.fetchStudentOnDemand(identifier);
+        break;
+      case 'class':
+        data = await this.fetchClassOnDemand(identifier);
+        break;
+      case 'school':
+      case 'group':
+      case 'district':
+        throw new Error('This view requires Full Cache mode. Please switch loading strategy.');
+      default:
+        throw new Error('Unknown level: ' + level);
+    }
+    
+    // Cache in memory (with size limit)
+    this.addToLightweightCache(cacheKey, data);
+    
+    return data;
+  }
+  
+  addToLightweightCache(key, data) {
+    const size = JSON.stringify(data).length;
+    
+    // Evict oldest entries if cache too large
+    while (this.cacheSize + size > this.maxCacheSize && this.lightweightCache.size > 0) {
+      const oldestKey = this.lightweightCache.keys().next().value;
+      const oldestEntry = this.lightweightCache.get(oldestKey);
+      this.cacheSize -= JSON.stringify(oldestEntry.data).length;
+      this.lightweightCache.delete(oldestKey);
+      console.log('[Hybrid] Evicted from cache:', oldestKey);
+    }
+    
+    // Add new entry
+    this.lightweightCache.set(key, {
+      data,
+      timestamp: Date.now()
+    });
+    this.cacheSize += size;
+    
+    console.log('[Hybrid] Cached:', key, 'Total size:', this.cacheSize / 1024, 'KB');
+  }
+}
+```
+
+### Summary: Fetch-on-Request by Page Level
+
+| Page Level | Full Cache | Fetch-on-Request | Recommendation |
+|-----------|-----------|-----------------|----------------|
+| **Student (Level 4)** | <100ms instant | 2-4s per load | ✅ **Supported** - Acceptable UX |
+| **Class (Level 3)** | <100ms instant | 60-120s per load | ⚠️ **Supported with warning** - Show progress bar |
+| **School (Level 2)** | <100ms instant | 8-10 min per load | ❌ **Not supported** - Require full cache |
+| **Group (Level 1)** | <100ms instant | 15-20 min per load | ❌ **Not supported** - Require full cache |
+| **District (Level 1)** | <100ms instant | 20-30 min per load | ❌ **Not supported** - Require full cache |
+
+### Recommendations by Device Type
+
+**Desktop / High-Performance Laptops:**
+- Default: **Full Cache Mode**
+- Why: 93 MB is negligible, instant navigation is critical for frequent use
+- Allow: User can switch to fetch-on-request if needed
+
+**Low-Power Laptops / Older Devices:**
+- Default: **Full Cache Mode** (with warning about initial load time)
+- Alternative: Fetch-on-request for student/class-only workflow
+- Why: Balance between performance and storage
+
+**Mobile Devices / Tablets:**
+- Default: **Fetch-on-Request Mode**
+- Why: Limited storage, battery concerns, typically used for single-student lookup
+- Limitation: Disable school/group/district views
+- Workflow: Use student search → direct to student page
+
+**Production Recommendation:**
+- Implement both modes
+- Auto-detect device and suggest appropriate mode
+- Allow manual override
+- Show clear warnings when fetch-on-request limits are reached
+- Provide "Switch to Full Cache" button on blocking screens
 
 ### Optimization Strategies
 
