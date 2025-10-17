@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Qualtrics Survey Data Extractor</title>
+    <link rel="stylesheet" href="css/style.css">
+    <!-- Properly reference eel.js -->
+    <script type="text/javascript" src="/eel.js"></script>
+    <script type="text/javascript" src="js/main.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header class="sticky-header">
+            <h1>Qualtrics Survey Data Extractor</h1>
+        </header>
+        
+        <!-- Eel Status Section -->
+        <div id="eel-status" class="status-container hidden">
+            <div class="error-message">
+                <h2>Eel Library Not Detected</h2>
+                <p>The application requires the Eel Python library to function properly.</p>
+                <button id="install-button" onclick="installEel()" class="action-button">Install Eel</button>
+                <p id="install-status"></p>
+                <div id="install-spinner" class="spinner hidden"></div>
+                <p>If installation doesn't work, please manually run: <code>pip install eel</code> in your command prompt or terminal.</p>
+            </div>
+        </div>
+        
+        <nav class="tab-nav sticky-tabs">
+            <button id="tab-export" class="tab-btn active">Export CSV</button>
+            <button id="tab-online-view" class="tab-btn">Online View</button>
+        </nav>
+        
+        <!-- Main Content Section -->
+        <main id="main-content">
+            <!-- Export CSV Section (existing, default visible) -->
+            <section id="export-section">
+                <!-- Replace dropdown with Search + Table Area -->
+                <div class="form-group" id="survey-selection-container">
+                    <label for="survey-search">Search Surveys:</label>
+                    <input type="text" id="survey-search" placeholder="Filter by name or ID...">
+                    
+                    <div id="survey-list-area">
+                        <p id="survey-loading-message">Loading surveys...</p>
+                        <div id="survey-table-container"> 
+                            <!-- Survey table will be built here by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Keep Load Fields button, but controlled by radio selection -->
+                    <button id="load-fields-button" onclick="loadSurveyFields()" class="action-button" disabled>Load Fields for Selected Survey</button> 
+                </div>
+
+                <!-- Field Selection Area (populated by JS) -->
+                <div id="field-selection-area" class="form-group hidden">
+                    <h3>Select Fields to Export:</h3>
+                    <div id="fields-loading" class="hidden">Loading fields... <div class="spinner-inline"></div></div>
+                    <div id="fields-content"></div>
+                </div>
+
+                <!-- Export Options -->
+                <div class="export-options form-group">
+                    <h3>Export Options:</h3>
+                    
+                    <div class="option-group">
+                        <label for="format">Format:</label>
+                        <select id="format">
+                            <option value="csv" selected>CSV</option>
+                            <option value="tsv">TSV</option>
+                            <option value="json">JSON</option>
+                            <option value="ndjson">NDJSON</option>
+                            <option value="spss">SPSS</option>
+                            <option value="xml">XML</option>
+                        </select>
+                    </div>
+
+                    <div class="option-group">
+                        <input type="checkbox" id="use-labels">
+                        <label for="use-labels">Use Labels (export text instead of numeric values)</label>
+                    </div>
+
+                    <div class="option-group">
+                        <input type="checkbox" id="compress" checked>
+                        <label for="compress">Compress Output (ZIP file)</label>
+                    </div>
+                </div>
+                
+                <div class="button-group">
+                    <button id="extract-button" onclick="extractSurveyData()">Extract Data</button>
+                </div>
+                
+                <div id="status" class="status-container hidden">
+                    <div class="spinner hidden"></div>
+                    <p id="status-message"></p>
+                </div>
+            </section>
+            <!-- Online View Section (new, hidden by default) -->
+            <section id="online-view-section" style="display:none;">
+                <div class="online-view-container">
+                    <aside class="online-survey-sidebar">
+                        <h3>Surveys</h3>
+                        <input type="text" id="online-survey-search" placeholder="Search surveys...">
+                        <ul id="online-survey-list">
+                            <!-- Survey list populated by JS -->
+                        </ul>
+                    </aside>
+                    <div class="online-view-main">
+                        <h2 id="online-survey-title">Select a survey to view responses</h2>
+                        <div id="online-survey-table-container" class="scrollable-table-area">
+                            <!-- Survey responses table populated by JS -->
+                        </div>
+                        <!-- Modal for respondent detail view -->
+                        <div id="response-detail-modal" class="modal" style="display:none;">
+                            <div class="modal-content">
+                                <span class="close-modal" id="close-detail-modal">&times;</span>
+                                <div id="response-detail-content">
+                                    <!-- Detailed response content -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+        
+        <footer>
+            <p> 2025 Qualtrics Survey Data Extractor by Herman</p>
+        </footer>
+    </div>
+</body>
+</html>

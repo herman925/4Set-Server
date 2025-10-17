@@ -189,7 +189,7 @@
 
     select.innerHTML = `
       <option value="">Choose district...</option>
-      ${availableDistricts.map(d => `<option value="${d}" ${d === currentValue ? 'selected' : ''}>${d}</option>`).join('')}
+      ${availableDistricts.map(d => `<option value="${d}" ${String(d) === String(currentValue) ? 'selected' : ''}>${d}</option>`).join('')}
     `;
 
     select.addEventListener('change', () => handleValueChange(filterId, FILTER_TYPES.DISTRICT, select.value));
@@ -226,7 +226,7 @@
 
     select.innerHTML = `
       <option value="">Choose group...</option>
-      ${availableGroups.map(g => `<option value="${g}" ${g === currentValue ? 'selected' : ''}>${g}</option>`).join('')}
+      ${availableGroups.map(g => `<option value="${g}" ${String(g) === String(currentValue) ? 'selected' : ''}>${g}</option>`).join('')}
     `;
 
     select.addEventListener('change', () => handleValueChange(filterId, FILTER_TYPES.GROUP, select.value));
@@ -852,10 +852,13 @@
    */
   function removeFilterRow(filterId) {
     delete activeFilters[filterId];
-    const filterRow = document.querySelector(`[data-filter-id="${filterId}"]`);
+    
+    // Find the actual filter row (not the chip button)
+    const filterRow = document.querySelector(`.filter-row[data-filter-id="${filterId}"]`);
     if (filterRow) {
-      filterRow.closest('.filter-row').remove();
+      filterRow.remove();
     }
+    
     updateChips();
     updateStartButton();
     updateFilterAvailability();

@@ -110,9 +110,14 @@
       return;
     }
 
-    // Config not loaded yet - skip update
+    // Config not loaded yet - set loading state and return
     if (!config) {
-      console.warn('[CacheUI] Config not loaded yet, skipping pill update');
+      console.warn('[CacheUI] Config not loaded yet, setting default loading state');
+      badge.classList.remove('badge-success', 'badge-error');
+      badge.classList.add('badge-warning');
+      statusText.textContent = 'Loading...';
+      badge.title = 'Loading configuration';
+      badge.style.cursor = 'default';
       return;
     }
     
@@ -129,7 +134,7 @@
       // Orange: Syncing with progress bar
       badge.classList.remove('badge-success', 'badge-error', 'badge-warning');
       badge.classList.add('badge-warning');
-      statusText.textContent = config.cache.statusLabels.syncing;
+      statusText.textContent = config.cache.statusLabels?.syncing || 'Syncing...';
       badge.title = `Syncing... ${Math.round(progress)}%`;
       badge.style.cursor = 'default';
       badge.style.position = 'relative';
@@ -167,8 +172,8 @@
         // Set loading state (orange) while checking cache
         badge.classList.remove('badge-success', 'badge-error', 'badge-warning');
         badge.classList.add('badge-warning');
-        statusText.textContent = config.cache.statusLabels.checking;
-        badge.title = config.cache.statusLabels.checking;
+        statusText.textContent = config.cache.statusLabels?.checking || 'Checking...';
+        badge.title = config.cache.statusLabels?.checking || 'Checking cache status';
         badge.style.cursor = 'default';
         
         const checkStartTime = Date.now();
@@ -193,7 +198,7 @@
         console.log(`[SYNC-TIMING] ⏱️ updateStatusPill: Setting pill to GREEN at ${new Date(pillGreenTime).toISOString()}`);
         console.log('[CacheUI] Setting pill to GREEN (System Ready)');
         badge.classList.add('badge-success');
-        statusText.textContent = config.cache.statusLabels.ready;
+        statusText.textContent = config.cache.statusLabels?.ready || 'System Ready';
         badge.title = 'Cache is ready (click for options)';
         badge.style.cursor = 'pointer';
       } else {
@@ -202,7 +207,7 @@
         console.log(`[SYNC-TIMING] ⏱️ updateStatusPill: Setting pill to RED at ${new Date(pillRedTime).toISOString()}`);
         console.log('[CacheUI] Setting pill to RED (System Not Ready)');
         badge.classList.add('badge-error');
-        statusText.textContent = config.cache.statusLabels.notReady;
+        statusText.textContent = config.cache.statusLabels?.notReady || 'System Not Ready';
         badge.title = 'Click to build cache';
         badge.style.cursor = 'pointer';
       }
