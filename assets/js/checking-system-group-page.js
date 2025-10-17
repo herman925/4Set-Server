@@ -346,8 +346,13 @@
         <div class="school-item border border-slate-200 rounded-lg p-3 bg-white hover:shadow-md transition-shadow" data-school-id="${school.schoolId}">
           <div class="flex items-center justify-between">
             <div class="flex-1">
-              <h4 class="text-sm font-semibold text-slate-900 font-noto">${school.schoolNameChinese || school.schoolName}</h4>
-              <p class="text-xs text-slate-600">${school.schoolName} · ${school.district}</p>
+              <a href="checking_system_2_school.html?schoolId=${encodeURIComponent(school.schoolId)}" 
+                 class="text-sm font-semibold text-[color:var(--foreground)] hover:text-[color:var(--primary)] font-noto transition-colors">
+                ${school.schoolNameChinese || school.schoolName}
+              </a>
+              <p class="text-xs text-slate-600 mt-0.5">
+                <span class="font-mono">${school.schoolId}</span> · ${school.schoolName} · ${school.district}
+              </p>
             </div>
             <div class="flex items-center gap-4">
               <div class="text-xs font-mono space-x-2">
