@@ -1820,6 +1820,642 @@ function checkCacheRequirement() {
 }
 ```
 
+---
+
+## Complete User Workflow: Cache Toggle Integration
+
+### Overview
+
+This section documents the **complete user journey** with the integrated cache toggle, covering initial setup, cache building, mode switching, and navigation patterns. Understanding these workflows is critical for implementation.
+
+---
+
+### Workflow 1: First-Time User (Desktop)
+
+**Scenario**: User visits checking system for the first time on a desktop computer
+
+**Step-by-Step Flow:**
+
+```
+1. User navigates to checking_system_home.html
+   ↓
+2. Page loads, auto-detects device
+   - Detects: Desktop (high CPU, >4GB RAM)
+   - Default: Toggle ON (Full Cache Mode)
+   - Status Pills: 🔴 Not Decrypted, 🔴 System Not Ready
+   ↓
+3. System prompts for password
+   - Modal: "Enter system password to decrypt data"
+   - User enters password
+   - System decrypts: credentials.enc, coreid.enc, schoolid.enc, classid.enc
+   - Decryption Status: 🔴 → 🟢 "Data Decrypted"
+   ↓
+4. Cache Status Check
+   - System checks IndexedDB for existing cache
+   - Result: No cache found
+   - JotForm Status: 🔴 "System Not Ready"
+   - UI shows: "Cache not built. Click status pill to sync."
+   ↓
+5. User clicks "System Not Ready" pill
+   - Sync modal appears: "System Not Ready"
+   - Message: "The system needs to sync with Jotform to enable fast searching."
+   - Shows: "This takes about 30-60 seconds"
+   - Button: [Sync with Jotform]
+   ↓
+6. User clicks "Sync with Jotform"
+   - Modal updates to show progress
+   - Progress bar: "Fetching page 1 of submissions... 5%"
+   - Progress bar: "Fetching page 2 of submissions... 25%"
+   - Progress bar: "Downloaded 544 submissions... 85%"
+   - Progress bar: "Saving to IndexedDB cache... 95%"
+   - Toast: "✅ Cache built successfully (544 submissions)"
+   - JotForm Status: 🔴 → 🟢 "System Ready"
+   - Last Synced: Updates to current time
+   ↓
+7. Cache Building Complete (Full Cache Mode)
+   - IndexedDB stores:
+     * jotform_global_cache: 30 MB (544 JotForm submissions)
+     * qualtrics_cache: 5 MB (200 Qualtrics responses - if Qualtrics enabled)
+     * Merged cache: 32 MB
+     * student_validation: 24 MB (3000 pre-computed validations)
+   - Total storage: ~93 MB
+   - Cache Status: "System Ready"
+   - User can now navigate instantly
+   ↓
+8. User configures filters and clicks "Start Checking"
+   - Applies filters (e.g., District → Group → School → Student)
+   - Router determines drilldown level
+   - Navigates to appropriate page (e.g., student detail)
+   ↓
+9. Student Page Loads (Full Cache Mode)
+   - Reads from student_validation cache (IndexedDB)
+   - Load time: <100ms (instant)
+   - Displays: All task data, TGMD from Qualtrics, validation results
+   - No API calls needed
+   ↓
+10. User navigates to other pages
+    - Class page: <100ms (reads from class_summary cache)
+    - School page: <100ms (reads from school_summary cache)
+    - All instant - no loading indicators needed
+```
+
+**Time Breakdown:**
+- Password entry: ~5 seconds
+- Initial cache build: ~90 seconds (one-time)
+- Subsequent page loads: <100ms each
+
+---
+
+### Workflow 2: First-Time User (Mobile)
+
+**Scenario**: User visits checking system for the first time on mobile device
+
+**Step-by-Step Flow:**
+
+```
+1. User navigates to checking_system_home.html (mobile)
+   ↓
+2. Page loads, auto-detects device
+   - Detects: Mobile (iOS/Android user agent)
+   - Default: Toggle OFF (Fetch-on-Request Mode)
+   - Shows recommendation banner:
+     "📱 Mobile device detected. Fetch-on-Request mode recommended to save storage (~90 MB)"
+   - Cache Toggle Display:
+     * 📡 Fetch-on-Request Mode [Mobile-Friendly badge]
+     * "Loads data as needed with minimal storage (~1-5 MB)"
+     * ⏱ <5s start  💾 ~1-5 MB  ⚡ 2-4s/page
+   ↓
+3. System prompts for password
+   - User enters password
+   - System decrypts metadata files
+   - Decryption Status: 🟢 "Data Decrypted"
+   ↓
+4. Cache Status Check (Fetch-on-Request Mode)
+   - System skips full cache build
+   - Only loads minimal metadata (~1 MB)
+   - JotForm Status: 🟡 "Fetch-on-Request Mode"
+   - Message: "Data will load as you navigate"
+   - Last Synced: "Not applicable (on-demand mode)"
+   ↓
+5. User configures filters
+   - Adds filter: Student search "張梓煋"
+   - Clicks "Start Checking"
+   - Router: Detects student filter → student detail page
+   ↓
+6. Student Page Loads (Fetch-on-Request Mode)
+   - Shows loading indicator: "Loading student data..."
+   - API call: Fetch submissions for this student only
+     * Filter: { "q3:matches": "10261" } (sessionkey filter)
+     * Returns: 2-4 submissions (~100 KB)
+   - Merge submissions
+   - Run TaskValidator on merged data
+   - Display results
+   - Load time: 2-4 seconds
+   ↓
+7. Optional: Cache this student only
+   - Store in lightweight in-memory cache (10 MB limit)
+   - Next visit to same student: <100ms (from memory)
+   - Cache expires after 30 minutes or browser close
+   ↓
+8. User tries to navigate to School page
+   - System detects: School level + Fetch-on-Request mode
+   - ❌ BLOCKS navigation
+   - Shows modal:
+     * Title: "Full Cache Required"
+     * Message: "School views require Full Cache mode (200+ students = 8-10 min load)"
+     * Actions:
+       - [Enable Full Cache] → Switches toggle, redirects to home
+       - [Search Student/Class] → Opens search modal for supported views
+   ↓
+9. User can only access Student/Class pages
+   - Student pages: 2-4s load each
+   - Class pages: 60-120s load (30 students × 2-4s)
+   - School/District: Blocked with modal
+```
+
+**Storage Comparison:**
+- Full Cache: 93 MB permanent storage
+- Fetch-on-Request: 1-5 MB (metadata + current page only)
+
+---
+
+### Workflow 3: Switching from Fetch-on-Request to Full Cache
+
+**Scenario**: Mobile user needs to access School-level reports, must enable Full Cache
+
+**Step-by-Step Flow:**
+
+```
+1. User is in Fetch-on-Request mode (mobile)
+   - Currently viewing student detail page
+   - Toggle: OFF (Fetch-on-Request)
+   ↓
+2. User tries to access School page via breadcrumb
+   - Clicks breadcrumb: "Home → District → School"
+   - School page starts loading
+   - checkCacheRequirement() runs
+   - Detects: strategy === 'on-demand' AND page === 'school'
+   - BLOCKS navigation
+   ↓
+3. Blocking Modal Appears
+   - Title: "🔒 Full Cache Required"
+   - Message: "School, Group, and District views require Full Cache mode due to data volume."
+   - Details: "This view would take 8-10 minutes to load in Fetch-on-Request mode (200+ students)"
+   - Actions:
+     * [Enable Full Cache] (primary button)
+     * [Search Student/Class] (secondary button)
+     * [Cancel] (close modal)
+   ↓
+4. User clicks "Enable Full Cache"
+   - JavaScript executes:
+     ```javascript
+     localStorage.setItem('cacheStrategy', 'full');
+     window.location.href = 'checking_system_home.html?autoSync=true';
+     ```
+   - Browser redirects to home page with autoSync flag
+   ↓
+5. Home Page Loads with autoSync=true
+   - Page detects URL parameter: ?autoSync=true
+   - Automatically triggers cache sync
+   - Toggle: Now ON (Full Cache Mode)
+   - Shows sync modal immediately (no manual click needed)
+   ↓
+6. Cache Building Process
+   - Progress modal: "Syncing with Jotform and Qualtrics..."
+   - Step 1: Fetch JotForm (30 seconds)
+   - Step 2: Fetch Qualtrics (20 seconds)
+   - Step 3: Merge datasets (10 seconds)
+   - Step 4: Build validation cache (30 seconds)
+   - Total: ~90 seconds
+   - Progress bar shows: "Building cache... 45%"
+   ↓
+7. Cache Build Complete
+   - Toast: "✅ Full Cache enabled. System is now ready."
+   - JotForm Status: 🟢 "System Ready"
+   - Storage used: 93 MB (user may see browser prompt on mobile)
+   - Toggle: ON (Full Cache Mode)
+   ↓
+8. User can now access all pages
+   - Re-configures filters (or uses Recent Checks)
+   - Navigates to School page
+   - Load time: <100ms (from cache)
+   - All drilldown levels now accessible
+```
+
+**Key Points:**
+- Mode switch is permanent (persists in localStorage)
+- Cache build happens automatically with autoSync flag
+- User doesn't need to manually trigger sync
+- Mobile browsers may prompt for storage permission (93 MB)
+
+---
+
+### Workflow 4: Switching from Full Cache to Fetch-on-Request
+
+**Scenario**: Desktop user wants to save storage or battery (laptop on battery)
+
+**Step-by-Step Flow:**
+
+```
+1. User is in Full Cache mode
+   - Toggle: ON (Full Cache Mode)
+   - Cache Status: 🟢 "System Ready"
+   - Storage: 93 MB in IndexedDB
+   ↓
+2. User clicks Cache Toggle (OFF position)
+   - Toggle switches: ON → OFF
+   - UI updates immediately:
+     * Icon changes: ⚡ → 📡
+     * Label: "Full Cache Mode" → "Fetch-on-Request Mode"
+     * Badge: "Recommended" → "Mobile-Friendly"
+     * Stats: "90s initial, ~93 MB, <100ms" → "<5s start, ~1-5 MB, 2-4s/page"
+     * Background color: Blue → Amber
+   ↓
+3. JavaScript saves preference
+   - localStorage.setItem('cacheStrategy', 'on-demand')
+   - Toast notification: "ℹ️ Fetch-on-Request enabled. Data will load as you navigate. School/District views disabled."
+   ↓
+4. Cache remains in IndexedDB
+   - ⚠️ Important: Existing cache is NOT deleted
+   - Reason: User might switch back, avoid re-downloading
+   - Cache just isn't used for navigation
+   - Takes up 93 MB until manually cleared or expires (1 hour TTL)
+   ↓
+5. User continues working
+   - Current page (if already loaded): Still displays cached data
+   - New navigation: Uses fetch-on-request
+   - Student pages: 2-4s load each
+   - Class pages: 60-120s load (with progress bar)
+   ↓
+6. User tries to access School page
+   - BLOCKED with modal (same as Workflow 3)
+   - Must switch back to Full Cache or use Student/Class search
+   ↓
+7. Optional: User switches back to Full Cache
+   - Toggle: OFF → ON
+   - System checks cache validity
+   - If cache still valid (<1 hour old): Instant reactivation, no rebuild
+   - If cache expired: Triggers rebuild (~90s)
+   - Toast: "✅ Full Cache re-enabled. Using existing cache."
+```
+
+**Cache Cleanup Options:**
+
+Users can manually clear cache in several ways:
+
+1. **Via Cache Manager UI** (recommended):
+   - Click green "System Ready" pill
+   - Modal shows: "JotForm Data is Ready"
+   - Button: [Delete Cache] (red button)
+   - Confirmation: "This will clear 93 MB of storage"
+   - Cache cleared, requires rebuild
+
+2. **Browser Developer Tools**:
+   - Open DevTools → Application → IndexedDB
+   - Delete JotFormCacheDB database
+   - Reload page
+
+3. **Automatic Expiration**:
+   - Cache TTL: 1 hour
+   - After expiration, cache marked invalid
+   - Next access triggers rebuild
+
+---
+
+### Workflow 5: Returning User (Cache Already Built)
+
+**Scenario**: User returns to checking system after cache was built previously
+
+**Step-by-Step Flow:**
+
+```
+1. User navigates to checking_system_home.html
+   ↓
+2. Page loads and checks cache
+   - Reads: localStorage.cacheStrategy (e.g., 'full')
+   - Toggle: Sets to saved state (ON for full cache)
+   - Checks IndexedDB: jotform_global_cache exists
+   - Validates cache:
+     * Has valid structure? ✅
+     * Age < 1 hour? ✅ (age: 15 minutes)
+     * Size reasonable? ✅ (93 MB)
+   ↓
+3. Cache Status determined
+   - Cache valid: 🟢 "System Ready"
+   - Last Synced: "15 min ago"
+   - No password prompt if already decrypted in session
+   - Or: Password prompt → Decrypt → Continue
+   ↓
+4. User can navigate immediately
+   - No cache rebuild needed
+   - Configure filters
+   - Click "Start Checking"
+   - All pages load instantly (<100ms)
+   ↓
+5. Cache expires after 1 hour
+   - Cache marked invalid
+   - Status: 🟢 "System Ready" → 🔴 "Cache Expired"
+   - Message: "Cache is outdated. Click to refresh."
+   - User clicks status pill → Rebuild cache (~90s)
+```
+
+**Cache Validity Check:**
+```javascript
+function isCacheValid(cached) {
+  // Structure validation
+  if (!cached.submissions || !Array.isArray(cached.submissions)) {
+    return false;
+  }
+  if (!cached.timestamp || typeof cached.timestamp !== 'number') {
+    return false;
+  }
+  if (cached.count !== cached.submissions.length) {
+    return false;
+  }
+  
+  // Time validity (1 hour TTL)
+  const age = Date.now() - cached.timestamp;
+  const ttl = 60 * 60 * 1000; // 1 hour
+  if (age > ttl) {
+    return false;
+  }
+  
+  return true;
+}
+```
+
+---
+
+### Workflow 6: Qualtrics Integration - Initial Sync
+
+**Scenario**: System has JotForm cache but needs to add Qualtrics TGMD data
+
+**Step-by-Step Flow:**
+
+```
+1. User in Full Cache mode with existing JotForm cache
+   - JotForm Status: 🟢 "System Ready" (544 submissions)
+   - Qualtrics Status: Not synced yet
+   ↓
+2. User clicks new "Refresh with Qualtrics" button
+   - Button location: Next to "System Ready" pill
+   - Label: "Refresh with Qualtrics Data"
+   - Icon: Database with plus sign
+   ↓
+3. Qualtrics Sync Modal Appears
+   - Title: "Sync with Qualtrics"
+   - Message: "Fetch TGMD assessment data from Qualtrics and merge with JotForm data?"
+   - Details: "This will take 30-60 seconds and add ~5 MB to cache"
+   - Buttons: [Cancel] [Sync Qualtrics Data]
+   ↓
+4. User clicks "Sync Qualtrics Data"
+   - Progress modal updates:
+   ↓
+5. Phase 1: Qualtrics Export (30 seconds)
+   - "Starting Qualtrics export... 5%"
+   - "Export request accepted, progress ID: abc123"
+   - "Polling export progress... 15%"
+   - "Export 25% complete..."
+   - "Export 50% complete..."
+   - "Export 100% complete, downloading... 25%"
+   ↓
+6. Phase 2: Data Transformation (5 seconds)
+   - "Transforming 200 Qualtrics responses... 30%"
+   - "Converting QIDs to field names..."
+   - "Processing matrix questions..."
+   - "Transformation complete... 35%"
+   ↓
+7. Phase 3: Data Merging (10 seconds)
+   - "Merging JotForm and Qualtrics data... 40%"
+   - "Aligning by sessionkey..."
+   - "Detecting conflicts..."
+   - "Merge statistics:"
+     * "544 total records"
+     * "198 with TGMD data"
+     * "156 from Qualtrics"
+     * "42 from JotForm only"
+     * "3 conflicts detected"
+   - "Merge complete... 60%"
+   ↓
+8. Phase 4: Cache Update (20 seconds)
+   - "Updating JotForm cache with merged data... 65%"
+   - "Saving Qualtrics responses to cache... 75%"
+   - "Rebuilding validation cache... 85%"
+   - "Re-validating 3000 students with TGMD data... 95%"
+   - "Cache update complete... 100%"
+   ↓
+9. Sync Complete
+   - Modal shows results:
+     * Title: "✅ Qualtrics Sync Complete"
+     * "Merged 200 Qualtrics responses with 544 JotForm submissions"
+     * "198 students now have TGMD data"
+     * "3 conflicts detected (Qualtrics data prioritized)"
+     * "Cache updated: +5 MB (now 98 MB total)"
+   - Button: [View Conflicts] [Close]
+   - Toast: "✅ Qualtrics data synced successfully"
+   ↓
+10. User navigates to student with TGMD data
+    - Student page shows:
+      * TGMD task section now populated
+      * Badge: "Source: Qualtrics" on TGMD task
+      * If conflicts: Warning icon "Data conflict detected - using Qualtrics values"
+    - Load time: Still <100ms (from updated cache)
+   ↓
+11. Cache now includes merged data
+    - IndexedDB stores:
+      * jotform_global_cache: 32 MB (merged: JotForm + Qualtrics)
+      * qualtrics_cache: 5 MB (raw Qualtrics responses)
+      * student_validation: 26 MB (includes TGMD validation)
+    - Total: 98 MB
+    - Future loads: All TGMD data available instantly
+```
+
+**Merge Conflict Handling:**
+
+If user clicks "View Conflicts":
+```
+┌─────────────────────────────────────────────────────┐
+│ TGMD Data Conflicts (3)                             │
+├─────────────────────────────────────────────────────┤
+│ Student: 張梓煋 (10261)                             │
+│ Field: TGMD_111_Hop_t1                              │
+│ JotForm: "0" (Failed)                               │
+│ Qualtrics: "1" (Passed) ✅ Using this               │
+│                                                      │
+│ Student: 潘姿螢 (10042)                             │
+│ Field: TGMD_Hand                                    │
+│ JotForm: "2" (Left)                                 │
+│ Qualtrics: "1" (Right) ✅ Using this                │
+│                                                      │
+│ Student: 黃子晴 (10087)                             │
+│ Field: TGMD_Leg                                     │
+│ JotForm: "1" (Right)                                │
+│ Qualtrics: "2" (Left) ✅ Using this                 │
+├─────────────────────────────────────────────────────┤
+│ [Export Conflict Report CSV] [Close]                │
+└─────────────────────────────────────────────────────┘
+```
+
+---
+
+### Workflow 7: Error Recovery - Cache Build Failure
+
+**Scenario**: Cache build fails mid-process (network error, API rate limit)
+
+**Step-by-Step Flow:**
+
+```
+1. User triggers cache build
+   - Toggle: ON (Full Cache Mode)
+   - Clicks "System Not Ready" pill → "Sync with Jotform"
+   ↓
+2. Build starts normally
+   - "Fetching page 1 of submissions... 5%"
+   - "Fetching page 2 of submissions... 25%"
+   ↓
+3. ERROR: Network timeout at 45%
+   - "Fetching page 5 of submissions... 45%"
+   - Network error: Request timeout after 30 seconds
+   ↓
+4. System Handles Error
+   - Progress modal updates:
+     * Title: "❌ Sync Failed"
+     * Message: "Network error during data fetch. Please try again."
+     * Details: "Fetched 200/544 submissions before error"
+   - Partial data is NOT saved (atomic operation)
+   - Cache remains in previous state (valid old cache or empty)
+   - Status: Reverts to previous (🟢 if old cache valid, 🔴 if no cache)
+   ↓
+5. User Options
+   - [Retry Now] (immediate retry)
+   - [Try Fetch-on-Request Instead] (switch modes)
+   - [Close] (dismiss, user can retry later)
+   ↓
+6. If User Clicks "Retry Now"
+   - System attempts build again
+   - Uses exponential backoff (5s, 10s, 20s delays between retries)
+   - Max 3 retries before suggesting Fetch-on-Request
+   ↓
+7. If User Clicks "Try Fetch-on-Request Instead"
+   - Toggle switches: ON → OFF
+   - localStorage.setItem('cacheStrategy', 'on-demand')
+   - Modal closes
+   - User can now navigate with fetch-on-request (2-4s per page)
+   ↓
+8. Alternative: Rate Limit Error
+   - Error: "429 Too Many Requests"
+   - Message: "JotForm API rate limit exceeded. Please wait 60 seconds."
+   - Shows countdown timer: "Retry available in 58s..."
+   - Auto-retry when timer reaches 0
+```
+
+**Error Logging:**
+```javascript
+// Log errors for debugging
+console.error('[CacheBuild] Failed at 45%', {
+  error: 'Network timeout',
+  fetchedSubmissions: 200,
+  totalSubmissions: 544,
+  lastSuccessfulPage: 4,
+  retryAttempt: 1,
+  timestamp: Date.now()
+});
+```
+
+---
+
+### Key Integration Points
+
+**1. Home Page Initialization:**
+```javascript
+// On page load
+async function initCheckingSystem() {
+  // Step 1: Load saved strategy
+  const strategy = localStorage.getItem('cacheStrategy');
+  const toggle = document.getElementById('cache-strategy-toggle');
+  toggle.checked = strategy === 'full';
+  
+  // Step 2: Auto-detect device if no preference
+  if (!strategy) {
+    const isMobile = detectMobileDevice();
+    toggle.checked = !isMobile; // Desktop: ON, Mobile: OFF
+    localStorage.setItem('cacheStrategy', isMobile ? 'on-demand' : 'full');
+  }
+  
+  // Step 3: Check cache validity (only if Full Cache mode)
+  if (toggle.checked) {
+    const cacheValid = await checkCacheValidity();
+    if (!cacheValid) {
+      showCacheInvalidWarning();
+    }
+  }
+  
+  // Step 4: Handle autoSync parameter
+  const urlParams = new URLSearchParams(window.location.search);
+  if (urlParams.has('autoSync')) {
+    await triggerCacheSync();
+  }
+}
+```
+
+**2. Drilldown Page Entry:**
+```javascript
+// On every drilldown page load
+async function loadDrilldownPage(level, identifier) {
+  // Step 1: Check cache requirement
+  if (!checkCacheRequirement(level)) {
+    return; // Blocked with modal
+  }
+  
+  // Step 2: Load data based on strategy
+  const strategy = localStorage.getItem('cacheStrategy');
+  let data;
+  
+  if (strategy === 'full') {
+    data = await loadFromCache(level, identifier);
+  } else {
+    showLoadingIndicator();
+    data = await fetchOnDemand(level, identifier);
+    hideLoadingIndicator();
+  }
+  
+  // Step 3: Render page
+  renderPage(data);
+}
+```
+
+**3. Cache Refresh Button:**
+```javascript
+// Refresh button behavior
+document.getElementById('refresh-cache-btn').addEventListener('click', async () => {
+  const strategy = localStorage.getItem('cacheStrategy');
+  
+  if (strategy === 'full') {
+    // Full cache: Rebuild entire cache
+    await buildFullCache();
+  } else {
+    // Fetch-on-request: Clear lightweight cache only
+    clearLightweightCache();
+    showToast('Cache cleared. Data will refresh on next page load.');
+  }
+});
+```
+
+---
+
+### Summary: Cache Toggle Impact on User Workflow
+
+| Workflow Stage | Full Cache Mode (Toggle ON) | Fetch-on-Request Mode (Toggle OFF) |
+|---------------|----------------------------|-----------------------------------|
+| **Initial Setup** | Password + 90s cache build | Password + instant ready |
+| **Storage Used** | 93-98 MB (persistent) | 1-5 MB (temporary) |
+| **Page Loads** | <100ms all pages | 2-4s student, 60-120s class, blocked school+ |
+| **Offline Support** | ✅ Full offline browsing | ❌ Requires active internet |
+| **Mode Switch** | Can switch to fetch-on-request (instant, cache remains) | Can switch to full cache (requires 90s rebuild) |
+| **Cache Refresh** | Manual or 1-hour auto-expire | No cache to refresh (always fresh) |
+| **Qualtrics Sync** | Integrated into cache build | Fetched per-student as needed |
+| **Error Recovery** | Retry full build or switch modes | Retry single API call |
+
 ### Fetch-on-Request Implementation
 
 #### Level 4: Student Detail Page
