@@ -353,7 +353,7 @@
       const { complete, incomplete, notstarted } = calculateSchoolStatus(schoolData);
 
       html += `
-        <div class="school-item px-4 py-3 hover:bg-[color:var(--muted)]/20 transition-colors" data-school-id="${school.schoolId}">
+        <div class="school-item px-6 py-3 hover:bg-[color:var(--muted)]/20 transition-colors" data-school-id="${school.schoolId}">
           <div class="flex items-center justify-between">
             <div class="flex-1">
               <a href="checking_system_2_school.html?schoolId=${encodeURIComponent(school.schoolId)}" 
@@ -364,26 +364,20 @@
                 <span class="font-mono">${school.schoolId}</span> · ${school.schoolName} · Group ${school.group}
               </p>
             </div>
-            <div class="flex items-center gap-4">
-              <div class="text-xs font-mono space-x-2">
-                <span class="inline-flex items-center gap-1">
-                  <span class="status-circle status-green"></span>
-                  <span>${complete}</span>
-                </span>
-                <span class="inline-flex items-center gap-1">
-                  <span class="status-circle status-red"></span>
-                  <span>${incomplete}</span>
-                </span>
-                <span class="inline-flex items-center gap-1">
-                  <span class="status-circle status-grey"></span>
-                  <span>${notstarted}</span>
-                </span>
-                <span class="text-[color:var(--muted-foreground)]">/ ${eligibleClasses}</span>
-              </div>
-              <a href="checking_system_2_school.html?schoolId=${encodeURIComponent(school.schoolId)}" 
-                 class="p-2 rounded-full hover:bg-[color:var(--muted)] text-[color:var(--muted-foreground)] hover:text-[color:var(--primary)] transition-colors">
-                <i data-lucide="chevron-right" class="w-4 h-4"></i>
-              </a>
+            <div class="text-xs font-mono space-x-2">
+              <span class="inline-flex items-center gap-1">
+                <span class="status-circle status-green"></span>
+                <span>${complete}</span>
+              </span>
+              <span class="inline-flex items-center gap-1">
+                <span class="status-circle status-red"></span>
+                <span>${incomplete}</span>
+              </span>
+              <span class="inline-flex items-center gap-1">
+                <span class="status-circle status-grey"></span>
+                <span>${notstarted}</span>
+              </span>
+              <span class="text-[color:var(--muted-foreground)]">/ ${eligibleClasses}</span>
             </div>
           </div>
         </div>

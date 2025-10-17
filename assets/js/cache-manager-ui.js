@@ -818,8 +818,8 @@
       return;
     }
     
-    // Update status pill initially
-    updateStatusPill();
+    // Don't update pill here - let checking-system-app trigger it after full initialization
+    // This prevents race condition where IndexedDB isn't fully ready yet
 
     // Click on status pill
     const badge = document.getElementById('system-health-badge');
