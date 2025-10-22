@@ -188,11 +188,14 @@ window.TaskValidator = (() => {
   function isExcludedField(id) {
     // Exclude date fields, memo fields, termination records, practice questions, and other non-question fields
     // NOTE: _TEXT fields are now INCLUDED for display purposes (handled separately in validation)
+    // EXCEPT: ToM_Q3_TEXT and ToM_Q4a_ins1_TEXT are instruction questions (not assessment) and should be excluded
     return id.endsWith('_Date') || 
            id.includes('_Memo_') ||
            id.includes('_Ter') || // Exclude all termination records (ERV_Ter1, CM_Ter2, etc.)
            id.endsWith('_timeout') || // Exclude timeout fields (SYM_timeout, NONSYM_timeout)
-           /_P\d+/.test(id); // Exclude practice questions (e.g., ERV_P1, ToM_P2, CM_P1, etc.)
+           /_P\d+/.test(id) || // Exclude practice questions (e.g., ERV_P1, ToM_P2, CM_P1, etc.)
+           id === 'ToM_Q3_TEXT' || // Instruction question: "What do you think is in the box?" (before revealing)
+           id === 'ToM_Q4a_ins1_TEXT'; // Instruction question: "What do you think is in the band-aid box?" (before revealing)
   }
 
   /**

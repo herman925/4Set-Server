@@ -211,7 +211,24 @@
       "showIf": { "ToM_Q2a": "草叢" },
       "scoring": { "correctAnswer": "車房" }
     },
-
+    {
+      "id": "ToM_Q3_TEXT",
+      "type": "text",
+      "label": {
+        "parts":
+        [
+          {
+            "zh": "「呢度有個 櫃桶。」\n\n「你覺得 櫃桶 入面裝咗啲咩呢？」\n\n（可以答任何佢鍾意嘅野或者唔知）",
+            "instruction": ["呢度有個 櫃桶。", "你覺得 櫃桶 入面裝咗啲咩呢？"],
+            "emphasize": "櫃桶",
+            "image": "images/ToM/ToM_Q3a.1.jpg"
+          },
+          {
+            "zh": "小朋友答案："
+          }
+        ]
+      }
+    },
     {
       "id": "ToM_Q3a_ins1",
       "type": "instruction",
@@ -317,7 +334,22 @@
       ],
       "scoring": { "correctAnswer": "沒有" }
     },
-
+    {
+      "id": "ToM_Q4a_ins1_TEXT",
+      "type": "text",
+      "label": {
+        "parts":
+        [
+          {
+            "zh": "「呢度有一個 膠布盒。」\n\n「你覺得 膠布盒 入面有啲咩？」",
+            "instruction": ["呢度有一個 膠布盒","你覺得 膠布盒 入面有啲咩？"],
+            "emphasize": "膠布盒",
+            "image": "images/ToM/ToM_Q4a.1.jpg"
+          }
+        ]
+      },
+      "placeholder": "請輸入小朋友答案"
+    },
     {
       "id": "ToM_Q4a_ins2",
       "type": "instruction",
