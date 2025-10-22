@@ -349,31 +349,39 @@ window.TaskValidator = (() => {
         // If other option OR text field is filled → WRONG
         // Priority: correct answer check comes first, text is treated as mistyped input and ignored
         if (question.type === 'radio_text' && question.options) {
+          // Check if associated text field (textId) has data
+          let hasTextData = false;
+          let textFieldId = null;
+          if (question.options) {
+            for (const option of question.options) {
+              if (option.textId) {
+                textFieldId = option.textId;
+                const textAnswer = mergedAnswers[option.textId]?.answer || 
+                                  mergedAnswers[option.textId]?.text || 
+                                  null;
+                if (textAnswer && textAnswer.trim() !== '') {
+                  hasTextData = true;
+                  break;
+                }
+              }
+            }
+          }
+          
           // Check if correct answer was selected
           if (studentAnswer !== null && String(studentAnswer).trim() === String(correctAnswer).trim()) {
             isCorrect = true;
             // Note: Even if associated _TEXT field has data, we ignore it as mistyped input
+          } else if (studentAnswer !== null) {
+            // Radio has an answer (but it's incorrect)
+            isCorrect = false;
+          } else if (hasTextData) {
+            // Radio is blank but text field is filled
+            // Per user: treat this as an incorrect answer attempt
+            // Mark the radio question as answered incorrectly
+            studentAnswer = '[TEXT_ONLY_ATTEMPT]'; // Special marker to indicate text-only attempt
+            isCorrect = false;
           } else {
-            // Check if any other option was selected OR if text field has data
-            const hasOtherOption = studentAnswer !== null && String(studentAnswer).trim() !== String(correctAnswer).trim();
-            
-            // Check if associated text field (textId) has data
-            let hasTextData = false;
-            if (question.options) {
-              for (const option of question.options) {
-                if (option.textId) {
-                  const textAnswer = mergedAnswers[option.textId]?.answer || 
-                                    mergedAnswers[option.textId]?.text || 
-                                    null;
-                  if (textAnswer && textAnswer.trim() !== '') {
-                    hasTextData = true;
-                    break;
-                  }
-                }
-              }
-            }
-            
-            // If either other option selected OR text filled → incorrect
+            // Radio blank and no text data
             isCorrect = false;
           }
         } else {
@@ -415,21 +423,25 @@ window.TaskValidator = (() => {
             // Correct answer was selected - this text field is N/A
             textFieldStatus = 'na';
           } else if (mappedRadioAnswer !== null) {
-            // Radio answer is incorrect or other option selected
+            // Radio answer exists (but is incorrect)
             if (studentAnswer !== null && studentAnswer.trim() !== '') {
               // Text field has content
               textFieldStatus = 'answered';
             } else {
-              // Text field is empty - show "Not answered" only when radio is incorrect
-              textFieldStatus = 'not-answered';
+              // Radio answered but text empty - show "—" (dash), not "not-answered"
+              // Per user: "not answered" for TEXT ONLY when radio is ALSO not answered
+              textFieldStatus = null;
             }
           } else {
-            // Radio has no answer - check if text was filled
+            // Radio has NO answer (blank/missing)
             if (studentAnswer !== null && studentAnswer.trim() !== '') {
-              // Student attempted to answer via text (treat as answered/incorrect)
-              textFieldStatus = 'answered';
+              // Student attempted to answer via text only (incorrect attempt)
+              // Per user: if radio blank and text filled, it means incorrect answer was assumed
+              // The _TEXT field should NOT be displayed to avoid revealing the incorrect attempt
+              textFieldStatus = null; // Hide _TEXT field
             } else {
-              // No answer at all (missing)
+              // Both radio and text are empty - show "not-answered"
+              // Per user: "not answered for TEXT only happens if radio is also not answered"
               textFieldStatus = 'not-answered';
             }
           }
