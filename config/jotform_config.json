@@ -30,7 +30,7 @@
     "updateTimeoutSec": 25,
     "createTimeoutSec": 15,
     "rateLimitMs": 200,
-    "maxPagesToScan": 5,
+    "maxPagesToScan": 10,
     "paginationLimit": 1000,
     "retryDelayBaseSec": 3,
     "retryDelayMaxSec": 10,
