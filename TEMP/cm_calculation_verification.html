@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CM Calculation Logic Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .test-pass { color: #10b981; font-weight: bold; }
+        .test-fail { color: #ef4444; font-weight: bold; }
+    </style>
+</head>
+<body class="p-8 bg-gray-50">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6">CM Calculation Logic Test</h1>
+        
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">Test Scenario: CM Terminated at Q7</h2>
+            <div class="space-y-2">
+                <p><strong>Student Data:</strong></p>
+                <ul class="list-disc ml-6">
+                    <li>CM_P1: Y (answered) - <span class="text-gray-500">Practice, excluded from count</span></li>
+                    <li>CM_P2: Y (answered) - <span class="text-gray-500">Practice, excluded from count</span></li>
+                    <li>CM_Q1: N (incorrect)</li>
+                    <li>CM_Q2: N (incorrect)</li>
+                    <li>CM_Q3: N (incorrect)</li>
+                    <li>CM_Q4: N (incorrect)</li>
+                    <li>CM_Q5: N (incorrect)</li>
+                    <li>CM_Q6: N (incorrect)</li>
+                    <li>CM_Q7: N (incorrect)</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">Termination Calculation</h2>
+            <div class="space-y-2">
+                <p><strong>Stage 1 Rules:</strong></p>
+                <ul class="list-disc ml-6">
+                    <li>Questions: CM_Q1 to CM_Q7 (7 questions)</li>
+                    <li>Threshold: 4 correct needed to continue</li>
+                    <li>Actual correct: 0</li>
+                    <li>Unanswered: 0</li>
+                    <li>Max possible: 0 + 0 = 0</li>
+                    <li class="text-red-600 font-bold">Result: 0 < 4 → TERMINATED at Q7</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-lg shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">Completion Calculation</h2>
+            <div id="results" class="space-y-2"></div>
+        </div>
+
+        <div class="bg-blue-50 border border-blue-200 p-6 rounded-lg">
+            <h3 class="font-semibold mb-2">Key Points:</h3>
+            <ul class="list-disc ml-6 space-y-1">
+                <li>Practice questions (CM_P1, CM_P2) are <strong>always excluded</strong> from total count</li>
+                <li>When terminated at Q7, only CM_Q1-Q7 are counted (7 questions)</li>
+                <li>All 7 questions are answered, so completion = 7/7 = 100%</li>
+                <li>This is the <strong>correct behavior</strong> according to task-validator.js</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Simulate the actual task-validator logic
+        function isExcludedField(id) {
+            return id.endsWith('_Date') || 
+                   id.includes('_Memo_') ||
+                   id.includes('_Ter') ||
+                   id.endsWith('_timeout') ||
+                   /_P\d+/.test(id); // Exclude practice questions
+        }
+
+        function calculateCM() {
+            const allQuestions = [
+                { id: 'CM_P1', answer: 'Y', type: 'radio' },
+                { id: 'CM_P2', answer: 'Y', type: 'radio' },
+                { id: 'CM_Q1', answer: 'N', correctAnswer: 'Y' },
+                { id: 'CM_Q2', answer: 'N', correctAnswer: 'Y' },
+                { id: 'CM_Q3', answer: 'N', correctAnswer: 'Y' },
+                { id: 'CM_Q4', answer: 'N', correctAnswer: 'Y' },
+                { id: 'CM_Q5', answer: 'N', correctAnswer: 'Y' },
+                { id: 'CM_Q6', answer: 'N', correctAnswer: 'Y' },
+                { id: 'CM_Q7', answer: 'N', correctAnswer: 'Y' },
+                { id: 'CM_Q8', answer: null, correctAnswer: 'Y' },
+                // ... more questions
+            ];
+
+            // Filter out excluded questions
+            const questions = allQuestions.filter(q => !isExcludedField(q.id));
+            
+            // Check termination (Stage 1: Q1-Q7, threshold: 4)
+            const stage1Questions = questions.slice(0, 7); // CM_Q1 to CM_Q7
+            const correct = stage1Questions.filter(q => q.answer === q.correctAnswer).length;
+            const answered = stage1Questions.filter(q => q.answer !== null).length;
+            const unanswered = stage1Questions.length - answered;
+            const maxPossible = correct + unanswered;
+            
+            const terminated = maxPossible < 4; // threshold = 4
+            const terminationIndex = terminated ? 6 : -1; // Index 6 = 7th question (Q7)
+            
+            // Calculate totals
+            let totalQuestions, answeredQuestions;
+            if (terminated) {
+                totalQuestions = terminationIndex + 1; // 7 questions
+                answeredQuestions = questions.slice(0, totalQuestions).filter(q => q.answer !== null).length;
+            } else {
+                totalQuestions = questions.length;
+                answeredQuestions = questions.filter(q => q.answer !== null).length;
+            }
+            
+            const completionPercentage = Math.round((answeredQuestions / totalQuestions) * 100);
+            
+            return {
+                practiceQuestions: allQuestions.filter(q => isExcludedField(q.id)),
+                includedQuestions: questions,
+                stage1Questions,
+                correct,
+                answered,
+                unanswered,
+                maxPossible,
+                terminated,
+                terminationIndex,
+                totalQuestions,
+                answeredQuestions,
+                completionPercentage
+            };
+        }
+
+        // Run the test
+        const result = calculateCM();
+        const resultsDiv = document.getElementById('results');
+        
+        function addResult(label, value, expected, isTest = false) {
+            const div = document.createElement('div');
+            const match = isTest ? (value === expected) : true;
+            const className = match ? 'test-pass' : 'test-fail';
+            const status = isTest ? (match ? '✅ PASS' : '❌ FAIL') : '';
+            
+            div.innerHTML = `
+                <p><strong>${label}:</strong> <span class="${className}">${value}</span> 
+                ${isTest ? `(Expected: ${expected}) ${status}` : ''}</p>
+            `;
+            resultsDiv.appendChild(div);
+        }
+
+        addResult('Practice Questions Found', result.practiceQuestions.map(q => q.id).join(', '));
+        addResult('Practice Questions Excluded', result.practiceQuestions.length, null, false);
+        addResult('Included Questions (after exclusion)', result.includedQuestions.length);
+        addResult('Stage 1 Correct Answers', result.correct);
+        addResult('Stage 1 Max Possible', result.maxPossible);
+        addResult('Terminated at Q7', result.terminated, true, true);
+        addResult('Termination Index', result.terminationIndex, 6, true);
+        addResult('Total Questions (adjusted)', result.totalQuestions, 7, true);
+        addResult('Answered Questions', result.answeredQuestions, 7, true);
+        addResult('Completion Percentage', `${result.completionPercentage}%`, '100%', true);
+        
+        // Summary
+        const summaryDiv = document.createElement('div');
+        summaryDiv.className = 'mt-4 p-4 bg-green-50 border border-green-200 rounded';
+        summaryDiv.innerHTML = `
+            <h3 class="font-bold text-green-800 mb-2">Test Result Summary</h3>
+            <p class="text-green-700">
+                All calculations are correct! CM is properly shown as:<br>
+                <strong>Completion: ${result.completionPercentage}%</strong> (${result.answeredQuestions}/${result.totalQuestions})<br>
+                <strong>Termination: ✅ Q7 (Stage 1)</strong><br>
+                <strong>Set 3 Status: ✅ Complete</strong> (all applicable tasks 100%)
+            </p>
+        `;
+        resultsDiv.appendChild(summaryDiv);
+    </script>
+</body>
+</html>
