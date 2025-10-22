@@ -20,6 +20,16 @@
   const CACHE_KEY = 'jotform_global_cache';
   const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hour
   
+  // Proxy configuration for CORS handling
+  const PROXY_CONFIG = {
+    enabled: true,  // Set to false to use direct API calls
+    baseUrl: 'http://127.0.0.1:3000',  // Default proxy server URL
+    endpoints: {
+      submissions: '/api/jotform/form/{formId}/submissions',
+      questions: '/api/jotform/form/{formId}/questions'
+    }
+  };
+  
   // Initialize localForage (uses IndexedDB, falls back to WebSQL/localStorage)
   if (typeof localforage === 'undefined') {
     console.error('[JotFormCache] localForage not loaded! Include <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>');
@@ -127,12 +137,28 @@
 
       try {
         while (hasMore) {
-          const url = `https://api.jotform.com/form/${credentials.formId}/submissions?` +
-                      `apiKey=${credentials.apiKey}` +
-                      `&limit=${limit}` +
-                      `&offset=${offset}` +
-                      `&orderby=created_at` +
-                      `&direction=ASC`;
+          // Build URL using proxy if enabled, otherwise direct API call
+          let url;
+          if (PROXY_CONFIG.enabled) {
+            // Use proxy server
+            const endpoint = PROXY_CONFIG.endpoints.submissions.replace('{formId}', credentials.formId);
+            url = `${PROXY_CONFIG.baseUrl}${endpoint}?` +
+                  `apiKey=${credentials.apiKey}` +
+                  `&limit=${limit}` +
+                  `&offset=${offset}` +
+                  `&orderby=created_at` +
+                  `&direction=ASC`;
+            console.log(`[JotFormCache] Using proxy: ${PROXY_CONFIG.baseUrl}`);
+          } else {
+            // Direct API call (may fail due to CORS)
+            url = `https://api.jotform.com/form/${credentials.formId}/submissions?` +
+                  `apiKey=${credentials.apiKey}` +
+                  `&limit=${limit}` +
+                  `&offset=${offset}` +
+                  `&orderby=created_at` +
+                  `&direction=ASC`;
+            console.log(`[JotFormCache] Direct API call (no proxy)`);
+          }
 
           console.log(`[JotFormCache] Fetching page ${pageNum} (offset ${offset})`);
           this.emitProgress(`Fetching page ${pageNum} of submissions...`, 10 + (pageNum * 5));

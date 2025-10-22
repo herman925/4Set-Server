@@ -47,12 +47,14 @@ Monitoring Dashboard (GitHub Pages)
 ### Prerequisites
 
 - **PowerShell 7+** (required for AES-GCM decryption)
-- **Python 3.7+** with `pypdf` or `PyPDF2` library
+- **Python 3.7+** with required libraries
   ```bash
-  pip install pypdf
-  # or
-  pip install PyPDF2
+  pip install -r requirements.txt
   ```
+  This installs:
+  - pypdf/PyPDF2 (PDF parsing)
+  - Flask & Flask-CORS (proxy server for web dashboards)
+  - requests (HTTP client)
 - **Windows Credential Manager** entry with master key (Windows deployment)
 - **OneDrive for Business** sync client or Synology Cloud Sync
 - Encrypted credential bundles in `assets/` directory
@@ -83,7 +85,19 @@ Monitoring Dashboard (GitHub Pages)
      ```
    - Synology: Configure Docker secret `processor_master_key`
 
-4. **Start Processor Agent**
+4. **Start CORS Proxy Server** (Required for Web Dashboards)
+   ```bash
+   # Start the proxy server on default port 3000
+   python proxy_server.py
+   
+   # Or specify a custom port
+   python proxy_server.py --port 8080
+   ```
+   
+   ⚠️ **Important:** The proxy server must be running for the web dashboards to access JotForm API.
+   See [PROXY_SERVER_README.md](PROXY_SERVER_README.md) for detailed proxy server documentation.
+
+5. **Start Processor Agent** (For PDF Processing)
    ```powershell
    # Interactive mode (for testing)
    pwsh -File .\processor_agent.ps1
@@ -95,8 +109,8 @@ Monitoring Dashboard (GitHub Pages)
    pwsh -File .\processor_agent.ps1 -ConfigPath "C:\custom\config.json"
    ```
 
-5. **Access Web Dashboards**
-   - **Main Entry**: Open `index.html` in browser
+6. **Access Web Dashboards**
+   - **Main Entry**: Open `index.html` in browser (requires proxy server running)
    - **Upload Interface**: `upload.html` for PDF submissions
    - **Checking System**: `checking_system_home.html` for data validation
 

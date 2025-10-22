@@ -8,6 +8,12 @@
     updateTimerId: null
   };
 
+  // Proxy configuration for CORS handling
+  const PROXY_CONFIG = {
+    enabled: true,  // Set to false to use direct API calls
+    baseUrl: 'http://127.0.0.1:3000'
+  };
+
   const apiRoutes = {
     latest: '/api/jotform/latest-submission',
     resync: '/api/jotform/resync'
@@ -220,7 +226,14 @@
       try {
         const apiKey = state.credentials.jotformApiKey;
         const formId = state.credentials.jotformFormId;
-        const url = `https://api.jotform.com/form/${formId}/questions?apiKey=${apiKey}`;
+        
+        // Build URL using proxy if enabled
+        let url;
+        if (PROXY_CONFIG.enabled) {
+          url = `${PROXY_CONFIG.baseUrl}/api/jotform/form/${formId}/questions?apiKey=${apiKey}`;
+        } else {
+          url = `https://api.jotform.com/form/${formId}/questions?apiKey=${apiKey}`;
+        }
         
         const response = await fetch(url, { cache: 'default' });
         if (!response.ok) throw new Error(`Questions API failed: ${response.status}`);
@@ -272,10 +285,17 @@
     }
     
     try {
-      // Call Jotform API directly to get latest submission
+      // Call Jotform API to get latest submission (via proxy if enabled)
       const apiKey = state.credentials.jotformApiKey;
       const formId = state.credentials.jotformFormId;
-      const url = `https://api.jotform.com/form/${formId}/submissions?apiKey=${apiKey}&limit=1&orderby=created_at&direction=DESC`;
+      
+      // Build URL using proxy if enabled
+      let url;
+      if (PROXY_CONFIG.enabled) {
+        url = `${PROXY_CONFIG.baseUrl}/api/jotform/form/${formId}/submissions?apiKey=${apiKey}&limit=1&orderby=created_at&direction=DESC`;
+      } else {
+        url = `https://api.jotform.com/form/${formId}/submissions?apiKey=${apiKey}&limit=1&orderby=created_at&direction=DESC`;
+      }
       
       const response = await fetch(url, { cache: 'no-store' });
       if (!response.ok) throw new Error(`Latest submission fetch failed: ${response.status}`);
