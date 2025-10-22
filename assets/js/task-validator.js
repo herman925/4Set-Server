@@ -332,7 +332,43 @@ window.TaskValidator = (() => {
       let isCorrect = false;
       if (correctAnswer !== undefined) {
         // Standard question with scoring.correctAnswer
-        isCorrect = studentAnswer !== null && String(studentAnswer).trim() === String(correctAnswer).trim();
+        
+        // SPECIAL HANDLING for radio_text questions with textId
+        // Rule: If correct answer is picked → CORRECT (even if associated text field has data)
+        // If other option OR text field is filled → WRONG
+        // Priority: correct answer check comes first, text is treated as mistyped input and ignored
+        if (question.type === 'radio_text' && question.options) {
+          // Check if correct answer was selected
+          if (studentAnswer !== null && String(studentAnswer).trim() === String(correctAnswer).trim()) {
+            isCorrect = true;
+            // Note: Even if associated _TEXT field has data, we ignore it as mistyped input
+          } else {
+            // Check if any other option was selected OR if text field has data
+            const hasOtherOption = studentAnswer !== null && String(studentAnswer).trim() !== String(correctAnswer).trim();
+            
+            // Check if associated text field (textId) has data
+            let hasTextData = false;
+            if (question.options) {
+              for (const option of question.options) {
+                if (option.textId) {
+                  const textAnswer = mergedAnswers[option.textId]?.answer || 
+                                    mergedAnswers[option.textId]?.text || 
+                                    null;
+                  if (textAnswer && textAnswer.trim() !== '') {
+                    hasTextData = true;
+                    break;
+                  }
+                }
+              }
+            }
+            
+            // If either other option selected OR text filled → incorrect
+            isCorrect = false;
+          }
+        } else {
+          // Standard correctAnswer comparison for non-radio_text questions
+          isCorrect = studentAnswer !== null && String(studentAnswer).trim() === String(correctAnswer).trim();
+        }
       } else if (question.type === 'matrix-cell') {
         // Matrix cell: 1 = performed correctly, 0 = not performed
         isCorrect = studentAnswer === '1' || studentAnswer === 1;

@@ -91,12 +91,12 @@ function extractQuestions(taskDef) {
 
 ### Answer Validation
 
-**Location:** `task-validator.js` Lines 189-263
+**Location:** `task-validator.js` Lines 319-372
 
 #### Standard Questions with Scoring
 
 ```javascript
-// Location: Lines 224-226
+// Location: Lines 333-336
 if (correctAnswer !== undefined) {
   isCorrect = studentAnswer !== null && 
               String(studentAnswer).trim() === String(correctAnswer).trim();
@@ -109,9 +109,55 @@ if (correctAnswer !== undefined) {
 - Correct Answer: "2"
 - Result: `isCorrect = true`
 
+#### Radio-Text Questions with Text Fields (ToM)
+
+**Location:** `task-validator.js` Lines 337-363
+
+**Special handling for questions with `radio_text` type that have associated `_TEXT` fields:**
+
+```javascript
+if (question.type === 'radio_text' && question.options) {
+  // Priority order:
+  // 1. If correct answer picked → CORRECT (text field data ignored as mistyped input)
+  // 2. If other option picked OR text field filled → INCORRECT
+  
+  if (studentAnswer === correctAnswer) {
+    isCorrect = true;  // Text field ignored even if has data
+  } else {
+    isCorrect = false; // Either wrong option or text filled
+  }
+}
+```
+
+**Example 1 - Correct Answer Selected (Text Ignored):**
+- Question: ToM_Q3a (Type: radio_text)
+- Options: ["狗仔" (correct), "其他" → ToM_Q3a_TEXT]
+- Student Answer (ToM_Q3a): "狗仔"
+- Student Answer (ToM_Q3a_TEXT): "貓仔" (mistyped, ignored)
+- Result: `isCorrect = true` ✅
+
+**Example 2 - Other Option Selected:**
+- Question: ToM_Q3a
+- Student Answer (ToM_Q3a): "其他"
+- Student Answer (ToM_Q3a_TEXT): "貓仔"
+- Result: `isCorrect = false` ❌
+
+**Example 3 - Text Field Filled (No Radio Selection):**
+- Question: ToM_Q3a
+- Student Answer (ToM_Q3a): null
+- Student Answer (ToM_Q3a_TEXT): "貓仔"
+- Result: `isCorrect = false` ❌
+
+**Questions Using This Logic:**
+- ToM_Q3a / ToM_Q3a_TEXT
+- ToM_Q4a / ToM_Q4a_TEXT
+- ToM_Q6a / ToM_Q6a_TEXT
+- ToM_Q7a / ToM_Q7a_TEXT
+- ToM_Q7b / ToM_Q7b_TEXT
+
 #### Matrix Questions (TGMD)
 
-**Location:** `task-validator.js` Lines 227-230
+**Location:** `task-validator.js` Lines 364-367
 
 ```javascript
 else if (question.type === 'matrix-cell') {
@@ -127,7 +173,7 @@ else if (question.type === 'matrix-cell') {
 
 #### Y/N Questions (No Scoring)
 
-**Location:** `task-validator.js` Lines 231-233
+**Location:** `task-validator.js` Lines 368-371
 
 ```javascript
 else {
@@ -736,22 +782,93 @@ The 4Set assessment has 4 sets:
 
 **Critical:** Set 2 contains gender-specific tasks (TEC_Male vs TEC_Female).
 
+**Location:** `assets/tasks/survey-structure.json` Lines 770-771
+
+```json
+{
+  "id": "set2",
+  "sections": [
+    { "file": "TEC_Male.json", "order": 1, "showIf": { "gender": "male" } },
+    { "file": "TEC_Female.json", "order": 2, "showIf": { "gender": "female" } },
+    { "file": "MathPattern.json", "order": 3 },
+    { "file": "CCM.json", "order": 4 }
+  ]
+}
+```
+
 **Problem:** Student data may use single-letter codes (`"M"`, `"F"`) OR full words (`"Male"`, `"Female"`), while survey-structure.json uses lowercase full words (`"male"`, `"female"`).
 
 **Solution - Gender Normalization:**
 
-**Location:** `jotform-cache.js` Lines 638-655 (approximate)
+**Location:** `jotform-cache.js` Lines 810-814, 840-850
 
 ```javascript
-applicableSections = set.sections.filter(section => {
-  if (!section.showIf) return true;
-  
-  if (section.showIf.gender) {
-    // CRITICAL: Normalize single-letter codes to full words
-    let studentGender = (student.gender || '').toLowerCase();
-    if (studentGender === 'm' || studentGender === 'male') studentGender = 'male';
-    if (studentGender === 'f' || studentGender === 'female') studentGender = 'female';
+// Gender normalization function (used in two places)
+let studentGender = (student.gender || '').toLowerCase();
+if (studentGender === 'm' || studentGender === 'male') studentGender = 'male';
+if (studentGender === 'f' || studentGender === 'female') studentGender = 'female';
+
+const requiredGender = section.showIf.gender.toLowerCase();
+const matches = studentGender === requiredGender;
+```
+
+**Examples:**
+
+| Student Gender | Normalized | TEC_Male Applicable? | TEC_Female Applicable? |
+|---------------|------------|---------------------|----------------------|
+| "M" | "male" | ✅ Yes | ❌ No |
+| "Male" | "male" | ✅ Yes | ❌ No |
+| "F" | "female" | ❌ No | ✅ Yes |
+| "Female" | "female" | ❌ No | ✅ Yes |
+
+**Implementation Across All Pages:**
+
+1. **Class Page** (`checking-system-class-page.js`):
+   - Uses validation cache built by `JotFormCache.buildStudentValidationCache()`
+   - Validation cache internally calls gender normalization
+   - Result: Class aggregation correctly excludes gender-inappropriate tasks
+
+2. **School/District/Group Pages**:
+   - All use the same validation cache mechanism
+   - Gender-conditional logic is transparent to these pages
+   - Aggregation automatically accounts for gender distribution
+
+3. **Student Page** (`checking-system-student-page.js`):
+   - Calls `TaskValidator.validateAllTasks()` directly
+   - TaskValidator filters questions based on `showIf` conditions
+   - Gender conditions evaluated at task selection level (Line 218-220)
+
+**Set Completion Calculation:**
+
+**Location:** `jotform-cache.js` Lines 834-857
+
+```javascript
+// Count tasks per set (accounting for gender-conditional tasks)
+for (const set of surveyStructure.sets) {
+  const applicableSections = set.sections.filter(section => {
+    if (!section.showIf) return true;
     
+    if (section.showIf.gender) {
+      let studentGender = (student.gender || '').toLowerCase();
+      if (studentGender === 'm' || studentGender === 'male') studentGender = 'male';
+      if (studentGender === 'f' || studentGender === 'female') studentGender = 'female';
+      
+      const requiredGender = section.showIf.gender.toLowerCase();
+      return studentGender === requiredGender;
+    }
+    
+    return true;
+  });
+  
+  setStatus[set.id].tasksTotal = applicableSections.length;
+}
+```
+
+**Example - Male Student, Set 2:**
+- Total sections in Set 2: 4 (TEC_Male, TEC_Female, MathPattern, CCM)
+- Applicable sections: 3 (TEC_Male, MathPattern, CCM)
+- TEC_Female excluded due to gender condition
+- Set 2 completion: X/3 tasks (not X/4)
     const requiredGender = section.showIf.gender.toLowerCase();
     return studentGender === requiredGender;
   }
@@ -812,7 +929,147 @@ if (completeSets === 4) {
 
 ---
 
-## Status Color Mapping
+## JotForm Data Fetching & Caching
+
+### Global Cache System
+
+**Location:** `assets/js/jotform-cache.js`
+
+**Purpose:** Cache the ENTIRE JotForm submissions response to avoid redundant API calls and enable fast client-side filtering.
+
+**Why:** JotForm's API returns the full dataset regardless of filter parameters. Even with `filter={"20:eq":"10001"}`, the API downloads all submissions before filtering. Solution: Fetch ALL submissions once, cache in IndexedDB, then filter client-side.
+
+**Benefits:**
+- 1 API call instead of N calls (one per student)
+- Instant filtering from cache
+- Reduced rate limiting risk
+- Faster user experience
+- Large storage capacity (hundreds of MB vs localStorage's 5-10 MB)
+
+### Adaptive Batch Sizing
+
+**Location:** `jotform-cache.js` Lines 200-310
+
+**Configuration:** `config/jotform_config.json`
+
+```json
+{
+  "webFetch": {
+    "initialBatchSize": 100,
+    "minBatchSize": 10,
+    "maxBatchSize": 500,
+    "batchSizeReductions": [1.0, 0.5, 0.3, 0.2, 0.1],
+    "consecutiveSuccessesForIncrease": 2,
+    "timeoutSeconds": 60,
+    "retryDelaySeconds": [2, 5, 10]
+  }
+}
+```
+
+**Problem Discovered:**
+JotForm API has a bug where large responses (1000 records = ~4.16 MB) get truncated mid-JSON at character 4,361,577. This causes JSON parse errors and failed fetches.
+
+**Solution - Adaptive Sizing (Mirrors processor_agent.ps1 behavior):**
+
+```javascript
+// Start at baseline (100 records)
+currentBatchSize = config.initialBatchSize;  // 100
+
+// On error (504 timeout, JSON parse error):
+consecutiveSuccesses = 0;  // Reset counter
+reductionIndex++;  // Step through reductions: [1.0, 0.5, 0.3, 0.2, 0.1]
+currentBatchSize = Math.floor(baseBatchSize * batchSizeReductions[reductionIndex]);
+// Example: 100 * 0.5 = 50
+
+// On success:
+consecutiveSuccesses++;
+
+// After 2 consecutive successes:
+if (consecutiveSuccesses >= 2 && reductionIndex > 0) {
+  reductionIndex--;  // Increase one step
+  currentBatchSize = Math.floor(baseBatchSize * batchSizeReductions[reductionIndex]);
+  consecutiveSuccesses = 0;  // Reset counter
+}
+```
+
+**Behavior Example:**
+
+```
+Start: 100 records/batch → SUCCESS
+  ↓
+2 successes → Try 100 (baseline) → SUCCESS
+  ↓
+ERROR (504/truncation) → Reduce to 50 (50%) → SUCCESS
+  ↓
+SUCCESS → Try 100 again (gradual increase) → SUCCESS
+```
+
+**Boundaries:**
+- Minimum: `minBatchSize` (10 records)
+- Maximum: `maxBatchSize` (500 records)
+- Current baseline: 100 records (recommended production size)
+
+**Testing:**
+- Test 1-3 (10 records, form access, basic API): ✅ Pass
+- Test 4 (1000 records): ❌ Fail - JSON truncated at 4.16 MB
+- Test 5 (100 records): ✅ Pass - Recommended production size
+
+**Diagnostic Tool:** `TEMP/test_jotform_api.py` - Tests JotForm API health with 10/100/1000 record batches.
+
+### Validation Cache
+
+**Location:** `jotform-cache.js` Lines 513-610
+
+**Purpose:** Pre-compute task validation for all students to accelerate class/school/district aggregation.
+
+**Architecture:**
+
+```
+JotForm Global Cache (submissions)
+    ↓
+buildStudentValidationCache()
+    ↓
+For each student:
+  - Merge submissions (earliest non-empty wins)
+  - Call TaskValidator.validateAllTasks()
+  - Calculate set completion status
+  - Handle gender-conditional tasks
+    ↓
+Save to IndexedDB (validation_cache)
+```
+
+**Cache Structure:**
+
+```javascript
+validationCache = Map {
+  'C10001': {
+    coreId: 'C10001',
+    taskValidation: { /* TaskValidator results */ },
+    setStatus: {
+      set1: { status: 'complete', tasksComplete: 4, tasksTotal: 4 },
+      set2: { status: 'incomplete', tasksComplete: 2, tasksTotal: 3 },
+      // ... set3, set4
+    },
+    submissions: [ /* raw JotForm submissions */ ],
+    mergedAnswers: { /* merged answer data */ }
+  },
+  // ... other students
+}
+```
+
+**Cache Invalidation:**
+- Validation cache timestamp must be >= submissions cache timestamp
+- If submissions cache is newer, validation cache is rebuilt
+- Force rebuild: `buildStudentValidationCache(students, surveyStructure, forceRebuild=true)`
+
+**Performance:**
+- Initial build: ~200ms per student (includes full TaskValidator run)
+- Cached access: <1ms per student
+- Cache duration: Tied to submissions cache (1 hour default)
+
+---
+
+## Page-Specific Implementation
 
 ### Task Status Circle
 
