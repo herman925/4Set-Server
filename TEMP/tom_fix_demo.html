@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToM Question Structure - Before & After Fix</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f9fafb;
+        }
+        h1 {
+            color: #111827;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #6b7280;
+            margin-bottom: 40px;
+            font-size: 18px;
+        }
+        .comparison {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        .panel {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .panel h2 {
+            margin-top: 0;
+            padding-bottom: 15px;
+            border-bottom: 3px solid;
+            font-size: 24px;
+        }
+        .before h2 {
+            border-bottom-color: #ef4444;
+            color: #dc2626;
+        }
+        .after h2 {
+            border-bottom-color: #22c55e;
+            color: #16a34a;
+        }
+        .question-list {
+            margin-top: 20px;
+        }
+        .question-item {
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .question-item.removed {
+            background: #fee2e2;
+            border-left-color: #ef4444;
+        }
+        .question-item.kept {
+            background: #dcfce7;
+            border-left-color: #22c55e;
+        }
+        .question-item.normal {
+            background: #f3f4f6;
+            border-left-color: #9ca3af;
+        }
+        .icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .question-code {
+            font-family: 'Courier New', monospace;
+            font-weight: 600;
+            color: #1f2937;
+            flex-shrink: 0;
+            min-width: 180px;
+        }
+        .question-desc {
+            color: #6b7280;
+            font-size: 14px;
+        }
+        .highlight-box {
+            background: #fef3c7;
+            border: 2px solid #fbbf24;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 30px;
+        }
+        .highlight-box h3 {
+            margin-top: 0;
+            color: #92400e;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .highlight-box ul {
+            margin: 15px 0;
+            padding-left: 25px;
+        }
+        .highlight-box li {
+            margin-bottom: 10px;
+            color: #78350f;
+            line-height: 1.6;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            margin-top: 20px;
+        }
+        .stat-box {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .stat-number {
+            font-size: 32px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+        .stat-label {
+            font-size: 14px;
+            color: #6b7280;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧠 Theory of Mind (ToM) Question Structure Fix</h1>
+    <p class="subtitle">Removing instruction text fields that should not be tracked as assessment data</p>
+
+    <div class="comparison">
+        <div class="panel before">
+            <h2>❌ Before Fix</h2>
+            <div class="question-list">
+                <div class="question-item removed">
+                    <span class="icon">🗑️</span>
+                    <div>
+                        <div class="question-code">ToM_Q3_TEXT</div>
+                        <div class="question-desc">Instruction: "What do you think is in the box?" (櫃桶)</div>
+                    </div>
+                </div>
+                <div class="question-item normal">
+                    <span class="icon">📝</span>
+                    <div>
+                        <div class="question-code">ToM_Q3a</div>
+                        <div class="question-desc">Assessment: "What's in the box?" (radio_text)</div>
+                    </div>
+                </div>
+                <div class="question-item normal">
+                    <span class="icon">💬</span>
+                    <div>
+                        <div class="question-code">ToM_Q3a_TEXT</div>
+                        <div class="question-desc">Associated text field for "其他" option</div>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top: 20px; padding: 15px; background: #fef2f2; border-radius: 8px;">
+                <strong style="color: #991b1b;">❌ Problems:</strong>
+                <ul style="margin: 10px 0; padding-left: 20px; color: #7f1d1d;">
+                    <li>Instruction text tracked as assessment data</li>
+                    <li>Confusing for data analysis</li>
+                    <li>Not related to actual assessment scoring</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="panel after">
+            <h2>✅ After Fix</h2>
+            <div class="question-list">
+                <div class="question-item kept">
+                    <span class="icon">📝</span>
+                    <div>
+                        <div class="question-code">ToM_Q3a</div>
+                        <div class="question-desc">Assessment: "What's in the box?" (radio_text)</div>
+                    </div>
+                </div>
+                <div class="question-item kept">
+                    <span class="icon">💬</span>
+                    <div>
+                        <div class="question-code">ToM_Q3a_TEXT</div>
+                        <div class="question-desc">Associated text field for "其他" option</div>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top: 20px; padding: 15px; background: #f0fdf4; border-radius: 8px;">
+                <strong style="color: #166534;">✅ Benefits:</strong>
+                <ul style="margin: 10px 0; padding-left: 20px; color: #14532d;">
+                    <li>Clean assessment structure</li>
+                    <li>Only actual assessment questions tracked</li>
+                    <li>Clear data analysis</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <div class="highlight-box">
+        <h3>
+            <span style="font-size: 24px;">🔍</span>
+            <span>Fields Removed</span>
+        </h3>
+        <ul>
+            <li><strong>ToM_Q3_TEXT</strong> (QID 243) - Asked "你覺得櫃桶入面裝咗啲咩呢？" (warmup before revealing dog)</li>
+            <li><strong>ToM_Q4a_ins1_TEXT</strong> (QID 248) - Asked "你覺得膠布盒入面有啲咩？" (warmup before revealing pig)</li>
+        </ul>
+        <p style="margin: 15px 0 0 0; color: #78350f; font-style: italic;">
+            These were instruction/warmup questions used to gauge student expectations BEFORE revealing the actual contents. They are not part of the assessment scoring and should not be tracked in JotForm.
+        </p>
+    </div>
+
+    <div class="highlight-box" style="background: #e0f2fe; border-color: #0ea5e9;">
+        <h3 style="color: #0c4a6e;">
+            <span style="font-size: 24px;">✅</span>
+            <span>Fields Retained (Correct Structure)</span>
+        </h3>
+        <ul style="color: #0c4a6e;">
+            <li><strong>ToM_Q3a_TEXT</strong> (QID 245) - Associated with ToM_Q3a radio_text question</li>
+            <li><strong>ToM_Q4a_TEXT</strong> (QID 250) - Associated with ToM_Q4a radio_text question</li>
+            <li><strong>ToM_Q6a_TEXT</strong> (QID 259) - Associated with ToM_Q6a radio_text question</li>
+            <li><strong>ToM_Q7a_TEXT</strong> (QID 263) - Associated with ToM_Q7a radio_text question</li>
+            <li><strong>ToM_Q7b_TEXT</strong> (QID 265) - Associated with ToM_Q7b radio_text question</li>
+        </ul>
+    </div>
+
+    <div style="margin-top: 30px;">
+        <h2 style="text-align: center; color: #1f2937;">📊 ToM Structure Summary</h2>
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-number">47</div>
+                <div class="stat-label">Total Questions</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number">5</div>
+                <div class="stat-label">Radio-Text Questions</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-number">0</div>
+                <div class="stat-label">Standalone Text Fields</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
