@@ -185,6 +185,118 @@ window.TaskValidator = (() => {
   }
 
   /**
+   * Map answer value for option-based questions (image-choice, radio, radio_text)
+   * @param {string} answer - The raw answer (might be an index like "1", "2")
+   * @param {Object} question - The question definition with options
+   * @returns {string} - The mapped value or original answer
+   */
+  function mapAnswerValue(answer, question) {
+    if (!answer) return null;
+    
+    // Map JotForm option indices (1, 2, 3) to actual values for option-based questions
+    if ((question.type === 'image-choice' || question.type === 'radio' || question.type === 'radio_text') && question.options) {
+      const optionIndex = parseInt(answer);
+      if (!isNaN(optionIndex) && optionIndex >= 1 && optionIndex <= question.options.length) {
+        return question.options[optionIndex - 1].value;
+      }
+    }
+    
+    return answer;
+  }
+
+  /**
+   * Evaluate if a showIf condition is met based on student answers
+   * @param {Object} showIf - The showIf condition object (e.g., { "ToM_Q1a": "紅蘿蔔" })
+   * @param {Object} answers - The merged student answers
+   * @param {Map} questionMap - Map of question IDs to question definitions
+   * @returns {boolean} - True if condition is met or no condition exists
+   */
+  function evaluateShowIfCondition(showIf, answers, questionMap) {
+    if (!showIf) return true; // No condition = always show
+    
+    // Handle gender conditions (static, evaluated at task selection level)
+    if (showIf.gender) {
+      return true; // Assume already filtered at task level
+    }
+    
+    // Handle answer-based conditions (e.g., { "ToM_Q1a": "紅蘿蔔" })
+    for (const [questionId, expectedValue] of Object.entries(showIf)) {
+      if (questionId === 'gender') continue;
+      
+      let studentAnswer = answers[questionId]?.answer || 
+                          answers[questionId]?.text || 
+                          null;
+      
+      if (studentAnswer === null) {
+        return false; // No answer to the condition question = condition not met
+      }
+      
+      // Map option index to value if the referenced question has options
+      const referencedQuestion = questionMap.get(questionId);
+      if (referencedQuestion) {
+        studentAnswer = mapAnswerValue(studentAnswer, referencedQuestion);
+      }
+      
+      if (String(studentAnswer).trim() !== String(expectedValue).trim()) {
+        return false; // Condition not met
+      }
+    }
+    
+    return true; // All conditions met
+  }
+
+  /**
+   * Filter questions based on showIf conditions and handle duplicates
+   * @param {Array} questions - All extracted questions
+   * @param {Object} answers - The merged student answers
+   * @returns {Array} - Filtered questions with only applicable branches
+   */
+  function filterQuestionsByConditions(questions, answers) {
+    // Build a map of question IDs to question definitions for option mapping
+    const questionMap = new Map();
+    for (const question of questions) {
+      questionMap.set(question.id, question);
+    }
+    
+    const applicable = [];
+    const seenIds = new Map(); // Track question IDs we've already added
+    
+    for (const question of questions) {
+      const questionId = question.id;
+      
+      // Evaluate showIf condition
+      if (question.showIf) {
+        const conditionMet = evaluateShowIfCondition(question.showIf, answers, questionMap);
+        if (!conditionMet) {
+          continue; // Skip this question - condition not met
+        }
+      }
+      
+      // Handle duplicate IDs: prefer questions with matching showIf conditions
+      if (seenIds.has(questionId)) {
+        const existingQuestion = seenIds.get(questionId);
+        
+        // If existing has no showIf and current has a matching showIf, replace it
+        if (!existingQuestion.showIf && question.showIf) {
+          const existingIndex = applicable.findIndex(q => q.id === questionId);
+          if (existingIndex >= 0) {
+            applicable.splice(existingIndex, 1);
+            applicable.push(question);
+            seenIds.set(questionId, question);
+          }
+        }
+        // Otherwise keep the first one that passed the condition check
+        continue;
+      }
+      
+      applicable.push(question);
+      seenIds.set(questionId, question);
+    }
+    
+    return applicable;
+  }
+
+  /**
    * Validate student answers for a task
    */
   async function validateTask(taskId, mergedAnswers) {
@@ -197,7 +309,11 @@ window.TaskValidator = (() => {
       };
     }
 
-    const questions = extractQuestions(taskDef);
+    const allQuestions = extractQuestions(taskDef);
+    
+    // Filter questions based on showIf conditions (handles conditional branching)
+    const questions = filterQuestionsByConditions(allQuestions, mergedAnswers);
+    
     const validatedQuestions = [];
 
     for (const question of questions) {
@@ -209,15 +325,8 @@ window.TaskValidator = (() => {
                           mergedAnswers[questionId]?.text || 
                           null;
       
-      // Map JotForm option indices (1, 2, 3) to actual values for image-choice, radio, and radio_text questions
-      if (studentAnswer && (question.type === 'image-choice' || question.type === 'radio' || question.type === 'radio_text') && question.options) {
-        const optionIndex = parseInt(studentAnswer);
-        if (!isNaN(optionIndex) && optionIndex >= 1 && optionIndex <= question.options.length) {
-          const mappedValue = question.options[optionIndex - 1].value;
-          // console.log(`[TaskValidator] Mapped ${questionId}: ${studentAnswer} → ${mappedValue}`);
-          studentAnswer = mappedValue;
-        }
-      }
+      // Map JotForm option indices to actual values using helper function
+      studentAnswer = mapAnswerValue(studentAnswer, question);
       
       // Determine if answer is correct
       let isCorrect = false;
