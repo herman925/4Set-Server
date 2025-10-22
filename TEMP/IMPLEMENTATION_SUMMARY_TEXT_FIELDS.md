@@ -214,7 +214,7 @@ Added comprehensive ToM branch display with the following improvements:
 4. Fixed _TEXT "Not answered" logic (only when BOTH radio AND text are blank)
 5. Fixed text-only attempt handling (radio marked incorrect, _TEXT hidden)
 
-**See:** `IMPLEMENTATION_SUMMARY_TOM_BRANCHES.md` for complete details
+**See:** `calculation_bible.md` section "ToM Branch Display Implementation" for complete details
 
 ### Update #2: Text-Only Attempt Handling
 **Commit:** 244904d

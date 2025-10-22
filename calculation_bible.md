@@ -2315,6 +2315,94 @@ if (cached) {
 
 ---
 
+## ToM Branch Display Implementation
+
+### Overview
+
+Theory of Mind (ToM) questions use a branching structure where the student's answer to a "selector" question (e.g., ToM_Q1a) determines which subsequent questions are asked. The checking system displays branch information on ALL questions in a branch to make the branching logic visible.
+
+### Branch Detection
+
+**Pattern Matching:**
+- **Branch selectors**: Questions ending in 'a' (e.g., `ToM_Q1a`, `ToM_Q2a`)
+- **Branched questions**: Questions with same base number (e.g., `ToM_Q1b`, `ToM_Q1c`)
+- **_TEXT fields**: Inherit branch from their base question
+
+**Example:**
+```
+Student answers "曲奇餅" to ToM_Q1a (selector)
+  ↓
+System creates "曲奇餅 Branch"
+  ↓
+Branch info propagates to:
+  - ToM_Q1a → "Answered (曲奇餅 Branch)"
+  - ToM_Q1b → "Incorrect (曲奇餅 Branch)"
+  - ToM_Q1b_TEXT → "Answered (曲奇餅 Branch)"
+```
+
+### Question Reordering
+
+**Problem:** _TEXT fields were appearing BEFORE their base questions, causing confusion.
+
+**Solution:** Reorder questions so _TEXT fields appear immediately AFTER their corresponding radio questions.
+
+**Before:**
+```
+ToM_Q3a_TEXT (appears first - confusing)
+ToM_Q3a
+```
+
+**After:**
+```
+ToM_Q3a (base question first)
+ToM_Q3a_TEXT (text field after - logical)
+```
+
+### Implementation
+
+**Location:** `assets/js/checking-system-student-page.js`
+
+**Function:** `reorderAndAnnotateQuestions(questions, taskId)`
+
+**Algorithm:**
+1. Identify branch selector questions (pattern: `ToM_Q\d+a`)
+2. Extract branch value from student answer
+3. Create branch info map for all questions with same base number
+4. Separate _TEXT fields from regular questions
+5. Reorder: Insert each _TEXT field after its base question
+6. Return reordered list with branch annotations
+
+**Usage:** Called before rendering task tables to ensure proper ordering and branch display.
+
+### Visual Display
+
+Branch information is appended to ALL status pills in a branching set:
+- ✅ `Correct (曲奇餅 Branch)`
+- ❌ `Incorrect (曲奇餅 Branch)`
+- 📝 `Answered (曲奇餅 Branch)`
+- ⚠️ `Not answered (曲奇餅 Branch)`
+
+**Exception:** "Ignored (Terminated)" status does not show branch suffix.
+
+### PR History
+
+**Issue:** herman925/4Set-Server#43 - "The branching text doesn't show in ToM 'Result'"
+
+**Commits:**
+- `7618f52` - Branch display and reordering implementation
+- `bb25873` - _TEXT "Not answered" styling fix (amber warning)
+- `fb0614b` - _TEXT "Not answered" logic fix (only when both blank)
+- `244904d` - Text-only attempt handling (mark radio incorrect, hide _TEXT)
+- `470d7e2` - Documentation updates
+
+**Requirements Completed:**
+1. ✅ Branch information on ALL ToM questions
+2. ✅ _TEXT fields reordered after base questions
+3. ✅ _TEXT fields excluded from completion percentage
+4. ✅ Text-only attempts handled correctly
+
+---
+
 ## Points to Note
 
 ### ⚠️ Critical Analysis: Potential Discrepancies Between Validation Mechanisms
