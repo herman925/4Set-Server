@@ -42,15 +42,15 @@ test_cases = [
         "name": "Scenario 5: No radio answer, text filled",
         "ToM_Q3a": None,
         "ToM_Q3a_TEXT": "貓仔",
-        "expected_ToM_Q3a": {"isCorrect": False, "status": "Not answered"},
-        "expected_ToM_Q3a_TEXT": {"status": "—", "reason": "Radio not answered, no display needed"}
+        "expected_ToM_Q3a": {"isCorrect": False, "status": "Incorrect"},
+        "expected_ToM_Q3a_TEXT": {"status": "Answered", "reason": "Student attempted to answer via text (radio not selected, treat as incorrect)"}
     },
     {
         "name": "Scenario 6: No radio answer, no text",
         "ToM_Q3a": None,
         "ToM_Q3a_TEXT": None,
         "expected_ToM_Q3a": {"isCorrect": False, "status": "Not answered"},
-        "expected_ToM_Q3a_TEXT": {"status": "—", "reason": "Radio not answered, no display needed"}
+        "expected_ToM_Q3a_TEXT": {"status": "Not answered", "reason": "No answer provided (missing)"}
     }
 ]
 
@@ -60,16 +60,32 @@ def simulate_validation(radio_answer, text_answer):
     
     Updated logic (2025-10-22):
     - N/A: Correct answer selected
-    - Answered: Text field has content (when radio is incorrect)
-    - Not answered: Radio incorrect AND no text
-    - No display (—): Radio not answered
+    - Answered: Text field has content (when radio is incorrect OR when text filled without radio)
+    - Not answered: Radio incorrect AND no text, OR no radio AND no text
+    
+    Special handling for no radio answer:
+    - If text is filled but radio not selected: Treat as incorrect (student attempted via text)
+    - If neither radio nor text: Treat as not answered (missing)
     """
     correct_answer = "狗仔"
     
     # Radio question validation
     radio_is_correct = False
+    radio_status = "Not answered"
+    
     if radio_answer is not None and str(radio_answer).strip() == str(correct_answer).strip():
         radio_is_correct = True
+        radio_status = "Correct"
+    elif radio_answer is not None:
+        # Radio answered but incorrect
+        radio_status = "Incorrect"
+    else:
+        # Radio not answered
+        # BUT: if text is filled, we treat the radio as incorrect (student attempted via text)
+        if text_answer is not None and str(text_answer).strip() != '':
+            radio_status = "Incorrect"
+        else:
+            radio_status = "Not answered"
     
     # Text field status
     text_status = None
@@ -80,15 +96,20 @@ def simulate_validation(radio_answer, text_answer):
         if text_answer is not None and str(text_answer).strip() != '':
             text_status = "Answered"
         else:
-            text_status = "Not answered"  # Only show when radio is incorrect
+            text_status = "Not answered"
     else:
-        # Radio not answered at all
-        text_status = "—"  # No display needed
+        # Radio not answered
+        if text_answer is not None and str(text_answer).strip() != '':
+            # Student attempted to answer via text (treat as answered/incorrect)
+            text_status = "Answered"
+        else:
+            # No answer at all (missing)
+            text_status = "Not answered"
     
     return {
         "radio": {
             "isCorrect": radio_is_correct,
-            "status": "Correct" if radio_is_correct else ("Not answered" if radio_answer is None else "Incorrect")
+            "status": radio_status
         },
         "text": {
             "status": text_status
