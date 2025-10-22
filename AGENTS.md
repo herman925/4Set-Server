@@ -68,13 +68,17 @@ The 4Set System is a comprehensive web-based assessment data processing pipeline
 - **PDF Parser Integration**: Extracts form fields using Python tools
 - **Data Enrichment**: Adds sessionkey, computerno, child-name, class-id
 - **Termination Calculation**: Applies threshold rules (ERV, CM, CWR, FM)
+- **Data Overwrite Protection**: Prevents accidental data corruption on re-uploads
+  - Validates that existing assessment answers won't be overwritten
+  - Exception list allows administrative fields to be updated
+  - Conflicts logged with `DATA_OVERWRITE_DIFF` and filed to Unsorted/
 - **JotForm Upload**: Idempotent upsert with exponential backoff retry
 - **Filing Protocol**: Archives to `schoolId/` or `Unsorted/` folder
 - **Telemetry API**: Exposes queue status via localhost:48500
 
 **Configuration**:
 - `config/agent.json` - Path resolution, polling, logging
-- `config/jotform_config.json` - Rate limits, retry schedules
+- `config/jotform_config.json` - Rate limits, retry schedules, log levels
 - `config/host_identity.json` - Computer number override (optional)
 
 #### 2. Upload Interface (`upload.html`)
@@ -590,6 +594,13 @@ Documented in `PRDs/processor_agent_runbook_prd.md`:
 - Created comprehensive documentation suite
 
 **Phase 3 Enhancements (October 22, 2025):**
+- ✅ **Data Overwrite Protection**: Implemented conflict detection for update operations
+  - Prevents accidental data corruption from re-uploaded PDFs
+  - Exception list allows administrative fields (student-id, child-name, etc.) to be updated
+  - Protected fields (assessment answers) reject overwrites of existing non-empty values
+  - Conflicts logged with `DATA_OVERWRITE_DIFF` level and filed to Unsorted/
+  - Comprehensive test suite: `tools/test_data_overwrite_protection.ps1` (10/10 tests passing)
+  - Performance impact: < 1% (uses existing search result, no additional API calls)
 - ✅ **Radio_text Validation Logic**: Implemented priority-based scoring for ToM questions
   - If correct answer picked → CORRECT (text field ignored as mistyped input)
   - If other option OR text filled → INCORRECT
