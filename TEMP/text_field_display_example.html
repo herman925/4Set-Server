@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>_TEXT Field Display Example</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 20px;
+            background: #f9fafb;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #111827;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 10px;
+        }
+        h2 {
+            color: #374151;
+            margin-top: 30px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        th {
+            background: #f3f4f6;
+            font-weight: 600;
+            color: #374151;
+        }
+        .answer-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid;
+        }
+        .correct {
+            background: #dcfce7;
+            color: #166534;
+            border-color: #86efac;
+        }
+        .incorrect {
+            background: #fee2e2;
+            color: #991b1b;
+            border-color: #fca5a5;
+        }
+        .answered {
+            background: #f0f9ff;
+            color: #0369a1;
+            border-color: #bae6fd;
+        }
+        .na {
+            background: #f3f4f6;
+            color: #6b7280;
+            border-color: #d1d5db;
+        }
+        .code {
+            font-family: 'Courier New', monospace;
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .note {
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 12px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .icon {
+            display: inline-block;
+            width: 14px;
+            height: 14px;
+            vertical-align: middle;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📋 _TEXT Field Display Example</h1>
+        <p>This demonstrates how <span class="code">_TEXT</span> fields are now displayed in the checking system for Theory of Mind questions.</p>
+
+        <h2>Example: Theory of Mind (ToM) Task</h2>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Question ID</th>
+                    <th>Student Answer</th>
+                    <th>Correct Answer</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Scenario 1: Correct answer selected -->
+                <tr>
+                    <td class="code">ToM_Q3a</td>
+                    <td>狗仔</td>
+                    <td>狗仔</td>
+                    <td><span class="answer-pill correct">✓ Correct</span></td>
+                </tr>
+                <tr style="background: #f9fafb;">
+                    <td class="code">ToM_Q3a_TEXT</td>
+                    <td>—</td>
+                    <td>N/A</td>
+                    <td><span class="answer-pill na">ℹ N/A</span></td>
+                </tr>
+                
+                <!-- Scenario 2: Wrong answer, text filled -->
+                <tr>
+                    <td class="code">ToM_Q4a</td>
+                    <td>其他</td>
+                    <td>豬仔</td>
+                    <td><span class="answer-pill incorrect">✗ Incorrect</span></td>
+                </tr>
+                <tr style="background: #f9fafb;">
+                    <td class="code">ToM_Q4a_TEXT</td>
+                    <td>貓仔</td>
+                    <td>N/A</td>
+                    <td><span class="answer-pill answered">✓ Answered</span></td>
+                </tr>
+                
+                <!-- Scenario 3: Wrong answer, no text -->
+                <tr>
+                    <td class="code">ToM_Q6a</td>
+                    <td>其他</td>
+                    <td>曲奇</td>
+                    <td><span class="answer-pill incorrect">✗ Incorrect</span></td>
+                </tr>
+                <tr style="background: #f9fafb;">
+                    <td class="code">ToM_Q6a_TEXT</td>
+                    <td>—</td>
+                    <td>N/A</td>
+                    <td><span class="answer-pill incorrect">− Not answered</span></td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="note">
+            <strong>📝 Key Points:</strong>
+            <ul style="margin: 10px 0 0 0;">
+                <li><strong>N/A Status:</strong> Shown when correct answer selected on radio question (text field not needed)</li>
+                <li><strong>Answered Status:</strong> Shown when text content exists</li>
+                <li><strong>Not answered Status:</strong> Shown when no text provided and wrong/no radio answer</li>
+                <li><strong>Exclusion:</strong> _TEXT fields are NOT counted in completion percentage calculations</li>
+            </ul>
+        </div>
+
+        <h2>Status Indicators</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Status</th>
+                    <th>Appearance</th>
+                    <th>When Shown</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>N/A</td>
+                    <td><span class="answer-pill na">ℹ N/A</span></td>
+                    <td>Correct answer selected on radio question</td>
+                </tr>
+                <tr>
+                    <td>Answered</td>
+                    <td><span class="answer-pill answered">✓ Answered</span></td>
+                    <td>Text content exists</td>
+                </tr>
+                <tr>
+                    <td>Not answered</td>
+                    <td><span class="answer-pill incorrect">− Not answered</span></td>
+                    <td>No text provided</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2>Affected Questions</h2>
+        <ul>
+            <li><span class="code">ToM_Q3_TEXT</span> - Initial guess question</li>
+            <li><span class="code">ToM_Q3a_TEXT</span> - Cabinet question (with radio_text)</li>
+            <li><span class="code">ToM_Q4a_TEXT</span> - Band-aid box question (with radio_text)</li>
+            <li><span class="code">ToM_Q6a_TEXT</span> - Teddy's snack question (with radio_text)</li>
+            <li><span class="code">ToM_Q7a_TEXT</span> - Control question 1 (with radio_text)</li>
+            <li><span class="code">ToM_Q7b_TEXT</span> - Control question 2 (with radio_text)</li>
+        </ul>
+
+        <h2>Test Results</h2>
+        <pre style="background: #1f2937; color: #d1d5db; padding: 15px; border-radius: 6px; overflow-x: auto;">
+RADIO_TEXT VALIDATION TEST SUITE: 6/6 tests passed ✅
+TEXT FIELD DISPLAY TEST SUITE: 6/6 tests passed ✅
+Success Rate: 100.0%
+
+Test Scripts:
+  - TEMP/test_radio_text_validation.py
+  - TEMP/test_text_field_display.py</pre>
+    </div>
+</body>
+</html>
