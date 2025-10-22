@@ -155,6 +155,74 @@ if (question.type === 'radio_text' && question.options) {
 - ToM_Q7a / ToM_Q7a_TEXT
 - ToM_Q7b / ToM_Q7b_TEXT
 
+#### Text Display Fields (_TEXT)
+
+**Location:** `task-validator.js` Lines 393-422
+
+**Purpose:** `_TEXT` fields are displayed in the checking system but excluded from completion calculations.
+
+**Display Logic:**
+
+```javascript
+if (isTextDisplay && questionId.endsWith('_TEXT')) {
+  // Find associated radio_text question
+  const radioQuestionId = questionId.replace('_TEXT', '');
+  
+  // Check if correct answer was selected on radio question
+  if (radioAnswerCorrect) {
+    textFieldStatus = 'na';  // N/A - not needed
+  } else if (textAnswer !== null && textAnswer.trim() !== '') {
+    textFieldStatus = 'answered';  // Has content
+  } else {
+    textFieldStatus = null;  // Not answered
+  }
+}
+```
+
+**Display Status:**
+
+| Scenario | Radio Answer | Text Content | Status Display |
+|----------|-------------|--------------|----------------|
+| Correct selected | "狗仔" (correct) | Any or empty | 🔵 **N/A** (grey pill) |
+| Wrong selected | "其他" | "貓仔" | 🔵 **Answered** (blue pill) |
+| Wrong selected | "其他" | Empty | 🔴 **Not answered** |
+| No answer | null | "貓仔" | 🔵 **Answered** (blue pill) |
+| No answer | null | Empty | 🔴 **Not answered** |
+
+**UI Implementation:** `checking-system-student-page.js` Lines 816-828
+
+```javascript
+if (question.isTextDisplay) {
+  if (question.textFieldStatus === 'na') {
+    statusPill = '<span class="answer-pill" style="background: #f3f4f6; color: #6b7280;">
+                  <i data-lucide="info"></i>N/A</span>';
+  } else if (question.textFieldStatus === 'answered') {
+    statusPill = '<span class="answer-pill" style="background: #f0f9ff; color: #0369a1;">
+                  <i data-lucide="circle-check"></i>Answered</span>';
+  } else {
+    statusPill = '<span class="answer-pill incorrect">
+                  <i data-lucide="minus"></i>Not answered</span>';
+  }
+}
+```
+
+**Important Notes:**
+- `_TEXT` fields are **NOT** counted in completion percentage
+- `_TEXT` fields show "N/A" in the "Correct Answer" column
+- `_TEXT` fields are **displayed** but **excluded** from statistics
+- Calculation logic: `task-validator.js` Lines 437-444
+
+```javascript
+// Exclude _TEXT display fields from completion calculations
+const scoredQuestions = validatedQuestions.filter(q => !q.isTextDisplay);
+const answeredCount = scoredQuestions.filter(q => q.studentAnswer !== null).length;
+const totalQuestions = scoredQuestions.length;
+```
+
+**Test Scripts:** 
+- `TEMP/test_radio_text_validation.py` - Tests validation logic
+- `TEMP/test_text_field_display.py` - Tests display status logic
+
 #### Matrix Questions (TGMD)
 
 **Location:** `task-validator.js` Lines 364-367

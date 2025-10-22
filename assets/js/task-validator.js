@@ -150,7 +150,12 @@ window.TaskValidator = (() => {
       } else if (item.type !== 'instruction' && item.type !== 'completion' && item.id && !isExcludedField(item.id)) {
         // Include all questions (with or without scoring)
         // Y/N tasks don't have scoring.correctAnswer, but Y=correct, N=incorrect
-        questions.push(item);
+        // INCLUDE _TEXT fields for display purposes (but mark them as display-only)
+        const questionItem = {...item};
+        if (item.id.endsWith('_TEXT')) {
+          questionItem.isTextDisplay = true; // Mark as text display field
+        }
+        questions.push(questionItem);
       }
     }
     
@@ -166,7 +171,12 @@ window.TaskValidator = (() => {
       if ((item.type === 'multi-question' || item.type === 'multi-step') && item.questions) {
         questions.push(...extractQuestionsFromArray(item.questions));
       } else if (item.type !== 'instruction' && item.type !== 'completion' && item.id && !isExcludedField(item.id)) {
-        questions.push(item);
+        // INCLUDE _TEXT fields for display purposes (but mark them as display-only)
+        const questionItem = {...item};
+        if (item.id.endsWith('_TEXT')) {
+          questionItem.isTextDisplay = true; // Mark as text display field
+        }
+        questions.push(questionItem);
       }
     }
     return questions;
@@ -176,9 +186,9 @@ window.TaskValidator = (() => {
    * Check if a field ID should be excluded from question counting
    */
   function isExcludedField(id) {
-    // Exclude date fields, text memo fields, termination records, and other non-question fields
+    // Exclude date fields, memo fields, termination records, and other non-question fields
+    // NOTE: _TEXT fields are now INCLUDED for display purposes (handled separately in validation)
     return id.endsWith('_Date') || 
-           id.endsWith('_TEXT') || 
            id.includes('_Memo_') ||
            id.includes('_Ter') || // Exclude all termination records (ERV_Ter1, CM_Ter2, etc.)
            id.endsWith('_timeout'); // Exclude timeout fields (SYM_timeout, NONSYM_timeout)
@@ -380,6 +390,37 @@ window.TaskValidator = (() => {
       // Check if this is an unscored preference question (no correctAnswer at all)
       const isUnscoredQuestion = correctAnswer === undefined && question.type !== 'matrix-cell' && !['Y', 'y', 'N', 'n'].includes(studentAnswer);
       
+      // SPECIAL HANDLING for _TEXT display fields
+      let isTextDisplay = question.isTextDisplay || false;
+      let textFieldStatus = null; // 'answered', 'na', or null (not answered)
+      
+      if (isTextDisplay && questionId.endsWith('_TEXT')) {
+        // Find the associated radio_text question (e.g., ToM_Q3a for ToM_Q3a_TEXT)
+        const radioQuestionId = questionId.replace('_TEXT', '');
+        const radioQuestion = questions.find(q => q.id === radioQuestionId);
+        
+        if (radioQuestion && radioQuestion.type === 'radio_text') {
+          // Check if the correct answer was selected on the radio question
+          const radioAnswer = mergedAnswers[radioQuestionId]?.answer || 
+                              mergedAnswers[radioQuestionId]?.text || 
+                              null;
+          const mappedRadioAnswer = mapAnswerValue(radioAnswer, radioQuestion);
+          const radioCorrectAnswer = radioQuestion.scoring?.correctAnswer;
+          
+          if (radioCorrectAnswer && mappedRadioAnswer !== null && 
+              String(mappedRadioAnswer).trim() === String(radioCorrectAnswer).trim()) {
+            // Correct answer was selected - this text field is N/A
+            textFieldStatus = 'na';
+          } else if (studentAnswer !== null && studentAnswer.trim() !== '') {
+            // Text field has content
+            textFieldStatus = 'answered';
+          }
+        } else if (studentAnswer !== null && studentAnswer.trim() !== '') {
+          // No associated radio question, just check if answered
+          textFieldStatus = 'answered';
+        }
+      }
+      
       validatedQuestions.push({
         id: questionId,
         studentAnswer: studentAnswer,
@@ -387,20 +428,24 @@ window.TaskValidator = (() => {
         isCorrect: isCorrect,
         label: question.label?.answer || question.label?.zh || questionId,
         isYNQuestion: correctAnswer === undefined, // Flag for UI (includes Y/N, matrix cells, and unscored questions)
-        isUnscored: isUnscoredQuestion // Flag for preference questions with no scoring
+        isUnscored: isUnscoredQuestion, // Flag for preference questions with no scoring
+        isTextDisplay: isTextDisplay, // Flag for _TEXT display fields
+        textFieldStatus: textFieldStatus // Status for _TEXT fields: 'answered', 'na', or null
       });
     }
 
-    const answeredCount = validatedQuestions.filter(q => q.studentAnswer !== null).length;
-    const correctCount = validatedQuestions.filter(q => q.isCorrect).length;
-    const totalQuestions = validatedQuestions.length;
+    // Calculate counts excluding _TEXT display fields (they don't count towards completion)
+    const scoredQuestions = validatedQuestions.filter(q => !q.isTextDisplay);
+    const answeredCount = scoredQuestions.filter(q => q.studentAnswer !== null).length;
+    const correctCount = scoredQuestions.filter(q => q.isCorrect).length;
+    const totalQuestions = scoredQuestions.length;
 
     return {
       taskId,
       title: taskDef.title,
-      questions: validatedQuestions,
-      totalQuestions,
-      answeredQuestions: answeredCount,
+      questions: validatedQuestions, // Include ALL questions (including _TEXT for display)
+      totalQuestions, // Only scored questions
+      answeredQuestions: answeredCount, // Only scored questions
       correctAnswers: correctCount,
       completionPercentage: totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0,
       accuracyPercentage: answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0
