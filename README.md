@@ -736,7 +736,7 @@ Level 4: Student View (checking_system_4_student.html)
 **New Feature (October 2025)**: The Checking System now displays text answer fields for Theory of Mind (ToM) questions with smart status indicators.
 
 **Applicable Fields:**
-- ToM_Q3_TEXT, ToM_Q3a_TEXT, ToM_Q4a_TEXT, ToM_Q6a_TEXT, ToM_Q7a_TEXT, ToM_Q7b_TEXT
+- ToM_Q3a_TEXT, ToM_Q4a_TEXT, ToM_Q6a_TEXT, ToM_Q7a_TEXT, ToM_Q7b_TEXT
 
 **Status Display Rules:**
 
