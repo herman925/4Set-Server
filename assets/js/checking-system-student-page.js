@@ -931,7 +931,8 @@
             statusPill = `<span class="answer-pill" style="background: #f0f9ff; color: #0369a1; border-color: #bae6fd;"><i data-lucide="circle-check" class="w-3 h-3"></i>Answered${branchSuffix}</span>`;
           } else if (question.textFieldStatus === 'not-answered') {
             // Only show "Not answered" when radio answer is incorrect
-            statusPill = '<span class="answer-pill incorrect"><i data-lucide="minus" class="w-3 h-3"></i>Not answered</span>';
+            // Use neutral styling (not "incorrect") since _TEXT fields don't have right/wrong answers
+            statusPill = '<span class="answer-pill" style="background: #fef3c7; color: #92400e; border-color: #fde68a;"><i data-lucide="alert-circle" class="w-3 h-3"></i>Not answered</span>';
           } else {
             // No status to display (radio question not answered) - show dash
             statusPill = '<span class="answer-pill" style="background: #f3f4f6; color: #9ca3af; border-color: #d1d5db;"><i data-lucide="minus" class="w-3 h-3"></i>—</span>';
