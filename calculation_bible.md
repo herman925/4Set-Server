@@ -115,16 +115,28 @@ if (correctAnswer !== undefined) {
 
 **Special handling for questions with `radio_text` type that have associated `_TEXT` fields:**
 
+**Updated Logic (2025-10-22 - Final):**
 ```javascript
 if (question.type === 'radio_text' && question.options) {
+  // Check for text field data first
+  const hasTextData = /* check if associated _TEXT field has content */;
+  
   // Priority order:
   // 1. If correct answer picked → CORRECT (text field data ignored as mistyped input)
-  // 2. If other option picked OR text field filled → INCORRECT
+  // 2. If wrong option picked → INCORRECT
+  // 3. If radio blank but text filled → INCORRECT (text-only attempt)
+  // 4. If both blank → Not answered
   
   if (studentAnswer === correctAnswer) {
     isCorrect = true;  // Text field ignored even if has data
+  } else if (studentAnswer !== null) {
+    isCorrect = false; // Wrong option selected
+  } else if (hasTextData) {
+    // Radio blank but text filled → treat as incorrect attempt
+    studentAnswer = '[TEXT_ONLY_ATTEMPT]';  // Special marker
+    isCorrect = false;
   } else {
-    isCorrect = false; // Either wrong option or text filled
+    isCorrect = false; // Both blank
   }
 }
 ```
@@ -144,9 +156,10 @@ if (question.type === 'radio_text' && question.options) {
 
 **Example 3 - Text Field Filled (No Radio Selection):**
 - Question: ToM_Q3a
-- Student Answer (ToM_Q3a): null
-- Student Answer (ToM_Q3a_TEXT): "貓仔"
+- Student Answer (ToM_Q3a): null → Changed to `[TEXT_ONLY_ATTEMPT]`
+- Student Answer (ToM_Q3a_TEXT): "貓仔" → Hidden (not displayed)
 - Result: `isCorrect = false` ❌
+- **Note:** Radio question marked as "Incorrect", _TEXT field hidden to protect assessment integrity
 
 **Questions Using This Logic:**
 - ToM_Q3a / ToM_Q3a_TEXT
@@ -161,7 +174,7 @@ if (question.type === 'radio_text' && question.options) {
 
 **Purpose:** `_TEXT` fields are displayed in the checking system but NEVER counted in completion calculations.
 
-**Display Logic (Updated 2025-10-22):**
+**Display Logic (Updated 2025-10-22 - Final):**
 
 ```javascript
 if (isTextDisplay && questionId.endsWith('_TEXT')) {
@@ -173,55 +186,74 @@ if (isTextDisplay && questionId.endsWith('_TEXT')) {
   if (isRadioCorrect) {
     textFieldStatus = 'na';  // N/A - not needed
   } else if (radioAnswer !== null) {
-    // Radio has incorrect answer
+    // Radio has an answer (but incorrect)
     if (textAnswer !== null && textAnswer.trim() !== '') {
       textFieldStatus = 'answered';  // Has content
     } else {
-      textFieldStatus = 'not-answered';  // ONLY when radio is incorrect
+      textFieldStatus = null;  // Show "—" (dash), not "not-answered"
     }
   } else {
-    // Radio not answered - no display needed
-    textFieldStatus = null;  // Shows as "—"
+    // Radio NOT answered (blank)
+    if (textAnswer !== null && textAnswer.trim() !== '') {
+      // Text-only attempt (incorrect) - HIDE the _TEXT field
+      textFieldStatus = null;  // Hidden (not displayed)
+    } else {
+      // Both radio and text blank
+      textFieldStatus = 'not-answered';  // Show "Not answered"
+    }
   }
 }
 ```
 
-**Display Status:**
+**Display Status (Updated 2025-10-22 - Final):**
 
-| Scenario | Radio Answer | Text Content | Status Display | Description |
-|----------|-------------|--------------|----------------|-------------|
-| Correct selected | "狗仔" (correct) | Any or empty | 🔵 **N/A** (grey pill) | Text not needed |
-| Wrong selected | "其他" | "貓仔" | 🔵 **Answered** (blue pill) | Text provided |
-| Wrong selected | "其他" | Empty | 🔴 **Not answered** | Text missing (radio incorrect) |
-| No answer | null | "貓仔" | ⚪ **—** (grey pill) | No display needed |
-| No answer | null | Empty | ⚪ **—** (grey pill) | No display needed |
+| Scenario | Radio Answer | Text Content | Radio Result | _TEXT Display | Description |
+|----------|-------------|--------------|--------------|---------------|-------------|
+| 1 | "狗仔" (correct) | Any or empty | ✅ **Correct** | 🔵 **N/A** (grey pill) | Text not needed when correct |
+| 2 | "其他" (incorrect) | "貓仔" (filled) | ❌ **Incorrect** | 🔵 **Answered** (blue pill) | Text provided |
+| 3 | "其他" (incorrect) | Empty | ❌ **Incorrect** | ⚪ **—** (grey pill) | Radio answered, text empty |
+| 4 | null (blank) | "貓仔" (filled) | ❌ **Incorrect** | ⚪ **Hidden** | Text-only attempt = incorrect |
+| 5 | null (blank) | Empty | ⚪ **Not answered** | 🟡 **Not answered** (amber) | Both blank = missing |
 
-**Key Rules:**
-1. **"Not answered" ONLY appears when radio answer is incorrect**
-2. When radio is not answered, _TEXT field shows "—" (no status display)
-3. When radio is correct, _TEXT field shows "N/A" (text not needed)
-4. _TEXT fields are **NEVER** counted in completion percentage regardless of status
+**Key Rules (Updated 2025-10-22):**
+1. **Scenario 4 Change:** When radio is blank but text is filled, this is treated as an incorrect attempt:
+   - Radio question: Marked as "Incorrect" (not "Not answered")
+   - _TEXT field: Hidden (not displayed) to protect assessment integrity
+   - Rationale: Student failed to complete question correctly; showing text would reveal incorrect attempt
+2. **"Not answered" for _TEXT:** ONLY appears when BOTH radio AND text are blank (Scenario 5)
+3. **Scenario 3 Change:** When radio is incorrect but text is empty, _TEXT shows "—" (not "Not answered")
+4. When radio is correct (Scenario 1), _TEXT field shows "N/A" (text not needed)
+5. _TEXT fields are **NEVER** counted in completion percentage regardless of status
 
-**UI Implementation:** `checking-system-student-page.js` Lines 822-834
+**UI Implementation:** `checking-system-student-page.js` (Updated 2025-10-22)
 
+**_TEXT Field Display:**
 ```javascript
 if (question.isTextDisplay) {
   if (question.textFieldStatus === 'na') {
-    statusPill = '<span class="answer-pill" style="background: #f3f4f6; color: #6b7280;">
+    statusPill = '<span class="answer-pill" style="background: #f9fafb; color: #6b7280;">
                   <i data-lucide="info"></i>N/A</span>';
   } else if (question.textFieldStatus === 'answered') {
     statusPill = '<span class="answer-pill" style="background: #f0f9ff; color: #0369a1;">
                   <i data-lucide="circle-check"></i>Answered</span>';
   } else if (question.textFieldStatus === 'not-answered') {
-    // Only shown when radio answer is incorrect
-    statusPill = '<span class="answer-pill incorrect">
-                  <i data-lucide="minus"></i>Not answered</span>';
+    // ONLY shown when BOTH radio AND text are blank
+    statusPill = '<span class="answer-pill" style="background: #fef3c7; color: #92400e;">
+                  <i data-lucide="alert-circle"></i>Not answered</span>';
   } else {
-    // Radio not answered - no display needed
+    // textFieldStatus = null → Hidden or dash display
     statusPill = '<span class="answer-pill" style="background: #f3f4f6; color: #9ca3af;">
                   <i data-lucide="minus"></i>—</span>';
   }
 }
+```
+
+**Radio Question Display for Text-Only Attempts:**
+```javascript
+// Handle special marker for text-only attempts
+const displayStudentAnswer = question.studentAnswer === '[TEXT_ONLY_ATTEMPT]' 
+  ? '—'  // Display as dash, but question is marked incorrect
+  : (question.studentAnswer || '—');
 ```
 
 **Important Notes:**

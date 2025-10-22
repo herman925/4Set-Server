@@ -202,6 +202,33 @@ TEC_Female_Q2_TEXT  | sad     | —       | ✓ Answered (Female Branch)
 
 ---
 
-**Implementation Status:** ✅ COMPLETE  
+## Subsequent Updates (2025-10-22)
+
+### Update #1: ToM Branch Display (PR #43)
+**Commits:** 7618f52, bb25873, fb0614b, 244904d
+
+Added comprehensive ToM branch display with the following improvements:
+1. Branch information shown on ALL ToM questions (not just _TEXT fields)
+2. _TEXT fields reordered to appear AFTER their corresponding radio questions
+3. Fixed _TEXT "Not answered" styling (amber warning instead of red error)
+4. Fixed _TEXT "Not answered" logic (only when BOTH radio AND text are blank)
+5. Fixed text-only attempt handling (radio marked incorrect, _TEXT hidden)
+
+**See:** `IMPLEMENTATION_SUMMARY_TOM_BRANCHES.md` for complete details
+
+### Update #2: Text-Only Attempt Handling
+**Commit:** 244904d
+
+When radio question is blank but text field is filled:
+- **Old Behavior:** Radio = "Not answered", _TEXT = "Answered"
+- **New Behavior:** Radio = "Incorrect" (with `[TEXT_ONLY_ATTEMPT]` marker), _TEXT = Hidden
+
+**Rationale:** Student failed to complete question correctly; showing text would reveal incorrect attempt
+
+**Applies to:** All `radio_text` question types (ToM, Math Pattern, etc.)
+
+---
+
+**Implementation Status:** ✅ COMPLETE + ENHANCED  
 **Ready for Merge:** ✅ YES  
 **Breaking Changes:** ❌ NONE

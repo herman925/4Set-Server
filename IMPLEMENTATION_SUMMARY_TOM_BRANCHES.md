@@ -293,7 +293,8 @@ The implementation is generic and can support:
 ## Related Documentation
 
 ### Files Modified
-- `assets/js/checking-system-student-page.js` (+111 lines, -23 lines)
+- `assets/js/checking-system-student-page.js` (+118 lines, -25 lines) - Branch display, reordering, text-only display
+- `assets/js/task-validator.js` (+19 lines, -15 lines) - Text-only attempt handling, _TEXT status logic
 
 ### Reference Materials
 - **Calculation Rules**: `calculation_bible.md`
@@ -302,9 +303,58 @@ The implementation is generic and can support:
 - **Test Suites**: `TEMP/test_text_field_display.py`, `TEMP/test_radio_text_validation.py`
 
 ### PR & Issues
-- **Issue**: "The branching text doesn't show in ToM 'Result'"
+- **Issue**: "The branching text doesn't show in ToM 'Result'" (herman925/4Set-Server#43)
 - **PR**: copilot/fix-to-m-result-text-branch
-- **Commit**: 7618f52 (main implementation)
+- **Commits**:
+  - 7618f52 - Branch display and reordering
+  - bb25873 - _TEXT "Not answered" styling fix
+  - fb0614b - _TEXT "Not answered" logic fix
+  - 244904d - Text-only attempt handling
+
+---
+
+## Additional Changes (2025-10-22)
+
+### Comment Fix #1: _TEXT "Not answered" Styling
+**Commit:** bb25873
+
+**Issue:** _TEXT fields were using red "incorrect" styling for "Not answered" status
+
+**Fix:** Changed to amber warning styling
+- Color: Red error → Amber warning (`#fef3c7` background, `#92400e` text)
+- Icon: X mark → Alert circle (⚠️)
+- Rationale: _TEXT fields don't have correct/incorrect answers; red styling was misleading
+
+### Comment Fix #2: _TEXT "Not answered" Logic
+**Commit:** fb0614b
+
+**Issue:** "Not answered" appearing when radio was incorrect but text was empty
+
+**Fix:** Corrected logic so "Not answered" for _TEXT ONLY when BOTH radio AND text are blank
+- Scenario 3 (Radio incorrect + Text empty): Now shows "—" (dash), not "Not answered"
+- Scenario 5 (Radio blank + Text empty): Shows "⚠️ Not answered" ✅
+
+### Comment Fix #3: Text-Only Attempt Handling
+**Commit:** 244904d
+
+**Issue:** When radio blank but text filled, system wasn't treating it as incorrect attempt
+
+**Fix:** Text-only attempts now properly handled:
+1. Radio question automatically marked as "Incorrect" (not "Not answered")
+2. _TEXT field hidden (not displayed) to protect assessment integrity
+3. Special marker `[TEXT_ONLY_ATTEMPT]` used internally, displayed as "—"
+
+**Applies to:** ToM, Math Pattern, and all other `radio_text` question types
+
+### Complete Radio_Text Behavior Matrix
+
+| Scenario | Radio Answer | Text Content | Radio Result | _TEXT Display |
+|----------|-------------|--------------|--------------|---------------|
+| 1 | Correct | Any/Empty | ✓ Correct | N/A |
+| 2 | Incorrect | Filled | ✗ Incorrect | ✓ Answered |
+| 3 | Incorrect | Empty | ✗ Incorrect | — (dash) |
+| **4** | **Blank** | **Filled** | **✗ Incorrect** | **Hidden** |
+| 5 | Blank | Empty | Not answered | ⚠️ Not answered |
 
 ---
 
@@ -314,7 +364,10 @@ This implementation successfully addresses all requirements:
 1. ✅ Branch information displayed on ALL ToM questions
 2. ✅ _TEXT fields reordered to appear after base questions
 3. ✅ Calculation mechanism verified to exclude _TEXT fields
-4. ✅ All tests passing
-5. ✅ No regressions in existing functionality
+4. ✅ _TEXT "Not answered" styling corrected (amber warning, not red error)
+5. ✅ _TEXT "Not answered" logic corrected (only when both blank)
+6. ✅ Text-only attempts properly handled (radio marked incorrect, _TEXT hidden)
+7. ✅ All tests passing
+8. ✅ No regressions in existing functionality
 
 The solution is robust, performant, and maintainable, with comprehensive test coverage and clear documentation.
