@@ -1,1 +1,9 @@
 test_*.html
+
+# Python virtual environment and cache (for local dev)
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+env/
+.venv/

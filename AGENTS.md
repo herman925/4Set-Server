@@ -251,6 +251,58 @@ The 4Set System is a comprehensive web-based assessment data processing pipeline
 - Existing organizational subscription
 - Reduced security attack surface
 
+#### Flask Proxy for Local Development CORS
+**Decision**: Use Flask (Python) proxy server instead of Node.js for local development  
+**Date**: October 22, 2025  
+**Rationale**:
+- **Ecosystem Alignment**: Project already uses Python (parser/, upload.py, requirements.txt)
+- **Zero New Dependencies**: Users already have Python installed for PDF parsing
+- **Cross-Platform**: Flask works on Windows, Linux, macOS with consistent behavior
+- **Production Simplicity**: Proxy only needed for localhost - GitHub Pages works directly
+- **One-Click Startup**: Batch/shell scripts (`start_dev.bat`, `start_dev.sh`) auto-install deps and open browser
+- **Auto-Detection**: JavaScript code automatically switches between proxy (local) and direct API (production)
+
+**Alternative Considered**: Node.js + Express proxy  
+**Why Rejected**: Would introduce new runtime dependency (Node.js) to an otherwise Python-based project
+
+**Implementation**:
+- `proxy_server.py` - Flask app with CORS headers, routes `/api/jotform/*` to `api.jotform.com`
+- `jotform-cache.js` - Auto-detects hostname and uses `http://localhost:3000/api/jotform` locally
+- `requirements.txt` - Added Flask, Flask-CORS, requests to existing pypdf dependency
+
+#### Adaptive Batch Sizing for JotForm Fetches
+**Decision**: Implement adaptive batch sizing for browser-based JotForm data fetching  
+**Date**: October 22, 2025  
+**Rationale**:
+- **JotForm API Bug**: Large responses (1000 records = ~4.16 MB) get truncated mid-JSON at character 4,361,577
+- **Dynamic Response**: Automatically reduces batch size on errors (504 timeout, JSON parse errors)
+- **Gradual Recovery**: Increases batch size after consecutive successes (like processor_agent.ps1)
+- **Configurable**: All settings in `config/jotform_config.json` for easy adjustment
+
+**Discovery Process**:
+- Test 1-3 (10 records, form access, basic API): ✅ Pass
+- Test 4 (1000 records): ❌ Fail - JSON truncated at 4.16 MB
+- Test 5 (100 records): ✅ Pass - Recommended production size
+
+**Implementation** (mirrors `processor_agent.ps1` adaptive chunk sizing):
+- `config/jotform_config.json` - Added `webFetch` section with batch size reductions `[1.0, 0.5, 0.3, 0.2, 0.1]`
+- `jotform-cache.js` - Adaptive fetch loop with:
+  - **Fall-off on error**: Reduces batch size by stepping through reduction array
+  - **Gradual increase**: After 2 consecutive successes, increases one step
+  - **Min/max bounds**: Enforces `minBatchSize: 10`, `maxBatchSize: 500`
+- `TEMP/test_jotform_api.py` - Diagnostic tool to test JotForm API health (10/100/1000 record tests)
+
+**Behavior**:
+```
+Start: 100 records/batch → Success
+  ↓
+2 successes → Try 100 (baseline)
+  ↓
+Error (504/truncation) → Reduce to 50 (50%)
+  ↓
+Success → Success → Try 100 again (gradual increase)
+```
+
 ### Data Flow Principles
 
 #### Absolute Certainty Principle for Terminations

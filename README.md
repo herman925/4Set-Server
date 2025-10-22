@@ -100,6 +100,43 @@ Monitoring Dashboard (GitHub Pages)
    - **Upload Interface**: `upload.html` for PDF submissions
    - **Checking System**: `checking_system_home.html` for data validation
 
+### Local Development (CORS Proxy)
+
+When running the Checking System locally, you'll need a CORS proxy to access JotForm API. The proxy is **not needed** for GitHub Pages or production deployment.
+
+**One-Click Startup:**
+
+```bash
+# Windows - Double-click or run:
+start_dev.bat
+
+# Linux/Mac:
+./start_dev.sh
+```
+
+This will:
+1. Install Flask dependencies (if needed)
+2. Start the CORS proxy server on `http://127.0.0.1:3000`
+3. Automatically open your browser to the Checking System
+
+**Manual Startup:**
+
+```bash
+# Install dependencies
+pip install -r requirements.txt
+
+# Start proxy server
+python proxy_server.py --port 3000 --host 127.0.0.1
+
+# Access at: http://127.0.0.1:3000/checking_system_home.html
+```
+
+**Why Needed:**
+- Browsers block cross-origin API requests (CORS policy)
+- JotForm API doesn't allow direct calls from `localhost`
+- The Flask proxy routes requests through Python (no CORS restrictions)
+- **Production (GitHub Pages)**: No proxy needed - works directly
+
 ---
 
 ## Project Structure
@@ -110,13 +147,16 @@ Monitoring Dashboard (GitHub Pages)
 |------|---------|
 | `processor_agent.ps1` | Main processor agent (PowerShell 7 service) |
 | `worker.ps1` | Worker thread manager for parallel processing |
+| `proxy_server.py` | Flask CORS proxy for local development |
+| `start_dev.bat` | Windows one-click startup (proxy + browser) |
+| `start_dev.sh` | Linux/Mac one-click startup (proxy + browser) |
 | `upload.py` | Python upload utility (legacy/backup) |
 | `index.html` | System entry page with navigation |
 | `upload.html` | Drag-and-drop PDF upload interface |
 | `queue_manifest.json` | Persistent queue state for restart recovery |
-| `requirements.txt` | Python dependencies (pypdf/PyPDF2) |
+| `requirements.txt` | Python dependencies (pypdf, Flask, requests) |
 | `README.md` | This file - comprehensive documentation |
-| `Agent.md` | Development roadmap and strategic planning |
+| `AGENTS.md` | Development roadmap and strategic planning |
 
 ### Key Directories
 

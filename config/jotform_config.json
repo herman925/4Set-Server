@@ -9,6 +9,18 @@
     "burstCooldownSeconds": 60
   },
   
+  "webFetch": {
+    "_comment": "Settings for browser-based JotForm data fetching (checking system)",
+    "initialBatchSize": 100,
+    "minBatchSize": 10,
+    "maxBatchSize": 500,
+    "batchSizeReductions": [1.0, 0.5, 0.3, 0.2, 0.1],
+    "consecutiveSuccessesForIncrease": 2,
+    "timeoutSeconds": 60,
+    "retryDelaySeconds": [2, 5, 10],
+    "comment": "Adaptive batch sizing: starts at 100, reduces on errors (504/truncation), increases after 2 consecutive successes"
+  },
+  
   "powershell": {
     "maxConcurrentPdfs": 2,
     "maxFieldsPerChunk": 100,

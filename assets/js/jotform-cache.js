@@ -46,6 +46,74 @@
       this.loadPromise = null;
       this.progressCallback = null; // For UI progress updates
       this.storage = storage; // Expose storage instance for debugging
+      
+      // Auto-detect API endpoint based on environment
+      // Local dev (localhost/127.0.0.1) → Use proxy server to bypass CORS
+      // Production (GitHub Pages) → Direct API call (no CORS issues)
+      this.apiBaseUrl = this.detectApiBaseUrl();
+      console.log(`[JotFormCache] Using API endpoint: ${this.apiBaseUrl}`);
+      
+      // Adaptive batch sizing state (like processor_agent.ps1)
+      this.config = null; // Will be loaded from config/jotform_config.json
+      this.lastSuccessfulBatchSize = null;
+      this.consecutiveSuccesses = 0;
+      this.reductionIndex = 0; // Index into batchSizeReductions array
+    }
+    
+    /**
+     * Detect whether to use proxy server or direct API
+     */
+    detectApiBaseUrl() {
+      const hostname = window.location.hostname;
+      const isLocal = hostname === 'localhost' || 
+                      hostname === '127.0.0.1' || 
+                      hostname === '0.0.0.0' ||
+                      hostname.startsWith('192.168.') ||
+                      hostname.startsWith('10.0.');
+      
+      if (isLocal) {
+        // Running locally - use Flask proxy server on port 3000
+        return 'http://localhost:3000/api/jotform';
+      } else {
+        // Running on GitHub Pages or production - use direct API
+        return 'https://api.jotform.com';
+      }
+    }
+    
+    /**
+     * Load configuration from config/jotform_config.json
+     * @returns {Promise<Object>} Configuration object
+     */
+    async loadConfig() {
+      if (this.config) {
+        return this.config; // Already loaded
+      }
+      
+      try {
+        const response = await fetch('/config/jotform_config.json');
+        const config = await response.json();
+        this.config = config.webFetch || {
+          initialBatchSize: 100,
+          minBatchSize: 10,
+          maxBatchSize: 500,
+          batchSizeReductions: [1.0, 0.5, 0.3, 0.2, 0.1],
+          consecutiveSuccessesForIncrease: 2,
+          timeoutSeconds: 60
+        };
+        console.log(`[JotFormCache] Config loaded: batch ${this.config.initialBatchSize}, reductions ${this.config.batchSizeReductions.length} levels`);
+        return this.config;
+      } catch (error) {
+        console.warn('[JotFormCache] Failed to load config, using defaults:', error);
+        this.config = {
+          initialBatchSize: 100,
+          minBatchSize: 10,
+          maxBatchSize: 500,
+          batchSizeReductions: [1.0, 0.5, 0.3, 0.2, 0.1],
+          consecutiveSuccessesForIncrease: 2,
+          timeoutSeconds: 60
+        };
+        return this.config;
+      }
     }
     
     /**
@@ -109,7 +177,8 @@
     }
 
     /**
-     * Fetch ALL submissions from JotForm API
+     * Fetch ALL submissions from JotForm API with adaptive batch sizing
+     * Mimics processor_agent.ps1 adaptive chunk sizing pattern
      * @param {Object} credentials - { formId, apiKey }
      * @returns {Promise<Array>} - All submissions
      */
@@ -117,57 +186,127 @@
       console.log('[JotFormCache] ========== FETCHING ALL SUBMISSIONS ==========');
       console.log('[JotFormCache] Form ID:', credentials.formId);
 
+      // Load configuration
+      await this.loadConfig();
+      
       this.emitProgress('Connecting to Jotform API...', 5);
 
       const allSubmissions = [];
       let offset = 0;
-      const limit = 1000; // Max per page
       let hasMore = true;
       let pageNum = 1;
+      
+      // Adaptive batch sizing (like processor_agent.ps1)
+      const baseBatchSize = this.config.initialBatchSize;
+      let currentBatchSize = baseBatchSize;
 
       try {
         while (hasMore) {
-          const url = `https://api.jotform.com/form/${credentials.formId}/submissions?` +
+          // Calculate current batch size based on reduction index
+          if (this.reductionIndex > 0) {
+            currentBatchSize = Math.max(
+              this.config.minBatchSize,
+              Math.floor(baseBatchSize * this.config.batchSizeReductions[this.reductionIndex])
+            );
+            console.log(`[JotFormCache] Using reduced batch size: ${currentBatchSize} (${Math.round(this.config.batchSizeReductions[this.reductionIndex] * 100)}% of ${baseBatchSize})`);
+          }
+          
+          const url = `${this.apiBaseUrl}/form/${credentials.formId}/submissions?` +
                       `apiKey=${credentials.apiKey}` +
-                      `&limit=${limit}` +
+                      `&limit=${currentBatchSize}` +
                       `&offset=${offset}` +
                       `&orderby=created_at` +
                       `&direction=ASC`;
 
-          console.log(`[JotFormCache] Fetching page ${pageNum} (offset ${offset})`);
-          this.emitProgress(`Fetching page ${pageNum} of submissions...`, 10 + (pageNum * 5));
+          console.log(`[JotFormCache] Fetching page ${pageNum} (offset ${offset}, batch ${currentBatchSize})`);
+          this.emitProgress(`Fetching page ${pageNum} (batch: ${currentBatchSize})...`, 10 + (pageNum * 2));
           
-          const response = await fetch(url);
+          let response;
+          let result;
+          let fetchSuccess = false;
           
-          if (!response.ok) {
-            if (response.status === 429) {
-              throw new Error('Rate limited by JotForm API. Please try again later.');
+          try {
+            response = await fetch(url);
+            
+            if (!response.ok) {
+              if (response.status === 429) {
+                throw new Error('Rate limited by JotForm API. Please try again later.');
+              }
+              if (response.status === 504) {
+                throw new Error('Gateway timeout - batch too large');
+              }
+              throw new Error(`JotForm API error: ${response.status}`);
             }
-            throw new Error(`JotForm API error: ${response.status}`);
-          }
 
-          const result = await response.json();
+            // Try to parse JSON
+            const text = await response.text();
+            result = JSON.parse(text);
+            
+            // Verify we got valid content
+            if (!result.content) {
+              throw new Error('Response missing content field');
+            }
+            
+            fetchSuccess = true;
+            
+          } catch (parseError) {
+            // JSON parse error or timeout - reduce batch size
+            console.error(`[JotFormCache] Fetch failed: ${parseError.message}`);
+            
+            // Adaptive response to errors (like processor_agent.ps1)
+            if (parseError.message.includes('timeout') || parseError.message.includes('Unexpected end of JSON')) {
+              this.consecutiveSuccesses = 0; // Reset on failure
+              
+              if (this.reductionIndex < this.config.batchSizeReductions.length - 1) {
+                this.reductionIndex++;
+                const newSize = Math.floor(baseBatchSize * this.config.batchSizeReductions[this.reductionIndex]);
+                console.warn(`[JotFormCache] Error detected - reducing batch size to ${newSize} (${Math.round(this.config.batchSizeReductions[this.reductionIndex] * 100)}%)`);
+                
+                // Retry this page with smaller batch
+                continue;
+              } else {
+                throw new Error(`Failed even at minimum batch size (${this.config.minBatchSize}): ${parseError.message}`);
+              }
+            } else {
+              throw parseError;
+            }
+          }
           
-          if (!result.content || result.content.length === 0) {
-            hasMore = false;
-            break;
-          }
+          // Success! Process the results
+          if (fetchSuccess) {
+            // Track consecutive successes for gradual increase (like processor_agent.ps1)
+            this.consecutiveSuccesses++;
+            this.lastSuccessfulBatchSize = currentBatchSize;
+            
+            if (!result.content || result.content.length === 0) {
+              hasMore = false;
+              break;
+            }
 
-          allSubmissions.push(...result.content);
-          console.log(`[JotFormCache] Retrieved ${result.content.length} submissions (total: ${allSubmissions.length})`);
-          this.emitProgress(`Downloaded ${allSubmissions.length} submissions`, 10 + (pageNum * 5));
+            allSubmissions.push(...result.content);
+            console.log(`[JotFormCache] Page ${pageNum}: Retrieved ${result.content.length} submissions (total: ${allSubmissions.length})`);
+            this.emitProgress(`Downloaded ${allSubmissions.length} submissions...`, Math.min(90, 10 + (pageNum * 2)));
 
-          // Check if we got less than limit (last page)
-          if (result.content.length < limit) {
-            hasMore = false;
-          } else {
-            offset += limit;
-            pageNum++;
-          }
+            // Gradually increase batch size if we're below baseline and have multiple consecutive successes
+            if (this.reductionIndex > 0 && this.consecutiveSuccesses >= this.config.consecutiveSuccessesForIncrease) {
+              this.reductionIndex = Math.max(0, this.reductionIndex - 1);
+              const newSize = this.reductionIndex === 0 ? baseBatchSize : Math.floor(baseBatchSize * this.config.batchSizeReductions[this.reductionIndex]);
+              this.consecutiveSuccesses = 0; // Reset counter after increase
+              console.log(`[JotFormCache] After ${this.config.consecutiveSuccessesForIncrease} successes, increasing batch size to ${newSize} (${Math.round((this.reductionIndex === 0 ? 1 : this.config.batchSizeReductions[this.reductionIndex]) * 100)}%)`);
+            }
+            
+            // Check if we got less than current batch size (last page)
+            if (result.content.length < currentBatchSize) {
+              hasMore = false;
+            } else {
+              offset += currentBatchSize; // Use current batch size, not hardcoded limit
+              pageNum++;
+            }
 
-          // Rate limiting: small delay between pages
-          if (hasMore) {
-            await new Promise(resolve => setTimeout(resolve, 500));
+            // Rate limiting: small delay between pages
+            if (hasMore) {
+              await new Promise(resolve => setTimeout(resolve, 200));
+            }
           }
         }
 

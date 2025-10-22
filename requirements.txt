@@ -1,0 +1,7 @@
+# PDF Parser dependencies
+pypdf>=3.0.0
+
+# CORS Proxy Server dependencies (for local development only)
+Flask>=2.0.0
+Flask-CORS>=3.0.0
+requests>=2.25.0
