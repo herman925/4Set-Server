@@ -910,6 +910,22 @@
           total,
           hasPostTerminationAnswers: validation.hasPostTerminationAnswers || false
         });
+        
+        // Debug logging for CM task
+        if (taskId === 'cm' && student.coreId === 'C10880') {
+          console.log('[JotFormCache] CM Cache Build for C10880:', {
+            taskId,
+            setId,
+            isComplete,
+            answered,
+            total,
+            terminated: validation.terminated,
+            hasPostTerminationAnswers: validation.hasPostTerminationAnswers,
+            answeredEqualsTotal: answered === total,
+            condition1: answered === total && total > 0,
+            condition2: validation.terminated && !validation.hasPostTerminationAnswers && answered > 0
+          });
+        }
       }
       
       // Calculate set status
