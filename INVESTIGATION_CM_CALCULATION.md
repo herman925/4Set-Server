@@ -135,12 +135,44 @@ Only the **documentation** needed correction. Users consulting the calculation b
 - **System Behavior:** No change - was already correct
 - **Trust:** Improved - documentation matches reality
 
+## Additional Finding: Status Circle Display Issue
+
+### User Report
+User observed that CM shows **grey circle** (not started) on class page but **green circle** (complete) on student page for the same student (C10880).
+
+### Root Cause
+This is **not a calculation bug** - it's a **cache staleness issue**. The logic test confirms both pages should show GREEN:
+
+![Status Circle Logic Test](https://github.com/user-attachments/assets/53eec356-6292-4dd1-8254-f96b70d483f3)
+
+**Why this happens:**
+- **Student Page**: Always fetches fresh data from JotForm API
+- **Class Page**: Uses IndexedDB validation cache that persists across sessions
+
+If CM was completed after the class page cache was built, the class page will show stale data (grey) until cache is cleared.
+
+### Solution
+**Clear the validation cache:**
+1. Open `checking_system_home.html`
+2. Click green "System Ready" status pill (top right)
+3. Click "Delete Cache" button
+4. Reload class page
+
+After clearing cache, both pages will show CM as green ✅
+
+### Prevention
+The system already has a 1-hour TTL on the validation cache. Consider:
+- Add visual indicator when cache is >30 minutes old
+- Add auto-refresh prompt when returning to page after extended time
+- Document cache clearing procedure in user guide
+
 ## Recommendations
 
 1. ✅ **Keep current code** - no changes needed
 2. ✅ **Use updated documentation** - now reflects actual behavior
 3. ✅ **Run verification test** - confirms calculations are correct
-4. ⚠️ **Review other examples** - check if ERV, CWR, FM also have similar doc issues
+4. ✅ **Clear cache if seeing stale data** - use cache manager on home page
+5. ⚠️ **Review other examples** - check if ERV, CWR, FM also have similar doc issues
 
 ## Testing
 
