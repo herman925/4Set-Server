@@ -687,6 +687,95 @@
   }
 
   /**
+   * Helper function: Reorder questions so _TEXT fields appear after their corresponding radio questions
+   * Also detect and annotate branch information for ToM questions
+   */
+  function reorderAndAnnotateQuestions(questions, taskId, mergedAnswers) {
+    // Check if this is a ToM task
+    const isToMTask = taskId.toLowerCase().includes('theoryofmind') || taskId.toLowerCase().includes('tom');
+    
+    // Step 1: Detect branch information for ToM tasks
+    const branchInfo = {};
+    if (isToMTask) {
+      // Map of branching questions (like ToM_Q1a) to their answer values
+      const branchSelectors = {};
+      
+      // First pass: identify branch selector questions (e.g., ToM_Q1a, ToM_Q2a, etc.)
+      // These are questions that determine which branch subsequent questions follow
+      for (const q of questions) {
+        const match = q.id.match(/^(ToM_Q\d+)([a-z])$/);
+        if (match && match[2] === 'a') {
+          // This is a potential branch selector (e.g., ToM_Q1a)
+          const baseId = match[1]; // e.g., "ToM_Q1"
+          const answer = q.studentAnswer;
+          if (answer) {
+            branchSelectors[q.id] = answer;
+            branchInfo[q.id] = answer;
+          }
+        }
+      }
+      
+      // Second pass: annotate branched questions with their branch
+      for (const q of questions) {
+        // Check if this question belongs to a branch
+        const match = q.id.match(/^(ToM_Q\d+)([a-z])$/);
+        if (match) {
+          const baseId = match[1]; // e.g., "ToM_Q1"
+          const suffix = match[2]; // e.g., "b", "c"
+          const selectorId = baseId + 'a'; // e.g., "ToM_Q1a"
+          
+          if (branchSelectors[selectorId]) {
+            // This question is part of a branch
+            branchInfo[q.id] = branchSelectors[selectorId];
+          }
+        }
+        
+        // Also check _TEXT fields
+        if (q.id.endsWith('_TEXT')) {
+          const baseQuestionId = q.id.replace('_TEXT', '');
+          if (branchInfo[baseQuestionId]) {
+            branchInfo[q.id] = branchInfo[baseQuestionId];
+          }
+        }
+      }
+    }
+    
+    // Step 2: Reorder questions to place _TEXT fields after their corresponding radio questions
+    const reordered = [];
+    const textFieldsToPlace = new Map(); // Map of base question ID to _TEXT question
+    
+    // First pass: separate _TEXT fields from regular questions
+    for (const q of questions) {
+      if (q.id.endsWith('_TEXT')) {
+        const baseQuestionId = q.id.replace('_TEXT', '');
+        textFieldsToPlace.set(baseQuestionId, q);
+      } else {
+        reordered.push(q);
+      }
+    }
+    
+    // Second pass: insert _TEXT fields immediately after their corresponding questions
+    const finalOrdered = [];
+    for (const q of reordered) {
+      finalOrdered.push(q);
+      
+      // Check if there's a _TEXT field for this question
+      if (textFieldsToPlace.has(q.id)) {
+        finalOrdered.push(textFieldsToPlace.get(q.id));
+        textFieldsToPlace.delete(q.id); // Remove from map so we don't add it again
+      }
+    }
+    
+    // Add any remaining _TEXT fields that didn't have a matching base question
+    for (const textField of textFieldsToPlace.values()) {
+      finalOrdered.push(textField);
+    }
+    
+    // Step 3: Return reordered questions with branch info
+    return { questions: finalOrdered, branchInfo };
+  }
+
+  /**
    * Populate task tables with validated question data
    */
   function populateTaskTables(taskValidation, mergedAnswers) {
@@ -781,9 +870,16 @@
         terminationIndex = validation.terminationIndex;
       }
       
-      // Populate with real questions
-      for (let i = 0; i < validation.questions.length; i++) {
-        const question = validation.questions[i];
+      // Reorder questions and detect branch information
+      const { questions: orderedQuestions, branchInfo } = reorderAndAnnotateQuestions(
+        validation.questions, 
+        taskId, 
+        mergedAnswers
+      );
+      
+      // Populate with real questions (using reordered list)
+      for (let i = 0; i < orderedQuestions.length; i++) {
+        const question = orderedQuestions[i];
         const row = document.createElement('tr');
         
         // Check if this question is after a timeout/termination (should be marked as "Ignored")
@@ -815,32 +911,24 @@
         row.setAttribute('data-text-display', question.isTextDisplay ? 'true' : 'false'); // Mark _TEXT fields
         row.className = 'hover:bg-[color:var(--muted)]/30';
         
+        // Determine branch information for this question (if any)
+        let branchSuffix = '';
+        if (branchInfo[question.id]) {
+          branchSuffix = ` (${branchInfo[question.id]} Branch)`;
+        }
+        
         // Determine status pill
         let statusPill;
         if (isIgnoredDueToTimeout) {
           statusPill = '<span class="answer-pill" style="background: #dbeafe; color: #1e40af; border-color: #93c5fd;"><i data-lucide="ban" class="w-3 h-3"></i>Ignored (Terminated)</span>';
         } else if (question.isTextDisplay) {
           // Special handling for _TEXT display fields
-          // Determine branch information for Theory of Mind tasks based on answer choices
-          let branchInfo = '';
-          if (taskId.toLowerCase().includes('theoryofmind') || taskId.toLowerCase().includes('tom')) {
-            // Theory of Mind branching: detect which answer choice was made
-            // Example: ToM_Q3a_TEXT -> check ToM_Q3a answer
-            const baseQuestionId = question.id.replace('_TEXT', '');
-            const branchingAnswer = mergedAnswers[baseQuestionId]?.answer || mergedAnswers[baseQuestionId]?.text;
-            
-            if (branchingAnswer) {
-              // Format the branch name based on the actual answer choice
-              branchInfo = ` (${branchingAnswer} Branch)`;
-            }
-          }
-          
           if (question.textFieldStatus === 'na') {
             // N/A status with muted colors
             statusPill = '<span class="answer-pill" style="background: #f9fafb; color: #6b7280; border-color: #e5e7eb;"><i data-lucide="info" class="w-3 h-3"></i>N/A</span>';
           } else if (question.textFieldStatus === 'answered') {
             // Answered status with branch info
-            statusPill = `<span class="answer-pill" style="background: #f0f9ff; color: #0369a1; border-color: #bae6fd;"><i data-lucide="circle-check" class="w-3 h-3"></i>Answered${branchInfo}</span>`;
+            statusPill = `<span class="answer-pill" style="background: #f0f9ff; color: #0369a1; border-color: #bae6fd;"><i data-lucide="circle-check" class="w-3 h-3"></i>Answered${branchSuffix}</span>`;
           } else if (question.textFieldStatus === 'not-answered') {
             // Only show "Not answered" when radio answer is incorrect
             statusPill = '<span class="answer-pill incorrect"><i data-lucide="minus" class="w-3 h-3"></i>Not answered</span>';
@@ -849,13 +937,13 @@
             statusPill = '<span class="answer-pill" style="background: #f3f4f6; color: #9ca3af; border-color: #d1d5db;"><i data-lucide="minus" class="w-3 h-3"></i>—</span>';
           }
         } else if (question.studentAnswer === null) {
-          statusPill = '<span class="answer-pill incorrect"><i data-lucide="minus" class="w-3 h-3"></i>Not answered</span>';
+          statusPill = `<span class="answer-pill incorrect"><i data-lucide="minus" class="w-3 h-3"></i>Not answered${branchSuffix}</span>`;
         } else if (question.isUnscored) {
-          statusPill = '<span class="answer-pill" style="background: #f0f9ff; color: #0369a1; border-color: #bae6fd;"><i data-lucide="circle-check" class="w-3 h-3"></i>Answered</span>';
+          statusPill = `<span class="answer-pill" style="background: #f0f9ff; color: #0369a1; border-color: #bae6fd;"><i data-lucide="circle-check" class="w-3 h-3"></i>Answered${branchSuffix}</span>`;
         } else if (question.isCorrect) {
-          statusPill = '<span class="answer-pill correct"><i data-lucide="check" class="w-3 h-3"></i>Correct</span>';
+          statusPill = `<span class="answer-pill correct"><i data-lucide="check" class="w-3 h-3"></i>Correct${branchSuffix}</span>`;
         } else {
-          statusPill = '<span class="answer-pill incorrect"><i data-lucide="x" class="w-3 h-3"></i>Incorrect</span>';
+          statusPill = `<span class="answer-pill incorrect"><i data-lucide="x" class="w-3 h-3"></i>Incorrect${branchSuffix}</span>`;
         }
         
         // For Y/N tasks (like TGMD), show "N/A" instead of correct answer
@@ -884,7 +972,7 @@
       // Populate termination checklist if task has termination points
       populateTerminationChecklist(taskElement, taskId, validation, mergedAnswers);
       
-      console.log(`[StudentPage] ✅ Populated ${taskId}: ${validation.questions.length} questions`);
+      console.log(`[StudentPage] ✅ Populated ${taskId}: ${orderedQuestions.length} questions`);
     }
     
     // Reinitialize Lucide icons
