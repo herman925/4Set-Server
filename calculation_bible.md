@@ -2134,6 +2134,35 @@ const isComplete = (answered === total && total > 0) ||
 
 **Recommendation:** 🚨 **IMMEDIATE FIX REQUIRED** - Add `&& answered > 0` to termination conditions in jotform-cache.js
 
+**FIX STATUS:** ✅ **FIXED** (October 2025)
+
+**Implementation Details:**
+- **Commit:** 56db5e5
+- **File Modified:** `assets/js/jotform-cache.js` Lines 746-752
+- **Changes:** Added `&& answered > 0` to both termination conditions
+- **Impact:** All pages now show consistent status colors
+
+**Post-Fix Verification:**
+
+| Scenario | Before Fix | After Fix | Status |
+|----------|------------|-----------|--------|
+| Terminated, 0 answers | Grey vs Green ❌ | Grey vs Grey ✅ | ✅ Fixed |
+| Terminated, has answers | Green vs Green ✅ | Green vs Green ✅ | ✅ Works |
+| Timed out, 0 answers | Grey vs Green ❌ | Grey vs Grey ✅ | ✅ Fixed |
+| 100% complete | Green vs Green ✅ | Green vs Green ✅ | ✅ Works |
+| Partially complete | Red vs Red ✅ | Red vs Red ✅ | ✅ Works |
+
+**Documentation Created:**
+- `INVESTIGATIVE_REPORT.md` - Full technical investigation (merged into this document)
+- `VERIFICATION_STATUS_FIX.md` - Test scenarios (merged into this document)
+- `FIX_SUMMARY.md` - Quick reference (merged into this document)
+
+⚠️ **Cache Invalidation Required:** After deploying this fix, users must clear their validation cache:
+1. Navigate to `checking_system_home.html`
+2. Click green "System Ready" status pill
+3. Click "Delete Cache" button
+4. Re-sync cache by reloading class/school pages
+
 ---
 
 #### Issue 2: Answer Object Structure Differences
@@ -2475,36 +2504,477 @@ Cache Health Dashboard:
 |--------|-------------|------------|-----------------|
 | **Core Validation** | ✅ Identical | 🟢 None | None |
 | **Merge Strategy** | ✅ Identical | 🟢 None | None |
-| **Task Completion Logic** | 🔴 **BUG FOUND** | 🔴 **CRITICAL** | **FIX IMMEDIATELY (P0)** |
+| **Task Completion Logic** | ✅ **FIXED** (Oct 2025) | 🟢 None | ✅ Complete |
 | **Answer Filtering** | ✅ Identical | 🟡 Low | Monitor |
 | **Cache Freshness** | ⚠️ Different by design | 🔴 High | Improve UX (P0) |
 | **Cache Lifecycle** | ⚠️ Different by design | 🟡 Medium | Improve UX (P1) |
 
 **Overall Assessment:** 
 
-The system has **1 CRITICAL BUG** in the task completion logic (jotform-cache.js lines 749-751) that causes tasks with termination but zero answers to show as complete (green) on class pages but not started (grey) on student pages.
+~~The system has **1 CRITICAL BUG** in the task completion logic (jotform-cache.js lines 749-751) that causes tasks with termination but zero answers to show as complete (green) on class pages but not started (grey) on student pages.~~
+
+**UPDATE (October 2025):** ✅ **CRITICAL BUG FIXED**
+
+The task completion logic bug has been successfully resolved. All pages now show consistent status colors.
 
 **Immediate Action Required:**
 
-🚨 **P0 CRITICAL BUG FIX:** Add `&& answered > 0` condition to termination checks in jotform-cache.js:
+~~🚨 **P0 CRITICAL BUG FIX:** Add `&& answered > 0` condition to termination checks in jotform-cache.js:~~
+
+✅ **COMPLETED (Commit 56db5e5):**
 
 ```javascript
-// Line 749-751 - ADD answered > 0 check
+// Line 749-751 - FIXED
 const isComplete = (answered === total && total > 0) || 
                    (validation.terminated && !validation.hasPostTerminationAnswers && answered > 0) ||
                    (validation.timedOut && !validation.hasPostTerminationAnswers && answered > 0);
 ```
 
-This bug explains the user-reported discrepancies between class page task view and student view even with fresh cache.
-
 **Final Recommendation:** 
 
-1. ✅ **Fix the critical bug immediately** (P0)
+1. ✅ **Fix the critical bug immediately** (P0) - **COMPLETED**
 2. ✅ **Keep both mechanisms** after bug fix (optimal architecture)
 3. ✅ **Add UX improvements** for cache staleness transparency (P0-P1)
+
+---
+
+## Additional Validation Investigations (October 2025)
+
+### Investigation 2: Conditional Logic, Gender Branching, and Radio_Text Questions
+
+Following the status inconsistency fix, additional validation concerns were investigated to ensure comprehensive system accuracy.
+
+---
+
+### Issue 5: Conditional Logic Systems (Question Branching)
+
+**Status:** 🔴 **CRITICAL BUG IDENTIFIED** - Requires separate fix
+
+**Investigation Date:** October 2025  
+**Finding:** The system does NOT evaluate `showIf` conditions during question extraction
+
+#### The Problem
+
+**Location:** `assets/js/task-validator.js` Lines 127-173
+
+The `extractQuestions()` function extracts ALL questions from task definitions without evaluating `showIf` conditions. This leads to:
+- Duplicate question IDs (same ID with different conditions)
+- Incorrect total question counts
+- Wrong completion percentages
+- Potential scoring conflicts
+
+**Example from Theory of Mind Task:**
+
+```json
+// Two versions of ToM_Q1b with same ID but different conditions:
+{
+  "id": "ToM_Q1b",
+  "type": "image-choice",
+  "showIf": { "ToM_Q1a": "紅蘿蔔" },
+  "scoring": { "correctAnswer": "曲奇餅" }
+},
+{
+  "id": "ToM_Q1b",
+  "type": "image-choice",
+  "showIf": { "ToM_Q1a": "曲奇餅" },
+  "scoring": { "correctAnswer": "紅蘿蔔" }
+}
+```
+
+**Current Behavior:** System includes BOTH versions of `ToM_Q1b` regardless of student's answer to `ToM_Q1a`
+
+**Expected Behavior:** System should:
+1. Evaluate `showIf` condition based on student's actual answer to `ToM_Q1a`
+2. Include only the applicable version of `ToM_Q1b`
+3. Use the correct `correctAnswer` for scoring
+
+#### Impact Assessment
+
+| Aspect | Current Behavior | Expected Behavior | Impact |
+|--------|------------------|-------------------|--------|
+| **Question Extraction** | Extracts ALL questions | Should filter by showIf | 🔴 High |
+| **Duplicate IDs** | Allows duplicates | Should resolve to single version | 🔴 High |
+| **Total Count** | Overcounts questions | Should count only applicable | 🔴 High |
+| **Completion %** | May show lower than actual | Should reflect actual applicable questions | 🟡 Medium |
+| **Scoring** | May use wrong correctAnswer | Should use version-specific answer | 🔴 High |
+
+#### Real-World Scenarios
+
+**Scenario 1: Theory of Mind Branching**
+```
+Student answers "紅蘿蔔" to ToM_Q1a
+
+Current System:
+  - Extracts both versions of ToM_Q1b
+  - Total questions: includes both (incorrect)
+  - Completion: 50% (answered 1 of 2 ToM_Q1b)
+  - Scoring: unclear which correctAnswer to use
+
+Expected System:
+  - Extracts only ToM_Q1b with showIf: {"ToM_Q1a": "紅蘿蔔"}
+  - Total questions: includes only applicable version
+  - Completion: 100% (answered the applicable ToM_Q1b)
+  - Scoring: uses correctAnswer: "曲奇餅"
+```
+
+**Scenario 2: Conditional Instructions**
+```
+Tasks may have conditional instruction screens based on answers:
+
+{
+  "id": "ToM_Q1a_ins1",
+  "type": "instruction",
+  "showIf": { "ToM_Q1a": "紅蘿蔔" }
+},
+{
+  "id": "ToM_Q1a_ins2",
+  "type": "instruction",
+  "showIf": { "ToM_Q1a": "曲奇餅" }
+}
+
+Current: Both excluded (instructions not counted)
+Impact: Low - instructions already excluded via type check
+```
+
+#### Fix Implementation Plan
+
+**Approach: Answer-Aware Question Extraction** ⭐ Recommended
+
+**Step 1:** Add condition evaluation function
+
+```javascript
+/**
+ * Evaluate if a showIf condition is met based on student answers
+ */
+function evaluateShowIfCondition(showIf, answers) {
+  if (!showIf) return true; // No condition = always show
+  
+  // Handle gender conditions (static, evaluated at task selection level)
+  if (showIf.gender) {
+    return true; // Assume already filtered at task level
+  }
+  
+  // Handle answer-based conditions (e.g., { "ToM_Q1a": "紅蘿蔔" })
+  for (const [questionId, expectedValue] of Object.entries(showIf)) {
+    if (questionId === 'gender') continue;
+    
+    let studentAnswer = answers[questionId]?.answer || 
+                        answers[questionId]?.text || 
+                        null;
+    
+    // Map option index to value if needed (same logic as existing option mapping)
+    // ... (reuse existing option mapping code)
+    
+    if (studentAnswer !== expectedValue) {
+      return false; // Condition not met
+    }
+  }
+  
+  return true; // All conditions met
+}
+```
+
+**Step 2:** Filter questions based on conditions
+
+```javascript
+function filterQuestionsByConditions(questions, answers) {
+  const applicable = [];
+  const seenIds = new Set();
+  
+  for (const question of questions) {
+    // Evaluate showIf condition
+    if (question.showIf) {
+      const conditionMet = evaluateShowIfCondition(question.showIf, answers);
+      if (!conditionMet) continue; // Skip this question
+    }
+    
+    // Handle duplicate IDs: keep first matching condition
+    if (seenIds.has(question.id)) {
+      console.warn(`[TaskValidator] Duplicate question ID filtered: ${question.id}`);
+      continue;
+    }
+    
+    applicable.push(question);
+    seenIds.add(question.id);
+  }
+  
+  return applicable;
+}
+```
+
+**Step 3:** Update validateTask to use filtered questions
+
+```javascript
+async function validateTask(taskId, mergedAnswers) {
+  const taskDef = await loadTaskDefinition(taskId);
+  if (!taskDef) return { taskId, error: 'Task definition not found', questions: [] };
+
+  const allQuestions = extractQuestions(taskDef);
+  
+  // NEW: Filter questions by evaluating showIf conditions
+  const applicableQuestions = filterQuestionsByConditions(allQuestions, mergedAnswers);
+  
+  const validatedQuestions = [];
+  for (const question of applicableQuestions) {
+    // ... existing validation logic
+  }
+  
+  return { taskId, questions: validatedQuestions, /* ... */ };
+}
+```
+
+#### Testing Requirements
+
+**Test Case 1: ToM Task with Different Branches**
+
+```javascript
+// Student answers "紅蘿蔔" to ToM_Q1a
+const answers = {
+  'ToM_Q1a': { answer: '紅蘿蔔' },
+  'ToM_Q1b': { answer: '曲奇餅' }
+};
+
+const validation = await TaskValidator.validateTask('theoryofmind', answers);
+
+// Verify:
+// 1. Only one ToM_Q1b included (showIf: {"ToM_Q1a": "紅蘿蔔"})
+// 2. correctAnswer is "曲奇餅"
+// 3. Question marked as correct (student answer matches)
+// 4. Total question count excludes alternative ToM_Q1b
+```
+
+**Test Case 2: ToM Task with Opposite Branch**
+
+```javascript
+// Student answers "曲奇餅" to ToM_Q1a
+const answers = {
+  'ToM_Q1a': { answer: '曲奇餅' },
+  'ToM_Q1b': { answer: '紅蘿蔔' }
+};
+
+const validation = await TaskValidator.validateTask('theoryofmind', answers);
+
+// Verify:
+// 1. Only one ToM_Q1b included (showIf: {"ToM_Q1a": "曲奇餅"})
+// 2. correctAnswer is "紅蘿蔔"
+// 3. Question marked as correct
+```
+
+#### Tasks Affected
+
+Tasks using `showIf` conditions:
+
+1. **Theory of Mind** (`TheoryofMind.json`) - ✅ Confirmed affected
+   - Multiple questions with answer-dependent branching
+   - Example: `ToM_Q1b`, `ToM_Q2b`, etc.
+
+2. **TEC_Male / TEC_Female** - ⚠️ Different type (task-level, not question-level)
+   - Gender-based task selection (already handled correctly)
+   - Not affected by this bug
+
+#### Priority Assessment
+
+**Risk Level:** 🔴 **CRITICAL**
+
+**Affected Areas:**
+- Question totals on all pages
+- Completion percentages
+- Task status calculations
+- Data accuracy and reporting
+
+**Implementation Priority:** 🔴 **HIGH** - Second only to the status inconsistency (now fixed)
+
+**Recommendation:** Implement answer-aware question filtering in separate PR after status fix is deployed.
+
+---
+
+### Issue 6: Gender Branching Verification
+
+**Status:** ✅ **WORKING CORRECTLY** - No fix needed
+
+**Investigation Date:** October 2025  
+**Finding:** Gender-conditional task filtering is properly implemented across all aggregate views
+
+#### Current Implementation
+
+**Location:** `assets/js/jotform-cache.js` Lines 656-718
+
+The validation cache builder correctly filters tasks based on student gender:
+
+```javascript
+function isTaskApplicableToStudent(taskId, student, surveyStructure) {
+  for (const set of surveyStructure.sets) {
+    const section = set.sections.find(s => {
+      const fileName = s.file.replace('.json', '');
+      const metadata = surveyStructure.taskMetadata[fileName];
+      return metadata && metadata.id === taskId;
+    });
+    
+    if (section) {
+      if (!section.showIf) return true;
+      
+      if (section.showIf.gender) {
+        // Normalize gender: M/F → male/female
+        let studentGender = (student.gender || '').toLowerCase();
+        if (studentGender === 'm' || studentGender === 'male') studentGender = 'male';
+        if (studentGender === 'f' || studentGender === 'female') studentGender = 'female';
+        
+        const requiredGender = section.showIf.gender.toLowerCase();
+        return studentGender === requiredGender;
+      }
+      
+      return true;
+    }
+  }
+  
+  return true;
+}
+```
+
+#### Verification Points
+
+**1. Task Count Calculation (Lines 694-718)**
+- Filters sections based on `showIf.gender` condition
+- Adjusts `tasksTotal` for each set based on student gender
+- Console logs: `"Set set4, File TEC_Male.json: student.gender="M"→"male", required="male", match=true"`
+
+**2. Task Completion Analysis (Lines 732-737)**
+- Skips tasks not applicable to student gender
+- Console logs: `"Skipping tec_male - not applicable for F student"`
+
+#### Pages Verified
+
+All aggregate views use the same validation cache builder with gender filtering:
+
+| Page | Uses Cache | Gender Filtering | Status |
+|------|-----------|------------------|--------|
+| **Student Page** | Direct validation | Gender-agnostic (task level) | ✅ Working |
+| **Class Page** | Via JotFormCache | ✅ Filters by gender | ✅ Working |
+| **School Page** | Via JotFormCache | ✅ Filters by gender | ✅ Working |
+| **District Page** | Via JotFormCache | ✅ Filters by gender | ✅ Working |
+| **Group Page** | Via JotFormCache | ✅ Filters by gender | ✅ Working |
+
+#### Example Console Output
+
+```
+[JotFormCache] Set set4, File TEC_Male.json: student.gender="M"→"male", required="male", match=true
+[JotFormCache] C12345 (M): Set set4 tasksTotal = 5
+
+[JotFormCache] Set set4, File TEC_Female.json: student.gender="F"→"female", required="female", match=true
+[JotFormCache] C67890 (F): Set set4 tasksTotal = 5
+```
+
+**Conclusion:** ✅ No action required - Gender branching working as expected
+
+---
+
+### Issue 7: Radio_Text Questions with Associated _TEXT Fields
+
+**Status:** ✅ **WORKING CORRECTLY** - Already implemented as requested
+
+**Investigation Date:** October 2025  
+**Finding:** System correctly handles radio_text questions with priority logic
+
+#### User Requirement
+
+From PR comment:
+> "if correct answer is picked, it will assume correct of course. Then either the other label or the text is filled, assume wrong. The first condition will precede the other 2. So if the correct answer is picked, and there is a text, it will assume the text is a mistyped input and will be ignored"
+
+#### Current Implementation
+
+**Location:** `assets/js/task-validator.js`
+
+**1. _TEXT Fields Excluded from Question Count (Line 181)**
+
+```javascript
+function isExcludedField(id) {
+  return id.endsWith('_Date') || 
+         id.endsWith('_TEXT') ||  // ← ToM_Q3a_TEXT excluded
+         id.includes('_Memo_') ||
+         id.includes('_Ter') || 
+         id.endsWith('_timeout');
+}
+```
+
+**2. Radio_Text Option Mapping (Lines 212-220)**
+
+```javascript
+// Map JotForm option indices to values for radio_text questions
+if (studentAnswer && question.type === 'radio_text' && question.options) {
+  const optionIndex = parseInt(studentAnswer);
+  if (!isNaN(optionIndex) && optionIndex >= 1 && optionIndex <= question.options.length) {
+    const mappedValue = question.options[optionIndex - 1].value;
+    studentAnswer = mappedValue;
+  }
+}
+```
+
+**3. Scoring Logic - Correct Answer Has Priority (Lines 224-226)**
+
+```javascript
+if (correctAnswer !== undefined) {
+  // This check happens FIRST - correct answer takes priority
+  isCorrect = studentAnswer !== null && 
+              String(studentAnswer).trim() === String(correctAnswer).trim();
+}
+```
+
+#### Example Task Definition
+
+From `assets/tasks/TheoryofMind.json`:
+
+```json
+{
+  "id": "ToM_Q3a",
+  "type": "radio_text",
+  "options": [
+    { "value": "狗仔", "label": "狗仔" },
+    { "value": "其他", "label": "其他（記錄答案）", "textId": "ToM_Q3a_TEXT" }
+  ],
+  "scoring": { "correctAnswer": "狗仔" }
+}
+```
+
+#### Behavior Verification
+
+| Scenario | Student Selection | ToM_Q3a_TEXT | Current Result | Matches Request? |
+|----------|------------------|--------------|----------------|------------------|
+| **1. Correct option selected** | "狗仔" (option 1) | "" (empty) | ✅ Correct | ✅ Yes |
+| **2. Correct + mistyped text** | "狗仔" (option 1) | "貓" (typo) | ✅ Correct | ✅ Yes (text ignored) |
+| **3. Other option, no text** | "其他" (option 2) | "" (empty) | ❌ Incorrect | ✅ Yes |
+| **4. Other option + filled text** | "其他" (option 2) | "貓" (filled) | ❌ Incorrect | ✅ Yes |
+
+#### Priority Logic Flow
+
+```
+1. Check if studentAnswer === correctAnswer
+   ├─ YES → Mark as CORRECT (regardless of _TEXT field)
+   └─ NO → Mark as INCORRECT (regardless of _TEXT field)
+
+2. _TEXT field has NO effect on scoring
+   - Excluded from question extraction
+   - Never checked in validation logic
+   - Used only for recording student's alternative answer
+```
+
+**Conclusion:** ✅ No action required - Already works as requested
+
+---
+
+### Summary of Additional Investigations
+
+| Issue | Status | Action Required |
+|-------|--------|-----------------|
+| **Issue 5: Conditional Logic (showIf)** | 🔴 **CRITICAL BUG** | ✅ Fix Required (Separate PR) |
+| **Issue 6: Gender Branching** | ✅ **WORKING CORRECTLY** | ❌ No Fix Needed |
+| **Issue 7: Radio_Text Scoring** | ✅ **WORKING CORRECTLY** | ❌ No Fix Needed |
 
 ---
 
 **End of Calculation Bible**
 
 For questions or clarifications, refer to the actual source code files listed in this document.
+
+**Version History:**
+- **v1.0** (January 2025) - Initial documentation
+- **v1.1** (October 2025) - Added status inconsistency fix and additional investigations
