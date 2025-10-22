@@ -825,10 +825,11 @@
           let branchInfo = '';
           if (taskId.toLowerCase().includes('tec')) {
             // Detect gender branch based on task ID
-            if (taskId.toLowerCase().includes('male')) {
-              branchInfo = ' (Male Branch)';
-            } else if (taskId.toLowerCase().includes('female')) {
+            // Check 'female' first since 'female' contains 'male' substring
+            if (taskId.toLowerCase().includes('female')) {
               branchInfo = ' (Female Branch)';
+            } else if (taskId.toLowerCase().includes('male')) {
+              branchInfo = ' (Male Branch)';
             }
           }
           
