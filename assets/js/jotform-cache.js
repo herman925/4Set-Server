@@ -21,7 +21,8 @@
   const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hour
   
   // Proxy configuration for CORS handling
-  const PROXY_CONFIG = {
+  // Can be overridden by loading config/proxy_config.json
+  let PROXY_CONFIG = {
     enabled: true,  // Set to false to use direct API calls
     baseUrl: 'http://127.0.0.1:3000',  // Default proxy server URL
     endpoints: {
@@ -29,6 +30,20 @@
       questions: '/api/jotform/form/{formId}/questions'
     }
   };
+  
+  // Attempt to load proxy configuration from file (optional)
+  (async () => {
+    try {
+      const response = await fetch('config/proxy_config.json', { cache: 'default' });
+      if (response.ok) {
+        const config = await response.json();
+        PROXY_CONFIG = { ...PROXY_CONFIG, ...config };
+        console.log('[JotFormCache] Loaded proxy configuration from config/proxy_config.json');
+      }
+    } catch (error) {
+      console.log('[JotFormCache] Using default proxy configuration (config file not found)');
+    }
+  })();
   
   // Initialize localForage (uses IndexedDB, falls back to WebSQL/localStorage)
   if (typeof localforage === 'undefined') {

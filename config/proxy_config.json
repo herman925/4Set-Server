@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "baseUrl": "http://127.0.0.1:3000",
+  "endpoints": {
+    "submissions": "/api/jotform/form/{formId}/submissions",
+    "questions": "/api/jotform/form/{formId}/questions"
+  },
+  "notes": [
+    "Set 'enabled' to false to use direct JotForm API calls (may fail due to CORS)",
+    "The proxy server must be running for the web dashboards to work",
+    "Start the proxy with: python proxy_server.py",
+    "Change 'baseUrl' if you're running the proxy on a different host/port"
+  ]
+}

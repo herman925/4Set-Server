@@ -85,13 +85,26 @@ Monitoring Dashboard (GitHub Pages)
      ```
    - Synology: Configure Docker secret `processor_master_key`
 
-4. **Start CORS Proxy Server** (Required for Web Dashboards)
-   ```bash
-   # Start the proxy server on default port 3000
-   python proxy_server.py
+4. **Start Development Servers** (Required for Web Dashboards)
    
-   # Or specify a custom port
-   python proxy_server.py --port 8080
+   **Quick Start - Automated:**
+   ```bash
+   # Linux/Mac
+   ./start_servers.sh
+   
+   # Windows
+   start_servers.bat
+   ```
+   
+   This will start both the CORS proxy server (port 3000) and HTTP file server (port 8080).
+   
+   **Manual Start:**
+   ```bash
+   # Terminal 1: Start proxy server
+   python proxy_server.py --port 3000
+   
+   # Terminal 2: Start HTTP server
+   python -m http.server 8080
    ```
    
    ⚠️ **Important:** The proxy server must be running for the web dashboards to access JotForm API.
@@ -110,9 +123,12 @@ Monitoring Dashboard (GitHub Pages)
    ```
 
 6. **Access Web Dashboards**
-   - **Main Entry**: Open `index.html` in browser (requires proxy server running)
-   - **Upload Interface**: `upload.html` for PDF submissions
-   - **Checking System**: `checking_system_home.html` for data validation
+   Once both servers are running, open these URLs in your browser:
+   - **Main Entry**: http://127.0.0.1:8080/index.html
+   - **Upload Interface**: http://127.0.0.1:8080/upload.html
+   - **Checking System**: http://127.0.0.1:8080/checking_system_home.html
+   
+   You can verify the proxy is working at http://127.0.0.1:3000/health
 
 ---
 

@@ -9,10 +9,25 @@
   };
 
   // Proxy configuration for CORS handling
-  const PROXY_CONFIG = {
+  // Can be overridden by loading config/proxy_config.json
+  let PROXY_CONFIG = {
     enabled: true,  // Set to false to use direct API calls
     baseUrl: 'http://127.0.0.1:3000'
   };
+  
+  // Attempt to load proxy configuration from file (optional)
+  (async () => {
+    try {
+      const response = await fetch('config/proxy_config.json', { cache: 'default' });
+      if (response.ok) {
+        const config = await response.json();
+        PROXY_CONFIG = { ...PROXY_CONFIG, ...config };
+        console.log('[JotFormResync] Loaded proxy configuration from config/proxy_config.json');
+      }
+    } catch (error) {
+      console.log('[JotFormResync] Using default proxy configuration (config file not found)');
+    }
+  })();
 
   const apiRoutes = {
     latest: '/api/jotform/latest-submission',
