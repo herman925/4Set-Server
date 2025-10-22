@@ -745,10 +745,11 @@
         
         // A task is complete if:
         // 1. All questions are answered (answered === total), OR
-        // 2. It's properly terminated/timed out without post-termination issues
+        // 2. It's properly terminated/timed out without post-termination issues AND has at least 1 answer
+        // CRITICAL: Must check answered > 0 to match student page logic (see checking-system-student-page.js Line 1831-1838)
         const isComplete = (answered === total && total > 0) || 
-                           (validation.terminated && !validation.hasPostTerminationAnswers) ||
-                           (validation.timedOut && !validation.hasPostTerminationAnswers);
+                           (validation.terminated && !validation.hasPostTerminationAnswers && answered > 0) ||
+                           (validation.timedOut && !validation.hasPostTerminationAnswers && answered > 0);
         
         if (isComplete) {
           completeTasks++;
