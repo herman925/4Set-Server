@@ -82,10 +82,16 @@ function extractQuestions(taskDef) {
 
 **Excluded Fields:**
 - `*_Date` - Date fields
-- `*_TEXT` - Text memo fields
+- `*_TEXT` - Text memo fields (for display only, not counted)
 - `*_Memo_*` - Memo fields
 - `*_Ter` - Termination records (ERV_Ter1, CM_Ter2, etc.)
 - `*_timeout` - Timeout fields (SYM_timeout, NONSYM_timeout)
+- `*_P\d+` - **Practice questions (e.g., ERV_P1, CM_P1, ToM_P2)** - These are training items and not counted in completion percentage
+
+**Important:** Practice questions are shown to students for training purposes but are **automatically excluded** from the total question count. This means:
+- ERV has 3 practice questions (ERV_P1, ERV_P2, ERV_P3) → Not counted in the 48 total
+- CM has 2 practice questions (CM_P1, CM_P2) → Not counted in the 7 total when terminated at Q7
+- When CM terminates at Q7, the completion is 7/7 = 100%, **not** 7/9
 
 **Location:** `task-validator.js` Lines 178-185
 
@@ -499,7 +505,8 @@ if (maxPossible < stage.threshold) {
 - Student: 3 correct, 9 answered, 0 unanswered
 - maxPossible = 3 + 0 = 3
 - Result: 3 < 5 → **TERMINATED at Q12**
-- Total adjusted: 15 questions (P1, P2, P3, Q1-Q12)
+- Total adjusted: 12 questions (Q1-Q12)
+- **Note:** Practice questions (ERV_P1, ERV_P2, ERV_P3) are excluded from question count
 
 **Example 2 - ERV Stage 1 Continue:**
 - Questions: ERV_Q1 - ERV_Q12
@@ -529,11 +536,12 @@ if (maxPossible < stage.threshold) {
 **Example - CM Stage 1 Termination:**
 - Questions: CM_Q1 - CM_Q7 (7 questions)
 - Threshold: 4 correct
-- Student: P1 ✅, P2 ✅, Q1 ❌, Q2 ✅, Q3 ✅, Q4 ❌, Q5 ✅, Q6 ❌, Q7 ❌
-- Stage Q1-Q7: 3 correct out of 7
-- Result: 3 < 4 → **TERMINATED at Q7**
-- Total adjusted: 9 questions (P1, P2, Q1-Q7)
-- Completion: 9/9 = 100% ✅
+- Student: Q1 ❌, Q2 ❌, Q3 ❌, Q4 ❌, Q5 ❌, Q6 ❌, Q7 ❌
+- Stage Q1-Q7: 0 correct out of 7
+- Result: 0 < 4 → **TERMINATED at Q7**
+- Total adjusted: 7 questions (Q1-Q7)
+- Completion: 7/7 = 100% ✅
+- **Note:** Practice questions (CM_P1, CM_P2) are excluded from question count (see isExcludedField function)
 
 ### Type 2: Consecutive Incorrect Termination (CWR)
 
