@@ -2276,8 +2276,17 @@ function Process-IncomingFile {
         $finalJsonTarget = Join-Path $schoolFolder $jsonFileName
         
         Move-Item -Path $stagingTarget -Destination $finalPdfTarget -Force
+        
+        # Handle JSON based on upload success
         if (Test-Path $jsonPath) {
-            Move-Item -Path $jsonPath -Destination $finalJsonTarget -Force
+            if ($uploadSuccess) {
+                # Upload succeeded - move JSON alongside PDF
+                Move-Item -Path $jsonPath -Destination $finalJsonTarget -Force
+            } else {
+                # Upload failed - delete JSON, only keep PDF for manual review
+                Remove-Item -Path $jsonPath -Force
+                # JSON deleted for failed upload - logged in WARN above
+            }
         }
         
         Set-ManifestStatus -Path $script:QueueManifestPath -Id $fileName -FileName $fileName -Status "Filed"

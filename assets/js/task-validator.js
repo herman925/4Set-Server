@@ -423,8 +423,16 @@ window.TaskValidator = (() => {
               // Text field is empty - show "Not answered" only when radio is incorrect
               textFieldStatus = 'not-answered';
             }
+          } else {
+            // Radio has no answer - check if text was filled
+            if (studentAnswer !== null && studentAnswer.trim() !== '') {
+              // Student attempted to answer via text (treat as answered/incorrect)
+              textFieldStatus = 'answered';
+            } else {
+              // No answer at all (missing)
+              textFieldStatus = 'not-answered';
+            }
           }
-          // If radio has no answer, textFieldStatus stays null (no display needed)
         } else if (studentAnswer !== null && studentAnswer.trim() !== '') {
           // No associated radio question, just check if answered
           textFieldStatus = 'answered';
