@@ -43,6 +43,9 @@
     "REJECT": true,
     "_REJECT_comment": "Validation failures: sessionkey mismatch, core ID mismatch, school ID mismatch, filename format errors",
     
+    "DATA_OVERWRITE_DIFF": true,
+    "_DATA_OVERWRITE_DIFF_comment": "Data overwrite conflicts: fields that would change existing non-empty values (excludes exception fields like student-id, child-name, etc.)",
+    
     "UPLOAD": true,
     "_UPLOAD_comment": "Jotform operations: created/updated submissions with field counts and chunk info",
     

@@ -1265,6 +1265,87 @@ function Enrich-JsonFields {
     }
 }
 
+function Test-DataOverwriteConflict {
+    param(
+        [PSCustomObject]$NewData,
+        [PSCustomObject]$ExistingSubmission,
+        [hashtable]$JotformQuestions,
+        [string]$FileName
+    )
+    
+    # Define exception fields that are allowed to be overwritten
+    # These are administrative/metadata fields that can be updated freely
+    $exceptionFields = @(
+        'student-id',      # QID 20
+        'child-name',      # QID 21
+        'school-id',       # QID 22
+        'district',        # QID 23
+        'class-id',        # QID 24
+        'class-name',      # QID 25
+        'computerno'       # QID 647
+    )
+    
+    $conflicts = @()
+    
+    # Check each field in new data
+    foreach ($fieldName in $NewData.PSObject.Properties.Name) {
+        # Skip sessionkey (identifier, never updated)
+        if ($fieldName -eq 'sessionkey') {
+            continue
+        }
+        
+        # Skip if field is in exception list (allowed to overwrite)
+        if ($exceptionFields -contains $fieldName) {
+            continue
+        }
+        
+        # Skip if field not in mapping
+        if (-not $JotformQuestions.ContainsKey($fieldName)) {
+            continue
+        }
+        
+        $qid = $JotformQuestions[$fieldName]
+        $newValue = $NewData.$fieldName
+        
+        # Get existing value from JotForm submission
+        $existingValue = $null
+        if ($ExistingSubmission.answers -and $ExistingSubmission.answers.$qid) {
+            $answer = $ExistingSubmission.answers.$qid
+            if ($answer.answer) {
+                $existingValue = $answer.answer
+            } elseif ($answer.text) {
+                $existingValue = $answer.text
+            }
+        }
+        
+        # Normalize values for comparison
+        $normalizedNew = if ($newValue) { $newValue.ToString().Trim() } else { "" }
+        $normalizedExisting = if ($existingValue) { $existingValue.ToString().Trim() } else { "" }
+        
+        # Check for conflict:
+        # 1. Existing value must be non-empty (if empty, it's insertion not overwrite)
+        # 2. New value must be different from existing value
+        # 3. New value must be non-empty (null/empty new values don't count as conflicts)
+        if (-not [string]::IsNullOrWhiteSpace($normalizedExisting) -and 
+            -not [string]::IsNullOrWhiteSpace($normalizedNew) -and 
+            $normalizedNew -ne $normalizedExisting) {
+            
+            $conflicts += [PSCustomObject]@{
+                FieldName = $fieldName
+                QID = $qid
+                ExistingValue = $normalizedExisting
+                NewValue = $normalizedNew
+            }
+        }
+    }
+    
+    return [PSCustomObject]@{
+        HasConflicts = ($conflicts.Count -gt 0)
+        Conflicts = $conflicts
+        ConflictCount = $conflicts.Count
+    }
+}
+
 function Build-JotformPayload {
     param(
         [PSCustomObject]$Data,
@@ -1471,6 +1552,33 @@ function Invoke-JotformUpsert {
                 # UPDATE existing submission with chunked payload
                 $submissionId = $foundSubmission.id
                 Write-Log -Message "Will UPDATE existing submission $submissionId" -Level "INFO" -File $FileName
+                
+                # CRITICAL: Check for data overwrite conflicts BEFORE updating
+                Write-Log -Message "Checking for data overwrite conflicts..." -Level "INFO" -File $FileName
+                $conflictResult = Test-DataOverwriteConflict -NewData $data -ExistingSubmission $foundSubmission -JotformQuestions $JotformQuestions -FileName $FileName
+                
+                if ($conflictResult.HasConflicts) {
+                    # Build detailed conflict message
+                    $conflictDetails = @()
+                    foreach ($conflict in $conflictResult.Conflicts) {
+                        $conflictDetails += "$($conflict.FieldName) (QID $($conflict.QID)): existing='$($conflict.ExistingValue)' → new='$($conflict.NewValue)'"
+                    }
+                    $conflictMessage = "Data overwrite conflict detected ($($conflictResult.ConflictCount) field(s)): " + ($conflictDetails -join "; ")
+                    
+                    Write-Log -Message $conflictMessage -Level "DATA_OVERWRITE_DIFF" -File $FileName
+                    Write-Log -Message "Update rejected - file will be moved to Unsorted/ for manual review" -Level "WARN" -File $FileName
+                    
+                    # Return failure - this will cause the file to be moved to Unsorted/
+                    return @{ 
+                        Success = $false
+                        Error = "Data overwrite conflict: $($conflictResult.ConflictCount) field(s) would be changed"
+                        ConflictDetails = $conflictDetails
+                        Retryable = $false
+                        OverwriteConflict = $true
+                    }
+                }
+                
+                Write-Log -Message "No overwrite conflicts detected - proceeding with update" -Level "INFO" -File $FileName
                 
                 # Get all fields excluding sessionkey, and filter out nulls
                 $fieldsToUpdate = @()
@@ -2168,8 +2276,17 @@ function Process-IncomingFile {
         $finalJsonTarget = Join-Path $schoolFolder $jsonFileName
         
         Move-Item -Path $stagingTarget -Destination $finalPdfTarget -Force
+        
+        # Handle JSON based on upload success
         if (Test-Path $jsonPath) {
-            Move-Item -Path $jsonPath -Destination $finalJsonTarget -Force
+            if ($uploadSuccess) {
+                # Upload succeeded - move JSON alongside PDF
+                Move-Item -Path $jsonPath -Destination $finalJsonTarget -Force
+            } else {
+                # Upload failed - delete JSON, only keep PDF for manual review
+                Remove-Item -Path $jsonPath -Force
+                # JSON deleted for failed upload - logged in WARN above
+            }
         }
         
         Set-ManifestStatus -Path $script:QueueManifestPath -Id $fileName -FileName $fileName -Status "Filed"

@@ -20,15 +20,18 @@ class TextFieldDisplayTest:
         
         Updated logic (2025-10-22):
         - N/A: Correct answer selected
-        - Answered: Text field has content (when radio is incorrect)
-        - Not answered: Radio incorrect AND no text
-        - No display (—): Radio not answered
+        - Answered: Text field has content (when radio is incorrect OR when text filled without radio)
+        - Not answered: Radio incorrect AND no text, OR no radio AND no text
+        
+        Special handling for no radio answer:
+        - If text is filled but radio not selected: Treat as incorrect (student attempted via text)
+        - If neither radio nor text: Treat as not answered (missing)
         
         Args:
             radio_correct: The correct answer for the radio question
             radio_answer: The actual answer selected
             text_content: Content in the _TEXT field
-            expected_status: Expected status ('N/A', 'Answered', 'Not answered', or '—')
+            expected_status: Expected status ('N/A', 'Answered', 'Not answered')
         """
         # Determine actual status
         if radio_answer is not None and str(radio_answer).strip() == str(radio_correct).strip():
@@ -38,10 +41,15 @@ class TextFieldDisplayTest:
             if text_content is not None and str(text_content).strip() != '':
                 actual_status = "Answered"
             else:
-                actual_status = "Not answered"  # Only show when radio is incorrect
+                actual_status = "Not answered"
         else:
             # Radio not answered at all
-            actual_status = "—"  # No display needed
+            if text_content is not None and str(text_content).strip() != '':
+                # Student attempted to answer via text (treat as answered/incorrect)
+                actual_status = "Answered"
+            else:
+                # No answer at all (missing)
+                actual_status = "Not answered"
         
         # Check if test passed
         passed = (actual_status == expected_status)
@@ -86,12 +94,12 @@ class TextFieldDisplayTest:
         
         # Test 5: No answer, text present
         print("Test 5: No radio answer, text present")
-        self.test_text_field_status("狗仔", None, "貓仔", "—")
+        self.test_text_field_status("狗仔", None, "貓仔", "Answered")
         self.display_last_result()
         
         # Test 6: No answer, no text
         print("Test 6: No radio answer, no text")
-        self.test_text_field_status("狗仔", None, None, "—")
+        self.test_text_field_status("狗仔", None, None, "Not answered")
         self.display_last_result()
         
         # Display summary
@@ -148,29 +156,29 @@ def test_ui_display_format():
     print()
     
     # Answered status
-    print("2. Status: Answered (when text content exists and radio incorrect)")
+    print("2. Status: Answered (when text content exists)")
     print("   HTML: <span class='answer-pill' style='background: #f0f9ff; color: #0369a1;'>")
     print("         <i data-lucide='circle-check'></i>Answered</span>")
     print("   Tooltip: 'Text answer provided'")
+    print("   Note: Can occur when radio is incorrect OR when text filled without radio selection")
     print()
     
     # Not answered status
-    print("3. Status: Not answered (when radio incorrect and no text)")
+    print("3. Status: Not answered (when no answer provided)")
     print("   HTML: <span class='answer-pill incorrect'>")
     print("         <i data-lucide='minus'></i>Not answered</span>")
-    print("   Tooltip: 'No text answer provided (radio answer was incorrect)'")
-    print()
-    
-    # No display status
-    print("4. Status: — (when radio not answered)")
-    print("   HTML: <span class='answer-pill' style='background: #f3f4f6; color: #9ca3af;'>")
-    print("         <i data-lucide='minus'></i>—</span>")
-    print("   Tooltip: 'No display needed (radio question not answered)'")
+    print("   Tooltip: 'No answer provided'")
+    print("   Note: Can occur when radio incorrect + no text, OR no radio + no text (missing)")
     print()
     
     print("Note: _TEXT fields show 'N/A' in the 'Correct Answer' column")
     print("Note: _TEXT fields are NEVER calculated in completion percentage")
-    print("Note: 'Not answered' status ONLY appears when radio answer is incorrect")
+    print("Note: 'Not answered' status appears when:")
+    print("      - Radio is incorrect AND no text provided")
+    print("      - Neither radio nor text provided (missing answer)")
+    print()
+    print("Note: If text is filled but radio not selected, student attempted via text")
+    print("      → Radio marked as Incorrect, Text marked as Answered")
     print()
 
 if __name__ == "__main__":
