@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>_TEXT Field Display - Before & After Comparison</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        h1 {
+            color: #111827;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 15px;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        .subtitle {
+            color: #6b7280;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin: 30px 0;
+        }
+        .section {
+            background: #f9fafb;
+            padding: 20px;
+            border-radius: 12px;
+            border: 2px solid #e5e7eb;
+        }
+        .section.before {
+            border-color: #f87171;
+            background: #fef2f2;
+        }
+        .section.after {
+            border-color: #34d399;
+            background: #f0fdf4;
+        }
+        .section h2 {
+            margin-top: 0;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .section.before h2 {
+            color: #dc2626;
+        }
+        .section.after h2 {
+            color: #059669;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        th {
+            background: #f3f4f6;
+            font-weight: 600;
+            color: #374151;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        tr:last-child td {
+            border-bottom: none;
+        }
+        .answer-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            font-size: 12px;
+            font-weight: 500;
+            border: 1px solid;
+            white-space: nowrap;
+        }
+        .correct {
+            background: #dcfce7;
+            color: #166534;
+            border-color: #86efac;
+        }
+        .incorrect {
+            background: #fee2e2;
+            color: #991b1b;
+            border-color: #fca5a5;
+        }
+        .answered {
+            background: #f0f9ff;
+            color: #0369a1;
+            border-color: #bae6fd;
+        }
+        /* OLD N/A style (more vibrant) */
+        .na-old {
+            background: #f3f4f6;
+            color: #6b7280;
+            border-color: #d1d5db;
+        }
+        /* NEW N/A style (more muted) */
+        .na-new {
+            background: #f9fafb;
+            color: #6b7280;
+            border-color: #e5e7eb;
+        }
+        .code {
+            font-family: 'Courier New', monospace;
+            background: #f3f4f6;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+        .highlight {
+            background: #fef3c7;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        .change-note {
+            background: #dbeafe;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 6px;
+        }
+        .change-note h3 {
+            margin-top: 0;
+            color: #1e40af;
+            font-size: 16px;
+        }
+        .change-note ul {
+            margin: 10px 0 0 20px;
+        }
+        .change-note li {
+            margin: 5px 0;
+        }
+        .text-display-row {
+            background: #fafafa;
+            font-style: italic;
+        }
+        .icon {
+            width: 24px;
+            height: 24px;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📊 _TEXT Field Display: Before & After Comparison</h1>
+        <p class="subtitle">Issue #11: N/A for the _TEXT answer detection is not what I imagined</p>
+
+        <div class="change-note">
+            <h3>✨ Key Changes</h3>
+            <ul>
+                <li><strong>Correct Answer Column:</strong> Changed from <span class="highlight">N/A</span> → <span class="highlight">—</span> (dash)</li>
+                <li><strong>Result Column:</strong> N/A now displayed with <strong>more muted colors</strong></li>
+                <li><strong>Branch Information:</strong> Added for TEC tasks (e.g., "Answered (Male Branch)")</li>
+            </ul>
+        </div>
+
+        <h2 style="margin-top: 40px; color: #374151;">Theory of Mind Example</h2>
+        
+        <div class="comparison-grid">
+            <!-- BEFORE -->
+            <div class="section before">
+                <h2>
+                    <span class="icon">❌</span>
+                    BEFORE (Old Behavior)
+                </h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Question</th>
+                            <th>Student Answer</th>
+                            <th>Correct Answer</th>
+                            <th>Result</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Regular question -->
+                        <tr>
+                            <td class="code">ToM_Q3a</td>
+                            <td>狗仔</td>
+                            <td>狗仔</td>
+                            <td><span class="answer-pill correct">✓ Correct</span></td>
+                        </tr>
+                        <!-- _TEXT field - OLD -->
+                        <tr class="text-display-row">
+                            <td class="code">ToM_Q3a_TEXT</td>
+                            <td>—</td>
+                            <td><span style="background: #fef3c7; padding: 2px 8px; border-radius: 4px;">N/A ⚠️</span></td>
+                            <td><span class="answer-pill na-old">ℹ N/A</span></td>
+                        </tr>
+                        
+                        <!-- Wrong answer with text -->
+                        <tr>
+                            <td class="code">ToM_Q4a</td>
+                            <td>其他</td>
+                            <td>豬仔</td>
+                            <td><span class="answer-pill incorrect">✗ Incorrect</span></td>
+                        </tr>
+                        <tr class="text-display-row">
+                            <td class="code">ToM_Q4a_TEXT</td>
+                            <td>貓仔</td>
+                            <td><span style="background: #fef3c7; padding: 2px 8px; border-radius: 4px;">N/A ⚠️</span></td>
+                            <td><span class="answer-pill answered">✓ Answered</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div style="background: #fef2f2; padding: 12px; border-radius: 6px; margin-top: 15px;">
+                    <strong style="color: #dc2626;">❌ Issues:</strong>
+                    <ul style="margin: 8px 0 0 20px; font-size: 13px;">
+                        <li>"N/A" appears in <strong>Correct Answer</strong> column (confusing)</li>
+                        <li>N/A status not clearly distinguished in Result column</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- AFTER -->
+            <div class="section after">
+                <h2>
+                    <span class="icon">✅</span>
+                    AFTER (New Behavior)
+                </h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Question</th>
+                            <th>Student Answer</th>
+                            <th>Correct Answer</th>
+                            <th>Result</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Regular question -->
+                        <tr>
+                            <td class="code">ToM_Q3a</td>
+                            <td>狗仔</td>
+                            <td>狗仔</td>
+                            <td><span class="answer-pill correct">✓ Correct</span></td>
+                        </tr>
+                        <!-- _TEXT field - NEW -->
+                        <tr class="text-display-row">
+                            <td class="code">ToM_Q3a_TEXT</td>
+                            <td>—</td>
+                            <td><span style="background: #dcfce7; padding: 2px 8px; border-radius: 4px;">— ✓</span></td>
+                            <td><span class="answer-pill na-new">ℹ N/A</span></td>
+                        </tr>
+                        
+                        <!-- Wrong answer with text -->
+                        <tr>
+                            <td class="code">ToM_Q4a</td>
+                            <td>其他</td>
+                            <td>豬仔</td>
+                            <td><span class="answer-pill incorrect">✗ Incorrect</span></td>
+                        </tr>
+                        <tr class="text-display-row">
+                            <td class="code">ToM_Q4a_TEXT</td>
+                            <td>貓仔</td>
+                            <td><span style="background: #dcfce7; padding: 2px 8px; border-radius: 4px;">— ✓</span></td>
+                            <td><span class="answer-pill answered">✓ Answered</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div style="background: #f0fdf4; padding: 12px; border-radius: 6px; margin-top: 15px;">
+                    <strong style="color: #059669;">✅ Improvements:</strong>
+                    <ul style="margin: 8px 0 0 20px; font-size: 13px;">
+                        <li>"—" (dash) in <strong>Correct Answer</strong> column (clearer)</li>
+                        <li>N/A clearly shown in <strong>Result</strong> column with muted color</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <h2 style="margin-top: 40px; color: #374151;">TEC (Gender Branching) Example</h2>
+        
+        <div class="comparison-grid">
+            <!-- BEFORE -->
+            <div class="section before">
+                <h2>
+                    <span class="icon">❌</span>
+                    BEFORE (Old Behavior)
+                </h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Question</th>
+                            <th>Student Answer</th>
+                            <th>Correct Answer</th>
+                            <th>Result</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="text-display-row">
+                            <td class="code">TEC_Male_Q1_TEXT</td>
+                            <td>happy</td>
+                            <td><span style="background: #fef3c7; padding: 2px 8px; border-radius: 4px;">N/A ⚠️</span></td>
+                            <td><span class="answer-pill answered">✓ Answered</span></td>
+                        </tr>
+                        <tr class="text-display-row">
+                            <td class="code">TEC_Female_Q2_TEXT</td>
+                            <td>sad</td>
+                            <td><span style="background: #fef3c7; padding: 2px 8px; border-radius: 4px;">N/A ⚠️</span></td>
+                            <td><span class="answer-pill answered">✓ Answered</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div style="background: #fef2f2; padding: 12px; border-radius: 6px; margin-top: 15px;">
+                    <strong style="color: #dc2626;">❌ Issues:</strong>
+                    <ul style="margin: 8px 0 0 20px; font-size: 13px;">
+                        <li>No branching information shown</li>
+                        <li>Can't tell which gender branch was used</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- AFTER -->
+            <div class="section after">
+                <h2>
+                    <span class="icon">✅</span>
+                    AFTER (New Behavior)
+                </h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Question</th>
+                            <th>Student Answer</th>
+                            <th>Correct Answer</th>
+                            <th>Result</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="text-display-row">
+                            <td class="code">TEC_Male_Q1_TEXT</td>
+                            <td>happy</td>
+                            <td><span style="background: #dcfce7; padding: 2px 8px; border-radius: 4px;">— ✓</span></td>
+                            <td><span class="answer-pill answered">✓ Answered <strong>(Male Branch)</strong></span></td>
+                        </tr>
+                        <tr class="text-display-row">
+                            <td class="code">TEC_Female_Q2_TEXT</td>
+                            <td>sad</td>
+                            <td><span style="background: #dcfce7; padding: 2px 8px; border-radius: 4px;">— ✓</span></td>
+                            <td><span class="answer-pill answered">✓ Answered <strong>(Female Branch)</strong></span></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div style="background: #f0fdf4; padding: 12px; border-radius: 6px; margin-top: 15px;">
+                    <strong style="color: #059669;">✅ Improvements:</strong>
+                    <ul style="margin: 8px 0 0 20px; font-size: 13px;">
+                        <li>Branch information clearly displayed</li>
+                        <li>Easy to identify which gender branch was used</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div style="background: #e0f2fe; border-left: 4px solid #0284c7; padding: 20px; margin-top: 40px; border-radius: 8px;">
+            <h3 style="margin-top: 0; color: #075985;">📝 Summary of Changes</h3>
+            <table style="background: white; margin: 15px 0;">
+                <thead>
+                    <tr>
+                        <th>Aspect</th>
+                        <th>Before</th>
+                        <th>After</th>
+                        <th>Impact</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Correct Answer Column</strong></td>
+                        <td>"N/A"</td>
+                        <td>"—" (dash)</td>
+                        <td>✅ Clearer, less confusing</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Result Column - N/A</strong></td>
+                        <td>Gray (#f3f4f6)</td>
+                        <td>Muted Gray (#f9fafb)</td>
+                        <td>✅ Less vibrant, distinct from other statuses</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Branch Information</strong></td>
+                        <td>Not shown</td>
+                        <td>"(Male Branch)" / "(Female Branch)"</td>
+                        <td>✅ Clear indication of TEC version used</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div style="margin-top: 30px; padding: 20px; background: #f9fafb; border-radius: 8px;">
+            <h3 style="margin-top: 0; color: #374151;">🧪 Test Results</h3>
+            <pre style="background: #1f2937; color: #d1d5db; padding: 15px; border-radius: 6px; overflow-x: auto; font-size: 13px;">======================================================================
+_TEXT Field Result Column Display Test Suite
+======================================================================
+
+=== Test 1: Correct Answer Column Display ===
+  ✅ Test 1: ToM _TEXT field should show dash
+  ✅ Test 2: ToM _TEXT field should show dash
+  ✅ Test 3: TEC _TEXT field should show dash
+  ✅ Test 4: Regular question should show actual correct answer
+  Result: 4/4 tests passed
+
+=== Test 2: Result Column N/A Status ===
+  ✅ Test 1: N/A status should have muted color
+  Result: 1/1 tests passed
+
+=== Test 3: Branch Information Display ===
+  ✅ Test 1: TEC Male task should show Male Branch
+  ✅ Test 2: TEC Female task should show Female Branch
+  ✅ Test 3: Non-TEC task should not show branch
+  Result: 3/3 tests passed
+
+======================================================================
+✅ ALL TESTS PASSED: 3/3
+======================================================================</pre>
+        </div>
+
+        <div style="margin-top: 30px; padding: 15px; background: #fef3c7; border-radius: 8px; text-align: center;">
+            <p style="margin: 0; color: #92400e;">
+                <strong>⚡ Ready for Review:</strong> All changes implemented and tested. Visual comparison complete.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

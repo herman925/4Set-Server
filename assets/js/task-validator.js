@@ -186,12 +186,13 @@ window.TaskValidator = (() => {
    * Check if a field ID should be excluded from question counting
    */
   function isExcludedField(id) {
-    // Exclude date fields, memo fields, termination records, and other non-question fields
+    // Exclude date fields, memo fields, termination records, practice questions, and other non-question fields
     // NOTE: _TEXT fields are now INCLUDED for display purposes (handled separately in validation)
     return id.endsWith('_Date') || 
            id.includes('_Memo_') ||
            id.includes('_Ter') || // Exclude all termination records (ERV_Ter1, CM_Ter2, etc.)
-           id.endsWith('_timeout'); // Exclude timeout fields (SYM_timeout, NONSYM_timeout)
+           id.endsWith('_timeout') || // Exclude timeout fields (SYM_timeout, NONSYM_timeout)
+           /_P\d+/.test(id); // Exclude practice questions (e.g., ERV_P1, ToM_P2, CM_P1, etc.)
   }
 
   /**

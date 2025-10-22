@@ -821,15 +821,31 @@
           statusPill = '<span class="answer-pill" style="background: #dbeafe; color: #1e40af; border-color: #93c5fd;"><i data-lucide="ban" class="w-3 h-3"></i>Ignored (Terminated)</span>';
         } else if (question.isTextDisplay) {
           // Special handling for _TEXT display fields
+          // Determine branch information for Theory of Mind tasks based on answer choices
+          let branchInfo = '';
+          if (taskId.toLowerCase().includes('theoryofmind') || taskId.toLowerCase().includes('tom')) {
+            // Theory of Mind branching: detect which answer choice was made
+            // Example: ToM_Q3a_TEXT -> check ToM_Q3a answer
+            const baseQuestionId = question.id.replace('_TEXT', '');
+            const branchingAnswer = mergedAnswers[baseQuestionId]?.answer || mergedAnswers[baseQuestionId]?.text;
+            
+            if (branchingAnswer) {
+              // Format the branch name based on the actual answer choice
+              branchInfo = ` (${branchingAnswer} Branch)`;
+            }
+          }
+          
           if (question.textFieldStatus === 'na') {
-            statusPill = '<span class="answer-pill" style="background: #f3f4f6; color: #6b7280; border-color: #d1d5db;"><i data-lucide="info" class="w-3 h-3"></i>N/A</span>';
+            // N/A status with muted colors
+            statusPill = '<span class="answer-pill" style="background: #f9fafb; color: #6b7280; border-color: #e5e7eb;"><i data-lucide="info" class="w-3 h-3"></i>N/A</span>';
           } else if (question.textFieldStatus === 'answered') {
-            statusPill = '<span class="answer-pill" style="background: #f0f9ff; color: #0369a1; border-color: #bae6fd;"><i data-lucide="circle-check" class="w-3 h-3"></i>Answered</span>';
+            // Answered status with branch info
+            statusPill = `<span class="answer-pill" style="background: #f0f9ff; color: #0369a1; border-color: #bae6fd;"><i data-lucide="circle-check" class="w-3 h-3"></i>Answered${branchInfo}</span>`;
           } else if (question.textFieldStatus === 'not-answered') {
             // Only show "Not answered" when radio answer is incorrect
             statusPill = '<span class="answer-pill incorrect"><i data-lucide="minus" class="w-3 h-3"></i>Not answered</span>';
           } else {
-            // No status to display (radio question not answered)
+            // No status to display (radio question not answered) - show dash
             statusPill = '<span class="answer-pill" style="background: #f3f4f6; color: #9ca3af; border-color: #d1d5db;"><i data-lucide="minus" class="w-3 h-3"></i>—</span>';
           }
         } else if (question.studentAnswer === null) {
@@ -843,8 +859,8 @@
         }
         
         // For Y/N tasks (like TGMD), show "N/A" instead of correct answer
-        // For _TEXT fields, also show "N/A" for correct answer column
-        const correctAnswerDisplay = (isYNTask || question.isTextDisplay) ? 'N/A' : (question.correctAnswer || '—');
+        // For _TEXT fields, show "—" (dash) instead of "N/A" for correct answer column
+        const correctAnswerDisplay = isYNTask ? 'N/A' : (question.isTextDisplay ? '—' : (question.correctAnswer || '—'));
         
         row.innerHTML = `
           <td class="py-2 px-2 text-[color:var(--foreground)] font-mono">${question.id}</td>
