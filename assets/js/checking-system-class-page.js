@@ -833,6 +833,18 @@
         );
         
         if (foundTask) {
+          // Debug logging for CM task
+          if (searchId === 'cm' && student.coreId === 'C10880') {
+            console.log('[ClassPage] CM Status Debug for C10880:', {
+              taskId: foundTask.taskId,
+              complete: foundTask.complete,
+              answered: foundTask.answered,
+              total: foundTask.total,
+              hasPostTerminationAnswers: foundTask.hasPostTerminationAnswers,
+              setId
+            });
+          }
+          
           // Post-term detection (yellow): Task has answers after termination
           if (foundTask.hasPostTerminationAnswers) return 'status-yellow';
           
