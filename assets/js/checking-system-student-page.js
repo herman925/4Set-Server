@@ -821,15 +821,17 @@
           statusPill = '<span class="answer-pill" style="background: #dbeafe; color: #1e40af; border-color: #93c5fd;"><i data-lucide="ban" class="w-3 h-3"></i>Ignored (Terminated)</span>';
         } else if (question.isTextDisplay) {
           // Special handling for _TEXT display fields
-          // Determine branch information if applicable (for TEC tasks)
+          // Determine branch information for Theory of Mind tasks based on answer choices
           let branchInfo = '';
-          if (taskId.toLowerCase().includes('tec')) {
-            // Detect gender branch based on task ID
-            // Check 'female' first since 'female' contains 'male' substring
-            if (taskId.toLowerCase().includes('female')) {
-              branchInfo = ' (Female Branch)';
-            } else if (taskId.toLowerCase().includes('male')) {
-              branchInfo = ' (Male Branch)';
+          if (taskId.toLowerCase().includes('theoryofmind') || taskId.toLowerCase().includes('tom')) {
+            // Theory of Mind branching: detect which answer choice was made
+            // Example: ToM_Q3a_TEXT -> check ToM_Q3a answer
+            const baseQuestionId = question.id.replace('_TEXT', '');
+            const branchingAnswer = mergedAnswers[baseQuestionId]?.answer || mergedAnswers[baseQuestionId]?.text;
+            
+            if (branchingAnswer) {
+              // Format the branch name based on the actual answer choice
+              branchInfo = ` (${branchingAnswer} Branch)`;
             }
           }
           
