@@ -1,13 +1,15 @@
 ---
 title: Qualtrics Data Integration - Implementation Plan
 owner: Project Maintainers
-last-updated: 2025-10-17
-status: Planning
+last-updated: 2025-10-22
+status: Implementation Ready
 ---
 
 # Qualtrics Data Integration - Implementation Plan
 
-> **Document Purpose:** This plan outlines how to utilize the API design in `PRDs/jotform_qualtrics_integration_prd.md` to enable Qualtrics data import, dual-source merging, IndexedDB caching, and drilldown page integration through the existing validator and calculation rules.
+> **Document Purpose:** This plan outlines how to implement Qualtrics TGMD data fetching, dual-source merging with JotForm, and integration with the existing checking system validation architecture.
+
+**Status Update (2025-10-22):** Ready for implementation. All prerequisites documented, credentials structure defined, field mappings complete.
 
 **Reference Documents:**
 - `PRDs/jotform_qualtrics_integration_prd.md` - Complete API specification
@@ -3092,6 +3094,131 @@ Trial 2    [2_1]       [2_2]       [2_3]       [2_4]
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2025-10-17  
-**Next Review**: After Week 1 implementation
+**Document Version**: 1.1  
+**Last Updated**: 2025-10-22  
+**Status**: Implementation Ready
+
+---
+
+## D. Implementation Status (2025-10-22)
+
+### Prerequisites ✅ Complete
+
+1. **Credentials Structure** - Already defined in issue:
+   ```json
+   {
+     "qualtricsDatacenter": "au1",
+     "qualtricsSurveyId": "SV_23Qbs14soOkGo9E",
+     "qualtricsApiKey": "PI: raV8YenlxaFuxEZuACFJ9gpl5XKWS7IyHB1ijuhR",
+     "qualtricsClientId": "d6ad061427f6d54018c2669dbc56c669",
+     "qualtricsClientSecret": "azx1sj1Dz3PpjngKqVqpDkQOFrwdErVCMVzIEzfn2TUWPisF2w5sZxWFS5QmKp70",
+     "systemPassword": "ks2.0"
+   }
+   ```
+
+2. **Field Mapping** - Complete in `assets/qualtrics-mapping.json`
+   - 534 lines, covering all TGMD questions from line 534-580
+   - QID mappings for TGMD_Hand, TGMD_Leg, and all matrix cells
+   - Matrix structure properly documented (e.g., `QID126166420#1_1`)
+
+3. **Existing Code** - Foundation in place:
+   - `Qualtrics Test/qualtrics_api.py` - Reference implementation for API calls
+   - `PRDs/jotform_qualtrics_integration_prd.md` - Complete API specification
+   - `PRDs/qualtrics_implementation_plan.md` - Detailed implementation plan
+
+### Implementation Phases
+
+#### Phase 1: Basic Qualtrics Fetch (Week 1)
+- [ ] Create `assets/js/qualtrics-cache.js`
+- [ ] Implement `fetchQualtricsResponses()` using API pattern from `qualtrics_api.py`
+- [ ] Add Qualtrics credentials to encryption/decryption workflow
+- [ ] Test with small dataset (10 responses)
+
+#### Phase 2: Data Transformation (Week 1)
+- [ ] Implement `transformQualtricsResponse()`
+- [ ] Map Qualtrics matrix responses to flat field structure
+- [ ] Extract sessionkey from Qualtrics responses
+- [ ] Verify transformation with sample data
+
+#### Phase 3: Merge Strategy (Week 2)
+- [ ] Extend `jotform-cache.js` with merge logic
+- [ ] Implement conflict detection for overlapping TGMD data
+- [ ] Add `_tgmdSource` metadata field to track origin
+- [ ] Test merge with dual-source samples
+
+#### Phase 4: UI Integration (Week 2)
+- [ ] Add "Sync with Qualtrics" button to home page
+- [ ] Display merge statistics in cache manager
+- [ ] Show TGMD data source indicator in student page
+- [ ] Update calculation_bible.md with Qualtrics section
+
+#### Phase 5: Production Deployment (Week 3)
+- [ ] Add Qualtrics credentials to production credentials.enc
+- [ ] Test full pipeline with production data
+- [ ] Monitor merge conflicts and resolution
+- [ ] Document operational procedures
+
+### Key Implementation Notes
+
+**Credential Access:**
+- Qualtrics credentials stored in encrypted `assets/credentials.enc`
+- Decrypted using same system password as JotForm credentials
+- Access pattern mirrors existing JotForm credential retrieval
+
+**API Endpoint Construction:**
+```javascript
+const apiBaseUrl = `https://${credentials.qualtricsDatacenter}.qualtrics.com`;
+const exportEndpoint = `/API/v3/surveys/${credentials.qualtricsSurveyId}/export-responses`;
+```
+
+**Rate Limiting:**
+- Qualtrics API: 1000 calls per hour (much higher than JotForm)
+- Export operation is async (start → poll → download)
+- Typical export time: 30-60 seconds for ~200 responses
+
+**Data Source Priority:**
+- TGMD fields: Qualtrics takes precedence
+- All other fields: JotForm takes precedence
+- Conflicts logged but not blocking
+
+### Quick Start Guide for Developer
+
+1. **Test Qualtrics API Connection:**
+   ```bash
+   cd "Qualtrics Test"
+   python qualtrics_api.py  # Verify credentials work
+   ```
+
+2. **Review Field Mapping:**
+   ```bash
+   cat assets/qualtrics-mapping.json | grep "TGMD"
+   ```
+
+3. **Start Implementation:**
+   - Copy pattern from `qualtrics_api.py` (lines 75-170)
+   - Adapt to JavaScript/Fetch API
+   - Follow existing JotFormCache architecture
+
+4. **Test Transformation:**
+   - Use sample Qualtrics response (see PRD section 3.2)
+   - Verify mapping produces correct field names
+   - Check sessionkey extraction logic
+
+### Known Limitations
+
+1. **No Real-Time Sync:** Qualtrics data refresh is manual (button click)
+2. **No Conflict Resolution UI:** Merge conflicts logged, not displayed to user
+3. **Single Survey:** Only supports one Qualtrics survey ID (TGMD)
+4. **No Incremental Fetch:** Always downloads full dataset (not delta updates)
+
+### Future Enhancements (Not in Scope)
+
+- [ ] Automatic background sync (every N hours)
+- [ ] Conflict resolution UI in checking system
+- [ ] Support for multiple Qualtrics surveys
+- [ ] Delta sync (fetch only new responses since last sync)
+- [ ] Qualtrics → JotForm upload (reverse direction)
+
+---
+
+**Next Review**: After Phase 1 completion

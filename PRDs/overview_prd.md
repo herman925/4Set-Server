@@ -115,6 +115,39 @@ The following design iterations were prototyped in `.superdesign/design_iteratio
 
 **Note:** These design iterations served as exploratory prototypes. Key patterns and components have been incorporated into the production HTML files (`checking_system_*.html`, `index.html`, `upload.html`). The `.superdesign/` directory can be retired once this documentation is reviewed and approved.
 
+## Recent Enhancements (October 2025)
+
+### Validation Logic Improvements
+The system now includes advanced validation logic for Theory of Mind (ToM) assessments:
+
+**Radio_text Question Handling:**
+- Priority-based scoring for questions with associated text fields
+- If correct answer selected → CORRECT (text field ignored as mistyped input)
+- If other option or text filled → INCORRECT
+- Affects: ToM_Q3a/ToM_Q3a_TEXT, ToM_Q4a/ToM_Q4a_TEXT, ToM_Q6a/ToM_Q6a_TEXT, ToM_Q7a/ToM_Q7a_TEXT, ToM_Q7b/ToM_Q7b_TEXT
+
+**_TEXT Field Display:**
+- New feature displaying text answer fields with smart status indicators
+- Four status states: N/A (correct answer selected), Answered (text provided), Not answered (expected but missing), — (no display needed)
+- Critical rule: "Not answered" status ONLY appears when radio answer is incorrect
+- _TEXT fields NEVER counted in completion percentage calculations
+
+**Gender-Based Branching:**
+- TEC_Male/TEC_Female conditional logic verified across all drilldown pages
+- Proper gender normalization (M→male, F→female) ensures accurate task counting
+- Set completion calculations account for gender-specific task exclusions
+
+**Documentation:**
+- Comprehensive `calculation_bible.md` updates (~350 lines added)
+- Test scripts with 100% pass rate (`TEMP/test_radio_text_validation.py`, `TEMP/test_text_field_display.py`)
+- Visual mockup (`TEMP/text_field_display_example.html`)
+
+### JotForm Integration Enhancements
+- Documented adaptive batch sizing algorithm with fall-off on error and gradual recovery
+- JotForm API bug documentation (4.16 MB truncation at 1000 records)
+- Recommended production batch size: 100 records
+- Complete caching architecture documentation
+
 ## Open Questions
 - Preferred identity provider for operator authentication on GitHub Pages (GitHub OAuth vs. enterprise SSO).
 - Hosting choice for serverless proxies (Cloudflare Workers, Azure Functions, or Supabase Edge Functions).

@@ -731,6 +731,32 @@ Level 4: Student View (checking_system_4_student.html)
 | ⚪ | Not Started | No submission data available |
 | 🔵 | In Progress | Partial completion |
 
+### Text Field Display (_TEXT Fields)
+
+**New Feature (October 2025)**: The Checking System now displays text answer fields for Theory of Mind (ToM) questions with smart status indicators.
+
+**Applicable Fields:**
+- ToM_Q3_TEXT, ToM_Q3a_TEXT, ToM_Q4a_TEXT, ToM_Q6a_TEXT, ToM_Q7a_TEXT, ToM_Q7b_TEXT
+
+**Status Display Rules:**
+
+| Scenario | Radio Answer | Text Content | Display | Meaning |
+|----------|-------------|--------------|---------|---------|
+| Correct selected | ✓ Correct | Any | 🔵 **N/A** | Text not needed |
+| Wrong selected | ✗ Incorrect | Has text | 🔵 **Answered** | Text provided |
+| Wrong selected | ✗ Incorrect | Empty | 🔴 **Not answered** | Expected but missing |
+| No answer | (null) | Any | ⚪ **—** | No display needed |
+
+**Key Rules:**
+1. **"Not answered" status ONLY appears when the radio answer is incorrect**
+2. When radio is not answered, _TEXT field shows "—" (no display needed)
+3. _TEXT fields are **NEVER** counted in completion percentage calculations
+4. Only scored questions (radio_text questions) count toward task completion
+
+**Example:** In ToM_Q3a, if student selects "狗仔" (correct answer), the ToM_Q3a_TEXT field shows "N/A" even if text is accidentally entered. If student selects "其他" (other), the text field should contain the actual answer and shows "Answered" status.
+
+**Documentation:** Complete validation logic and implementation details available in `calculation_bible.md` (Lines 158-220).
+
 ### JotForm API Filter Implementation
 
 **⚠️ CRITICAL**: All student data retrieval MUST use the `:matches` operator on sessionkey field (QID 3).

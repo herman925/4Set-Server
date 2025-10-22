@@ -141,6 +141,11 @@ The 4Set System is a comprehensive web-based assessment data processing pipeline
 - [x] Task completion calculation logic
 - [x] Termination rule validation and mismatch detection
 - [x] Visual status indicators and filtering
+- [x] **Radio_text validation with priority-based scoring (Oct 2025)**
+- [x] **_TEXT field display support for ToM questions (Oct 2025)**
+- [x] **Gender branching verification across all pages (Oct 2025)**
+- [x] **Adaptive batch sizing documentation (Oct 2025)**
+- [x] **Comprehensive calculation_bible.md updates (Oct 2025)**
 
 ### 🔄 Phase 4: Production Deployment (In Progress)
 - [x] Upload interface with drag-and-drop support
@@ -577,12 +582,41 @@ Documented in `PRDs/processor_agent_runbook_prd.md`:
 
 ## Changelog
 
-### October 2025 - Initial Release
+### October 2025 - Initial Release & Phase 3 Enhancements
 - Completed core processor agent with full pipeline
 - Deployed checking system with 5-level drilldowns
 - Implemented upload interface with drag-and-drop
 - Established security architecture and encryption standards
 - Created comprehensive documentation suite
+
+**Phase 3 Enhancements (October 22, 2025):**
+- ✅ **Radio_text Validation Logic**: Implemented priority-based scoring for ToM questions
+  - If correct answer picked → CORRECT (text field ignored as mistyped input)
+  - If other option OR text filled → INCORRECT
+  - Comprehensive test suite with 100% pass rate
+- ✅ **_TEXT Field Display Support**: New feature for Theory of Mind questions
+  - Display text answers with smart status indicators (N/A, Answered, Not answered, —)
+  - "Not answered" status ONLY appears when radio answer is incorrect
+  - _TEXT fields NEVER counted in completion percentage
+  - 4-state status system with contextual display
+- ✅ **Gender Branching Verification**: Documented across all drilldown pages
+  - TEC_Male/TEC_Female conditional logic verified
+  - Gender normalization (M→male, F→female) across all hierarchy levels
+- ✅ **Adaptive Batch Sizing**: Comprehensive documentation
+  - JotForm API bug documentation (4.16 MB truncation)
+  - Fall-off on error, gradual recovery algorithm
+  - Configuration parameters and testing methodology
+- ✅ **Calculation Bible Updates**: Major documentation enhancements
+  - Added 5 new sections (~350 lines)
+  - Radio-text validation with examples
+  - Text display fields with status rules
+  - Gender branching implementation
+  - JotForm caching architecture
+  - Adaptive batch sizing algorithm
+- ✅ **Test Scripts**: Created comprehensive validation test suite
+  - `TEMP/test_radio_text_validation.py` - 6/6 tests passing
+  - `TEMP/test_text_field_display.py` - 6/6 tests passing
+  - Visual mockup: `TEMP/text_field_display_example.html`
 
 ### Future Updates
 This section will track major system updates, feature additions, and architectural changes as they occur.
