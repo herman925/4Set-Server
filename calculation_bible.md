@@ -2548,16 +2548,17 @@ Following the status inconsistency fix, additional validation concerns were inve
 
 ### Issue 5: Conditional Logic Systems (Question Branching)
 
-**Status:** 🔴 **CRITICAL BUG IDENTIFIED** - Requires separate fix
+**Status:** ✅ **FIXED** (October 2025)
 
 **Investigation Date:** October 2025  
-**Finding:** The system does NOT evaluate `showIf` conditions during question extraction
+**Fix Date:** October 2025  
+**Finding:** The system was NOT evaluating `showIf` conditions during question extraction
 
-#### The Problem
+#### The Problem (RESOLVED)
 
-**Location:** `assets/js/task-validator.js` Lines 127-173
+**Location:** `assets/js/task-validator.js` Lines 127-173 (before fix)
 
-The `extractQuestions()` function extracts ALL questions from task definitions without evaluating `showIf` conditions. This leads to:
+The `extractQuestions()` function was extracting ALL questions from task definitions without evaluating `showIf` conditions. This led to:
 - Duplicate question IDs (same ID with different conditions)
 - Incorrect total question counts
 - Wrong completion percentages
@@ -2581,43 +2582,90 @@ The `extractQuestions()` function extracts ALL questions from task definitions w
 }
 ```
 
-**Current Behavior:** System includes BOTH versions of `ToM_Q1b` regardless of student's answer to `ToM_Q1a`
+**Previous Behavior:** System included BOTH versions of `ToM_Q1b` regardless of student's answer to `ToM_Q1a`
 
-**Expected Behavior:** System should:
-1. Evaluate `showIf` condition based on student's actual answer to `ToM_Q1a`
-2. Include only the applicable version of `ToM_Q1b`
-3. Use the correct `correctAnswer` for scoring
+**Fixed Behavior:** System now:
+1. Evaluates `showIf` condition based on student's actual answer to `ToM_Q1a`
+2. Includes only the applicable version of `ToM_Q1b`
+3. Uses the correct `correctAnswer` for scoring
 
-#### Impact Assessment
+#### Fix Implementation
 
-| Aspect | Current Behavior | Expected Behavior | Impact |
-|--------|------------------|-------------------|--------|
-| **Question Extraction** | Extracts ALL questions | Should filter by showIf | 🔴 High |
-| **Duplicate IDs** | Allows duplicates | Should resolve to single version | 🔴 High |
-| **Total Count** | Overcounts questions | Should count only applicable | 🔴 High |
-| **Completion %** | May show lower than actual | Should reflect actual applicable questions | 🟡 Medium |
-| **Scoring** | May use wrong correctAnswer | Should use version-specific answer | 🔴 High |
+**Commit:** [Current commit]  
+**File Modified:** `assets/js/task-validator.js`
 
-#### Real-World Scenarios
+**Changes Made:**
+
+1. **Added `mapAnswerValue()` helper function** (Lines 187-201)
+   - Centralizes option index to value mapping logic
+   - Used by both condition evaluation and answer validation
+
+2. **Added `evaluateShowIfCondition()` function** (Lines 203-235)
+   - Evaluates showIf conditions based on student answers
+   - Handles option mapping for referenced questions
+   - Supports answer-based conditions (e.g., `{ "ToM_Q1a": "紅蘿蔔" }`)
+
+3. **Added `filterQuestionsByConditions()` function** (Lines 237-289)
+   - Filters questions based on evaluated showIf conditions
+   - Handles duplicate question IDs by preferring matching conditions
+   - Builds question map for proper option value resolution
+
+4. **Updated `validateTask()` function** (Lines 299-320)
+   - Now calls `filterQuestionsByConditions()` before validation
+   - Uses `mapAnswerValue()` for answer mapping (removed duplicate logic)
+
+**Code Example:**
+
+```javascript
+// NEW: Filter questions by showIf conditions
+const allQuestions = extractQuestions(taskDef);
+const questions = filterQuestionsByConditions(allQuestions, mergedAnswers);
+
+// Helper function evaluates conditions like:
+// showIf: { "ToM_Q1a": "紅蘿蔔" }
+// Against student's actual answer to ToM_Q1a
+```
+
+#### Impact Assessment (Post-Fix)
+
+| Aspect | Before Fix | After Fix | Status |
+|--------|------------|-----------|--------|
+| **Question Extraction** | Extracts ALL questions | Filters by showIf ✅ | ✅ Fixed |
+| **Duplicate IDs** | Allows duplicates | Resolves to single version ✅ | ✅ Fixed |
+| **Total Count** | Overcounts questions | Counts only applicable ✅ | ✅ Fixed |
+| **Completion %** | May show lower than actual | Reflects actual applicable questions ✅ | ✅ Fixed |
+| **Scoring** | May use wrong correctAnswer | Uses version-specific answer ✅ | ✅ Fixed |
+
+#### Verification Scenarios
 
 **Scenario 1: Theory of Mind Branching**
 ```
 Student answers "紅蘿蔔" to ToM_Q1a
 
-Current System:
+Before Fix:
   - Extracts both versions of ToM_Q1b
   - Total questions: includes both (incorrect)
   - Completion: 50% (answered 1 of 2 ToM_Q1b)
   - Scoring: unclear which correctAnswer to use
 
-Expected System:
+After Fix:
   - Extracts only ToM_Q1b with showIf: {"ToM_Q1a": "紅蘿蔔"}
-  - Total questions: includes only applicable version
-  - Completion: 100% (answered the applicable ToM_Q1b)
-  - Scoring: uses correctAnswer: "曲奇餅"
+  - Total questions: includes only applicable version ✅
+  - Completion: 100% (answered the applicable ToM_Q1b) ✅
+  - Scoring: uses correctAnswer: "曲奇餅" ✅
 ```
 
-**Scenario 2: Conditional Instructions**
+**Scenario 2: Opposite Branch**
+```
+Student answers "曲奇餅" to ToM_Q1a
+
+After Fix:
+  - Extracts only ToM_Q1b with showIf: {"ToM_Q1a": "曲奇餅"}
+  - Uses correctAnswer: "紅蘿蔔" ✅
+  - No duplicate questions ✅
+```
+
+**Scenario 3: Conditional Instructions**
 ```
 Tasks may have conditional instruction screens based on answers:
 
@@ -2632,159 +2680,32 @@ Tasks may have conditional instruction screens based on answers:
   "showIf": { "ToM_Q1a": "曲奇餅" }
 }
 
-Current: Both excluded (instructions not counted)
-Impact: Low - instructions already excluded via type check
-```
-
-#### Fix Implementation Plan
-
-**Approach: Answer-Aware Question Extraction** ⭐ Recommended
-
-**Step 1:** Add condition evaluation function
-
-```javascript
-/**
- * Evaluate if a showIf condition is met based on student answers
- */
-function evaluateShowIfCondition(showIf, answers) {
-  if (!showIf) return true; // No condition = always show
-  
-  // Handle gender conditions (static, evaluated at task selection level)
-  if (showIf.gender) {
-    return true; // Assume already filtered at task level
-  }
-  
-  // Handle answer-based conditions (e.g., { "ToM_Q1a": "紅蘿蔔" })
-  for (const [questionId, expectedValue] of Object.entries(showIf)) {
-    if (questionId === 'gender') continue;
-    
-    let studentAnswer = answers[questionId]?.answer || 
-                        answers[questionId]?.text || 
-                        null;
-    
-    // Map option index to value if needed (same logic as existing option mapping)
-    // ... (reuse existing option mapping code)
-    
-    if (studentAnswer !== expectedValue) {
-      return false; // Condition not met
-    }
-  }
-  
-  return true; // All conditions met
-}
-```
-
-**Step 2:** Filter questions based on conditions
-
-```javascript
-function filterQuestionsByConditions(questions, answers) {
-  const applicable = [];
-  const seenIds = new Set();
-  
-  for (const question of questions) {
-    // Evaluate showIf condition
-    if (question.showIf) {
-      const conditionMet = evaluateShowIfCondition(question.showIf, answers);
-      if (!conditionMet) continue; // Skip this question
-    }
-    
-    // Handle duplicate IDs: keep first matching condition
-    if (seenIds.has(question.id)) {
-      console.warn(`[TaskValidator] Duplicate question ID filtered: ${question.id}`);
-      continue;
-    }
-    
-    applicable.push(question);
-    seenIds.add(question.id);
-  }
-  
-  return applicable;
-}
-```
-
-**Step 3:** Update validateTask to use filtered questions
-
-```javascript
-async function validateTask(taskId, mergedAnswers) {
-  const taskDef = await loadTaskDefinition(taskId);
-  if (!taskDef) return { taskId, error: 'Task definition not found', questions: [] };
-
-  const allQuestions = extractQuestions(taskDef);
-  
-  // NEW: Filter questions by evaluating showIf conditions
-  const applicableQuestions = filterQuestionsByConditions(allQuestions, mergedAnswers);
-  
-  const validatedQuestions = [];
-  for (const question of applicableQuestions) {
-    // ... existing validation logic
-  }
-  
-  return { taskId, questions: validatedQuestions, /* ... */ };
-}
-```
-
-#### Testing Requirements
-
-**Test Case 1: ToM Task with Different Branches**
-
-```javascript
-// Student answers "紅蘿蔔" to ToM_Q1a
-const answers = {
-  'ToM_Q1a': { answer: '紅蘿蔔' },
-  'ToM_Q1b': { answer: '曲奇餅' }
-};
-
-const validation = await TaskValidator.validateTask('theoryofmind', answers);
-
-// Verify:
-// 1. Only one ToM_Q1b included (showIf: {"ToM_Q1a": "紅蘿蔔"})
-// 2. correctAnswer is "曲奇餅"
-// 3. Question marked as correct (student answer matches)
-// 4. Total question count excludes alternative ToM_Q1b
-```
-
-**Test Case 2: ToM Task with Opposite Branch**
-
-```javascript
-// Student answers "曲奇餅" to ToM_Q1a
-const answers = {
-  'ToM_Q1a': { answer: '曲奇餅' },
-  'ToM_Q1b': { answer: '紅蘿蔔' }
-};
-
-const validation = await TaskValidator.validateTask('theoryofmind', answers);
-
-// Verify:
-// 1. Only one ToM_Q1b included (showIf: {"ToM_Q1a": "曲奇餅"})
-// 2. correctAnswer is "紅蘿蔔"
-// 3. Question marked as correct
+Fix: Instructions already excluded via type check, so no impact
 ```
 
 #### Tasks Affected
 
-Tasks using `showIf` conditions:
+Tasks using `showIf` conditions that now work correctly:
 
-1. **Theory of Mind** (`TheoryofMind.json`) - ✅ Confirmed affected
+1. **Theory of Mind** (`TheoryofMind.json`) - ✅ Fixed
    - Multiple questions with answer-dependent branching
-   - Example: `ToM_Q1b`, `ToM_Q2b`, etc.
+   - Examples: `ToM_Q1b`, `ToM_Q2b`, `ToM_Q3a_ins2`, `ToM_Q4a_ins2`, etc.
+   - All conditional branches now properly evaluated
 
 2. **TEC_Male / TEC_Female** - ⚠️ Different type (task-level, not question-level)
-   - Gender-based task selection (already handled correctly)
-   - Not affected by this bug
+   - Gender-based task selection (already handled correctly at cache level)
+   - Not affected by this fix (different mechanism)
 
-#### Priority Assessment
+#### Cache Invalidation Required
 
-**Risk Level:** 🔴 **CRITICAL**
+⚠️ **Important:** Users must clear validation cache to see corrected question counts and completion percentages:
 
-**Affected Areas:**
-- Question totals on all pages
-- Completion percentages
-- Task status calculations
-- Data accuracy and reporting
+1. Navigate to `checking_system_home.html`
+2. Click green "System Ready" status pill
+3. Click "Delete Cache" button
+4. Re-sync cache by reloading pages
 
-**Implementation Priority:** 🔴 **HIGH** - Second only to the status inconsistency (now fixed)
-
-**Recommendation:** Implement answer-aware question filtering in separate PR after status fix is deployed.
+**Priority Assessment:** 🟢 **RESOLVED** - Critical issue fixed and ready for deployment
 
 ---
 
@@ -2965,9 +2886,11 @@ From `assets/tasks/TheoryofMind.json`:
 
 | Issue | Status | Action Required |
 |-------|--------|-----------------|
-| **Issue 5: Conditional Logic (showIf)** | 🔴 **CRITICAL BUG** | ✅ Fix Required (Separate PR) |
+| **Issue 5: Conditional Logic (showIf)** | ✅ **FIXED** (October 2025) | ✅ Complete |
 | **Issue 6: Gender Branching** | ✅ **WORKING CORRECTLY** | ❌ No Fix Needed |
 | **Issue 7: Radio_Text Scoring** | ✅ **WORKING CORRECTLY** | ❌ No Fix Needed |
+
+**All Issues Resolved:** ✅ All critical bugs have been fixed and verified.
 
 ---
 
@@ -2978,3 +2901,4 @@ For questions or clarifications, refer to the actual source code files listed in
 **Version History:**
 - **v1.0** (January 2025) - Initial documentation
 - **v1.1** (October 2025) - Added status inconsistency fix and additional investigations
+- **v1.2** (October 2025) - Implemented conditional logic (showIf) fix - all issues resolved
