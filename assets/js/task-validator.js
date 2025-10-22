@@ -415,21 +415,23 @@ window.TaskValidator = (() => {
             // Correct answer was selected - this text field is N/A
             textFieldStatus = 'na';
           } else if (mappedRadioAnswer !== null) {
-            // Radio answer is incorrect or other option selected
+            // Radio answer exists (but is incorrect)
             if (studentAnswer !== null && studentAnswer.trim() !== '') {
               // Text field has content
               textFieldStatus = 'answered';
             } else {
-              // Text field is empty - show "Not answered" only when radio is incorrect
-              textFieldStatus = 'not-answered';
+              // Radio answered but text empty - show "—" (dash), not "not-answered"
+              // Per user: "not answered" for TEXT ONLY when radio is ALSO not answered
+              textFieldStatus = null;
             }
           } else {
-            // Radio has no answer - check if text was filled
+            // Radio has NO answer (blank/missing)
             if (studentAnswer !== null && studentAnswer.trim() !== '') {
-              // Student attempted to answer via text (treat as answered/incorrect)
+              // Student attempted to answer via text only
               textFieldStatus = 'answered';
             } else {
-              // No answer at all (missing)
+              // Both radio and text are empty - show "not-answered"
+              // Per user: "not answered for TEXT only happens if radio is also not answered"
               textFieldStatus = 'not-answered';
             }
           }
