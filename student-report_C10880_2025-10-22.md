@@ -4,7 +4,7 @@
 **Core ID:** C10880  
 **Class:** C-046-12  
 **School:** S046  
-**Export Time:** 22/10/2025, 16:39:10  
+**Export Time:** 22/10/2025, 17:16:04  
 
 ---
 
@@ -231,23 +231,21 @@
 |---|-------------|----------------|----------------|--------|
 | 1 | ToM_Q1a | — | Y/N | ⚪ Unanswered |
 | 2 | ToM_Q2a | — | Y/N | ⚪ Unanswered |
-| 3 | ToM_Q3_TEXT | — | Y/N | ⚪ Unanswered |
-| 4 | ToM_Q3a | — | 狗仔 | ⚪ Unanswered |
-| 5 | ToM_Q3b | — | 不知道 | ⚪ Unanswered |
-| 6 | ToM_Q3c | — | 沒有 | ⚪ Unanswered |
-| 7 | ToM_Q4a_ins1_TEXT | — | Y/N | ⚪ Unanswered |
-| 8 | ToM_Q4a | — | 豬仔 | ⚪ Unanswered |
-| 9 | ToM_Q4b | — | 膠布 | ⚪ Unanswered |
-| 10 | ToM_Q4c | — | 沒有 | ⚪ Unanswered |
-| 11 | ToM_Q5a | — | 衣櫃 | ⚪ Unanswered |
-| 12 | ToM_Q5b | — | 書包 | ⚪ Unanswered |
-| 13 | ToM_Q6a | — | 粟米片 | ⚪ Unanswered |
-| 14 | ToM_Q6b | — | 開心 | ⚪ Unanswered |
-| 15 | ToM_Q6c | — | 唔開心 | ⚪ Unanswered |
-| 16 | ToM_Q7a | — | 好搞笑 | ⚪ Unanswered |
-| 17 | ToM_Q7b | — | 話小光成個bb咁 | ⚪ Unanswered |
-| 18 | ToM_Q7c | — | 唔開心 | ⚪ Unanswered |
-| 19 | ToM_Q7d | — | 開心 | ⚪ Unanswered |
+| 3 | ToM_Q3a | — | 狗仔 | ⚪ Unanswered |
+| 4 | ToM_Q3b | — | 不知道 | ⚪ Unanswered |
+| 5 | ToM_Q3c | — | 沒有 | ⚪ Unanswered |
+| 6 | ToM_Q4a | — | 豬仔 | ⚪ Unanswered |
+| 7 | ToM_Q4b | — | 膠布 | ⚪ Unanswered |
+| 8 | ToM_Q4c | — | 沒有 | ⚪ Unanswered |
+| 9 | ToM_Q5a | — | 衣櫃 | ⚪ Unanswered |
+| 10 | ToM_Q5b | — | 書包 | ⚪ Unanswered |
+| 11 | ToM_Q6a | — | 粟米片 | ⚪ Unanswered |
+| 12 | ToM_Q6b | — | 開心 | ⚪ Unanswered |
+| 13 | ToM_Q6c | — | 唔開心 | ⚪ Unanswered |
+| 14 | ToM_Q7a | — | 好搞笑 | ⚪ Unanswered |
+| 15 | ToM_Q7b | — | 話小光成個bb咁 | ⚪ Unanswered |
+| 16 | ToM_Q7c | — | 唔開心 | ⚪ Unanswered |
+| 17 | ToM_Q7d | — | 開心 | ⚪ Unanswered |
 
 
 #### Chinese Word Reading
