@@ -951,9 +951,14 @@
         // For _TEXT fields, show "—" (dash) instead of "N/A" for correct answer column
         const correctAnswerDisplay = isYNTask ? 'N/A' : (question.isTextDisplay ? '—' : (question.correctAnswer || '—'));
         
+        // Handle special case for text-only attempts (radio blank, text filled)
+        const displayStudentAnswer = question.studentAnswer === '[TEXT_ONLY_ATTEMPT]' 
+          ? '—' 
+          : (question.studentAnswer || '—');
+        
         row.innerHTML = `
           <td class="py-2 px-2 text-[color:var(--foreground)] font-mono">${question.id}</td>
-          <td class="py-2 px-2 text-[color:var(--muted-foreground)]">${question.studentAnswer || '—'}</td>
+          <td class="py-2 px-2 text-[color:var(--muted-foreground)]">${displayStudentAnswer}</td>
           <td class="py-2 px-2 text-[color:var(--muted-foreground)]">${correctAnswerDisplay}</td>
           <td class="py-2 px-2">${statusPill}</td>
         `;
