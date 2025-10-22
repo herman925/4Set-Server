@@ -825,8 +825,12 @@
             statusPill = '<span class="answer-pill" style="background: #f3f4f6; color: #6b7280; border-color: #d1d5db;"><i data-lucide="info" class="w-3 h-3"></i>N/A</span>';
           } else if (question.textFieldStatus === 'answered') {
             statusPill = '<span class="answer-pill" style="background: #f0f9ff; color: #0369a1; border-color: #bae6fd;"><i data-lucide="circle-check" class="w-3 h-3"></i>Answered</span>';
-          } else {
+          } else if (question.textFieldStatus === 'not-answered') {
+            // Only show "Not answered" when radio answer is incorrect
             statusPill = '<span class="answer-pill incorrect"><i data-lucide="minus" class="w-3 h-3"></i>Not answered</span>';
+          } else {
+            // No status to display (radio question not answered)
+            statusPill = '<span class="answer-pill" style="background: #f3f4f6; color: #9ca3af; border-color: #d1d5db;"><i data-lucide="minus" class="w-3 h-3"></i>—</span>';
           }
         } else if (question.studentAnswer === null) {
           statusPill = '<span class="answer-pill incorrect"><i data-lucide="minus" class="w-3 h-3"></i>Not answered</span>';

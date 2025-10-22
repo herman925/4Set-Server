@@ -43,20 +43,26 @@ test_cases = [
         "ToM_Q3a": None,
         "ToM_Q3a_TEXT": "貓仔",
         "expected_ToM_Q3a": {"isCorrect": False, "status": "Not answered"},
-        "expected_ToM_Q3a_TEXT": {"status": "Answered", "reason": "Text field has content"}
+        "expected_ToM_Q3a_TEXT": {"status": "—", "reason": "Radio not answered, no display needed"}
     },
     {
         "name": "Scenario 6: No radio answer, no text",
         "ToM_Q3a": None,
         "ToM_Q3a_TEXT": None,
         "expected_ToM_Q3a": {"isCorrect": False, "status": "Not answered"},
-        "expected_ToM_Q3a_TEXT": {"status": "Not answered", "reason": "No text provided"}
+        "expected_ToM_Q3a_TEXT": {"status": "—", "reason": "Radio not answered, no display needed"}
     }
 ]
 
 def simulate_validation(radio_answer, text_answer):
     """
     Simulate the validation logic from task-validator.js
+    
+    Updated logic (2025-10-22):
+    - N/A: Correct answer selected
+    - Answered: Text field has content (when radio is incorrect)
+    - Not answered: Radio incorrect AND no text
+    - No display (—): Radio not answered
     """
     correct_answer = "狗仔"
     
@@ -69,10 +75,15 @@ def simulate_validation(radio_answer, text_answer):
     text_status = None
     if radio_is_correct:
         text_status = "N/A"  # Correct answer selected, text not needed
-    elif text_answer is not None and str(text_answer).strip() != '':
-        text_status = "Answered"
+    elif radio_answer is not None:
+        # Radio has an answer (but it's incorrect)
+        if text_answer is not None and str(text_answer).strip() != '':
+            text_status = "Answered"
+        else:
+            text_status = "Not answered"  # Only show when radio is incorrect
     else:
-        text_status = "Not answered"
+        # Radio not answered at all
+        text_status = "—"  # No display needed
     
     return {
         "radio": {

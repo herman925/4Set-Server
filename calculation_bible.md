@@ -157,39 +157,52 @@ if (question.type === 'radio_text' && question.options) {
 
 #### Text Display Fields (_TEXT)
 
-**Location:** `task-validator.js` Lines 393-422
+**Location:** `task-validator.js` Lines 393-435
 
-**Purpose:** `_TEXT` fields are displayed in the checking system but excluded from completion calculations.
+**Purpose:** `_TEXT` fields are displayed in the checking system but NEVER counted in completion calculations.
 
-**Display Logic:**
+**Display Logic (Updated 2025-10-22):**
 
 ```javascript
 if (isTextDisplay && questionId.endsWith('_TEXT')) {
   // Find associated radio_text question
   const radioQuestionId = questionId.replace('_TEXT', '');
   
-  // Check if correct answer was selected on radio question
-  if (radioAnswerCorrect) {
+  const isRadioCorrect = /* check if radio answer matches correctAnswer */;
+  
+  if (isRadioCorrect) {
     textFieldStatus = 'na';  // N/A - not needed
-  } else if (textAnswer !== null && textAnswer.trim() !== '') {
-    textFieldStatus = 'answered';  // Has content
+  } else if (radioAnswer !== null) {
+    // Radio has incorrect answer
+    if (textAnswer !== null && textAnswer.trim() !== '') {
+      textFieldStatus = 'answered';  // Has content
+    } else {
+      textFieldStatus = 'not-answered';  // ONLY when radio is incorrect
+    }
   } else {
-    textFieldStatus = null;  // Not answered
+    // Radio not answered - no display needed
+    textFieldStatus = null;  // Shows as "—"
   }
 }
 ```
 
 **Display Status:**
 
-| Scenario | Radio Answer | Text Content | Status Display |
-|----------|-------------|--------------|----------------|
-| Correct selected | "狗仔" (correct) | Any or empty | 🔵 **N/A** (grey pill) |
-| Wrong selected | "其他" | "貓仔" | 🔵 **Answered** (blue pill) |
-| Wrong selected | "其他" | Empty | 🔴 **Not answered** |
-| No answer | null | "貓仔" | 🔵 **Answered** (blue pill) |
-| No answer | null | Empty | 🔴 **Not answered** |
+| Scenario | Radio Answer | Text Content | Status Display | Description |
+|----------|-------------|--------------|----------------|-------------|
+| Correct selected | "狗仔" (correct) | Any or empty | 🔵 **N/A** (grey pill) | Text not needed |
+| Wrong selected | "其他" | "貓仔" | 🔵 **Answered** (blue pill) | Text provided |
+| Wrong selected | "其他" | Empty | 🔴 **Not answered** | Text missing (radio incorrect) |
+| No answer | null | "貓仔" | ⚪ **—** (grey pill) | No display needed |
+| No answer | null | Empty | ⚪ **—** (grey pill) | No display needed |
 
-**UI Implementation:** `checking-system-student-page.js` Lines 816-828
+**Key Rules:**
+1. **"Not answered" ONLY appears when radio answer is incorrect**
+2. When radio is not answered, _TEXT field shows "—" (no status display)
+3. When radio is correct, _TEXT field shows "N/A" (text not needed)
+4. _TEXT fields are **NEVER** counted in completion percentage regardless of status
+
+**UI Implementation:** `checking-system-student-page.js` Lines 822-834
 
 ```javascript
 if (question.isTextDisplay) {
@@ -199,9 +212,14 @@ if (question.isTextDisplay) {
   } else if (question.textFieldStatus === 'answered') {
     statusPill = '<span class="answer-pill" style="background: #f0f9ff; color: #0369a1;">
                   <i data-lucide="circle-check"></i>Answered</span>';
-  } else {
+  } else if (question.textFieldStatus === 'not-answered') {
+    // Only shown when radio answer is incorrect
     statusPill = '<span class="answer-pill incorrect">
                   <i data-lucide="minus"></i>Not answered</span>';
+  } else {
+    // Radio not answered - no display needed
+    statusPill = '<span class="answer-pill" style="background: #f3f4f6; color: #9ca3af;">
+                  <i data-lucide="minus"></i>—</span>';
   }
 }
 ```
@@ -210,6 +228,7 @@ if (question.isTextDisplay) {
 - `_TEXT` fields are **NOT** counted in completion percentage
 - `_TEXT` fields show "N/A" in the "Correct Answer" column
 - `_TEXT` fields are **displayed** but **excluded** from statistics
+- **"Not answered" status** only appears when the associated radio question has an incorrect answer
 - Calculation logic: `task-validator.js` Lines 437-444
 
 ```javascript

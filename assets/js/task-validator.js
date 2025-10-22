@@ -392,7 +392,7 @@ window.TaskValidator = (() => {
       
       // SPECIAL HANDLING for _TEXT display fields
       let isTextDisplay = question.isTextDisplay || false;
-      let textFieldStatus = null; // 'answered', 'na', or null (not answered)
+      let textFieldStatus = null; // 'answered', 'na', 'not-answered', or null (hide)
       
       if (isTextDisplay && questionId.endsWith('_TEXT')) {
         // Find the associated radio_text question (e.g., ToM_Q3a for ToM_Q3a_TEXT)
@@ -407,14 +407,23 @@ window.TaskValidator = (() => {
           const mappedRadioAnswer = mapAnswerValue(radioAnswer, radioQuestion);
           const radioCorrectAnswer = radioQuestion.scoring?.correctAnswer;
           
-          if (radioCorrectAnswer && mappedRadioAnswer !== null && 
-              String(mappedRadioAnswer).trim() === String(radioCorrectAnswer).trim()) {
+          const isRadioCorrect = radioCorrectAnswer && mappedRadioAnswer !== null && 
+                                 String(mappedRadioAnswer).trim() === String(radioCorrectAnswer).trim();
+          
+          if (isRadioCorrect) {
             // Correct answer was selected - this text field is N/A
             textFieldStatus = 'na';
-          } else if (studentAnswer !== null && studentAnswer.trim() !== '') {
-            // Text field has content
-            textFieldStatus = 'answered';
+          } else if (mappedRadioAnswer !== null) {
+            // Radio answer is incorrect or other option selected
+            if (studentAnswer !== null && studentAnswer.trim() !== '') {
+              // Text field has content
+              textFieldStatus = 'answered';
+            } else {
+              // Text field is empty - show "Not answered" only when radio is incorrect
+              textFieldStatus = 'not-answered';
+            }
           }
+          // If radio has no answer, textFieldStatus stays null (no display needed)
         } else if (studentAnswer !== null && studentAnswer.trim() !== '') {
           // No associated radio question, just check if answered
           textFieldStatus = 'answered';
