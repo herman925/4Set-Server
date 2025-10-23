@@ -390,22 +390,55 @@
       // Get sessionkey QID (needed for submission processing)
       const sessionKeyQid = questionsData['sessionkey'] || '3'; // Default to QID 3
 
-      // ✅ USE WORKING :matches FILTER ON SESSIONKEY FIELD
-      // This is the ONLY filter method that works correctly (see PRDs)
-      console.log('[StudentPage] ========== FETCHING JOTFORM DATA ==========');
-      console.log('[StudentPage] Using :matches filter on sessionkey field (QID ' + sessionKeyQid + ')');
-      console.log('[StudentPage] Fetching Jotform data for Core ID:', coreId);
+      // ✅ FIRST: Try to get data from global cache (includes merged Qualtrics data)
+      console.log('[StudentPage] ========== CHECKING GLOBAL CACHE ==========');
+      console.log('[StudentPage] Looking for Core ID:', coreId);
       
-      await updateLoadingStatus('Connecting to Jotform API with :matches filter...');
+      let submissions = [];
       
-      // fetchStudentSubmissionsDirectly uses the working :matches operator
-      // Returns only submissions where sessionkey contains the student ID
-      const submissions = await window.JotformAPI.fetchStudentSubmissionsDirectly(coreId, sessionKeyQid);
-      
-      console.log(`[StudentPage] ✅ API returned: ${submissions.length} validated submissions`);
-      console.log('[StudentPage] Filter accuracy: 100% (server-side :matches filter working!)');
-      await updateLoadingStatus(`Found ${submissions.length} matching submissions`);
-      console.log('[StudentPage] ==========================================');
+      if (window.JotFormCache && typeof window.JotFormCache.getStudentSubmissions === 'function') {
+        try {
+          submissions = await window.JotFormCache.getStudentSubmissions(coreId);
+          
+          if (submissions.length > 0) {
+            console.log(`[StudentPage] ✅ Found ${submissions.length} submissions in global cache (includes Qualtrics data if merged)`);
+            
+            // Check if any are Qualtrics-only records
+            const qualtricsOnly = submissions.filter(s => s._orphaned || (s._sources && s._sources.length === 1 && s._sources[0] === 'qualtrics'));
+            if (qualtricsOnly.length > 0) {
+              console.log(`[StudentPage] ℹ️  ${qualtricsOnly.length} submission(s) are from Qualtrics only (no JotForm data)`);
+            }
+            
+            console.log('[StudentPage] ==========================================');
+          } else {
+            console.log('[StudentPage] No submissions found in global cache, will try API');
+            console.log('[StudentPage] ==========================================');
+          }
+        } catch (cacheError) {
+          console.warn('[StudentPage] Error reading from global cache:', cacheError);
+        }
+      } else {
+        console.log('[StudentPage] Global cache not available, will use API');
+        console.log('[StudentPage] ==========================================');
+      }
+
+      // ✅ FALLBACK: If no cached data, fetch from API
+      if (submissions.length === 0) {
+        console.log('[StudentPage] ========== FETCHING JOTFORM DATA ==========');
+        console.log('[StudentPage] Using :matches filter on sessionkey field (QID ' + sessionKeyQid + ')');
+        console.log('[StudentPage] Fetching Jotform data for Core ID:', coreId);
+        
+        await updateLoadingStatus('Connecting to Jotform API with :matches filter...');
+        
+        // fetchStudentSubmissionsDirectly uses the working :matches operator
+        // Returns only submissions where sessionkey contains the student ID
+        submissions = await window.JotformAPI.fetchStudentSubmissionsDirectly(coreId, sessionKeyQid);
+        
+        console.log(`[StudentPage] ✅ API returned: ${submissions.length} validated submissions`);
+        console.log('[StudentPage] Filter accuracy: 100% (server-side :matches filter working!)');
+        await updateLoadingStatus(`Found ${submissions.length} matching submissions`);
+        console.log('[StudentPage] ==========================================');
+      }
 
       if (submissions.length === 0) {
         showNoDataMessage();

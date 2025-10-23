@@ -934,22 +934,6 @@
           total,
           hasPostTerminationAnswers: validation.hasPostTerminationAnswers || false
         });
-        
-        // Debug logging for CM task
-        if (taskId === 'cm' && student.coreId === 'C10880') {
-          console.log('[JotFormCache] CM Cache Build for C10880:', {
-            taskId,
-            setId,
-            isComplete,
-            answered,
-            total,
-            terminated: validation.terminated,
-            hasPostTerminationAnswers: validation.hasPostTerminationAnswers,
-            answeredEqualsTotal: answered === total,
-            condition1: answered === total && total > 0,
-            condition2: validation.terminated && !validation.hasPostTerminationAnswers && answered > 0
-          });
-        }
       }
       
       // Calculate set status
@@ -1177,6 +1161,42 @@
         await qualtricsStorage.removeItem('qualtrics_responses');
         console.log('[JotFormCache] Qualtrics cache cleared');
       }
+    }
+
+    /**
+     * Get submissions for a specific student from cache (includes Qualtrics-only records)
+     * @param {string} coreId - Student core ID (e.g., "C10947")
+     * @returns {Promise<Array>} Array of submissions matching the student
+     */
+    async getStudentSubmissions(coreId) {
+      const cached = await this.loadFromCache();
+      if (!cached || !cached.submissions) {
+        console.log('[JotFormCache] No cached data available for student lookup');
+        return [];
+      }
+
+      // Extract numeric ID from core ID (e.g., "C10947" -> "10947")
+      const numericId = coreId.replace(/^C/i, '');
+      
+      // Filter submissions where sessionkey contains the student ID
+      const studentSubmissions = cached.submissions.filter(submission => {
+        const sessionkey = submission.sessionkey;
+        if (!sessionkey) return false;
+        
+        // sessionkey format: "10947_YYYYMMDD_HH_MM" or contains the ID
+        return sessionkey.startsWith(numericId + '_') || 
+               sessionkey.includes('_' + numericId + '_');
+      });
+
+      console.log(`[JotFormCache] Found ${studentSubmissions.length} submissions for ${coreId} in cache`);
+      
+      // Log if any are Qualtrics-only records
+      const qualtricsOnly = studentSubmissions.filter(s => s._orphaned || (s._sources && s._sources.length === 1 && s._sources[0] === 'qualtrics'));
+      if (qualtricsOnly.length > 0) {
+        console.log(`[JotFormCache] - ${qualtricsOnly.length} of these are Qualtrics-only records (no JotForm data)`);
+      }
+      
+      return studentSubmissions;
     }
   }
 

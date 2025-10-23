@@ -117,7 +117,10 @@
 
       if (conflicts.length > 0) {
         merged._tgmdConflicts = conflicts;
-        console.log(`[DataMerger] Conflicts detected for ${jotformRecord.sessionkey}: ${conflicts.length} fields`);
+        
+        // Log merge details for specific student if requested
+        const studentId = jotformRecord['student-id'] || jotformRecord.sessionkey?.split('_')[0];
+        console.log(`[DataMerger] Merged TGMD for student ${studentId} (sessionkey: ${jotformRecord.sessionkey}): ${conflicts.length} conflicts resolved, ${Object.keys(qualtricsRecord).filter(k => k.startsWith(this.tgmdFieldPrefix)).length} TGMD fields from Qualtrics`);
       }
 
       // Preserve Qualtrics metadata
