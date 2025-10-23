@@ -442,10 +442,10 @@
     const container = document.getElementById('students-table');
     if (!container) return;
     
-    // Get unique students (by coreId) from all classes in the school
-    const uniqueStudents = students;
+    // Apply filters to get filtered students
+    const filteredStudents = applyStudentFilters(students);
     
-    if (uniqueStudents.length === 0) {
+    if (students.length === 0) {
       container.innerHTML = `
         <div class="px-4 py-8 text-center text-[color:var(--muted-foreground)]">
           <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-2 text-[color:var(--muted-foreground)]"></i>
@@ -457,9 +457,9 @@
     }
     
     if (currentStudentViewMode === 'set') {
-      renderStudentsTableBySet(container, uniqueStudents);
+      renderStudentsTableBySet(container, filteredStudents);
     } else {
-      renderStudentsTableByTask(container, uniqueStudents);
+      renderStudentsTableByTask(container, filteredStudents);
     }
     
     lucide.createIcons();
@@ -476,6 +476,7 @@
             <th class="px-4 py-3 text-left font-medium">Student Name</th>
             <th class="px-4 py-3 text-left font-medium">Core ID</th>
             <th class="px-4 py-3 text-left font-medium">Class</th>
+            <th class="px-4 py-3 text-left font-medium">Grade</th>
             <th class="px-4 py-3 text-left font-medium">Set 1</th>
             <th class="px-4 py-3 text-left font-medium">Set 2</th>
             <th class="px-4 py-3 text-left font-medium">Set 3</th>
@@ -488,7 +489,7 @@
     if (filteredStudents.length === 0) {
       html += `
         <tr>
-          <td colspan="7" class="px-4 py-8 text-center text-[color:var(--muted-foreground)]">
+          <td colspan="8" class="px-4 py-8 text-center text-[color:var(--muted-foreground)]">
             <p>No students match the current filter</p>
           </td>
         </tr>
@@ -500,7 +501,7 @@
         const classInfo = classes.find(c => c.classId === student.classId);
         
         html += `
-          <tr class="hover:bg-[color:var(--muted)]/20 transition-colors">
+          <tr class="hover:bg-[color:var(--muted)]/20 transition-colors" data-student-row data-grade="${String(classInfo?.grade || 0)}" data-has-data="${data ? 'true' : 'false'}">
             <td class="px-4 py-3">
               <a href="checking_system_4_student.html?coreId=${encodeURIComponent(student.coreId)}" 
                  class="font-medium text-[color:var(--primary)] hover:underline font-noto">
@@ -509,6 +510,7 @@
             </td>
             <td class="px-4 py-3 text-xs font-mono text-[color:var(--muted-foreground)]">${student.coreId}</td>
             <td class="px-4 py-3 text-xs text-[color:var(--muted-foreground)]">${classInfo?.actualClassName || '—'}</td>
+            <td class="px-4 py-3 text-xs text-[color:var(--muted-foreground)]">${getGradeLabel(classInfo?.grade)}</td>
             ${renderSetStatus(getSetStatusColor(setStatus, 'set1'))}
             ${renderSetStatus(getSetStatusColor(setStatus, 'set2'))}
             ${renderSetStatus(getSetStatusColor(setStatus, 'set3'))}
@@ -579,6 +581,7 @@
     const studentNameColumnWidth = systemConfig?.taskView?.studentNameColumnWidth || '200px';
     const coreIdColumnWidth = systemConfig?.taskView?.coreIdColumnWidth || '120px';
     const classColumnWidth = systemConfig?.taskView?.classColumnWidth || '150px';
+    const gradeColumnWidth = systemConfig?.taskView?.gradeColumnWidth || '80px';
     const useEqualWidth = systemConfig?.taskView?.equalWidthColumns !== false;
     const columnNames = systemConfig?.taskView?.taskColumnNames || {};
     
@@ -607,6 +610,7 @@
             <th rowspan="2" class="px-4 py-3 text-left font-medium sticky left-0 bg-white z-20" style="width: ${studentNameColumnWidth}; min-width: ${studentNameColumnWidth}; max-width: ${studentNameColumnWidth};">Student Name</th>
             <th rowspan="2" class="px-4 py-3 text-left font-medium" style="width: ${coreIdColumnWidth}; min-width: ${coreIdColumnWidth}; max-width: ${coreIdColumnWidth};">Core ID</th>
             <th rowspan="2" class="px-4 py-3 text-left font-medium" style="width: ${classColumnWidth}; min-width: ${classColumnWidth}; max-width: ${classColumnWidth};">Class</th>
+            <th rowspan="2" class="px-4 py-3 text-left font-medium" style="width: ${gradeColumnWidth}; min-width: ${gradeColumnWidth}; max-width: ${gradeColumnWidth};">Grade</th>
     `;
     
     // Add set headers with merged cells and background colors
@@ -642,7 +646,7 @@
     if (filteredStudents.length === 0) {
       html += `
         <tr>
-          <td colspan="${allTasks.length + 3}" class="px-4 py-8 text-center text-[color:var(--muted-foreground)]">
+          <td colspan="${allTasks.length + 4}" class="px-4 py-8 text-center text-[color:var(--muted-foreground)]">
             <p>No students match the current filter</p>
           </td>
         </tr>
@@ -654,7 +658,7 @@
         const classInfo = classes.find(c => c.classId === student.classId);
         
         html += `
-          <tr class="hover:bg-[color:var(--muted)]/20 transition-colors">
+          <tr class="hover:bg-[color:var(--muted)]/20 transition-colors" data-student-row data-grade="${String(classInfo?.grade || 0)}" data-has-data="${data ? 'true' : 'false'}">
             <td class="px-4 py-3 sticky left-0 bg-white z-20">
               <a href="checking_system_4_student.html?coreId=${encodeURIComponent(student.coreId)}" 
                  class="font-medium text-[color:var(--primary)] hover:underline font-noto">
@@ -663,6 +667,7 @@
             </td>
             <td class="px-4 py-3 text-xs font-mono text-[color:var(--muted-foreground)]">${student.coreId}</td>
             <td class="px-4 py-3 text-xs text-[color:var(--muted-foreground)]">${classInfo?.actualClassName || '—'}</td>
+            <td class="px-4 py-3 text-xs text-[color:var(--muted-foreground)]">${getGradeLabel(classInfo?.grade)}</td>
         `;
         
         // Add status for each task with set background colors
@@ -1012,6 +1017,51 @@
   }
 
   /**
+   * Apply filters to student list
+   * Returns filtered array of students based on current filter settings
+   */
+  function applyStudentFilters(studentList) {
+    if (!studentList || studentList.length === 0) return [];
+    
+    // Get current filter values
+    const dataFilter = document.getElementById('data-view-filter')?.value || 'all';
+    const currentGradeFilter = window.currentGradeFilter || 'all';
+    
+    return studentList.filter(student => {
+      const data = studentSubmissionData.get(student.coreId);
+      const classInfo = classes.find(c => c.classId === student.classId);
+      const studentGrade = String(classInfo?.grade || 0);
+      
+      // Apply data filter
+      let passesDataFilter = true;
+      switch (dataFilter) {
+        case 'with-data':
+          passesDataFilter = data && data.submissions && data.submissions.length > 0;
+          break;
+        case 'incomplete':
+          passesDataFilter = data && data.outstanding > 0;
+          break;
+        case 'all':
+        default:
+          passesDataFilter = true;
+          break;
+      }
+      
+      // Apply grade filter
+      let passesGradeFilter = true;
+      if (currentGradeFilter === 'all') {
+        passesGradeFilter = true;
+      } else if (currentGradeFilter === '1' || currentGradeFilter === '2' || currentGradeFilter === '3') {
+        passesGradeFilter = studentGrade === currentGradeFilter;
+      } else if (currentGradeFilter === '0') {
+        passesGradeFilter = studentGrade === '0';
+      }
+      
+      return passesDataFilter && passesGradeFilter;
+    });
+  }
+
+  /**
    * Render main view (either classes or students)
    */
   function renderMainView() {
@@ -1069,44 +1119,53 @@
   }
 
   /**
-   * Apply grade filter to classes table
+   * Apply grade filter to classes or students table
    * Now uses numeric grades: 1 (K1), 2 (K2), 3 (K3), 0 (Other)
    */
   function applyGradeFilter(grade) {
-    const rows = document.querySelectorAll('[data-class-row]');
-    let visibleCount = 0;
+    // Store current grade filter globally
+    window.currentGradeFilter = grade;
+    
+    if (currentViewMode === 'class') {
+      // Apply to classes table
+      const rows = document.querySelectorAll('[data-class-row]');
+      let visibleCount = 0;
 
-    rows.forEach(row => {
-      const rowGrade = row.getAttribute('data-grade');
-      let shouldShow = false;
-      
-      if (grade === 'all') {
-        shouldShow = true;
-      } else if (grade === '1' || grade === '2' || grade === '3') {
-        // Filter by specific grade number (numeric comparison)
-        shouldShow = String(rowGrade) === grade;
-      } else if (grade === '0') {
-        // Filter by "Other" grade (numeric 0)
-        shouldShow = String(rowGrade) === '0';
-      }
-      
-      if (shouldShow) {
-        row.style.removeProperty('display');
-        visibleCount++;
-      } else {
-        row.style.display = 'none';
-      }
-    });
+      rows.forEach(row => {
+        const rowGrade = row.getAttribute('data-grade');
+        let shouldShow = false;
+        
+        if (grade === 'all') {
+          shouldShow = true;
+        } else if (grade === '1' || grade === '2' || grade === '3') {
+          // Filter by specific grade number (numeric comparison)
+          shouldShow = String(rowGrade) === grade;
+        } else if (grade === '0') {
+          // Filter by "Other" grade (numeric 0)
+          shouldShow = String(rowGrade) === '0';
+        }
+        
+        if (shouldShow) {
+          row.style.removeProperty('display');
+          visibleCount++;
+        } else {
+          row.style.display = 'none';
+        }
+      });
 
-    // Update class count display
-    const classCountEl = document.getElementById('class-count');
-    if (classCountEl) {
-      const gradeLabel = grade === 'all' ? '' : 
-                         grade === '1' ? ' (K1 only)' :
-                         grade === '2' ? ' (K2 only)' :
-                         grade === '3' ? ' (K3 only)' :
-                         ' (Others only)';
-      classCountEl.textContent = `${visibleCount} ${visibleCount === 1 ? 'class' : 'classes'}${gradeLabel}`;
+      // Update class count display
+      const classCountEl = document.getElementById('class-count');
+      if (classCountEl) {
+        const gradeLabel = grade === 'all' ? '' : 
+                           grade === '1' ? ' (K1 only)' :
+                           grade === '2' ? ' (K2 only)' :
+                           grade === '3' ? ' (K3 only)' :
+                           ' (Others only)';
+        classCountEl.textContent = `${visibleCount} ${visibleCount === 1 ? 'class' : 'classes'}${gradeLabel}`;
+      }
+    } else {
+      // Re-render student table with new filter
+      renderStudentsTable();
     }
   }
 

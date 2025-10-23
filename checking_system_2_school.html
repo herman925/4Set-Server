@@ -172,15 +172,6 @@
                 <!-- Legend and Filters -->
                 <div class="px-6 py-3 border-b border-[color:var(--border)] bg-[color:var(--muted)]/20 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div class="flex items-center gap-4 text-xs text-[color:var(--muted-foreground)]">
-                        <!-- Student List View Mode Toggle (only shown when By Student is active) -->
-                        <div id="student-view-mode-toggle" class="inline-flex items-center bg-white/50 rounded-lg p-1 border border-[color:var(--border)]" style="display: none;">
-                            <button id="student-view-by-set-btn" class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors bg-[color:var(--primary)] text-white shadow-sm">
-                                By Set
-                            </button>
-                            <button id="student-view-by-task-btn" class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors text-[color:var(--muted-foreground)] hover:bg-[color:var(--secondary)] hover:text-[color:var(--secondary-foreground)]">
-                                By Task
-                            </button>
-                        </div>
                         <!-- Legend -->
                         <div id="legend-container" class="flex items-center gap-4">
                             <span class="inline-flex items-center gap-1.5">
@@ -204,6 +195,15 @@
                             <option value="with-data">With Data Only</option>
                             <option value="incomplete">Incomplete Only</option>
                         </select>
+                        <!-- Student List View Mode Toggle (only shown when By Student is active) -->
+                        <div id="student-view-mode-toggle" class="inline-flex items-center bg-white/50 rounded-lg p-1 border border-[color:var(--border)]" style="display: none;">
+                            <button id="student-view-by-set-btn" class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors bg-[color:var(--primary)] text-white shadow-sm">
+                                By Set
+                            </button>
+                            <button id="student-view-by-task-btn" class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors text-[color:var(--muted-foreground)] hover:bg-[color:var(--secondary)] hover:text-[color:var(--secondary-foreground)]">
+                                By Task
+                            </button>
+                        </div>
                         <button id="grade-filter-button" class="hero-button btn-secondary filter-button">
                             <i data-lucide="sliders-horizontal"></i>
                             <span>Filter by Grade</span>
@@ -213,7 +213,7 @@
                 
                 <div class="px-6 pb-6 pt-3">
                     <div id="classes-table"></div>
-                    <div id="students-table" style="display: none;"></div>
+                    <div id="students-table" style="display: none; overflow-x: auto;"></div>
                 </div>
             </details>
         </main>

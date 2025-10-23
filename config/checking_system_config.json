@@ -48,6 +48,8 @@
     "taskColumnWidth": "60px",
     "studentNameColumnWidth": "250px",
     "coreIdColumnWidth": "80px",
+    "classColumnWidth": "150px",
+    "gradeColumnWidth": "80px",
     "taskColumnNames": {
       "ERV": "ERV",
       "SYM": "SYM",
