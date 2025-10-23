@@ -12,7 +12,9 @@ class AgentConfigGUI:
     def __init__(self, master):
         self.master = master
         master.title("4Set Processor Agent Configuration")
-        master.resizable(False, False)
+        master.resizable(True, True)
+        master.grid_rowconfigure(0, weight=1)
+        master.grid_columnconfigure(0, weight=1)
 
         try:
             with open(CONFIG_PATH, "r", encoding="utf-8") as f:
@@ -39,19 +41,20 @@ class AgentConfigGUI:
         self.entries = {}
         form_frame = tk.Frame(master, padx=16, pady=16)
         form_frame.grid(row=0, column=0, sticky="nsew")
+        form_frame.grid_columnconfigure(1, weight=1)
 
         row = 0
-        self._add_entry(form_frame, row, "OneDrive Relative Path", "relativePath")
+        self._add_entry(form_frame, row, "OneDrive Relative Path", "relativePath", editable=True)
         row += 1
-        self._add_entry(form_frame, row, "OneDrive Fallback Root", "fallbackRoot")
+        self._add_entry(form_frame, row, "OneDrive Fallback Root", "fallbackRoot", editable=False)
         row += 1
-        self._add_entry(form_frame, row, "Watch Path", "watchPath")
+        self._add_entry(form_frame, row, "Watch Path", "watchPath", editable=True)
         row += 1
-        self._add_entry(form_frame, row, "Staging Path", "stagingPath")
+        self._add_entry(form_frame, row, "Staging Path", "stagingPath", editable=True)
         row += 1
-        self._add_entry(form_frame, row, "Filing Root", "filingRoot")
+        self._add_entry(form_frame, row, "Filing Root", "filingRoot", editable=True)
         row += 1
-        self._add_entry(form_frame, row, "Unsorted Root", "unsortedRoot")
+        self._add_entry(form_frame, row, "Unsorted Root", "unsortedRoot", editable=True)
 
         button_frame = tk.Frame(master, padx=16, pady=8)
         button_frame.grid(row=1, column=0, sticky="ew")
@@ -72,17 +75,24 @@ class AgentConfigGUI:
         self.status_label.pack(fill="x")
         self.set_status("Loaded configuration from agent.json")
 
-    def _add_entry(self, parent, row, label_text, key):
+    def _add_entry(self, parent, row, label_text, key, editable=True):
         label = tk.Label(parent, text=label_text, anchor="w")
-        label.grid(row=row, column=0, sticky="w")
+        label.grid(row=row, column=0, sticky="w", pady=4)
 
         entry_var = tk.StringVar(value=self.defaults.get(key, ""))
         entry = tk.Entry(parent, textvariable=entry_var, width=60)
-        entry.grid(row=row, column=1, padx=(8, 0), pady=4)
-        browse_button = tk.Button(parent, text="...", width=3, command=lambda: self._browse(entry_var))
-        browse_button.grid(row=row, column=2, padx=(4, 0))
+        entry.grid(row=row, column=1, padx=(8, 0), pady=4, sticky="ew")
 
-        self.entries[key] = entry_var
+        if editable:
+            browse_button = tk.Button(parent, text="...", width=3, command=lambda: self._browse(entry_var))
+            browse_button.grid(row=row, column=2, padx=(4, 0))
+        else:
+            entry.configure(state=tk.DISABLED)
+
+        self.entries[key] = {
+            "var": entry_var,
+            "editable": editable
+        }
 
     def _browse(self, var):
         initial_dir = var.get() or os.path.dirname(CONFIG_PATH)
@@ -94,17 +104,24 @@ class AgentConfigGUI:
         updated = False
 
         one_drive = self.config.setdefault("oneDrive", {})
-        for key in ("relativePath", "fallbackRoot"):
-            value = self.entries[key].get().strip()
-            if one_drive.get(key) != value:
-                one_drive[key] = value
-                updated = True
 
-        for key in ("watchPath", "stagingPath", "filingRoot", "unsortedRoot"):
-            value = self.entries[key].get().strip()
-            if self.config.get(key) != value:
-                self.config[key] = value
-                updated = True
+        for key, meta in self.entries.items():
+            var = meta["var"]
+            editable = meta["editable"]
+            value = var.get().strip()
+
+            if key in ("relativePath", "fallbackRoot"):
+                if not editable:
+                    # Read-only field; skip persisting changes
+                    continue
+                if one_drive.get(key) != value:
+                    one_drive[key] = value
+                    updated = True
+            else:
+                current_value = self.config.get(key)
+                if current_value != value:
+                    self.config[key] = value
+                    updated = True
 
         if not updated:
             self.set_status("No changes to save.")
@@ -119,14 +136,14 @@ class AgentConfigGUI:
             return
 
         # Refresh defaults to the newly saved values
-        for key, var in self.entries.items():
-            self.defaults[key] = var.get().strip()
+        for key, meta in self.entries.items():
+            self.defaults[key] = meta["var"].get().strip()
 
         self.set_status("Configuration saved.")
 
     def reset_defaults(self):
-        for key, var in self.entries.items():
-            var.set(self.defaults.get(key, ""))
+        for key, meta in self.entries.items():
+            meta["var"].set(self.defaults.get(key, ""))
         self.set_status("Fields reset to defaults (current file values).")
 
     def reload_from_file(self):
@@ -146,8 +163,8 @@ class AgentConfigGUI:
             "unsortedRoot": self.config.get("unsortedRoot", "")
         }
 
-        for key, var in self.entries.items():
-            var.set(self.defaults.get(key, ""))
+        for key, meta in self.entries.items():
+            meta["var"].set(self.defaults.get(key, ""))
 
         self.set_status("Reloaded configuration from file.")
 
