@@ -121,21 +121,22 @@
         return null;
       }
 
-      // Extract sessionkey and normalize format
-      let sessionkey = this.extractValue(response.values, 'sessionkey');
+      // Extract student-id (which contains the Core ID without "C" prefix in Qualtrics)
+      let studentId = this.extractValue(response.values, fieldMapping['student-id']);
       
-      // Normalize sessionkey: Qualtrics uses numeric IDs (e.g., "10194_..."), 
-      // but JotForm uses "C" prefix (e.g., "C10194_...")
-      // Add "C" prefix if sessionkey starts with digits
-      if (sessionkey && /^\d/.test(sessionkey)) {
-        sessionkey = 'C' + sessionkey;
-        console.log(`[QualtricsTransformer] Normalized sessionkey: added "C" prefix → ${sessionkey}`);
+      // Normalize to coreId format: Add "C" prefix if it starts with digits
+      let coreId = '';
+      if (studentId && /^\d/.test(studentId)) {
+        coreId = 'C' + studentId;
+        console.log(`[QualtricsTransformer] Normalized coreId: added "C" prefix → ${coreId}`);
+      } else if (studentId) {
+        coreId = studentId;
       }
       
       const result = {
-        // Core identifiers
-        sessionkey: sessionkey,
-        'student-id': this.extractValue(response.values, fieldMapping['student-id']),
+        // Core identifiers - coreId is the primary key for merging
+        coreId: coreId,
+        'student-id': studentId,
         'school-id': this.extractValue(response.values, fieldMapping['school-id']),
         
         // Metadata
@@ -193,10 +194,10 @@
         try {
           const record = this.transformResponse(response, mapping);
           
-          if (record && record.sessionkey) {
+          if (record && record.coreId) {
             transformed.push(record);
           } else {
-            console.warn('[QualtricsTransformer] Skipping response without sessionkey:', response.responseId);
+            console.warn('[QualtricsTransformer] Skipping response without coreId:', response.responseId);
             skipped++;
           }
         } catch (error) {
@@ -254,16 +255,16 @@
         return false;
       }
 
-      // Must have sessionkey
-      if (!record.sessionkey) {
-        console.warn('[QualtricsTransformer] Record missing sessionkey');
+      // Must have coreId
+      if (!record.coreId) {
+        console.warn('[QualtricsTransformer] Record missing coreId');
         return false;
       }
 
       // Should have at least one TGMD field
       const hasTGMDData = Object.keys(record).some(key => key.startsWith('TGMD_'));
       if (!hasTGMDData) {
-        console.warn('[QualtricsTransformer] Record has no TGMD data:', record.sessionkey);
+        console.warn('[QualtricsTransformer] Record has no TGMD data:', record.coreId);
       }
 
       return true;
@@ -276,19 +277,19 @@
      */
     getStatistics(transformedRecords) {
       if (!Array.isArray(transformedRecords)) {
-        return { total: 0, withSessionkey: 0, withTGMD: 0, tgmdFields: {} };
+        return { total: 0, withCoreId: 0, withTGMD: 0, tgmdFields: {} };
       }
 
       const stats = {
         total: transformedRecords.length,
-        withSessionkey: 0,
+        withCoreId: 0,
         withTGMD: 0,
         tgmdFields: {}
       };
 
       for (const record of transformedRecords) {
-        if (record.sessionkey) {
-          stats.withSessionkey++;
+        if (record.coreId) {
+          stats.withCoreId++;
         }
 
         let hasTGMD = false;

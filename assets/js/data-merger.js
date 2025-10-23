@@ -16,7 +16,12 @@
     }
 
     /**
-     * Merge JotForm and Qualtrics datasets by sessionkey
+     * Merge JotForm and Qualtrics datasets by coreId
+     * Strategy:
+     * 1. Group all records by coreId (multiple submissions possible)
+     * 2. For each coreId, merge all Qualtrics TGMD data into JotForm submissions
+     * 3. If multiple Qualtrics records exist for same coreId, merge them first
+     * 
      * @param {Array} jotformData - JotForm submissions
      * @param {Array} qualtricsData - Transformed Qualtrics responses
      * @returns {Array} Merged records
@@ -26,61 +31,110 @@
       console.log('[DataMerger] JotForm records:', jotformData.length);
       console.log('[DataMerger] Qualtrics records:', qualtricsData.length);
 
-      const merged = new Map(); // sessionkey → merged record
-
-      // Step 1: Add all JotForm records as base
-      for (const record of jotformData) {
-        const key = record.sessionkey;
-        if (!key) {
-          console.warn('[DataMerger] JotForm record missing sessionkey, skipping');
+      // Step 1: Group Qualtrics records by coreId and merge multiple responses
+      const qualtricsByCoreId = new Map(); // coreId → merged TGMD data
+      
+      for (const record of qualtricsData) {
+        const coreId = record.coreId;
+        if (!coreId) {
+          console.warn('[DataMerger] Qualtrics record missing coreId, skipping:', record._meta?.qualtricsResponseId);
           continue;
         }
 
-        merged.set(key, {
-          ...record,
-          _sources: ['jotform']
-        });
+        if (qualtricsByCoreId.has(coreId)) {
+          // Multiple Qualtrics responses for same student - merge TGMD fields
+          const existing = qualtricsByCoreId.get(coreId);
+          const merged = this.mergeMultipleQualtricsRecords(existing, record);
+          qualtricsByCoreId.set(coreId, merged);
+          console.log(`[DataMerger] Merged multiple Qualtrics responses for ${coreId}`);
+        } else {
+          qualtricsByCoreId.set(coreId, record);
+        }
       }
 
-      // Step 2: Merge Qualtrics records
-      let qualtricsOnlyCount = 0;
-      let mergedCount = 0;
+      console.log(`[DataMerger] Grouped Qualtrics data into ${qualtricsByCoreId.size} unique students`);
 
-      for (const record of qualtricsData) {
-        const key = record.sessionkey;
-        if (!key) {
-          console.warn('[DataMerger] Qualtrics record missing sessionkey, skipping:', record._meta?.qualtricsResponseId);
+      // Step 2: Process JotForm records and merge with Qualtrics
+      const mergedRecords = [];
+      let jotformOnlyCount = 0;
+      let mergedWithQualtricsCount = 0;
+
+      for (const jotformRecord of jotformData) {
+        const coreId = jotformRecord.coreId;
+        if (!coreId) {
+          console.warn('[DataMerger] JotForm record missing coreId, skipping');
           continue;
         }
 
-        if (merged.has(key)) {
-          // Existing record - merge TGMD fields
-          const existing = merged.get(key);
-          const mergedRecord = this.mergeTGMDFields(existing, record);
-          merged.set(key, mergedRecord);
-          mergedCount++;
+        if (qualtricsByCoreId.has(coreId)) {
+          // Merge Qualtrics TGMD data into this JotForm record
+          const qualtricsData = qualtricsByCoreId.get(coreId);
+          const merged = this.mergeTGMDFields(jotformRecord, qualtricsData);
+          mergedRecords.push(merged);
+          mergedWithQualtricsCount++;
           
-          // Log the match for debugging
-          const studentId = key.split('_')[0]; // Extract student ID from sessionkey
-          console.log(`[DataMerger] ✓ Matched and merged TGMD for student ${studentId} (sessionkey: ${key})`);
+          console.log(`[DataMerger] ✓ Matched and merged TGMD for student ${coreId}`);
         } else {
-          // New record from Qualtrics (no matching JotForm record)
-          const studentId = key.split('_')[0]; // Extract student ID from sessionkey
-          merged.set(key, {
-            ...record,
+          // JotForm-only record
+          mergedRecords.push({
+            ...jotformRecord,
+            _sources: ['jotform']
+          });
+          jotformOnlyCount++;
+        }
+      }
+
+      // Step 3: Add Qualtrics-only records (students not in JotForm)
+      const jotformCoreIds = new Set(jotformData.map(r => r.coreId).filter(Boolean));
+      let qualtricsOnlyCount = 0;
+
+      for (const [coreId, qualtricsRecord] of qualtricsByCoreId.entries()) {
+        if (!jotformCoreIds.has(coreId)) {
+          mergedRecords.push({
+            ...qualtricsRecord,
             _sources: ['qualtrics'],
             _orphaned: true // Flag as Qualtrics-only
           });
           qualtricsOnlyCount++;
-          console.log(`[DataMerger] ℹ️  Qualtrics-only record for student ${studentId} (sessionkey: ${key}) - no JotForm match`);
+          console.log(`[DataMerger] ℹ️  Qualtrics-only record for student ${coreId} - no JotForm match`);
         }
       }
 
-      console.log(`[DataMerger] Merge complete: ${merged.size} total records`);
-      console.log(`[DataMerger] - ${mergedCount} merged (JotForm + Qualtrics)`);
+      console.log(`[DataMerger] Merge complete: ${mergedRecords.length} total records`);
+      console.log(`[DataMerger] - ${mergedWithQualtricsCount} merged (JotForm + Qualtrics)`);
+      console.log(`[DataMerger] - ${jotformOnlyCount} JotForm-only records`);
       console.log(`[DataMerger] - ${qualtricsOnlyCount} Qualtrics-only records`);
 
-      return Array.from(merged.values());
+      return mergedRecords;
+    }
+
+    /**
+     * Merge multiple Qualtrics responses for the same student
+     * Uses last non-empty value principle for conflicts
+     * @param {Object} record1 - First Qualtrics record
+     * @param {Object} record2 - Second Qualtrics record
+     * @returns {Object} Merged record
+     */
+    mergeMultipleQualtricsRecords(record1, record2) {
+      const merged = { ...record1 };
+
+      // Merge TGMD fields - later values overwrite earlier ones
+      for (const [key, value] of Object.entries(record2)) {
+        if (key.startsWith(this.tgmdFieldPrefix) && value) {
+          merged[key] = value;
+        }
+      }
+
+      // Keep metadata from most recent response
+      if (record2._meta && record2._meta.recordedDate) {
+        merged._meta = {
+          ...merged._meta,
+          ...record2._meta,
+          multipleResponses: true
+        };
+      }
+
+      return merged;
     }
 
     /**
@@ -124,9 +178,9 @@
       if (conflicts.length > 0) {
         merged._tgmdConflicts = conflicts;
         
-        // Log merge details for specific student if requested
-        const studentId = jotformRecord['student-id'] || jotformRecord.sessionkey?.split('_')[0];
-        console.log(`[DataMerger] Merged TGMD for student ${studentId} (sessionkey: ${jotformRecord.sessionkey}): ${conflicts.length} conflicts resolved, ${Object.keys(qualtricsRecord).filter(k => k.startsWith(this.tgmdFieldPrefix)).length} TGMD fields from Qualtrics`);
+        // Log merge details
+        const coreId = jotformRecord.coreId;
+        console.log(`[DataMerger] Merged TGMD for student ${coreId}: ${conflicts.length} conflicts resolved, ${Object.keys(qualtricsRecord).filter(k => k.startsWith(this.tgmdFieldPrefix)).length} TGMD fields from Qualtrics`);
       }
 
       // Preserve Qualtrics metadata
@@ -182,7 +236,7 @@
           if (record._tgmdConflicts && record._tgmdConflicts.length > 0) {
             validation.tgmdConflicts++;
             validation.conflictDetails.push({
-              sessionkey: record.sessionkey,
+              coreId: record.coreId,
               studentId: record['student-id'],
               childName: record['child-name'],
               conflicts: record._tgmdConflicts
@@ -190,7 +244,7 @@
           }
         } else {
           validation.missingTGMD.push({
-            sessionkey: record.sessionkey,
+            coreId: record.coreId,
             studentId: record['student-id'],
             sources: record._sources
           });
@@ -226,7 +280,7 @@
       for (const record of mergedRecords) {
         if (record._tgmdConflicts && record._tgmdConflicts.length > 0) {
           conflicts.push({
-            sessionkey: record.sessionkey,
+            coreId: record.coreId,
             studentId: record['student-id'],
             studentName: record['child-name'],
             schoolId: record['school-id'],
@@ -254,13 +308,13 @@
       const csvRows = [];
       
       // Header
-      csvRows.push('Sessionkey,Student ID,Student Name,School ID,Field,JotForm Value,Qualtrics Value,Resolution');
+      csvRows.push('CoreID,Student ID,Student Name,School ID,Field,JotForm Value,Qualtrics Value,Resolution');
 
       // Data rows
       for (const record of conflicts) {
         for (const conflict of record.conflicts) {
           csvRows.push([
-            record.sessionkey,
+            record.coreId,
             record.studentId,
             record.studentName,
             record.schoolId,
