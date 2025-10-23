@@ -416,6 +416,37 @@
     // Get cache stats
     const stats = await window.JotFormCache.getCacheStats();
     
+    // Get Qualtrics stats if available
+    let qualtricsStats = { cached: false };
+    try {
+      qualtricsStats = await window.JotFormCache.getQualtricsStats();
+    } catch (e) {
+      console.log('[CacheUI] Qualtrics stats not available:', e.message);
+    }
+    
+    // Build Qualtrics section
+    let qualtricsSection = '';
+    if (qualtricsStats.cached) {
+      qualtricsSection = `
+        <div class="mt-4 pt-4 border-t border-[color:var(--border)]">
+          <p class="text-sm text-[color:var(--muted-foreground)] mb-2">
+            <i data-lucide="check-circle" class="w-4 h-4 inline text-green-600"></i>
+            Qualtrics TGMD data: <strong>${qualtricsStats.count}</strong> responses, 
+            synced <strong>${qualtricsStats.ageMinutes}</strong> minutes ago.
+          </p>
+        </div>
+      `;
+    } else {
+      qualtricsSection = `
+        <div class="mt-4 pt-4 border-t border-[color:var(--border)]">
+          <p class="text-sm text-[color:var(--muted-foreground)] mb-2">
+            <i data-lucide="alert-circle" class="w-4 h-4 inline text-amber-600"></i>
+            Qualtrics TGMD data not synced yet. Click "Refresh with Qualtrics" to fetch TGMD assessments.
+          </p>
+        </div>
+      `;
+    }
+    
     const modal = document.createElement('div');
     modal.id = 'cache-ready-modal';
     modal.className = 'modal-overlay';
@@ -433,8 +464,13 @@
             Cache contains <strong>${stats.count}</strong> submissions, synced <strong>${stats.age}</strong> minutes ago. 
             You can delete the cache to force a fresh sync.
           </p>
+          ${qualtricsSection}
         </div>
         <div class="modal-footer flex gap-3">
+          <button id="qualtrics-sync-btn" class="px-4 py-2.5 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors flex items-center gap-2">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            Refresh with Qualtrics
+          </button>
           <button id="cache-delete-btn" class="px-4 py-2.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors">
             Delete Cache
           </button>
@@ -448,8 +484,15 @@
     document.body.appendChild(modal);
     lucide.createIcons();
     
+    const qualtricsSyncBtn = document.getElementById('qualtrics-sync-btn');
     const deleteBtn = document.getElementById('cache-delete-btn');
     const closeBtn = document.getElementById('cache-close-btn');
+    
+    // Qualtrics sync button
+    qualtricsSyncBtn.addEventListener('click', async () => {
+      modal.remove();
+      await refreshWithQualtrics();
+    });
     
     // Delete button
     deleteBtn.addEventListener('click', async () => {
@@ -471,6 +514,269 @@
     if (backdrop) {
       backdrop.addEventListener('click', () => modal.remove());
     }
+  }
+
+  /**
+   * Refresh with Qualtrics data
+   */
+  async function refreshWithQualtrics() {
+    console.log('[CacheUI] refreshWithQualtrics called');
+    
+    // Check if modules are loaded
+    if (typeof window.QualtricsAPI === 'undefined' || 
+        typeof window.QualtricsTransformer === 'undefined' || 
+        typeof window.DataMerger === 'undefined') {
+      alert('Qualtrics modules not loaded. Please refresh the page and try again.');
+      return;
+    }
+    
+    // Get credentials from session storage
+    const credentials = await getCredentials();
+    if (!credentials) {
+      alert('Credentials not available. Please decrypt credentials first.');
+      return;
+    }
+    
+    // Validate Qualtrics credentials
+    if (!credentials.qualtricsApiToken || !credentials.qualtricsDatacenter || !credentials.qualtricsSurveyId) {
+      alert('Qualtrics credentials not found in credentials.enc. Please contact administrator.');
+      return;
+    }
+    
+    // Show progress modal
+    await showQualtricsProgressModal();
+    
+    try {
+      // Set progress callback
+      window.JotFormCache.setProgressCallback((message, progress) => {
+        updateQualtricsProgress(message, progress);
+      });
+      
+      // Perform refresh
+      const result = await window.JotFormCache.refreshWithQualtrics(credentials);
+      
+      // Show completion modal with stats
+      await showQualtricsCompleteModal(result.stats);
+      
+      // Update status pill
+      await updateStatusPill();
+      await updateLastSyncedTimestamp();
+      
+    } catch (error) {
+      console.error('[CacheUI] Qualtrics refresh failed:', error);
+      showQualtricsErrorModal(error.message);
+    }
+  }
+
+  /**
+   * Show Qualtrics progress modal
+   */
+  async function showQualtricsProgressModal() {
+    ensureModalCSS();
+    
+    const modal = document.createElement('div');
+    modal.id = 'qualtrics-progress-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal-backdrop" style="background: rgba(0, 0, 0, 0.5);"></div>
+      <div class="modal-content" style="max-width: 500px; animation: slideDown 0.3s ease-out;">
+        <div class="modal-header">
+          <h3 class="text-lg font-semibold text-[color:var(--foreground)] flex items-center gap-2">
+            <i data-lucide="refresh-cw" class="w-5 h-5 text-purple-600 animate-spin"></i>
+            <span>Syncing with Qualtrics</span>
+          </h3>
+        </div>
+        <div class="modal-body">
+          <p id="qualtrics-progress-message" class="text-sm text-[color:var(--muted-foreground)] mb-4">
+            Starting Qualtrics integration...
+          </p>
+          
+          <div class="mb-2">
+            <div class="flex justify-between items-center mb-1">
+              <span id="qualtrics-progress-text" class="text-xs text-[color:var(--muted-foreground)]">Initializing...</span>
+              <span id="qualtrics-progress-percent" class="text-xs font-mono font-semibold text-purple-600">0%</span>
+            </div>
+            <div class="w-full h-2 bg-[color:var(--muted)] rounded-full overflow-hidden">
+              <div id="qualtrics-progress-bar" class="h-full bg-purple-600 transition-all duration-300" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="qualtrics-progress-cancel" class="px-4 py-2.5 text-sm font-medium text-[color:var(--foreground)] bg-[color:var(--muted)] hover:bg-[color:var(--accent)] rounded-lg transition-colors" disabled>
+            Please Wait...
+          </button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    lucide.createIcons();
+  }
+
+  /**
+   * Update Qualtrics progress modal
+   */
+  function updateQualtricsProgress(message, progress) {
+    const messageEl = document.getElementById('qualtrics-progress-message');
+    const textEl = document.getElementById('qualtrics-progress-text');
+    const percentEl = document.getElementById('qualtrics-progress-percent');
+    const barEl = document.getElementById('qualtrics-progress-bar');
+    
+    if (messageEl) messageEl.textContent = message;
+    if (textEl) textEl.textContent = message;
+    if (percentEl) percentEl.textContent = Math.round(progress) + '%';
+    if (barEl) barEl.style.width = progress + '%';
+  }
+
+  /**
+   * Show Qualtrics completion modal
+   */
+  async function showQualtricsCompleteModal(stats) {
+    // Remove progress modal
+    const progressModal = document.getElementById('qualtrics-progress-modal');
+    if (progressModal) progressModal.remove();
+    
+    ensureModalCSS();
+    
+    const modal = document.createElement('div');
+    modal.id = 'qualtrics-complete-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal-backdrop" style="background: rgba(0, 0, 0, 0.5);"></div>
+      <div class="modal-content" style="max-width: 500px; animation: slideDown 0.3s ease-out;">
+        <div class="modal-header">
+          <h3 class="text-lg font-semibold text-[color:var(--foreground)] flex items-center gap-2">
+            <i data-lucide="check-circle" class="w-6 h-6 text-green-600"></i>
+            Qualtrics Sync Complete
+          </h3>
+        </div>
+        <div class="modal-body">
+          <p class="text-sm text-[color:var(--muted-foreground)] mb-4">
+            Successfully merged Qualtrics TGMD data with JotForm submissions.
+          </p>
+          
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between">
+              <span class="text-[color:var(--muted-foreground)]">Total records:</span>
+              <span class="font-semibold">${stats.total}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[color:var(--muted-foreground)]">Records with TGMD:</span>
+              <span class="font-semibold">${stats.withTGMD}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[color:var(--muted-foreground)]">TGMD from Qualtrics:</span>
+              <span class="font-semibold text-purple-600">${stats.tgmdFromQualtrics}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[color:var(--muted-foreground)]">TGMD from JotForm:</span>
+              <span class="font-semibold">${stats.tgmdFromJotform}</span>
+            </div>
+            ${stats.tgmdConflicts > 0 ? `
+            <div class="flex justify-between text-amber-600">
+              <span>Conflicts detected:</span>
+              <span class="font-semibold">${stats.tgmdConflicts}</span>
+            </div>
+            ` : ''}
+          </div>
+          
+          ${stats.tgmdConflicts > 0 ? `
+          <div class="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+            <p class="text-xs text-amber-800 dark:text-amber-200">
+              <i data-lucide="alert-triangle" class="w-4 h-4 inline"></i>
+              Data conflicts were detected where JotForm and Qualtrics had different values. 
+              Qualtrics data was prioritized for TGMD fields.
+            </p>
+          </div>
+          ` : ''}
+        </div>
+        <div class="modal-footer">
+          <button id="qualtrics-complete-close" class="px-4 py-2.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors">
+            Done
+          </button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    lucide.createIcons();
+    
+    const closeBtn = document.getElementById('qualtrics-complete-close');
+    closeBtn.addEventListener('click', () => {
+      modal.remove();
+    });
+    
+    const backdrop = modal.querySelector('.modal-backdrop');
+    if (backdrop) {
+      backdrop.addEventListener('click', () => modal.remove());
+    }
+  }
+
+  /**
+   * Show Qualtrics error modal
+   */
+  function showQualtricsErrorModal(errorMessage) {
+    // Remove progress modal
+    const progressModal = document.getElementById('qualtrics-progress-modal');
+    if (progressModal) progressModal.remove();
+    
+    ensureModalCSS();
+    
+    const modal = document.createElement('div');
+    modal.id = 'qualtrics-error-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal-backdrop" style="background: rgba(0, 0, 0, 0.5);"></div>
+      <div class="modal-content" style="max-width: 500px; animation: slideDown 0.3s ease-out;">
+        <div class="modal-header">
+          <h3 class="text-lg font-semibold text-[color:var(--foreground)] flex items-center gap-2">
+            <i data-lucide="x-circle" class="w-6 h-6 text-red-600"></i>
+            Qualtrics Sync Failed
+          </h3>
+        </div>
+        <div class="modal-body">
+          <p class="text-sm text-[color:var(--muted-foreground)] mb-4">
+            The Qualtrics integration failed. Please try again or contact support if the issue persists.
+          </p>
+          
+          <div class="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+            <p class="text-xs font-mono text-red-800 dark:text-red-200">
+              ${errorMessage}
+            </p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="qualtrics-error-close" class="px-4 py-2.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors">
+            Close
+          </button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    lucide.createIcons();
+    
+    const closeBtn = document.getElementById('qualtrics-error-close');
+    closeBtn.addEventListener('click', () => {
+      modal.remove();
+    });
+    
+    const backdrop = modal.querySelector('.modal-backdrop');
+    if (backdrop) {
+      backdrop.addEventListener('click', () => modal.remove());
+    }
+  }
+
+  /**
+   * Get credentials helper
+   */
+  async function getCredentials() {
+    // Check if credentials are in sessionStorage
+    const cred = sessionStorage.getItem('decryptedCredentials');
+    if (cred) {
+      return JSON.parse(cred);
+    }
+    return null;
   }
 
   /**
