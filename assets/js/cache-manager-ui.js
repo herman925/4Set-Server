@@ -802,11 +802,20 @@
    * Get credentials helper
    */
   async function getCredentials() {
-    // Check if credentials are in sessionStorage
-    const cred = sessionStorage.getItem('decryptedCredentials');
-    if (cred) {
-      return JSON.parse(cred);
+    // Check if credentials are in checking_system_data (where they are actually stored)
+    const cachedData = sessionStorage.getItem('checking_system_data');
+    if (cachedData) {
+      try {
+        const data = JSON.parse(cachedData);
+        if (data.credentials) {
+          console.log('[CacheUI] Credentials found in checking_system_data');
+          return data.credentials;
+        }
+      } catch (error) {
+        console.error('[CacheUI] Error parsing checking_system_data:', error);
+      }
     }
+    console.warn('[CacheUI] No credentials found in sessionStorage');
     return null;
   }
 

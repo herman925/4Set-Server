@@ -849,15 +849,6 @@
       }
     }
     
-    // Debug: If CM not found for C10880, log the issue
-    if (searchTaskIds.some(id => id === 'cm') && student.coreId === 'C10880') {
-      console.warn('[ClassPage] CM NOT FOUND in cache for C10880', {
-        searchTaskIds,
-        taskName: task.name,
-        availableSets: Object.keys(setStatus || {})
-      });
-    }
-    
     return 'status-grey';
   }
 
