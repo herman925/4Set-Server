@@ -6,8 +6,9 @@
 (() => {
   let schoolData = null;
   let classes = [];
-  let students = [];
-  let classMetrics = new Map(); // classId -> { students: [], completion: {...} }
+  let students = []; // Deduplicated unique students (for card count)
+  let allStudentRecords = []; // All student records including duplicates (for table view)
+  let classMetrics = new Map(); // classId -> { students, setStatus, outstanding }
   let surveyStructure = null;
   let taskToSetMap = new Map();
   let currentViewMode = 'class'; // 'class' or 'student'
@@ -69,9 +70,35 @@
 
     // Get all classes and students in this school
     classes = cachedData.classes.filter(c => c.schoolId === schoolId);
-    students = cachedData.students.filter(s => s.schoolId === schoolId && s.coreId && s.coreId.trim() !== '');
+    allStudentRecords = cachedData.students.filter(s => s.schoolId === schoolId && s.coreId && s.coreId.trim() !== '');
+    
+    // Deduplicate students by coreId for card count (keep only unique students)
+    const uniqueStudentsMap = new Map();
+    allStudentRecords.forEach(student => {
+      const existingStudent = uniqueStudentsMap.get(student.coreId);
+      // Keep the record with the higher year (most recent), or first one if years are equal
+      if (!existingStudent || (student.year && existingStudent.year && student.year > existingStudent.year)) {
+        uniqueStudentsMap.set(student.coreId, student);
+      } else if (!existingStudent.year && student.year) {
+        // Prefer records with year data
+        uniqueStudentsMap.set(student.coreId, student);
+      }
+    });
+    students = Array.from(uniqueStudentsMap.values()); // For card count only
 
-    console.log(`[SchoolPage] Found ${classes.length} classes, ${students.length} students with Core IDs`);
+    // Count valid classes (excluding 無班級 placeholder classes)
+    const validClasses = classes.filter(c => !c.actualClassName.includes('無班級'));
+    
+    // Debug: Check if there are K1 students without a 無班級 (K1) class
+    const k1StudentsInUnclassified = students.filter(s => {
+      const cls = classes.find(c => c.classId === s.classId);
+      return cls && cls.actualClassName.includes('無班級') && cls.grade === 1;
+    });
+    
+    console.log(`[SchoolPage] Found ${validClasses.length} valid classes (${classes.length} total), ${students.length} unique students (${allStudentRecords.length} total records)`);
+    if (k1StudentsInUnclassified.length === 0) {
+      console.log(`[SchoolPage] Note: No K1 students in 無班級 classes - this school may not have unclassified K1 students`);
+    }
 
     // Load survey structure
     await loadSurveyStructure();
@@ -173,9 +200,10 @@
         });
       }
       
-      // Aggregate by class
+      // Aggregate by class - use ALL student records (not deduplicated)
+      // This ensures K1, K2, K3 classes count their respective year's students
       for (const cls of classes) {
-        const classStudents = students.filter(s => s.classId === cls.classId);
+        const classStudents = allStudentRecords.filter(s => s.classId === cls.classId);
         const classData = {
           students: classStudents,
           setCompletion: {
@@ -285,7 +313,9 @@
     document.getElementById('school-id').textContent = schoolData.schoolId;
     document.getElementById('school-district').textContent = schoolData.district || '—';
     document.getElementById('school-group').textContent = schoolData.group || '—';
-    document.getElementById('total-classes').textContent = classes.length;
+    // Count only valid classes (excluding 無班級 placeholder classes)
+    const validClassesCount = classes.filter(c => !c.actualClassName.includes('無班級')).length;
+    document.getElementById('total-classes').textContent = validClassesCount;
     document.getElementById('total-students').textContent = students.length;
     
     // Update class count display (optional element)
@@ -342,12 +372,87 @@
    * Render classes table with status lights (PRD-compliant)
    */
   function renderClassesTable() {
-    const tableContainer = document.getElementById('classes-table');
+    const container = document.getElementById('classes-table');
+    if (!container) return;
     
-    if (classes.length === 0) {
-      tableContainer.innerHTML = '<p class="text-[color:var(--muted-foreground)] text-sm">No classes found</p>';
+    // Check if there are any regular classes (non-無班級)
+    const hasRegularClasses = classes.some(c => !c.actualClassName.includes('無班級'));
+    
+    // Check if all 無班級 classes have 0 students
+    const allEmptyClasses = classes.every(c => {
+      if (c.actualClassName.includes('無班級')) {
+        const metrics = classMetrics.get(c.classId);
+        return !metrics || !metrics.students || metrics.students.length === 0;
+      }
+      return true; // Regular classes don't affect this check
+    });
+    
+    // If no regular classes and all 無班級 are empty, show empty state
+    if (!hasRegularClasses && allEmptyClasses && students.length === 0) {
+      container.innerHTML = `
+        <div class="entry-card p-6 text-center">
+          <i data-lucide="inbox" class="w-12 h-12 mx-auto text-[color:var(--muted-foreground)] mb-4"></i>
+          <h3 class="text-lg font-semibold mb-2">No Students Found</h3>
+          <p class="text-[color:var(--muted-foreground)]">This school doesn't have any students with Core IDs assigned yet.</p>
+        </div>
+      `;
+      lucide.createIcons();
       return;
     }
+    
+    // Filter out old-style 無班級 classes (C-XXX-99 without K1/K2/K3 suffix and grade=0)
+    // These are legacy placeholders that should be replaced by grade-specific versions
+    const filteredClasses = classes.filter(c => {
+      // Keep all non-無班級 classes
+      if (!c.actualClassName.includes('無班級')) return true;
+      
+      // Keep grade-specific 無班級 classes (with K1/K2/K3 in name or classId)
+      if (c.actualClassName.match(/無班級\s*\([KN]\d\)/)) return true;
+      if (c.classId.match(/-99-[KN]\d$/)) return true;
+      
+      // Filter out old-style C-XXX-99 with grade 0 (Other)
+      if (c.classId.match(/-99$/) && c.grade === 0) return false;
+      
+      // Keep 無班級 with specific grade (1, 2, 3) even without suffix
+      if (c.grade >= 1 && c.grade <= 3) return true;
+      
+      return false; // Filter out anything else that's ambiguous
+    });
+    
+    // Only show 無班級 classes if they have students (don't create empty placeholders)
+    // Check if 無班級 classes exist and have students
+    const classesWithPlaceholders = filteredClasses.filter(c => {
+      // Keep all non-無班級 classes
+      if (!c.actualClassName.includes('無班級')) return true;
+      
+      // For 無班級 classes, only keep if they have students
+      const metrics = classMetrics.get(c.classId);
+      const hasStudents = metrics && metrics.students && metrics.students.length > 0;
+      return hasStudents;
+    });
+    
+    // Sort: Regular classes first (by grade, then name), then 無班級 classes (K1, K2, K3, Other)
+    const sortedClasses = classesWithPlaceholders.sort((a, b) => {
+      const aIs無班級 = a.actualClassName.includes('無班級');
+      const bIs無班級 = b.actualClassName.includes('無班級');
+      
+      // Regular classes come before 無班級 classes
+      if (!aIs無班級 && bIs無班級) return -1;
+      if (aIs無班級 && !bIs無班級) return 1;
+      
+      // Among regular classes, sort by grade then name
+      if (!aIs無班級 && !bIs無班級) {
+        if (a.grade !== b.grade) return a.grade - b.grade;
+        return a.actualClassName.localeCompare(b.actualClassName, 'zh-Hant');
+      }
+      
+      // Among 無班級 classes, sort by grade (K1=1, K2=2, K3=3, Other=0)
+      if (aIs無班級 && bIs無班級) {
+        return a.grade - b.grade;
+      }
+      
+      return 0;
+    });
 
     // Create table header
     const table = document.createElement('div');
@@ -368,7 +473,7 @@
           </tr>
         </thead>
         <tbody>
-          ${classes.map(cls => {
+          ${sortedClasses.map(cls => {
             const metrics = classMetrics.get(cls.classId);
             const classStudents = metrics?.students || [];
             
@@ -430,8 +535,8 @@
       </table>
     `;
     
-    tableContainer.innerHTML = '';
-    tableContainer.appendChild(table);
+    container.innerHTML = '';
+    container.appendChild(table);
   }
 
   /**
@@ -442,10 +547,10 @@
     const container = document.getElementById('students-table');
     if (!container) return;
     
-    // Apply filters to get filtered students
-    const filteredStudents = applyStudentFilters(students);
+    // Apply filters to get filtered students (use all records, not deduplicated)
+    const filteredStudents = applyStudentFilters(allStudentRecords);
     
-    if (students.length === 0) {
+    if (allStudentRecords.length === 0) {
       container.innerHTML = `
         <div class="px-4 py-8 text-center text-[color:var(--muted-foreground)]">
           <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-2 text-[color:var(--muted-foreground)]"></i>

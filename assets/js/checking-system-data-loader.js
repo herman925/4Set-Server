@@ -171,6 +171,8 @@
 
       // Process students - create entries for all years (23/24, 24/25, 25/26)
       // Students without class IDs will be assigned to grade-specific 無班級 classes
+      const yearStats = { K1: { total: 0, unassigned: 0 }, K2: { total: 0, unassigned: 0 }, K3: { total: 0, unassigned: 0 } };
+      
       students.forEach(student => {
         const coreId = student['Core ID'];
         const studentId = student['Student ID'];
@@ -184,11 +186,18 @@
         ];
         
         years.forEach(year => {
-          let classId = student[year.key] || '';
+          const originalClassId = student[year.key];
+          let classId = originalClassId || '';
+          
+          // Track statistics for each year
+          if (originalClassId !== undefined && originalClassId !== null && originalClassId !== '') {
+            yearStats[year.label].total++;
+          }
           
           // Auto-assign to grade-specific 無班級 if no classId for this year
           if (!classId && schoolId) {
             classId = `C-${schoolId}-99-${year.label}`;
+            yearStats[year.label].unassigned++;
           }
           
           // Only create student record if there's a valid classId
@@ -215,6 +224,12 @@
           }
         });
       });
+      
+      // Log year statistics for debugging
+      console.log('[DataLoader] Year statistics from coreid.enc:');
+      console.log('  K1 (23/24):', yearStats.K1.total, 'with class IDs,', yearStats.K1.unassigned, 'assigned to 無班級 (K1)');
+      console.log('  K2 (24/25):', yearStats.K2.total, 'with class IDs,', yearStats.K2.unassigned, 'assigned to 無班級 (K2)');
+      console.log('  K3 (25/26):', yearStats.K3.total, 'with class IDs,', yearStats.K3.unassigned, 'assigned to 無班級 (K3)');
 
       // Create grade-specific class 99 (無班級) entries for schools with unassigned students
       // Collect unique school IDs and grades that need class 99 entries
