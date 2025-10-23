@@ -70,7 +70,7 @@ getTaskStatus(taskValidation) {
 1. **assets/js/student-ui-renderer.js** (Lines 575-601)
    - Updated `getTaskStatus()` function with proper logic
    
-2. **calculation_bible.md** (Lines 1213-1254)
+2. **PRDs/calculation_bible.md** (Lines 1213-1254)
    - Updated documentation to reflect fix
    - Corrected file reference
    - Added implementation date note
@@ -84,7 +84,7 @@ getTaskStatus(taskValidation) {
 
 ## Related Documentation
 - Issue #50: Original status light implementation
-- `calculation_bible.md`: Complete calculation reference (Lines 1211-1272)
+- `PRDs/calculation_bible.md`: Complete calculation reference (Lines 1211-1272)
 - `assets/js/checking-system-class-page.js`: Class page implementation (Lines 798-873)
 - `assets/js/jotform-cache.js`: Cache builder with `complete` flag calculation (Lines 885-912)
 - `assets/js/task-validator.js`: Validation engine with termination/timeout fields
@@ -93,7 +93,7 @@ getTaskStatus(taskValidation) {
 When adding new status conditions:
 1. Update `getTaskStatus()` in **both** class and student pages
 2. Maintain priority ordering (yellow > green > red > grey)
-3. Update documentation in `calculation_bible.md`
+3. Update documentation in `PRDs/calculation_bible.md`
 4. Add test cases to verify consistency
 5. Test with actual student data
 

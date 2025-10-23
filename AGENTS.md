@@ -149,7 +149,7 @@ The 4Set System is a comprehensive web-based assessment data processing pipeline
 - [x] **_TEXT field display support for ToM questions (Oct 2025)**
 - [x] **Gender branching verification across all pages (Oct 2025)**
 - [x] **Adaptive batch sizing documentation (Oct 2025)**
-- [x] **Comprehensive calculation_bible.md updates (Oct 2025)**
+- [x] **Comprehensive PRDs/calculation_bible.md updates (Oct 2025)**
 
 ### 🔄 Phase 4: Production Deployment (In Progress)
 - [x] Upload interface with drag-and-drop support
