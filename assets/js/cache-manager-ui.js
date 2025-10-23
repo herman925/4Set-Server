@@ -491,10 +491,20 @@
           </h3>
         </div>
         <div class="modal-body">
-          <p class="text-sm text-[color:var(--muted-foreground)]">
-            Cache contains <strong>${stats.count}</strong> submissions, synced <strong>${stats.age}</strong> minutes ago. 
-            You can delete the cache to force a fresh sync.
+          <p class="text-sm text-[color:var(--muted-foreground)] mb-3">
+            Cache contains <strong>${stats.count}</strong> submissions, synced <strong>${stats.age}</strong> minutes ago.
           </p>
+          
+          <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-3">
+            <p class="text-xs text-blue-800 dark:text-blue-200 mb-2">
+              <strong>💡 Options:</strong>
+            </p>
+            <ul class="text-xs text-blue-700 dark:text-blue-300 space-y-1 ml-4">
+              <li><strong>Refresh with Qualtrics:</strong> Re-syncs TGMD data only (~30 sec)</li>
+              <li><strong>Delete Cache:</strong> Purges ALL data - requires full re-sync (~90 sec)</li>
+            </ul>
+          </div>
+          
           ${qualtricsSection}
         </div>
         <div class="modal-footer flex gap-3">
@@ -525,11 +535,14 @@
       await refreshWithQualtrics();
     });
     
-    // Delete button
+    // Delete button - Performs comprehensive cache purge
+    // Deletes ALL three IndexedDB stores: submissions, validation, Qualtrics
+    // See CACHE_SYSTEM_STATUS.md for details
     deleteBtn.addEventListener('click', async () => {
-      if (confirm('Are you sure you want to delete the cache? This will require a fresh sync before using the system.')) {
+      if (confirm('⚠️ DELETE ALL CACHED DATA?\n\nThis will purge:\n• JotForm submissions cache\n• Student validation cache\n• Qualtrics TGMD cache\n\nYou will need to re-sync (60-90 seconds) before using the system again.\n\nContinue?')) {
+        console.log('[CacheUI] User confirmed comprehensive cache deletion');
         await window.JotFormCache.clearCache();
-        console.log('[CacheUI] Cache deleted by user');
+        console.log('[CacheUI] ✅ Comprehensive cache purge complete');
         modal.remove();
         updateStatusPill(); // Update pill to red
       }

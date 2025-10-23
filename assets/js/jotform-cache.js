@@ -436,6 +436,18 @@
 
     /**
      * Clear cache (force refresh)
+     * 
+     * COMPREHENSIVE CACHE DELETION:
+     * This method performs a complete purge of ALL cached data in IndexedDB:
+     * 1. Submissions cache (jotform_global_cache) - All JotForm form submissions
+     * 2. Validation cache (student_validation) - Pre-computed task validation results  
+     * 3. Qualtrics cache (qualtrics_responses) - TGMD survey data (via clearValidationCache)
+     * 
+     * After calling this method, the system requires a full re-sync (60-90 seconds)
+     * before it can be used again. This is the recommended way to force a fresh
+     * data fetch when suspecting stale or incorrect cached data.
+     * 
+     * Related: See CACHE_SYSTEM_STATUS.md for implementation details
      */
     async clearCache() {
       if (storage) {
@@ -444,8 +456,13 @@
       this.cache = null;
       console.log('[JotFormCache] Submissions cache cleared');
       
-      // Also clear validation cache
+      // Also clear validation cache (which includes Qualtrics cache)
       await this.clearValidationCache();
+      
+      // Clear Qualtrics cache separately for completeness
+      await this.clearQualtricsCache();
+      
+      console.log('[JotFormCache] ✅ COMPREHENSIVE CACHE PURGE COMPLETE - All 3 stores cleared');
     }
 
     /**
@@ -725,6 +742,10 @@
     
     /**
      * Clear validation cache from IndexedDB
+     * 
+     * Part of comprehensive cache deletion system.
+     * Removes pre-computed student validation results that are built from submissions.
+     * This cache is automatically rebuilt when navigating to class/school pages.
      */
     async clearValidationCache() {
       if (validationStorage) {
@@ -1153,6 +1174,10 @@
 
     /**
      * Clear Qualtrics cache
+     * 
+     * Part of comprehensive cache deletion system.
+     * Removes TGMD survey responses fetched from Qualtrics API.
+     * Separate from JotForm cache to allow selective refresh of TGMD data.
      */
     async clearQualtricsCache() {
       const qualtricsStorage = this.getQualtricsStorage();
