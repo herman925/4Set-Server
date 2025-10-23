@@ -4,6 +4,10 @@
 
 The 4Set system now supports fetching TGMD (Test of Gross Motor Development) assessment data from Qualtrics surveys and merging it with JotForm submission data. This provides a unified view of all assessment data in one place.
 
+> **⚠️ Important Update (October 2024):** Qualtrics has deprecated the `au1.qualtrics.com` datacenter. The system now uses `syd1.qualtrics.com` (Sydney datacenter). If you encounter 400 Bad Request errors when syncing with Qualtrics, please ensure your `credentials.enc` file has been updated with `qualtricsDatacenter: "syd1"` instead of `"au1"`. Contact your system administrator for assistance.
+
+> **📝 Credential Field Name:** The correct field name in `credentials.enc` is `qualtricsApiKey` (not `qualtricsApiToken`). The system code supports both for backwards compatibility, but all new configurations should use `qualtricsApiKey`.
+
 ## Key Features
 
 - **Automatic Data Merging**: Qualtrics TGMD responses are automatically merged with JotForm data by sessionkey
@@ -96,7 +100,18 @@ Qualtrics uses Question IDs (QIDs) that are mapped to standard field names:
 
 **Solution**:
 - Contact system administrator to add Qualtrics credentials to `credentials.enc`
-- Required fields: `qualtricsApiToken`, `qualtricsDatacenter`, `qualtricsSurveyId`
+- Required fields: `qualtricsApiKey`, `qualtricsDatacenter`, `qualtricsSurveyId`
+
+### "Bad Request" Error (400) - Deprecated Datacenter
+
+**Problem**: Qualtrics API returns 400 Bad Request error, possibly with timeout messages
+
+**Cause**: The `au1.qualtrics.com` datacenter has been deprecated by Qualtrics and replaced with `syd1.qualtrics.com` (Sydney datacenter)
+
+**Solution**:
+- Update `qualtricsDatacenter` in `credentials.enc` from `"au1"` to `"syd1"`
+- Contact system administrator if you don't have access to update credentials
+- After updating credentials, clear your cache and try syncing again
 
 ### "Invalid Qualtrics API token" Error (401)
 

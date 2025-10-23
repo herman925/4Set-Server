@@ -157,8 +157,8 @@ const credentials = await window.decryptCredentials(systemPassword);
 
 // Expected structure (see PRD lines 1164-1170):
 {
-  qualtricsApiToken: "raV8YenlxaFux...",  // API token
-  qualtricsDatacenter: "au1",              // Datacenter region
+  qualtricsApiKey: "raV8YenlxaFux...",     // API key (field name is qualtricsApiKey, not qualtricsApiToken)
+  qualtricsDatacenter: "syd1",             // Datacenter region (Sydney, replaces deprecated au1)
   qualtricsSurveyId: "SV_23Qbs14soOkGo9E" // TGMD survey ID
 }
 ```
@@ -969,7 +969,7 @@ async function loadClassData(classId) {
   - Handle matrix sub-questions
 
 - [ ] Update credentials structure in `credentials.enc`
-  - Add `qualtricsApiToken` (if not already present)
+  - Add `qualtricsApiKey` (field name is `qualtricsApiKey`, if not already present)
   - Validate on checking system home page
 
 **Testing:**
@@ -1081,7 +1081,8 @@ async function loadClassData(classId) {
 ```javascript
 /**
  * Start Qualtrics response export
- * @param {Object} credentials - { qualtricsApiToken, qualtricsDatacenter, qualtricsSurveyId }
+ * @param {Object} credentials - { qualtricsApiKey, qualtricsDatacenter, qualtricsSurveyId }
+ *                                 Note: qualtricsApiKey is normalized to qualtricsApiToken in code
  * @param {Array} questionIds - Array of QIDs to include
  * @returns {Promise<string>} progressId
  */
@@ -3140,7 +3141,7 @@ Trial 2    [2_1]       [2_2]       [2_3]       [2_4]
 1. **Credentials Structure** - Already defined in issue:
    ```json
    {
-     "qualtricsDatacenter": "au1",
+     "qualtricsDatacenter": "syd1",
      "qualtricsSurveyId": "SV_23Qbs14soOkGo9E",
      "qualtricsApiKey": "PI: raV8YenlxaFuxEZuACFJ9gpl5XKWS7IyHB1ijuhR",
      "qualtricsClientId": "d6ad061427f6d54018c2669dbc56c669",
@@ -3148,6 +3149,7 @@ Trial 2    [2_1]       [2_2]       [2_3]       [2_4]
      "systemPassword": "ks2.0"
    }
    ```
+   **Note:** `qualtricsDatacenter` has been updated from deprecated `au1` to `syd1` (Sydney datacenter).
 
 2. **Field Mapping** - Complete in `assets/qualtrics-mapping.json`
    - 534 lines, covering all TGMD questions from line 534-580
