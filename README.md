@@ -183,6 +183,7 @@ PDF extraction engine:
 
 #### `PRDs/`
 Comprehensive product requirement documents:
+- `calculation_bible.md` – Complete calculation and validation reference
 - `overview_prd.md` – System architecture and component overview
 - `processor_agent_prd.md` – Agent specification and requirements
 - `processor_agent_runbook_prd.md` – Operational procedures
@@ -767,7 +768,7 @@ Level 4: Student View (checking_system_4_student.html)
 
 **Example:** In ToM_Q3a, if student selects "狗仔" (correct answer), the ToM_Q3a_TEXT field shows "N/A" even if text is accidentally entered. If student selects "其他" (other), the text field should contain the actual answer and shows "Answered" status.
 
-**Documentation:** Complete validation logic and implementation details available in `calculation_bible.md` (Lines 158-220).
+**Documentation:** Complete validation logic and implementation details available in `PRDs/calculation_bible.md` (Lines 158-220).
 
 ### JotForm API Filter Implementation
 

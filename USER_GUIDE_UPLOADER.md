@@ -769,7 +769,7 @@ A: Yes, but:
 
 - **Processor Agent PRD**: Technical details on processing
 - **Checking System Guide**: Verify uploaded data
-- **DEPRECATIONS.md**: Understand system evolution
+- **AGENTS.md**: Development roadmap and system evolution
 - **README.md**: Quick reference
 
 ### Quick Reference Card

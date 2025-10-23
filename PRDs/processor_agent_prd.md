@@ -1,6 +1,6 @@
 # 4Set Processor Agent - Comprehensive PRD
 
-> **Documentation Status:** Updated (2025-10-16) to replace legacy TEMP/ documentation references with current implementations. Expanded with comprehensive operational guidance. See `DEPRECATIONS.md` for migration details.
+> **Documentation Status:** Updated (2025-10-16) to replace legacy TEMP/ documentation references with current implementations. Expanded with comprehensive operational guidance.
 
 ---
 
