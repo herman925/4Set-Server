@@ -287,7 +287,13 @@
     document.getElementById('school-group').textContent = schoolData.group || '—';
     document.getElementById('total-classes').textContent = classes.length;
     document.getElementById('total-students').textContent = students.length;
-    document.getElementById('class-count').textContent = `${classes.length} ${classes.length === 1 ? 'class' : 'classes'}`;
+    
+    // Update class count display (optional element)
+    const classCountEl = document.getElementById('class-count');
+    if (classCountEl) {
+      classCountEl.textContent = `${classes.length} ${classes.length === 1 ? 'class' : 'classes'}`;
+    }
+    
     document.title = `${schoolData.schoolNameChinese} · 4Set Checking System`;
 
     // Build breadcrumbs matching class page style
