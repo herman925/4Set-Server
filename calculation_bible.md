@@ -308,6 +308,21 @@ else if (question.type === 'matrix-cell') {
 - Student Answer: "1"
 - Result: `isCorrect = true`
 
+**Data Sources:**
+- **Primary:** Qualtrics web survey (via `qualtrics-api.js`, implemented 2025-10-23)
+  - 45 TGMD fields mapped in `assets/qualtrics-mapping.json`
+  - Fetched via 3-step API workflow: Export → Poll → Download
+  - Transformed using `qualtrics-transformer.js` from QID format to standard field names
+- **Fallback:** JotForm PDF upload (manual entry)
+  - Used when Qualtrics data unavailable
+  - Serves as backup source
+
+**Data Merging:**
+- Both sources merged by `sessionkey` (see `data-merger.js`)
+- **Precedence Rule:** Qualtrics takes priority for TGMD fields when both sources present
+- Conflicts logged but Qualtrics value used
+- Source tracked via `_tgmdSource` metadata field
+
 #### Y/N Questions (No Scoring)
 
 **Location:** `task-validator.js` Lines 368-371

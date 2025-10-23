@@ -136,6 +136,26 @@ No setup required! The Checking System works immediately after:
 - ✅ Jotform credentials are valid
 - ✅ Browser has internet connection
 
+### Syncing TGMD Data from Qualtrics
+
+**TGMD (Test of Gross Motor Development)** assessments can be synced from Qualtrics web surveys to supplement JotForm data.
+
+**To Sync:**
+1. Enter system password on home page
+2. Click the purple **"Sync with Qualtrics"** button (top right of status section)
+3. Wait 30-60 seconds for sync to complete
+4. Review merge statistics in the completion dialog
+
+**Data Sources:**
+- **Qualtrics** (primary): Web-based TGMD assessments take precedence
+- **JotForm** (fallback): Manual PDF entries used when Qualtrics unavailable
+
+**Visual Indicators:**
+- Student pages show purple "Qualtrics" badge for TGMD tasks with Qualtrics data
+- Pink "JotForm" badge indicates TGMD data from manual entry
+
+See calculation_bible.md for technical details on data merging and precedence rules.
+
 ---
 
 ## Navigation Guide
@@ -1238,6 +1258,15 @@ A:
 3. Missing data (questions skipped)
 4. System calculation logic difference
 
+**Q: What is the difference between Qualtrics and JotForm TGMD data?**  
+A: Qualtrics is the primary source for TGMD (web survey), while JotForm serves as backup (manual PDF entry). When both exist, Qualtrics data takes precedence. Purple badge = Qualtrics, Pink badge = JotForm.
+
+**Q: How often should I sync Qualtrics data?**  
+A: Sync after major TGMD assessment sessions or daily. Data is cached for 1 hour. Manual sync via button on home page.
+
+**Q: What if Qualtrics sync fails?**  
+A: System continues with JotForm-only data. TGMD may be incomplete but other tasks are unaffected. Check credentials with administrator if problem persists.
+
 Always manually verify when mismatch detected.
 
 **Q: What does "Not Started" mean?**  
@@ -1403,180 +1432,6 @@ Data Questions:     [Data Team Email]
 System Access:      [Administrator Email]
 General Inquiries:  [Project Email]
 ```
-
----
-
-## Qualtrics TGMD Data Integration
-
-**Feature Status:** ✅ Implemented (2025-10-23)
-
-### Overview
-
-The Checking System now supports fetching TGMD (Test of Gross Motor Development) assessment data directly from Qualtrics surveys. This dual-source integration allows combining web-based TGMD assessments from Qualtrics with PDF-based assessments from JotForm.
-
-### What Is TGMD?
-
-TGMD assessments evaluate gross motor skills through:
-- Hopping, jumping, sliding movements
-- Dribbling, catching, throwing activities
-- Hand and leg preference tracking
-
-These assessments are administered via Qualtrics web surveys, making data entry more efficient and accurate.
-
-### How to Sync Qualtrics Data
-
-#### Step 1: Access the Home Page
-1. Navigate to the Checking System home page
-2. Enter the system password to decrypt credentials
-3. Verify that the status pills show "Data Decrypted"
-
-#### Step 2: Initiate Qualtrics Sync
-1. Locate the **"Sync with Qualtrics"** button (purple gradient, top right of status section)
-2. Click the button to open the sync modal
-
-![Qualtrics Sync Button](../assets/docs/qualtrics-sync-button.png)
-
-#### Step 3: Start the Sync Process
-1. Review the sync information in the modal
-2. Click **"Sync with Qualtrics"** to begin
-3. Watch the progress bar as the system:
-   - Starts Qualtrics export (5-15%)
-   - Polls export progress (15-80%)
-   - Downloads responses (80-85%)
-   - Transforms data (85-90%)
-   - Merges with JotForm (90-95%)
-   - Saves to cache (95-100%)
-
-**Typical Duration:** 30-60 seconds for 200 TGMD responses
-
-#### Step 4: Review Results
-When sync completes, the modal displays:
-- **Total Records:** Combined JotForm + Qualtrics count
-- **TGMD from Qualtrics:** Count of students with Qualtrics TGMD data
-- **TGMD from JotForm:** Count of students with JotForm-only TGMD data
-- **Conflicts Detected:** Number of records where values differ (Qualtrics takes priority)
-
-Example Results:
-```
-✅ Sync Complete
-
-Total records: 544
-TGMD from Qualtrics: 198
-TGMD from JotForm: 42
-Conflicts detected: 3
-```
-
-### Viewing TGMD Data Source
-
-After syncing, student detail pages display data source badges:
-
-#### Qualtrics Badge (Purple)
-![Qualtrics Badge](../assets/docs/qualtrics-badge.png)
-- Appears next to TGMD task title
-- Indicates TGMD data came from Qualtrics survey
-- Purple gradient with database icon
-
-#### JotForm Badge (Pink)
-![JotForm Badge](../assets/docs/jotform-badge.png)
-- Appears next to TGMD task title
-- Indicates TGMD data came from JotForm PDF upload
-- Pink gradient with file icon
-
-### Data Precedence Rules
-
-When both JotForm and Qualtrics have TGMD data for the same student:
-
-1. **Qualtrics Takes Priority:** TGMD field values from Qualtrics are used
-2. **Conflicts Are Logged:** Differences are recorded but not displayed to users
-3. **JotForm Preserved:** Non-TGMD data always comes from JotForm
-4. **Metadata Tracked:** System tracks data source and merge timestamp
-
-### Troubleshooting
-
-#### "Failed to Fetch Qualtrics Data"
-**Possible Causes:**
-- Missing or invalid Qualtrics credentials
-- Network connectivity issues
-- Qualtrics API rate limiting
-
-**Solution:**
-- Check with system administrator to verify credentials
-- Try again after a few minutes
-- System will continue with JotForm-only data
-
-#### "Export Timeout After 2 Minutes"
-**Cause:** Qualtrics export took longer than expected
-
-**Solution:**
-- Try again during off-peak hours
-- Contact administrator if problem persists
-- Large surveys may require longer timeout
-
-#### "No TGMD Data Source Badge"
-**Possible Causes:**
-- Student has not completed TGMD assessment
-- Sync has not been run since TGMD completion
-- TGMD data is missing in both sources
-
-**Solution:**
-- Run Qualtrics sync to update data
-- Verify student completed TGMD assessment
-- Check JotForm for manual TGMD entries
-
-### Best Practices
-
-1. **Regular Syncing:**
-   - Sync daily or after major TGMD assessment sessions
-   - Ensures most recent data is available
-
-2. **Verify After Import:**
-   - Check merge statistics after each sync
-   - Review conflict counts (should be minimal)
-   - Investigate unexpected conflict patterns
-
-3. **Cache Management:**
-   - System automatically caches merged data
-   - Cache expires after 1 hour
-   - Manual refresh available via status pill
-
-4. **Data Quality:**
-   - Qualtrics source is preferred for TGMD (web-based entry)
-   - JotForm serves as backup for manual corrections
-   - Source badges help track data origin
-
-### Technical Details
-
-**Credentials Required:**
-- `qualtricsApiKey`: Qualtrics API authentication token
-- `qualtricsDatacenter`: Data center region (e.g., "au1")
-- `qualtricsSurveyId`: TGMD survey identifier
-
-**Field Mapping:**
-- 45 TGMD fields mapped in `assets/qualtrics-mapping.json`
-- Includes Hand/Leg preference, movement criteria, trial data
-- Matrix question patterns automatically handled
-
-**Cache Structure:**
-- Merged data stored in `jotform_global_cache`
-- Raw Qualtrics responses in `qualtrics_cache`
-- Persists across browser sessions via IndexedDB
-
-### FAQs
-
-**Q: How often should I sync Qualtrics data?**
-A: Daily, or after major assessment sessions. Data is cached for 1 hour.
-
-**Q: What happens if Qualtrics is unavailable?**
-A: System continues with JotForm-only data. TGMD may be incomplete but other tasks are unaffected.
-
-**Q: Can I see which responses conflicted?**
-A: Conflicts are logged in browser console. Contact administrator for detailed conflict report.
-
-**Q: Does this replace JotForm uploads?**
-A: No. JotForm remains the primary data source for all non-TGMD tasks and serves as TGMD backup.
-
-**Q: How long is Qualtrics data cached?**
-A: Merged data cache expires after 1 hour. Click status pill to refresh manually.
 
 ---
 
