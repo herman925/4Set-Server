@@ -1006,6 +1006,178 @@
         validationVersion: "1.0"
       };
     }
+
+    // ========== QUALTRICS INTEGRATION ==========
+
+    /**
+     * Create separate storage for Qualtrics cache
+     * @returns {Object} localforage instance for Qualtrics cache
+     */
+    getQualtricsStorage() {
+      if (!this.qualtricsStorage) {
+        this.qualtricsStorage = typeof localforage !== 'undefined' ? localforage.createInstance({
+          name: 'JotFormCacheDB',
+          storeName: 'qualtrics_cache'
+        }) : null;
+      }
+      return this.qualtricsStorage;
+    }
+
+    /**
+     * Fetch Qualtrics data and merge with JotForm
+     * @param {Object} credentials - Must include Qualtrics credentials
+     * @returns {Promise<Object>} Merge statistics
+     */
+    async refreshWithQualtrics(credentials) {
+      console.log('[JotFormCache] ========== STARTING QUALTRICS REFRESH ==========');
+      
+      // Validate required modules
+      if (typeof window.QualtricsAPI === 'undefined') {
+        throw new Error('QualtricsAPI module not loaded. Include qualtrics-api.js');
+      }
+      if (typeof window.QualtricsTransformer === 'undefined') {
+        throw new Error('QualtricsTransformer module not loaded. Include qualtrics-transformer.js');
+      }
+      if (typeof window.DataMerger === 'undefined') {
+        throw new Error('DataMerger module not loaded. Include data-merger.js');
+      }
+
+      // Validate Qualtrics credentials
+      if (!credentials.qualtricsApiToken || !credentials.qualtricsDatacenter || !credentials.qualtricsSurveyId) {
+        throw new Error('Missing Qualtrics credentials. Please ensure credentials.enc contains qualtricsApiToken, qualtricsDatacenter, and qualtricsSurveyId');
+      }
+
+      this.emitProgress('Starting Qualtrics integration...', 0);
+
+      try {
+        // Step 1: Fetch JotForm data (use existing cache system)
+        this.emitProgress('Loading JotForm data...', 5);
+        const jotformData = await this.getAllSubmissions(credentials);
+        console.log('[JotFormCache] JotForm data loaded:', jotformData.length, 'submissions');
+
+        // Step 2: Initialize Qualtrics modules
+        const qualtricsAPI = new window.QualtricsAPI();
+        const transformer = new window.QualtricsTransformer();
+        const merger = new window.DataMerger();
+
+        // Connect progress callbacks
+        qualtricsAPI.setProgressCallback((msg, progress) => {
+          // Map Qualtrics progress (0-60) to our overall progress (10-60)
+          const mappedProgress = 10 + Math.floor(progress * 0.5);
+          this.emitProgress(msg, mappedProgress);
+        });
+
+        // Step 3: Load Qualtrics field mapping
+        this.emitProgress('Loading Qualtrics field mapping...', 8);
+        await transformer.loadMapping();
+
+        // Step 4: Fetch Qualtrics responses
+        this.emitProgress('Fetching Qualtrics responses...', 10);
+        const rawResponses = await qualtricsAPI.fetchAllResponses(credentials);
+        console.log('[JotFormCache] Qualtrics responses fetched:', rawResponses.length);
+
+        // Step 5: Transform Qualtrics responses
+        this.emitProgress('Transforming Qualtrics data...', 65);
+        const transformedData = transformer.transformBatch(rawResponses);
+        console.log('[JotFormCache] Qualtrics data transformed:', transformedData.length, 'records');
+
+        // Step 6: Merge datasets
+        this.emitProgress('Merging JotForm and Qualtrics data...', 70);
+        const mergedData = merger.mergeDataSources(jotformData, transformedData);
+        console.log('[JotFormCache] Data merged:', mergedData.length, 'records');
+
+        // Step 7: Validate merge
+        this.emitProgress('Validating merged data...', 80);
+        const validation = merger.validateMergedData(mergedData);
+
+        // Step 8: Cache Qualtrics data separately (for future incremental refresh)
+        this.emitProgress('Caching Qualtrics responses...', 85);
+        const qualtricsStorage = this.getQualtricsStorage();
+        if (qualtricsStorage) {
+          await qualtricsStorage.setItem('qualtrics_responses', {
+            timestamp: Date.now(),
+            responses: transformedData,
+            surveyId: credentials.qualtricsSurveyId,
+            count: transformedData.length
+          });
+          console.log('[JotFormCache] Qualtrics cache updated');
+        }
+
+        // Step 9: Update main cache with merged data
+        this.emitProgress('Updating main cache...', 90);
+        await this.saveToCache(mergedData);
+        this.cache = mergedData;
+        console.log('[JotFormCache] Main cache updated with merged data');
+
+        // Step 10: Clear validation cache (needs rebuild with TGMD data)
+        this.emitProgress('Clearing validation cache...', 95);
+        await this.clearValidationCache();
+        console.log('[JotFormCache] Validation cache cleared (will rebuild on demand)');
+
+        this.emitProgress('Qualtrics integration complete!', 100);
+        console.log('[JotFormCache] ========== QUALTRICS REFRESH COMPLETE ==========');
+
+        return {
+          success: true,
+          stats: {
+            ...validation,
+            jotformRecords: jotformData.length,
+            qualtricsResponses: rawResponses.length,
+            transformedRecords: transformedData.length,
+            mergedRecords: mergedData.length
+          }
+        };
+      } catch (error) {
+        console.error('[JotFormCache] Qualtrics refresh failed:', error);
+        this.emitProgress('Qualtrics refresh failed: ' + error.message, 0);
+        throw error;
+      }
+    }
+
+    /**
+     * Get Qualtrics cache statistics
+     * @returns {Promise<Object>} Qualtrics cache stats
+     */
+    async getQualtricsStats() {
+      const qualtricsStorage = this.getQualtricsStorage();
+      if (!qualtricsStorage) {
+        return { cached: false };
+      }
+
+      try {
+        const cached = await qualtricsStorage.getItem('qualtrics_responses');
+        if (!cached) {
+          return { cached: false };
+        }
+
+        const age = Date.now() - cached.timestamp;
+        const ageMinutes = Math.floor(age / 60000);
+
+        return {
+          cached: true,
+          count: cached.count,
+          surveyId: cached.surveyId,
+          timestamp: cached.timestamp,
+          age: age,
+          ageMinutes: ageMinutes,
+          ageHours: Math.floor(ageMinutes / 60)
+        };
+      } catch (error) {
+        console.error('[JotFormCache] Failed to get Qualtrics stats:', error);
+        return { cached: false, error: error.message };
+      }
+    }
+
+    /**
+     * Clear Qualtrics cache
+     */
+    async clearQualtricsCache() {
+      const qualtricsStorage = this.getQualtricsStorage();
+      if (qualtricsStorage) {
+        await qualtricsStorage.removeItem('qualtrics_responses');
+        console.log('[JotFormCache] Qualtrics cache cleared');
+      }
+    }
   }
 
   // Export global instance
