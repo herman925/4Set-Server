@@ -1,12 +1,11 @@
 # 4set Web Successor — Overview PRD
 
-> **Documentation Status:** This PRD has been updated (2025-10-16) to remove references to non-existent `TEMP/` documentation. See `DEPRECATIONS.md` for details on documentation evolution.
+> **Documentation Status:** This PRD has been updated (2025-10-16) to remove references to non-existent `TEMP/` documentation and align with current implementation.
 
 ## Context
 - The system has evolved from a legacy desktop tool to a hybrid model: a Windows-based processor agent handles ingestion and processing, while a lightweight web dashboard (GitHub Pages) monitors status, surfacing telemetry and controls.
 - Security model and mappings are governed by `PRDs/data_security_prd.md` and `assets/id_mapping/` artifacts.
-- Historical desktop workflow context is available in `DEPRECATIONS.md` for reference.
-- **NEW**: Complete API call process documentation including upload and create submission workflows is available in `PRDs/jotform-integration.md` (see "Complete API Call Process Documentation" section).
+- **NEW**: Complete API call process documentation including upload and create submission workflows is available in `PRDs/jotform_qualtrics_integration_prd.md` (see "Complete API Call Process Documentation" section).
 
 ## Goals
 - Deliver an unsupervised pipeline that reacts to OneDrive uploads without manual triggers.
