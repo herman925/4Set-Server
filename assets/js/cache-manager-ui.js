@@ -935,9 +935,16 @@
       // Mark syncing state
       isSyncing = true;
       currentSyncProgress = 0;
+      let maxProgress = 0; // Track maximum progress to prevent regression
 
       // Set up progress callback - updates BOTH modal AND pill
       window.JotFormCache.setProgressCallback((message, progress) => {
+        // Prevent progress regression
+        if (progress < maxProgress) {
+          console.warn(`[CacheUI] Progress regression prevented: ${progress}% < ${maxProgress}%`);
+          return;
+        }
+        maxProgress = progress;
         currentSyncProgress = progress;
         
         // Update modal progress (if still open)
@@ -990,9 +997,7 @@
         
         if (hasQualtricsCredentials) {
           console.log('[CacheUI] Qualtrics credentials found, fetching TGMD data...');
-          progressBar.style.width = '52%';
-          progressPercent.textContent = '52%';
-          progressText.textContent = 'JotForm data cached, fetching Qualtrics TGMD data...';
+          // Don't manually update progress here - let the callback handle it to prevent regression
           
           try {
             // Check if modules are loaded
@@ -1005,6 +1010,13 @@
                 // Map Qualtrics progress (0-100) to our range (50-70)
                 const mappedProgress = 50 + (progress * 0.2);
                 
+                // Prevent regression
+                if (mappedProgress < maxProgress) {
+                  console.warn(`[CacheUI] Qualtrics progress regression prevented: ${mappedProgress}% < ${maxProgress}%`);
+                  return;
+                }
+                maxProgress = mappedProgress;
+                
                 if (progressBar) progressBar.style.width = `${mappedProgress}%`;
                 if (progressPercent) progressPercent.textContent = `${Math.round(mappedProgress)}%`;
                 if (progressText) progressText.textContent = message;
@@ -1016,29 +1028,37 @@
               const qualtricsResult = await window.JotFormCache.refreshWithQualtrics(credentials);
               console.log('[CacheUI] Qualtrics data merged successfully');
               
-              progressBar.style.width = '70%';
-              progressPercent.textContent = '70%';
-              progressText.textContent = 'JotForm and Qualtrics data merged successfully!';
+              // Ensure we're at 70% after Qualtrics
+              if (maxProgress < 70) {
+                maxProgress = 70;
+                progressBar.style.width = '70%';
+                progressPercent.textContent = '70%';
+                progressText.textContent = 'JotForm and Qualtrics data merged successfully!';
+              }
             } else {
               console.warn('[CacheUI] Qualtrics modules not loaded, skipping Qualtrics sync');
+              maxProgress = 70;
               progressBar.style.width = '70%';
               progressPercent.textContent = '70%';
               progressText.textContent = 'JotForm data cached (Qualtrics modules not loaded)';
             }
           } catch (qualtricsError) {
             console.error('[CacheUI] Qualtrics sync failed, continuing with JotForm data only:', qualtricsError);
+            maxProgress = 70;
             progressBar.style.width = '70%';
             progressPercent.textContent = '70%';
             progressText.textContent = 'JotForm data cached (Qualtrics sync failed)';
           }
         } else {
           console.log('[CacheUI] No Qualtrics credentials found, using JotForm data only');
+          maxProgress = 70;
           progressBar.style.width = '70%';
           progressPercent.textContent = '70%';
           progressText.textContent = 'JotForm data cached';
         }
         
         // Step 2: Build validation cache (70-95%)
+        maxProgress = 75;
         progressBar.style.width = '75%';
         progressPercent.textContent = '75%';
         progressText.textContent = 'Submissions cached, loading validation data...';
@@ -1088,6 +1108,13 @@
         const PILL_UPDATE_THROTTLE = 1000; // Update pill max once per second
         
         window.JotFormCache.setProgressCallback((message, progress) => {
+          // Prevent regression
+          if (progress < maxProgress) {
+            console.warn(`[CacheUI] Validation progress regression prevented: ${progress}% < ${maxProgress}%`);
+            return;
+          }
+          maxProgress = progress;
+          
           // Always update modal (no throttle)
           if (progressBar) {
             progressBar.style.width = `${progress}%`;

@@ -218,7 +218,7 @@
                       `&orderby=created_at` +
                       `&direction=ASC`;
 
-          // Progress: 0-70% for fetching (phase 1)
+          // Progress: 0-50% for fetching (phase 1) - leave 50-70% for Qualtrics if enabled
           // Intelligent progress: estimate based on typical batch patterns
           // Assume we're roughly halfway done if we're fetching full batches
           // This provides better UX than fixed 2% per page
@@ -227,8 +227,8 @@
             fetchProgress = 5; // Starting
           } else {
             // Logarithmic curve: slower growth as we fetch more pages
-            // This prevents hitting 70% too early on large datasets
-            fetchProgress = Math.min(65, 5 + Math.log(pageNum) * 15);
+            // Cap at 48% to leave room for Qualtrics (50-70%)
+            fetchProgress = Math.min(48, 5 + Math.log(pageNum) * 12);
           }
           this.emitProgress(`Fetching page ${pageNum} (batch: ${currentBatchSize})...`, Math.round(fetchProgress));
           
@@ -296,15 +296,15 @@
 
             allSubmissions.push(...result.content);
             
-            // Progress: 0-70% for fetching (phase 1)
+            // Progress: 0-50% for fetching (phase 1) - leave 50-70% for Qualtrics if enabled
             // Smart progress: if we got less than batch size, we're near the end!
             let downloadProgress;
             if (result.content.length < currentBatchSize) {
-              // Last page - jump to 70% to transition smoothly to validation
-              downloadProgress = 70;
+              // Last page - cap at 50% to allow Qualtrics sync (50-70%)
+              downloadProgress = 50;
             } else {
-              // Still fetching - use logarithmic curve
-              downloadProgress = Math.min(65, 5 + Math.log(pageNum) * 15);
+              // Still fetching - use logarithmic curve, capped at 48%
+              downloadProgress = Math.min(48, 5 + Math.log(pageNum) * 12);
             }
             this.emitProgress(`Downloaded ${allSubmissions.length} submissions...`, Math.round(downloadProgress));
 
@@ -334,7 +334,7 @@
         }
 
         // Progress: Phase 1 complete, moving to phase 2
-        this.emitProgress('Saving to local cache...', 70);
+        this.emitProgress('Saving to local cache...', 50);
         console.log(`[JotFormCache] ========== FETCH COMPLETE ==========`);
         console.log(`[JotFormCache] Total submissions: ${allSubmissions.length}`);
         
