@@ -16,9 +16,10 @@
 6. [Status Indicators and Meanings](#status-indicators-and-meanings)
 7. [Filters and Search](#filters-and-search)
 8. [Data Export and Reporting](#data-export-and-reporting)
-9. [Troubleshooting](#troubleshooting)
-10. [FAQs](#faqs)
-11. [Best Practices](#best-practices)
+9. [Cache Management](#cache-management)
+10. [Troubleshooting](#troubleshooting)
+11. [FAQs](#faqs)
+12. [Best Practices](#best-practices)
 
 ---
 
@@ -1137,9 +1138,11 @@ Average Completion: 83%
 **Solutions:**
 1. Check internet connection
 2. Refresh page (Ctrl+R)
-3. Clear cache and reload
+3. Delete cache (click green pill → "Delete Cache") and reload
 4. Re-enter system password
 5. Check browser console (F12) for errors
+
+**Note:** See [Cache Management](#cache-management) section for detailed cache operations.
 
 #### "Incorrect data showing"
 
@@ -1154,11 +1157,13 @@ Average Completion: 83%
 3. OneDrive sync delay
 
 **Solutions:**
-1. Click "Refresh Cache" button
+1. Click green "System Ready" pill → "Delete Cache" → Re-sync
 2. Hard refresh (Ctrl+Shift+R)
 3. Clear browser cache
 4. Wait 5-10 minutes for sync
 5. Verify data in Jotform directly
+
+**Note:** See [Cache Management](#cache-management) section for detailed cache troubleshooting.
 
 ### Performance Issues
 
@@ -1264,7 +1269,28 @@ Average Completion: 83%
 ### General Questions
 
 **Q: How often does data update?**  
-A: Real-time for Jotform API calls. Cache updates every 5 minutes by default. Click "Refresh Cache" for immediate update.
+A: The system uses a cache-based architecture:
+- **Cache duration**: 1 hour by default
+- **Manual refresh**: Click green "System Ready" pill → "Delete Cache" → Re-sync
+- **Qualtrics refresh**: Click green pill → "Refresh with Qualtrics" (faster, keeps JotForm cache)
+- **Auto-expiration**: Cache automatically expires after 1 hour
+
+**Q: Can I see cache statistics?**  
+A: Yes! Click the green "System Ready" pill to see:
+- Number of submissions cached
+- Cache age (e.g., "synced 15 minutes ago")
+- Qualtrics integration status
+- Option to delete or refresh
+
+**Q: What happens when I delete the cache?**  
+A: The system performs a **comprehensive purge**:
+1. Removes all JotForm submissions from IndexedDB
+2. Clears student validation cache
+3. Clears Qualtrics TGMD cache
+4. Requires full re-sync (60-90 seconds) before system can be used again
+
+**Q: Is there a way to fetch data on-demand instead of caching everything?**  
+A: Not yet implemented. The current system uses **full cache mode only** (fetches all submissions at once). A "fetch-on-request" mode is planned for future release but not yet deployed. See [issue #57](https://github.com/herman925/4Set-Server/issues/57) for status.
 
 **Q: Can I edit data in the Checking System?**  
 A: No. The Checking System is read-only. Data correction must be done in Jotform or by re-processing PDFs.
@@ -1418,6 +1444,106 @@ A: Forever (in Jotform). Local cache cleared after 30 days or when manually clea
    - Include error messages
    - Provide steps to reproduce
    - Suggest potential fixes
+
+---
+
+## Cache Management
+
+### Understanding the Cache System
+
+The Checking System uses **IndexedDB** (browser-based database) to cache assessment data locally for fast performance. This section explains how the cache system works and how to manage it.
+
+### What Gets Cached
+
+The system caches **three types of data** in IndexedDB:
+
+1. **Submissions Cache** (`jotform_global_cache`)
+   - All JotForm submissions from the assessment form
+   - Typically 500-2000 records (20-40 MB)
+   - Expires after 1 hour by default
+
+2. **Validation Cache** (`student_validation`)
+   - Pre-computed task completion and validation results
+   - One entry per student with detailed status
+   - Rebuilds automatically when submissions cache updates
+
+3. **Qualtrics Cache** (`qualtrics_responses`) - *Optional*
+   - TGMD assessment data from Qualtrics surveys
+   - Merged with JotForm data when available
+   - Separate cache store for incremental updates
+
+### Cache Status Indicator
+
+The home page displays a **system health pill** showing cache status:
+
+- **🔴 Red "System Not Ready"**: No cache exists, click to build
+- **🟠 Orange "Syncing X%"**: Cache is being built (shows progress)
+- **🟢 Green "System Ready"**: Cache is valid and ready to use
+
+**"Last Synced"** timestamp shows cache age (e.g., "5 min ago", "2 hours ago")
+
+### How to Manage the Cache
+
+#### Building the Cache (First Time)
+
+1. Click the **red "System Not Ready"** pill on the home page
+2. Click **"Sync Now"** in the modal
+3. Wait for sync to complete (~60-90 seconds)
+   - Progress bar shows: Fetching (0-50%), Merging Qualtrics (50-70%), Validating (70-100%)
+4. Pill turns **green** when ready
+
+#### Refreshing the Cache
+
+To get the latest data from JotForm/Qualtrics:
+
+1. Click the **green "System Ready"** pill
+2. Choose one of two options:
+   - **"Delete Cache"**: Removes all cached data, requires full re-sync
+   - **"Refresh with Qualtrics"**: Re-syncs TGMD data without rebuilding everything
+
+#### Deleting/Purging the Cache
+
+**The cache deletion system is COMPREHENSIVE** - it removes all three cache stores:
+
+```javascript
+// When you click "Delete Cache", the system:
+1. Removes submissions cache (jotform_global_cache)
+2. Clears validation cache (student_validation)
+3. Clears Qualtrics cache (qualtrics_responses)
+```
+
+**When to delete the cache:**
+- After major data updates in JotForm
+- When you suspect stale/incorrect data
+- To force a complete refresh
+- When troubleshooting data issues
+
+**Important:** Deleting the cache requires a full re-sync before you can use the system again.
+
+### Cache Expiration
+
+- **Submissions**: Expires after **1 hour** (configurable in `jotform-cache.js`)
+- **Validation**: Rebuilds when submissions cache is newer
+- **Qualtrics**: No automatic expiration (manual refresh only)
+
+### Troubleshooting Cache Issues
+
+| Problem | Solution |
+|---------|----------|
+| Data looks outdated | Click "Delete Cache" → Re-sync |
+| Sync stuck at X% | Close modal, refresh page, try again |
+| "System Not Ready" after sync | Check browser console for errors |
+| Very slow performance | Clear browser cache (Ctrl+Shift+R) |
+| Cache won't delete | Clear browser IndexedDB in DevTools |
+
+### Advanced: Manual Cache Inspection
+
+For technical users, you can inspect the cache in browser DevTools:
+
+1. Press **F12** to open DevTools
+2. Go to **Application** tab (Chrome) or **Storage** tab (Firefox)
+3. Navigate to **IndexedDB** → **JotFormCacheDB**
+4. Inspect stores: `cache`, `student_validation`, `qualtrics_cache`
 
 ---
 
