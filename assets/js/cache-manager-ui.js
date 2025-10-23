@@ -35,35 +35,44 @@
     const checkStartTime = Date.now();
     console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Starting check at ${new Date(checkStartTime).toISOString()}`);
     
-    if (!window.JotFormCache) return false;
-    
-    // Check submissions cache
-    const submissionsCheckStart = Date.now();
-    const submissionsStats = await window.JotFormCache.getCacheStats();
-    const submissionsCheckEnd = Date.now();
-    console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Submissions check took ${submissionsCheckEnd - submissionsCheckStart}ms`);
-    
-    if (!submissionsStats.exists || !submissionsStats.valid) {
-      console.log('[CacheUI] Submissions cache not ready');
-      console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Total time ${Date.now() - checkStartTime}ms, result: FALSE (submissions missing)`);
+    if (!window.JotFormCache) {
+      console.log('[CacheUI] JotFormCache not available');
       return false;
     }
     
-    // Check validation cache
-    const validationCheckStart = Date.now();
-    const validationCache = await window.JotFormCache.loadValidationCache();
-    const validationCheckEnd = Date.now();
-    console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Validation check took ${validationCheckEnd - validationCheckStart}ms`);
-    
-    if (!validationCache || validationCache.size === 0) {
-      console.log('[CacheUI] Validation cache not ready');
-      console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Total time ${Date.now() - checkStartTime}ms, result: FALSE (validation missing)`);
+    try {
+      // Check submissions cache
+      const submissionsCheckStart = Date.now();
+      const submissionsStats = await window.JotFormCache.getCacheStats();
+      const submissionsCheckEnd = Date.now();
+      console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Submissions check took ${submissionsCheckEnd - submissionsCheckStart}ms`);
+      
+      if (!submissionsStats.exists || !submissionsStats.valid) {
+        console.log('[CacheUI] Submissions cache not ready');
+        console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Total time ${Date.now() - checkStartTime}ms, result: FALSE (submissions missing)`);
+        return false;
+      }
+      
+      // Check validation cache
+      const validationCheckStart = Date.now();
+      const validationCache = await window.JotFormCache.loadValidationCache();
+      const validationCheckEnd = Date.now();
+      console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Validation check took ${validationCheckEnd - validationCheckStart}ms`);
+      
+      if (!validationCache || validationCache.size === 0) {
+        console.log('[CacheUI] Validation cache not ready');
+        console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Total time ${Date.now() - checkStartTime}ms, result: FALSE (validation missing)`);
+        return false;
+      }
+      
+      console.log('[CacheUI] Both caches ready: submissions + validation');
+      console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Total time ${Date.now() - checkStartTime}ms, result: TRUE ✅`);
+      return true;
+    } catch (error) {
+      console.error('[CacheUI] Error in isCacheReady:', error);
+      console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Total time ${Date.now() - checkStartTime}ms, result: FALSE (error)`);
       return false;
     }
-    
-    console.log('[CacheUI] Both caches ready: submissions + validation');
-    console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Total time ${Date.now() - checkStartTime}ms, result: TRUE ✅`);
-    return true;
   }
 
   /**
@@ -183,11 +192,26 @@
         console.log(`[SYNC-TIMING] ⏱️ updateStatusPill: Starting cache readiness check at ${new Date(checkStartTime).toISOString()}`);
         console.log('[CacheUI] updateStatusPill checking cache readiness...');
         
-        isReady = await isCacheReady();
-        
-        const checkEndTime = Date.now();
-        console.log(`[SYNC-TIMING] ⏱️ updateStatusPill: Cache check took ${checkEndTime - checkStartTime}ms`);
-        console.log('[CacheUI] isCacheReady returned:', isReady);
+        try {
+          // Add timeout to prevent hanging (5 seconds max)
+          const timeoutPromise = new Promise((_, reject) => {
+            setTimeout(() => reject(new Error('Cache check timeout')), 5000);
+          });
+          
+          isReady = await Promise.race([
+            isCacheReady(),
+            timeoutPromise
+          ]);
+          
+          const checkEndTime = Date.now();
+          console.log(`[SYNC-TIMING] ⏱️ updateStatusPill: Cache check took ${checkEndTime - checkStartTime}ms`);
+          console.log('[CacheUI] isCacheReady returned:', isReady);
+        } catch (error) {
+          console.error('[CacheUI] Error checking cache readiness:', error);
+          isReady = false; // Default to not ready on error
+          const checkEndTime = Date.now();
+          console.log(`[SYNC-TIMING] ⏱️ updateStatusPill: Cache check failed after ${checkEndTime - checkStartTime}ms`);
+        }
       } else {
         console.log('[CacheUI] Skipping cache check (skipCheck=true), directly setting to GREEN');
       }
