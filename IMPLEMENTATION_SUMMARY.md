@@ -13,21 +13,26 @@ Enhanced the school page to provide better visibility of students without class 
 
 ### Changes Implemented
 
-#### 1. Auto-Assignment of Class 99 (無班級)
+#### 1. Auto-Assignment of Grade-Specific Class 99 (無班級)
 **File**: `assets/js/checking-system-data-loader.js`
 
-Students without a Class ID for the current year (25/26) are automatically assigned to class 99 with the naming convention `C-{schoolId}-99`. This ensures:
-- All students appear in the school page, even without explicit class assignments
-- The "無班級" (No Class) category captures unassigned students
-- Dynamic creation of class 99 entries for schools with unassigned students
+Students without a Class ID for any year (23/24, 24/25, or 25/26) are automatically assigned to grade-specific 無班級 classes:
+
+**Three Grade-Specific 無班級 Classes**:
+- **無班級 (K1)**: For students without Class ID 23/24 → `C-{schoolId}-99-K1` (grade 1)
+- **無班級 (K2)**: For students without Class ID 24/25 → `C-{schoolId}-99-K2` (grade 2)
+- **無班級 (K3)**: For students without Class ID 25/26 → `C-{schoolId}-99-K3` (grade 3)
 
 **Student Class Assignment Logic**:
-- Primary: Use `Class ID 25/26` if available
-- Fallback: Use `Class ID 24/25` if 25/26 is not available  
-- Auto-assign: Create `C-{schoolId}-99` if neither 25/26 nor 24/25 exists
-- Each student is assigned to **one class** (the most current one available)
+- Check all three years (23/24, 24/25, 25/26) for Class ID
+- For each year without a class ID, create a student record assigned to the corresponding 無班級 class
+- Students can appear in **multiple** 無班級 classes if they lack class IDs for multiple years
+- Each student record is identified by a composite key: `{coreId}-{year}` (e.g., `C10207-K1`, `C10207-K2`)
 
-**Note on Multi-Year Data**: Students are counted in their most recent class assignment. If a student has classIds for multiple years (23/24, 24/25, 25/26), they appear in the 25/26 class. This approach ensures students are not double-counted in the student totals while maintaining accurate historical tracking.
+**Multi-Year Data Handling**: 
+- Students with missing class IDs for multiple years will have separate records in each corresponding 無班級 class
+- This ensures complete visibility of all unassigned students across all years
+- The grade mapping (K1/K2/K3) helps identify which academic year the student is missing a class assignment for
 
 #### 2. View Mode Toggles
 **Files**: 

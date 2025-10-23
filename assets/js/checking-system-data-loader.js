@@ -161,65 +161,96 @@
         classIdMap.set(classId, classData);
       });
 
-      // Process students (use current year: Class ID 25/26)
+      // Process students - create entries for all years (23/24, 24/25, 25/26)
+      // Students without class IDs will be assigned to grade-specific 無班級 classes
       students.forEach(student => {
         const coreId = student['Core ID'];
         const studentId = student['Student ID'];
         const schoolId = student['School ID'];
-        let classId = student['Class ID 25/26'] || student['Class ID 24/25'] || '';
         
-        // Auto-assign class 99 (無班級) if no classId for 25/26
-        // This ensures students without a class mapping appear in the "no class" category
-        if (!student['Class ID 25/26'] && schoolId) {
-          classId = `C-${schoolId}-99`;
-        }
+        // Check all three years and create student records for each
+        const years = [
+          { key: 'Class ID 23/24', grade: 1, label: 'K1' },  // 無班級 (K1)
+          { key: 'Class ID 24/25', grade: 2, label: 'K2' },  // 無班級 (K2)
+          { key: 'Class ID 25/26', grade: 3, label: 'K3' }   // 無班級 (K3)
+        ];
         
-        const studentData = {
-          coreId,
-          studentId,
-          studentName: student['Student Name'],
-          schoolId,
-          classId,
-          group: parseInt(student['Group']) || 0,
-          gender: student['Gender'] || '',
-          displayName: `${student['Student Name']} (${studentId})`
-        };
-        
-        studentsMap.set(coreId, studentData);
-        coreIdMap.set(coreId, studentData);
-        studentIdMap.set(studentId, studentData);
+        years.forEach(year => {
+          let classId = student[year.key] || '';
+          
+          // Auto-assign to grade-specific 無班級 if no classId for this year
+          if (!classId && schoolId) {
+            classId = `C-${schoolId}-99-${year.label}`;
+          }
+          
+          // Only create student record if there's a valid classId
+          if (classId) {
+            const studentData = {
+              coreId,
+              studentId,
+              studentName: student['Student Name'],
+              schoolId,
+              classId,
+              group: parseInt(student['Group']) || 0,
+              gender: student['Gender'] || '',
+              displayName: `${student['Student Name']} (${studentId})`,
+              year: year.label  // Track which year this record is for
+            };
+            
+            // Use a composite key to allow same coreId in different years
+            const compositeKey = `${coreId}-${year.label}`;
+            studentsMap.set(compositeKey, studentData);
+            
+            // Keep coreIdMap for backward compatibility (will have latest year)
+            coreIdMap.set(coreId, studentData);
+            studentIdMap.set(studentId, studentData);
+          }
+        });
       });
 
-      // Create class 99 (無班級) entries for schools with unassigned students
-      // Collect unique school IDs that need a class 99 entry
-      const schoolsNeedingClass99 = new Set();
+      // Create grade-specific class 99 (無班級) entries for schools with unassigned students
+      // Collect unique school IDs and grades that need class 99 entries
+      const schoolsNeedingClass99 = new Map(); // schoolId -> Set of grade labels
+      
       Array.from(studentsMap.values()).forEach(student => {
-        if (student.classId && student.classId.endsWith('-99')) {
-          schoolsNeedingClass99.add(student.schoolId);
+        if (student.classId && student.classId.includes('-99-')) {
+          if (!schoolsNeedingClass99.has(student.schoolId)) {
+            schoolsNeedingClass99.set(student.schoolId, new Set());
+          }
+          // Extract grade label from classId (e.g., C-S001-99-K1 -> K1)
+          const match = student.classId.match(/-99-([KN]\d)$/);
+          if (match) {
+            schoolsNeedingClass99.get(student.schoolId).add(match[1]);
+          }
         }
       });
       
-      // Create class 99 entries for each school that needs one
-      schoolsNeedingClass99.forEach(schoolId => {
-        const classId = `C-${schoolId}-99`;
-        
-        // Only create if it doesn't already exist
-        if (!classesMap.has(classId)) {
-          const school = schoolsMap.get(schoolId);
-          const classData = {
-            classId,
-            schoolId,
-            schoolName: school?.schoolName || '',
-            actualClassName: '無班級',
-            teacherNames: '',
-            grade: 0, // Grade 0 for "Other"
-            gradeDisplay: 'Other',
-            displayName: '無班級'
-          };
+      // Create class 99 entries for each school-grade combination
+      schoolsNeedingClass99.forEach((gradeLabels, schoolId) => {
+        gradeLabels.forEach(gradeLabel => {
+          const classId = `C-${schoolId}-99-${gradeLabel}`;
           
-          classesMap.set(classId, classData);
-          classIdMap.set(classId, classData);
-        }
+          // Only create if it doesn't already exist
+          if (!classesMap.has(classId)) {
+            const school = schoolsMap.get(schoolId);
+            // Map K1->1, K2->2, K3->3 for grade
+            const gradeNum = gradeLabel === 'K1' ? 1 : gradeLabel === 'K2' ? 2 : 3;
+            
+            const classData = {
+              classId,
+              schoolId,
+              schoolName: school?.schoolName || '',
+              actualClassName: `無班級 (${gradeLabel})`,
+              teacherNames: '',
+              grade: gradeNum,
+              gradeDisplay: gradeLabel,
+              displayName: `無班級 (${gradeLabel})`
+            };
+            
+            classesMap.set(classId, classData);
+            classIdMap.set(classId, classData);
+          }
+        });
       });
 
       // Get unique districts and groups
@@ -295,7 +326,7 @@
         groups: data.groups,
         credentials: data.credentials, // Include Jotform API credentials
         metadata: data.metadata,
-        version: '1.3' // Cache version updated to include normalized grade indexing
+        version: '1.4' // Cache version updated for multi-year student records
       };
       sessionStorage.setItem('checking_system_data', JSON.stringify(cacheData));
     } catch (error) {
@@ -315,7 +346,7 @@
       const data = JSON.parse(cached);
       
       // Check cache version - invalidate if outdated
-      if (data.version !== '1.3') {
+      if (data.version !== '1.4') {
         console.log('Cache version mismatch, clearing old cache');
         sessionStorage.removeItem('checking_system_data');
         return null;
@@ -324,7 +355,10 @@
       // Rebuild lookup maps
       const schoolsMap = new Map(data.schools.map(s => [s.schoolId, s]));
       const classesMap = new Map(data.classes.map(c => [c.classId, c]));
-      const studentsMap = new Map(data.students.map(s => [s.coreId, s]));
+      // Use composite key (coreId-year) for studentsMap to support multi-year records
+      const studentsMap = new Map(data.students.map(s => [`${s.coreId}-${s.year}`, s]));
+      // Keep coreIdMap for backward compatibility (maps to most recent/last entry)
+      const coreIdMap = new Map(data.students.map(s => [s.coreId, s]));
       
       return {
         ...data, // Includes schools, classes, students, districts, groups, credentials, metadata, version
@@ -334,7 +368,7 @@
         schoolIdMap: schoolsMap,
         classIdMap: classesMap,
         studentIdMap: new Map(data.students.map(s => [s.studentId, s])),
-        coreIdMap: studentsMap
+        coreIdMap
       };
     } catch (error) {
       console.warn('Failed to load cached data:', error);
