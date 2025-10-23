@@ -348,12 +348,18 @@ class StudentUIRenderer {
         const statusClass = `status-${status}`;
         const terminationInfo = this.validation.termination[taskId];
         
+        // Check if this is TGMD task with Qualtrics data
+        const isTGMD = taskId === 'tgmd';
+        const tgmdSource = this.getTGMDDataSource();
+        const tgmdBadge = isTGMD && tgmdSource ? this.generateTGMDSourceBadge(tgmdSource) : '';
+        
         const html = `
             <details class="task-expand" data-task="${taskId}">
                 <summary class="px-4 py-3 grid gap-2 sm:grid-cols-[minmax(0,220px)_minmax(0,200px)_minmax(0,120px)_minmax(0,1fr)] sm:items-center cursor-pointer hover:bg-white/60 transition-colors">
                     <div class="flex items-center gap-2">
                         <span class="status-circle ${statusClass}" title="${this.getStatusTitle(status)}"></span>
                         <strong class="text-[color:var(--foreground)] text-sm">${taskDef.title || taskId}</strong>
+                        ${tgmdBadge}
                     </div>
                     <div class="flex flex-wrap items-center gap-1 text-xs">
                         ${this.generateTerminationChips(terminationInfo)}
@@ -668,6 +674,68 @@ class StudentUIRenderer {
         const day = dateStr.substring(6, 8);
         
         return `${year}-${month}-${day} ${hour}:${min}`;
+    }
+    
+    /**
+     * Get TGMD data source (qualtrics, jotform, or null)
+     * Checks the student's submissions for _tgmdSource metadata
+     */
+    getTGMDDataSource() {
+        try {
+            // Check if student has submissions with TGMD source metadata
+            const submissions = this.data?.submissions || [];
+            
+            for (const submission of submissions) {
+                // Check for _tgmdSource field on submission
+                if (submission._tgmdSource) {
+                    return submission._tgmdSource;
+                }
+                
+                // Check answers for TGMD fields
+                if (submission.answers) {
+                    const hasTGMD = Object.keys(submission.answers).some(qid => {
+                        const answer = submission.answers[qid];
+                        return answer && answer.name && answer.name.startsWith('TGMD_');
+                    });
+                    
+                    if (hasTGMD) {
+                        // If we have TGMD data but no explicit source, check _sources
+                        if (submission._sources && submission._sources.includes('qualtrics')) {
+                            return 'qualtrics';
+                        }
+                        return 'jotform'; // Default to jotform if we have TGMD but no Qualtrics indicator
+                    }
+                }
+            }
+            
+            return null;
+        } catch (error) {
+            console.warn('[UI] Failed to detect TGMD source:', error);
+            return null;
+        }
+    }
+    
+    /**
+     * Generate TGMD source badge HTML
+     * @param {string} source - 'qualtrics' or 'jotform'
+     */
+    generateTGMDSourceBadge(source) {
+        if (source === 'qualtrics') {
+            return `
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;" title="TGMD data from Qualtrics survey">
+                    <i data-lucide="database" class="w-3 h-3"></i>
+                    Qualtrics
+                </span>
+            `;
+        } else if (source === 'jotform') {
+            return `
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;" title="TGMD data from JotForm">
+                    <i data-lucide="file-text" class="w-3 h-3"></i>
+                    JotForm
+                </span>
+            `;
+        }
+        return '';
     }
 }
 
