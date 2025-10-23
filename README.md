@@ -210,6 +210,16 @@ Multi-level monitoring dashboards:
 - `checking_system_3_class.html` – Class drilldown with heatmaps
 - `checking_system_4_student.html` – Student detail validation
 
+**Export Features**:
+- All exports include calculated **Status Light** column (🟢 Complete, 🔴 Incomplete, 🟡 Post-Term, ⚪ Not Started)
+- Validates exported data matches displayed status for quality assurance
+- See `export-utils.js` for implementation details
+
+**Validation Logic**:
+- **Radio-Text Questions** (Theory of Mind, Math Pattern): Automatically marks as incorrect if radio empty but text field filled
+- Prevents partial submissions and ensures data completeness
+- See `task-validator.js` lines 354-389 for implementation
+
 ---
 
 ## Component Documentation
