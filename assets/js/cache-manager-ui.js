@@ -134,8 +134,11 @@
       // Orange: Syncing with progress bar
       badge.classList.remove('badge-success', 'badge-error', 'badge-warning');
       badge.classList.add('badge-warning');
-      statusText.textContent = config.cache.statusLabels?.syncing || 'Syncing...';
-      badge.title = `Syncing... ${Math.round(progress)}%`;
+      
+      // Show percentage in status text for better feedback
+      const roundedProgress = Math.round(progress);
+      statusText.textContent = `Syncing ${roundedProgress}%`;
+      badge.title = `Syncing... ${roundedProgress}%`;
       badge.style.cursor = 'default';
       badge.style.position = 'relative';
       badge.style.overflow = 'hidden';
@@ -149,8 +152,8 @@
         top: 0;
         bottom: 0;
         width: ${progress}%;
-        background: rgba(249, 157, 51, 0.3);
-        transition: width 0.3s ease-out;
+        background: linear-gradient(90deg, rgba(249, 157, 51, 0.4), rgba(249, 157, 51, 0.6));
+        transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         z-index: 0;
       `;
       badge.appendChild(progressBar);
@@ -682,15 +685,24 @@
         
         progressText.textContent = 'Submissions cached, validating students...';
         
-        // Hook up progress callback for validation
+        // Hook up progress callback for validation with throttled pill updates
+        let lastPillUpdate = 0;
+        const PILL_UPDATE_THROTTLE = 1000; // Update pill max once per second
+        
         window.JotFormCache.setProgressCallback((message, progress) => {
+          // Always update modal (no throttle)
           if (progressBar) {
             progressBar.style.width = `${progress}%`;
             progressPercent.textContent = `${progress}%`;
             progressText.textContent = message;
           }
-          // Don't call updateStatusPill here - it causes hundreds of IndexedDB reads
-          // The pill will be updated once when validation completes
+          
+          // Throttled pill updates to avoid excessive IndexedDB reads
+          const now = Date.now();
+          if (now - lastPillUpdate >= PILL_UPDATE_THROTTLE) {
+            lastPillUpdate = now;
+            updateStatusPill(progress);
+          }
         });
         
         console.log('[CacheUI] Building validation cache...');
