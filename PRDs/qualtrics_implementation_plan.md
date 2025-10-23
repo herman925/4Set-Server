@@ -3150,7 +3150,7 @@ Trial 2    [2_1]       [2_2]       [2_3]       [2_4]
 - [ ] Add "Sync with Qualtrics" button to home page
 - [ ] Display merge statistics in cache manager
 - [ ] Show TGMD data source indicator in student page
-- [ ] Update calculation_bible.md with Qualtrics section
+- [ ] Update PRDs/calculation_bible.md with Qualtrics section
 
 #### Phase 5: Production Deployment (Week 3)
 - [ ] Add Qualtrics credentials to production credentials.enc

@@ -571,7 +571,7 @@ When implementing or modifying task validation:
 - `assets/jotformquestions.json` - Question ID to JotForm QID mapping
 - `assets/js/task-validator.js` - Validation logic implementation
 - `PRDs/termination-rules.md` - Termination rule specifications
-- `calculation_bible.md` - Calculation methodology reference
+- `PRDs/calculation_bible.md` - Calculation methodology reference
 
 ---
 

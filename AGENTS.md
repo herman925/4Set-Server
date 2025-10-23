@@ -149,7 +149,7 @@ The 4Set System is a comprehensive web-based assessment data processing pipeline
 - [x] **_TEXT field display support for ToM questions (Oct 2025)**
 - [x] **Gender branching verification across all pages (Oct 2025)**
 - [x] **Adaptive batch sizing documentation (Oct 2025)**
-- [x] **Comprehensive calculation_bible.md updates (Oct 2025)**
+- [x] **Comprehensive PRDs/calculation_bible.md updates (Oct 2025)**
 
 ### 🔄 Phase 4: Production Deployment (In Progress)
 - [x] Upload interface with drag-and-drop support
@@ -628,17 +628,6 @@ Documented in `PRDs/processor_agent_runbook_prd.md`:
   - `TEMP/test_radio_text_validation.py` - 6/6 tests passing
   - `TEMP/test_text_field_display.py` - 6/6 tests passing
   - Visual mockup: `TEMP/text_field_display_example.html`
-
-**Documentation Refactoring (October 23, 2025):**
-- ✅ **Documentation Cleanup**: Removed outdated FULL CAPITAL MD files
-  - Removed `IMPLEMENTATION_SUMMARY.md` (completed PR summary from Oct 22, 2025)
-  - Removed `INVESTIGATION_CM_CALCULATION.md` (completed investigation report)
-  - Removed `PR_SUMMARY.md` (completed PR summary for CM Status Light fix)
-  - Removed generated report files (`class-report_*.md`, `student-report_*.md`)
-  - Renamed `AGENTS.md` to `development-roadmap.md` for consistent naming convention
-  - Decision: Keep active documentation with lowercase/dash naming; remove temporary PR summaries
-  - All permanent documentation now follows consistent naming patterns
-  - Updated README.md references to reflect changes
 
 ### Future Updates
 This section will track major system updates, feature additions, and architectural changes as they occur.

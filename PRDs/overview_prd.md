@@ -138,7 +138,7 @@ The system now includes advanced validation logic for Theory of Mind (ToM) asses
 - Set completion calculations account for gender-specific task exclusions
 
 **Documentation:**
-- Comprehensive `calculation_bible.md` updates (~350 lines added)
+- Comprehensive `PRDs/calculation_bible.md` updates (~350 lines added)
 - Test scripts with 100% pass rate (`TEMP/test_radio_text_validation.py`, `TEMP/test_text_field_display.py`)
 - Visual mockup (`TEMP/text_field_display_example.html`)
 
