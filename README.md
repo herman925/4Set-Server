@@ -695,6 +695,22 @@ The Checking System is a comprehensive data validation suite that provides multi
 - Identify data quality issues and missing data
 - Alert administrators to inconsistencies requiring verification
 
+#### Cache System
+**Purpose**: Fast, offline-capable data access via IndexedDB
+- **Storage**: 100+ MB capacity (using ~35 MB for 544 submissions)
+- **Duration**: 1-hour TTL with auto-expiration
+- **Purge**: Manual cache deletion via UI (green status pill)
+- **Rebuild**: One-click sync from JotForm API
+- **Performance**: <100ms load time from cache vs 3-5s from API
+
+**Managing Cache:**
+1. **View Status**: Check green/red status pill on home page
+2. **Delete Cache**: Click green pill → "Delete Cache" button
+3. **Rebuild Cache**: Click red pill → "Sync" button
+4. **Auto-Refresh**: Cache expires after 1 hour automatically
+
+**See:** `PRDs/cache_system_analysis.md` for complete documentation
+
 ### Dashboard Hierarchy
 
 The system provides 5 levels of drill-down navigation:
