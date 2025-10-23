@@ -358,8 +358,8 @@ Required with production credentials:
 
 ### Production Deployment
 - [ ] Add Qualtrics credentials to production `credentials.enc`
-  - `qualtricsApiKey`: API key from Qualtrics account (field name is `qualtricsApiKey`, not `qualtricsApiToken`)
-  - `qualtricsDatacenter`: Region (e.g., "syd1" - Sydney datacenter, replaces deprecated "au1")
+  - `qualtricsApiToken`: API key from Qualtrics account
+  - `qualtricsDatacenter`: Region (e.g., "au1")
   - `qualtricsSurveyId`: TGMD survey ID
 - [ ] Test sync with production data
 - [ ] Verify field mapping accuracy
