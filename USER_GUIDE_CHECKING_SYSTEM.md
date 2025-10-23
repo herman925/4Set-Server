@@ -315,10 +315,17 @@ Click any student to see detailed assessment view.
 │  • In Progress: 10 (13%)                │
 │  • Not Started: 3 (4%)                  │
 ├─────────────────────────────────────────┤
-│  Classes                                │
-│  C-023-01  ████████░░ 80%              │
-│  C-023-02  █████████░ 90%              │
-│  C-023-03  ███████░░░ 70%              │
+│  View Mode: [By Class] [By Student]     │
+│  ├─ By Class (default)                  │
+│  │  C-023-01  ████████░░ 80%           │
+│  │  C-023-02  █████████░ 90%           │
+│  │  C-023-03  ███████░░░ 70%           │
+│  │  無班級     ████░░░░░░ 40%           │
+│  │                                      │
+│  └─ By Student (toggle active)          │
+│     [By Set] [By Task]                  │
+│     • By Set: Shows Set 1-4 status      │
+│     • By Task: Shows individual tasks   │
 └─────────────────────────────────────────┘
 ```
 
@@ -326,14 +333,46 @@ Click any student to see detailed assessment view.
 - School identification (ID, names)
 - Geographic/project grouping
 - Overall completion statistics
-- Class-by-class breakdown
+- Class-by-class breakdown OR student-by-student view
 - Progress bars for visual reference
+- **NEW**: 無班級 (No Class) category for unassigned students
+
+**View Modes:**
+
+1. **By Class (Default)**
+   - Shows all classes in the school
+   - Includes automatically created "無班級" class for students without class assignments
+   - Displays Set 1-4 completion status for each class
+   - Legend: ✅ Complete | 🔴 Incomplete | ⭕ Not Started
+
+2. **By Student**
+   - Shows unique students aggregated across all school classes
+   - Two sub-modes available:
+   
+   **By Set** (default student view)
+   - Student Name, Core ID, Class, Set 1-4 status
+   - Legend: ✅ Complete | 🔴 Incomplete | ⭕ Not Started
+   
+   **By Task**
+   - Individual task completion for each student
+   - Tasks grouped by Set 1-4 with color-coded backgrounds
+   - Legend: ✅ Complete | 🟡 Post-Term | 🔴 Incomplete | ⭕ Not Started
+
+**Special Features:**
+
+- **Auto-Assignment to 無班級**: Students without a Class ID for the current year (25/26) are automatically assigned to class 99 (`C-{schoolId}-99`) labeled as "無班級" (No Class). This ensures all students are visible for review.
+
+- **Multi-Year Data Handling**: Students are assigned to their most recent class (25/26 → 24/25 priority) to avoid double-counting while maintaining accurate tracking.
 
 **Actions:**
 - Click class to drill down
+- Click student name to view detailed assessment
+- Toggle between By Class / By Student views
+- In By Student view, toggle between By Set / By Task
 - Export school report
 - View completion trends
-- Identify classes needing attention
+- Identify classes or students needing attention
+- Filter by grade, data status, or completion
 
 ### Class View
 
