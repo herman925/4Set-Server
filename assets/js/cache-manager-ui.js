@@ -933,10 +933,12 @@
         // Force fetch (clear cache first)
         await window.JotFormCache.clearCache();
         
-        // Step 1: Fetch all submissions from JotForm API (0-70%)
+        // Step 1: Fetch all submissions from JotForm API (0-50%)
         console.log('[CacheUI] Calling getAllSubmissions...');
-        progressBar.style.width = '70%';
-        progressPercent.textContent = '70%';
+        modalTitle.textContent = 'Syncing Database';
+        modalMessage.textContent = 'Fetching data from JotForm and Qualtrics...';
+        progressBar.style.width = '5%';
+        progressPercent.textContent = '5%';
         progressText.textContent = 'Fetching submissions from JotForm...';
         
         // This waits for IndexedDB write to fully complete
@@ -945,6 +947,61 @@
           apiKey: credentials.jotformApiKey || credentials.apiKey
         });
         console.log('[CacheUI] getAllSubmissions returned:', result ? result.length : 0, 'submissions');
+        
+        // Step 1.5: Fetch and merge Qualtrics data if credentials available (50-70%)
+        const hasQualtricsCredentials = credentials.qualtricsApiToken && 
+                                       credentials.qualtricsDatacenter && 
+                                       credentials.qualtricsSurveyId;
+        
+        if (hasQualtricsCredentials) {
+          console.log('[CacheUI] Qualtrics credentials found, fetching TGMD data...');
+          progressBar.style.width = '52%';
+          progressPercent.textContent = '52%';
+          progressText.textContent = 'JotForm data cached, fetching Qualtrics TGMD data...';
+          
+          try {
+            // Check if modules are loaded
+            if (typeof window.QualtricsAPI !== 'undefined' && 
+                typeof window.QualtricsTransformer !== 'undefined' && 
+                typeof window.DataMerger !== 'undefined') {
+              
+              // Set up progress callback for Qualtrics sync (50-70%)
+              window.JotFormCache.setProgressCallback((message, progress) => {
+                // Map Qualtrics progress (0-100) to our range (50-70)
+                const mappedProgress = 50 + (progress * 0.2);
+                
+                if (progressBar) progressBar.style.width = `${mappedProgress}%`;
+                if (progressPercent) progressPercent.textContent = `${Math.round(mappedProgress)}%`;
+                if (progressText) progressText.textContent = message;
+                
+                updateStatusPill(mappedProgress);
+              });
+              
+              // Perform Qualtrics refresh
+              const qualtricsResult = await window.JotFormCache.refreshWithQualtrics(credentials);
+              console.log('[CacheUI] Qualtrics data merged successfully');
+              
+              progressBar.style.width = '70%';
+              progressPercent.textContent = '70%';
+              progressText.textContent = 'JotForm and Qualtrics data merged successfully!';
+            } else {
+              console.warn('[CacheUI] Qualtrics modules not loaded, skipping Qualtrics sync');
+              progressBar.style.width = '70%';
+              progressPercent.textContent = '70%';
+              progressText.textContent = 'JotForm data cached (Qualtrics modules not loaded)';
+            }
+          } catch (qualtricsError) {
+            console.error('[CacheUI] Qualtrics sync failed, continuing with JotForm data only:', qualtricsError);
+            progressBar.style.width = '70%';
+            progressPercent.textContent = '70%';
+            progressText.textContent = 'JotForm data cached (Qualtrics sync failed)';
+          }
+        } else {
+          console.log('[CacheUI] No Qualtrics credentials found, using JotForm data only');
+          progressBar.style.width = '70%';
+          progressPercent.textContent = '70%';
+          progressText.textContent = 'JotForm data cached';
+        }
         
         // Step 2: Build validation cache (70-95%)
         progressBar.style.width = '75%';
@@ -1049,7 +1106,13 @@
         // NOW show success message (cache is confirmed saved)
         progressText.textContent = 'Complete!';
         modalTitle.textContent = config.cache.modalText.completeTitle;
-        modalMessage.textContent = config.cache.modalText.completeMessage;
+        
+        // Build success message based on what was synced
+        let successMessage = config.cache.modalText.completeMessage;
+        if (hasQualtricsCredentials) {
+          successMessage += ' TGMD data from Qualtrics has been merged.';
+        }
+        modalMessage.textContent = successMessage;
         modalMessage.classList.remove('text-[color:var(--muted-foreground)]');
         modalMessage.classList.add('text-green-600');
         
