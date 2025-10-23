@@ -35,35 +35,44 @@
     const checkStartTime = Date.now();
     console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Starting check at ${new Date(checkStartTime).toISOString()}`);
     
-    if (!window.JotFormCache) return false;
-    
-    // Check submissions cache
-    const submissionsCheckStart = Date.now();
-    const submissionsStats = await window.JotFormCache.getCacheStats();
-    const submissionsCheckEnd = Date.now();
-    console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Submissions check took ${submissionsCheckEnd - submissionsCheckStart}ms`);
-    
-    if (!submissionsStats.exists || !submissionsStats.valid) {
-      console.log('[CacheUI] Submissions cache not ready');
-      console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Total time ${Date.now() - checkStartTime}ms, result: FALSE (submissions missing)`);
+    if (!window.JotFormCache) {
+      console.log('[CacheUI] JotFormCache not available');
       return false;
     }
     
-    // Check validation cache
-    const validationCheckStart = Date.now();
-    const validationCache = await window.JotFormCache.loadValidationCache();
-    const validationCheckEnd = Date.now();
-    console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Validation check took ${validationCheckEnd - validationCheckStart}ms`);
-    
-    if (!validationCache || validationCache.size === 0) {
-      console.log('[CacheUI] Validation cache not ready');
-      console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Total time ${Date.now() - checkStartTime}ms, result: FALSE (validation missing)`);
+    try {
+      // Check submissions cache
+      const submissionsCheckStart = Date.now();
+      const submissionsStats = await window.JotFormCache.getCacheStats();
+      const submissionsCheckEnd = Date.now();
+      console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Submissions check took ${submissionsCheckEnd - submissionsCheckStart}ms`);
+      
+      if (!submissionsStats.exists || !submissionsStats.valid) {
+        console.log('[CacheUI] Submissions cache not ready');
+        console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Total time ${Date.now() - checkStartTime}ms, result: FALSE (submissions missing)`);
+        return false;
+      }
+      
+      // Check validation cache
+      const validationCheckStart = Date.now();
+      const validationCache = await window.JotFormCache.loadValidationCache();
+      const validationCheckEnd = Date.now();
+      console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Validation check took ${validationCheckEnd - validationCheckStart}ms`);
+      
+      if (!validationCache || validationCache.size === 0) {
+        console.log('[CacheUI] Validation cache not ready');
+        console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Total time ${Date.now() - checkStartTime}ms, result: FALSE (validation missing)`);
+        return false;
+      }
+      
+      console.log('[CacheUI] Both caches ready: submissions + validation');
+      console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Total time ${Date.now() - checkStartTime}ms, result: TRUE ✅`);
+      return true;
+    } catch (error) {
+      console.error('[CacheUI] Error in isCacheReady:', error);
+      console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Total time ${Date.now() - checkStartTime}ms, result: FALSE (error)`);
       return false;
     }
-    
-    console.log('[CacheUI] Both caches ready: submissions + validation');
-    console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Total time ${Date.now() - checkStartTime}ms, result: TRUE ✅`);
-    return true;
   }
 
   /**
@@ -183,11 +192,29 @@
         console.log(`[SYNC-TIMING] ⏱️ updateStatusPill: Starting cache readiness check at ${new Date(checkStartTime).toISOString()}`);
         console.log('[CacheUI] updateStatusPill checking cache readiness...');
         
-        isReady = await isCacheReady();
-        
-        const checkEndTime = Date.now();
-        console.log(`[SYNC-TIMING] ⏱️ updateStatusPill: Cache check took ${checkEndTime - checkStartTime}ms`);
-        console.log('[CacheUI] isCacheReady returned:', isReady);
+        try {
+          // Add timeout to prevent hanging (5 seconds max)
+          const timeoutPromise = new Promise((resolve) => {
+            setTimeout(() => {
+              console.warn('[CacheUI] Cache check timed out after 5 seconds, defaulting to not ready');
+              resolve(false); // Resolve with false instead of reject
+            }, 5000);
+          });
+          
+          isReady = await Promise.race([
+            isCacheReady(),
+            timeoutPromise
+          ]);
+          
+          const checkEndTime = Date.now();
+          console.log(`[SYNC-TIMING] ⏱️ updateStatusPill: Cache check took ${checkEndTime - checkStartTime}ms`);
+          console.log('[CacheUI] isCacheReady returned:', isReady);
+        } catch (error) {
+          console.error('[CacheUI] Error checking cache readiness:', error);
+          isReady = false; // Default to not ready on error
+          const checkEndTime = Date.now();
+          console.log(`[SYNC-TIMING] ⏱️ updateStatusPill: Cache check failed after ${checkEndTime - checkStartTime}ms`);
+        }
       } else {
         console.log('[CacheUI] Skipping cache check (skipCheck=true), directly setting to GREEN');
       }
@@ -416,6 +443,37 @@
     // Get cache stats
     const stats = await window.JotFormCache.getCacheStats();
     
+    // Get Qualtrics stats if available
+    let qualtricsStats = { cached: false };
+    try {
+      qualtricsStats = await window.JotFormCache.getQualtricsStats();
+    } catch (e) {
+      console.log('[CacheUI] Qualtrics stats not available:', e.message);
+    }
+    
+    // Build Qualtrics section
+    let qualtricsSection = '';
+    if (qualtricsStats.cached) {
+      qualtricsSection = `
+        <div class="mt-4 pt-4 border-t border-[color:var(--border)]">
+          <p class="text-sm text-[color:var(--muted-foreground)] mb-2">
+            <i data-lucide="check-circle" class="w-4 h-4 inline text-green-600"></i>
+            Qualtrics TGMD data: <strong>${qualtricsStats.count}</strong> responses, 
+            synced <strong>${qualtricsStats.ageMinutes}</strong> minutes ago.
+          </p>
+        </div>
+      `;
+    } else {
+      qualtricsSection = `
+        <div class="mt-4 pt-4 border-t border-[color:var(--border)]">
+          <p class="text-sm text-[color:var(--muted-foreground)] mb-2">
+            <i data-lucide="alert-circle" class="w-4 h-4 inline text-amber-600"></i>
+            Qualtrics TGMD data not synced yet. Click "Refresh with Qualtrics" to fetch TGMD assessments.
+          </p>
+        </div>
+      `;
+    }
+    
     const modal = document.createElement('div');
     modal.id = 'cache-ready-modal';
     modal.className = 'modal-overlay';
@@ -433,8 +491,13 @@
             Cache contains <strong>${stats.count}</strong> submissions, synced <strong>${stats.age}</strong> minutes ago. 
             You can delete the cache to force a fresh sync.
           </p>
+          ${qualtricsSection}
         </div>
         <div class="modal-footer flex gap-3">
+          <button id="qualtrics-sync-btn" class="px-4 py-2.5 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors flex items-center gap-2">
+            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+            Refresh with Qualtrics
+          </button>
           <button id="cache-delete-btn" class="px-4 py-2.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors">
             Delete Cache
           </button>
@@ -448,8 +511,15 @@
     document.body.appendChild(modal);
     lucide.createIcons();
     
+    const qualtricsSyncBtn = document.getElementById('qualtrics-sync-btn');
     const deleteBtn = document.getElementById('cache-delete-btn');
     const closeBtn = document.getElementById('cache-close-btn');
+    
+    // Qualtrics sync button
+    qualtricsSyncBtn.addEventListener('click', async () => {
+      modal.remove();
+      await refreshWithQualtrics();
+    });
     
     // Delete button
     deleteBtn.addEventListener('click', async () => {
@@ -471,6 +541,282 @@
     if (backdrop) {
       backdrop.addEventListener('click', () => modal.remove());
     }
+  }
+
+  /**
+   * Refresh with Qualtrics data
+   */
+  async function refreshWithQualtrics() {
+    console.log('[CacheUI] refreshWithQualtrics called');
+    
+    // Check if modules are loaded
+    if (typeof window.QualtricsAPI === 'undefined' || 
+        typeof window.QualtricsTransformer === 'undefined' || 
+        typeof window.DataMerger === 'undefined') {
+      alert('Qualtrics modules not loaded. Please refresh the page and try again.');
+      return;
+    }
+    
+    // Get credentials from session storage
+    const credentials = await getCredentials();
+    if (!credentials) {
+      alert('Credentials not available. Please decrypt credentials first.');
+      return;
+    }
+    
+    // Validate Qualtrics credentials (support both qualtricsApiToken and qualtricsApiKey)
+    const qualtricsApiToken = credentials.qualtricsApiToken || credentials.qualtricsApiKey;
+    if (!qualtricsApiToken || !credentials.qualtricsDatacenter || !credentials.qualtricsSurveyId) {
+      alert('Qualtrics credentials not found in credentials.enc. Please contact administrator.');
+      return;
+    }
+    
+    // Normalize credentials to use qualtricsApiToken
+    credentials.qualtricsApiToken = qualtricsApiToken;
+    
+    // Show progress modal
+    await showQualtricsProgressModal();
+    
+    try {
+      // Set progress callback
+      window.JotFormCache.setProgressCallback((message, progress) => {
+        updateQualtricsProgress(message, progress);
+      });
+      
+      // Perform refresh
+      const result = await window.JotFormCache.refreshWithQualtrics(credentials);
+      
+      // Show completion modal with stats
+      await showQualtricsCompleteModal(result.stats);
+      
+      // Update status pill
+      await updateStatusPill();
+      await updateLastSyncedTimestamp();
+      
+    } catch (error) {
+      console.error('[CacheUI] Qualtrics refresh failed:', error);
+      showQualtricsErrorModal(error.message);
+    }
+  }
+
+  /**
+   * Show Qualtrics progress modal
+   */
+  async function showQualtricsProgressModal() {
+    ensureModalCSS();
+    
+    const modal = document.createElement('div');
+    modal.id = 'qualtrics-progress-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal-backdrop" style="background: rgba(0, 0, 0, 0.5);"></div>
+      <div class="modal-content" style="max-width: 500px; animation: slideDown 0.3s ease-out;">
+        <div class="modal-header">
+          <h3 class="text-lg font-semibold text-[color:var(--foreground)] flex items-center gap-2">
+            <i data-lucide="refresh-cw" class="w-5 h-5 text-purple-600 animate-spin"></i>
+            <span>Syncing with Qualtrics</span>
+          </h3>
+        </div>
+        <div class="modal-body">
+          <p id="qualtrics-progress-message" class="text-sm text-[color:var(--muted-foreground)] mb-4">
+            Starting Qualtrics integration...
+          </p>
+          
+          <div class="mb-2">
+            <div class="flex justify-between items-center mb-1">
+              <span id="qualtrics-progress-text" class="text-xs text-[color:var(--muted-foreground)]">Initializing...</span>
+              <span id="qualtrics-progress-percent" class="text-xs font-mono font-semibold text-purple-600">0%</span>
+            </div>
+            <div class="w-full h-2 bg-[color:var(--muted)] rounded-full overflow-hidden">
+              <div id="qualtrics-progress-bar" class="h-full bg-purple-600 transition-all duration-300" style="width: 0%"></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="qualtrics-progress-cancel" class="px-4 py-2.5 text-sm font-medium text-[color:var(--foreground)] bg-[color:var(--muted)] hover:bg-[color:var(--accent)] rounded-lg transition-colors" disabled>
+            Please Wait...
+          </button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    lucide.createIcons();
+  }
+
+  /**
+   * Update Qualtrics progress modal
+   */
+  function updateQualtricsProgress(message, progress) {
+    const messageEl = document.getElementById('qualtrics-progress-message');
+    const textEl = document.getElementById('qualtrics-progress-text');
+    const percentEl = document.getElementById('qualtrics-progress-percent');
+    const barEl = document.getElementById('qualtrics-progress-bar');
+    
+    if (messageEl) messageEl.textContent = message;
+    if (textEl) textEl.textContent = message;
+    if (percentEl) percentEl.textContent = Math.round(progress) + '%';
+    if (barEl) barEl.style.width = progress + '%';
+  }
+
+  /**
+   * Show Qualtrics completion modal
+   */
+  async function showQualtricsCompleteModal(stats) {
+    // Remove progress modal
+    const progressModal = document.getElementById('qualtrics-progress-modal');
+    if (progressModal) progressModal.remove();
+    
+    ensureModalCSS();
+    
+    const modal = document.createElement('div');
+    modal.id = 'qualtrics-complete-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal-backdrop" style="background: rgba(0, 0, 0, 0.5);"></div>
+      <div class="modal-content" style="max-width: 500px; animation: slideDown 0.3s ease-out;">
+        <div class="modal-header">
+          <h3 class="text-lg font-semibold text-[color:var(--foreground)] flex items-center gap-2">
+            <i data-lucide="check-circle" class="w-6 h-6 text-green-600"></i>
+            Qualtrics Sync Complete
+          </h3>
+        </div>
+        <div class="modal-body">
+          <p class="text-sm text-[color:var(--muted-foreground)] mb-4">
+            Successfully merged Qualtrics TGMD data with JotForm submissions.
+          </p>
+          
+          <div class="space-y-2 text-sm">
+            <div class="flex justify-between">
+              <span class="text-[color:var(--muted-foreground)]">Total records:</span>
+              <span class="font-semibold">${stats.total}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[color:var(--muted-foreground)]">Records with TGMD:</span>
+              <span class="font-semibold">${stats.withTGMD}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[color:var(--muted-foreground)]">TGMD from Qualtrics:</span>
+              <span class="font-semibold text-purple-600">${stats.tgmdFromQualtrics}</span>
+            </div>
+            <div class="flex justify-between">
+              <span class="text-[color:var(--muted-foreground)]">TGMD from JotForm:</span>
+              <span class="font-semibold">${stats.tgmdFromJotform}</span>
+            </div>
+            ${stats.tgmdConflicts > 0 ? `
+            <div class="flex justify-between text-amber-600">
+              <span>Conflicts detected:</span>
+              <span class="font-semibold">${stats.tgmdConflicts}</span>
+            </div>
+            ` : ''}
+          </div>
+          
+          ${stats.tgmdConflicts > 0 ? `
+          <div class="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+            <p class="text-xs text-amber-800 dark:text-amber-200">
+              <i data-lucide="alert-triangle" class="w-4 h-4 inline"></i>
+              Data conflicts were detected where JotForm and Qualtrics had different values. 
+              Qualtrics data was prioritized for TGMD fields.
+            </p>
+          </div>
+          ` : ''}
+        </div>
+        <div class="modal-footer">
+          <button id="qualtrics-complete-close" class="px-4 py-2.5 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors">
+            Done
+          </button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    lucide.createIcons();
+    
+    const closeBtn = document.getElementById('qualtrics-complete-close');
+    closeBtn.addEventListener('click', () => {
+      modal.remove();
+    });
+    
+    const backdrop = modal.querySelector('.modal-backdrop');
+    if (backdrop) {
+      backdrop.addEventListener('click', () => modal.remove());
+    }
+  }
+
+  /**
+   * Show Qualtrics error modal
+   */
+  function showQualtricsErrorModal(errorMessage) {
+    // Remove progress modal
+    const progressModal = document.getElementById('qualtrics-progress-modal');
+    if (progressModal) progressModal.remove();
+    
+    ensureModalCSS();
+    
+    const modal = document.createElement('div');
+    modal.id = 'qualtrics-error-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal-backdrop" style="background: rgba(0, 0, 0, 0.5);"></div>
+      <div class="modal-content" style="max-width: 500px; animation: slideDown 0.3s ease-out;">
+        <div class="modal-header">
+          <h3 class="text-lg font-semibold text-[color:var(--foreground)] flex items-center gap-2">
+            <i data-lucide="x-circle" class="w-6 h-6 text-red-600"></i>
+            Qualtrics Sync Failed
+          </h3>
+        </div>
+        <div class="modal-body">
+          <p class="text-sm text-[color:var(--muted-foreground)] mb-4">
+            The Qualtrics integration failed. Please try again or contact support if the issue persists.
+          </p>
+          
+          <div class="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+            <p class="text-xs font-mono text-red-800 dark:text-red-200">
+              ${errorMessage}
+            </p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="qualtrics-error-close" class="px-4 py-2.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors">
+            Close
+          </button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    lucide.createIcons();
+    
+    const closeBtn = document.getElementById('qualtrics-error-close');
+    closeBtn.addEventListener('click', () => {
+      modal.remove();
+    });
+    
+    const backdrop = modal.querySelector('.modal-backdrop');
+    if (backdrop) {
+      backdrop.addEventListener('click', () => modal.remove());
+    }
+  }
+
+  /**
+   * Get credentials helper
+   */
+  async function getCredentials() {
+    // Check if credentials are in checking_system_data (where they are actually stored)
+    const cachedData = sessionStorage.getItem('checking_system_data');
+    if (cachedData) {
+      try {
+        const data = JSON.parse(cachedData);
+        if (data.credentials) {
+          console.log('[CacheUI] Credentials found in checking_system_data');
+          return data.credentials;
+        }
+      } catch (error) {
+        console.error('[CacheUI] Error parsing checking_system_data:', error);
+      }
+    }
+    console.warn('[CacheUI] No credentials found in sessionStorage');
+    return null;
   }
 
   /**
@@ -601,9 +947,16 @@
       // Mark syncing state
       isSyncing = true;
       currentSyncProgress = 0;
+      let maxProgress = 0; // Track maximum progress to prevent regression
 
       // Set up progress callback - updates BOTH modal AND pill
       window.JotFormCache.setProgressCallback((message, progress) => {
+        // Prevent progress regression
+        if (progress < maxProgress) {
+          console.warn(`[CacheUI] Progress regression prevented: ${progress}% < ${maxProgress}%`);
+          return;
+        }
+        maxProgress = progress;
         currentSyncProgress = progress;
         
         // Update modal progress (if still open)
@@ -627,10 +980,12 @@
         // Force fetch (clear cache first)
         await window.JotFormCache.clearCache();
         
-        // Step 1: Fetch all submissions from JotForm API (0-70%)
+        // Step 1: Fetch all submissions from JotForm API (0-50%)
         console.log('[CacheUI] Calling getAllSubmissions...');
-        progressBar.style.width = '70%';
-        progressPercent.textContent = '70%';
+        modalTitle.textContent = 'Syncing Database';
+        modalMessage.textContent = 'Fetching data from JotForm and Qualtrics...';
+        progressBar.style.width = '5%';
+        progressPercent.textContent = '5%';
         progressText.textContent = 'Fetching submissions from JotForm...';
         
         // This waits for IndexedDB write to fully complete
@@ -640,7 +995,82 @@
         });
         console.log('[CacheUI] getAllSubmissions returned:', result ? result.length : 0, 'submissions');
         
+        // Step 1.5: Fetch and merge Qualtrics data if credentials available (50-70%)
+        // Support both qualtricsApiToken and qualtricsApiKey for backwards compatibility
+        const qualtricsApiToken = credentials.qualtricsApiToken || credentials.qualtricsApiKey;
+        const hasQualtricsCredentials = qualtricsApiToken && 
+                                       credentials.qualtricsDatacenter && 
+                                       credentials.qualtricsSurveyId;
+        
+        // Normalize credentials to use qualtricsApiToken
+        if (hasQualtricsCredentials && !credentials.qualtricsApiToken) {
+          credentials.qualtricsApiToken = qualtricsApiToken;
+        }
+        
+        if (hasQualtricsCredentials) {
+          console.log('[CacheUI] Qualtrics credentials found, fetching TGMD data...');
+          // Don't manually update progress here - let the callback handle it to prevent regression
+          
+          try {
+            // Check if modules are loaded
+            if (typeof window.QualtricsAPI !== 'undefined' && 
+                typeof window.QualtricsTransformer !== 'undefined' && 
+                typeof window.DataMerger !== 'undefined') {
+              
+              // Set up progress callback for Qualtrics sync (50-70%)
+              window.JotFormCache.setProgressCallback((message, progress) => {
+                // Map Qualtrics progress (0-100) to our range (50-70)
+                const mappedProgress = 50 + (progress * 0.2);
+                
+                // Prevent regression
+                if (mappedProgress < maxProgress) {
+                  console.warn(`[CacheUI] Qualtrics progress regression prevented: ${mappedProgress}% < ${maxProgress}%`);
+                  return;
+                }
+                maxProgress = mappedProgress;
+                
+                if (progressBar) progressBar.style.width = `${mappedProgress}%`;
+                if (progressPercent) progressPercent.textContent = `${Math.round(mappedProgress)}%`;
+                if (progressText) progressText.textContent = message;
+                
+                updateStatusPill(mappedProgress);
+              });
+              
+              // Perform Qualtrics refresh
+              const qualtricsResult = await window.JotFormCache.refreshWithQualtrics(credentials);
+              console.log('[CacheUI] Qualtrics data merged successfully');
+              
+              // Ensure we're at 70% after Qualtrics
+              if (maxProgress < 70) {
+                maxProgress = 70;
+                progressBar.style.width = '70%';
+                progressPercent.textContent = '70%';
+                progressText.textContent = 'JotForm and Qualtrics data merged successfully!';
+              }
+            } else {
+              console.warn('[CacheUI] Qualtrics modules not loaded, skipping Qualtrics sync');
+              maxProgress = 70;
+              progressBar.style.width = '70%';
+              progressPercent.textContent = '70%';
+              progressText.textContent = 'JotForm data cached (Qualtrics modules not loaded)';
+            }
+          } catch (qualtricsError) {
+            console.error('[CacheUI] Qualtrics sync failed, continuing with JotForm data only:', qualtricsError);
+            maxProgress = 70;
+            progressBar.style.width = '70%';
+            progressPercent.textContent = '70%';
+            progressText.textContent = 'JotForm data cached (Qualtrics sync failed)';
+          }
+        } else {
+          console.log('[CacheUI] No Qualtrics credentials found, using JotForm data only');
+          maxProgress = 70;
+          progressBar.style.width = '70%';
+          progressPercent.textContent = '70%';
+          progressText.textContent = 'JotForm data cached';
+        }
+        
         // Step 2: Build validation cache (70-95%)
+        maxProgress = 75;
         progressBar.style.width = '75%';
         progressPercent.textContent = '75%';
         progressText.textContent = 'Submissions cached, loading validation data...';
@@ -690,6 +1120,13 @@
         const PILL_UPDATE_THROTTLE = 1000; // Update pill max once per second
         
         window.JotFormCache.setProgressCallback((message, progress) => {
+          // Prevent regression
+          if (progress < maxProgress) {
+            console.warn(`[CacheUI] Validation progress regression prevented: ${progress}% < ${maxProgress}%`);
+            return;
+          }
+          maxProgress = progress;
+          
           // Always update modal (no throttle)
           if (progressBar) {
             progressBar.style.width = `${progress}%`;
@@ -743,7 +1180,13 @@
         // NOW show success message (cache is confirmed saved)
         progressText.textContent = 'Complete!';
         modalTitle.textContent = config.cache.modalText.completeTitle;
-        modalMessage.textContent = config.cache.modalText.completeMessage;
+        
+        // Build success message based on what was synced
+        let successMessage = config.cache.modalText.completeMessage;
+        if (hasQualtricsCredentials) {
+          successMessage += ' TGMD data from Qualtrics has been merged.';
+        }
+        modalMessage.textContent = successMessage;
         modalMessage.classList.remove('text-[color:var(--muted-foreground)]');
         modalMessage.classList.add('text-green-600');
         

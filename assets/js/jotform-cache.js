@@ -218,8 +218,7 @@
                       `&orderby=created_at` +
                       `&direction=ASC`;
 
-          console.log(`[JotFormCache] Fetching page ${pageNum} (offset ${offset}, batch ${currentBatchSize})`);
-          // Progress: 0-70% for fetching (phase 1)
+          // Progress: 0-50% for fetching (phase 1) - leave 50-70% for Qualtrics if enabled
           // Intelligent progress: estimate based on typical batch patterns
           // Assume we're roughly halfway done if we're fetching full batches
           // This provides better UX than fixed 2% per page
@@ -228,8 +227,8 @@
             fetchProgress = 5; // Starting
           } else {
             // Logarithmic curve: slower growth as we fetch more pages
-            // This prevents hitting 70% too early on large datasets
-            fetchProgress = Math.min(65, 5 + Math.log(pageNum) * 15);
+            // Cap at 48% to leave room for Qualtrics (50-70%)
+            fetchProgress = Math.min(48, 5 + Math.log(pageNum) * 12);
           }
           this.emitProgress(`Fetching page ${pageNum} (batch: ${currentBatchSize})...`, Math.round(fetchProgress));
           
@@ -296,26 +295,27 @@
             }
 
             allSubmissions.push(...result.content);
-            console.log(`[JotFormCache] Page ${pageNum}: Retrieved ${result.content.length} submissions (total: ${allSubmissions.length})`);
             
-            // Progress: 0-70% for fetching (phase 1)
+            // Progress: 0-50% for fetching (phase 1) - leave 50-70% for Qualtrics if enabled
             // Smart progress: if we got less than batch size, we're near the end!
             let downloadProgress;
             if (result.content.length < currentBatchSize) {
-              // Last page - jump to 70% to transition smoothly to validation
-              downloadProgress = 70;
+              // Last page - cap at 50% to allow Qualtrics sync (50-70%)
+              downloadProgress = 50;
             } else {
-              // Still fetching - use logarithmic curve
-              downloadProgress = Math.min(65, 5 + Math.log(pageNum) * 15);
+              // Still fetching - use logarithmic curve, capped at 48%
+              downloadProgress = Math.min(48, 5 + Math.log(pageNum) * 12);
             }
             this.emitProgress(`Downloaded ${allSubmissions.length} submissions...`, Math.round(downloadProgress));
 
             // Gradually increase batch size if we're below baseline and have multiple consecutive successes
             if (this.reductionIndex > 0 && this.consecutiveSuccesses >= this.config.consecutiveSuccessesForIncrease) {
+              const oldSize = currentBatchSize;
               this.reductionIndex = Math.max(0, this.reductionIndex - 1);
               const newSize = this.reductionIndex === 0 ? baseBatchSize : Math.floor(baseBatchSize * this.config.batchSizeReductions[this.reductionIndex]);
               this.consecutiveSuccesses = 0; // Reset counter after increase
-              console.log(`[JotFormCache] After ${this.config.consecutiveSuccessesForIncrease} successes, increasing batch size to ${newSize} (${Math.round((this.reductionIndex === 0 ? 1 : this.config.batchSizeReductions[this.reductionIndex]) * 100)}%)`);
+              currentBatchSize = newSize; // Apply the increase immediately
+              console.log(`[JotFormCache] ✓ After ${this.config.consecutiveSuccessesForIncrease} successes, increased batch size: ${oldSize} → ${newSize}`);
             }
             
             // Check if we got less than current batch size (last page)
@@ -334,7 +334,7 @@
         }
 
         // Progress: Phase 1 complete, moving to phase 2
-        this.emitProgress('Saving to local cache...', 70);
+        this.emitProgress('Saving to local cache...', 50);
         console.log(`[JotFormCache] ========== FETCH COMPLETE ==========`);
         console.log(`[JotFormCache] Total submissions: ${allSubmissions.length}`);
         
@@ -493,12 +493,9 @@
      * @returns {Promise<Object>} - Cache stats
      */
     async getCacheStats() {
-      console.log('[JotFormCache] getCacheStats called');
       const cached = await this.loadFromCache();
-      console.log('[JotFormCache] loadFromCache returned:', cached ? `object with ${cached?.count} submissions` : 'null');
       
       if (!cached) {
-        console.log('[JotFormCache] Cache does not exist, returning false');
         return {
           exists: false,
           count: 0,
@@ -869,7 +866,6 @@
             
             const requiredGender = section.showIf.gender.toLowerCase();
             const matches = studentGender === requiredGender;
-            console.log(`[JotFormCache] Set ${set.id}, File ${section.file}: student.gender="${student.gender}"→"${studentGender}", required="${requiredGender}", match=${matches}`);
             return matches;
           }
           
@@ -877,7 +873,6 @@
         });
         
         setStatus[set.id].tasksTotal = applicableSections.length;
-        console.log(`[JotFormCache] ${student.coreId} (${student.gender}): Set ${set.id} tasksTotal = ${applicableSections.length}`);
       }
       
       // Analyze each task
@@ -934,22 +929,6 @@
           total,
           hasPostTerminationAnswers: validation.hasPostTerminationAnswers || false
         });
-        
-        // Debug logging for CM task
-        if (taskId === 'cm' && student.coreId === 'C10880') {
-          console.log('[JotFormCache] CM Cache Build for C10880:', {
-            taskId,
-            setId,
-            isComplete,
-            answered,
-            total,
-            terminated: validation.terminated,
-            hasPostTerminationAnswers: validation.hasPostTerminationAnswers,
-            answeredEqualsTotal: answered === total,
-            condition1: answered === total && total > 0,
-            condition2: validation.terminated && !validation.hasPostTerminationAnswers && answered > 0
-          });
-        }
       }
       
       // Calculate set status
@@ -1005,6 +984,218 @@
         lastValidated: Date.now(),
         validationVersion: "1.0"
       };
+    }
+
+    // ========== QUALTRICS INTEGRATION ==========
+
+    /**
+     * Create separate storage for Qualtrics cache
+     * @returns {Object} localforage instance for Qualtrics cache
+     */
+    getQualtricsStorage() {
+      if (!this.qualtricsStorage) {
+        this.qualtricsStorage = typeof localforage !== 'undefined' ? localforage.createInstance({
+          name: 'JotFormCacheDB',
+          storeName: 'qualtrics_cache'
+        }) : null;
+      }
+      return this.qualtricsStorage;
+    }
+
+    /**
+     * Fetch Qualtrics data and merge with JotForm
+     * @param {Object} credentials - Must include Qualtrics credentials
+     * @returns {Promise<Object>} Merge statistics
+     */
+    async refreshWithQualtrics(credentials) {
+      console.log('[JotFormCache] ========== STARTING QUALTRICS REFRESH ==========');
+      
+      // Validate required modules
+      if (typeof window.QualtricsAPI === 'undefined') {
+        throw new Error('QualtricsAPI module not loaded. Include qualtrics-api.js');
+      }
+      if (typeof window.QualtricsTransformer === 'undefined') {
+        throw new Error('QualtricsTransformer module not loaded. Include qualtrics-transformer.js');
+      }
+      if (typeof window.DataMerger === 'undefined') {
+        throw new Error('DataMerger module not loaded. Include data-merger.js');
+      }
+
+      // Validate Qualtrics credentials (support both qualtricsApiToken and qualtricsApiKey)
+      const qualtricsApiToken = credentials.qualtricsApiToken || credentials.qualtricsApiKey;
+      if (!qualtricsApiToken || !credentials.qualtricsDatacenter || !credentials.qualtricsSurveyId) {
+        throw new Error('Missing Qualtrics credentials. Please ensure credentials.enc contains qualtricsApiToken (or qualtricsApiKey), qualtricsDatacenter, and qualtricsSurveyId');
+      }
+      
+      // Normalize credentials to use qualtricsApiToken
+      credentials.qualtricsApiToken = qualtricsApiToken;
+
+      this.emitProgress('Starting Qualtrics integration...', 0);
+
+      try {
+        // Step 1: Fetch JotForm data (use existing cache system)
+        this.emitProgress('Loading JotForm data...', 5);
+        const jotformData = await this.getAllSubmissions(credentials);
+        console.log('[JotFormCache] JotForm data loaded:', jotformData.length, 'submissions');
+
+        // Step 2: Initialize Qualtrics modules
+        const qualtricsAPI = new window.QualtricsAPI();
+        const transformer = new window.QualtricsTransformer();
+        const merger = new window.DataMerger();
+
+        // Connect progress callbacks
+        qualtricsAPI.setProgressCallback((msg, progress) => {
+          // Map Qualtrics progress (0-60) to our overall progress (10-60)
+          const mappedProgress = 10 + Math.floor(progress * 0.5);
+          this.emitProgress(msg, mappedProgress);
+        });
+
+        // Step 3: Load Qualtrics field mapping
+        this.emitProgress('Loading Qualtrics field mapping...', 8);
+        await transformer.loadMapping();
+
+        // Step 4: Fetch Qualtrics responses
+        this.emitProgress('Fetching Qualtrics responses...', 10);
+        const rawResponses = await qualtricsAPI.fetchAllResponses(credentials);
+        console.log('[JotFormCache] Qualtrics responses fetched:', rawResponses.length);
+
+        // Step 5: Transform Qualtrics responses
+        this.emitProgress('Transforming Qualtrics data...', 65);
+        const transformedData = transformer.transformBatch(rawResponses);
+        console.log('[JotFormCache] Qualtrics data transformed:', transformedData.length, 'records');
+
+        // Step 6: Merge datasets
+        this.emitProgress('Merging JotForm and Qualtrics data...', 70);
+        const mergedData = merger.mergeDataSources(jotformData, transformedData);
+        console.log('[JotFormCache] Data merged:', mergedData.length, 'records');
+
+        // Step 7: Validate merge
+        this.emitProgress('Validating merged data...', 80);
+        const validation = merger.validateMergedData(mergedData);
+
+        // Step 8: Cache Qualtrics data separately (for future incremental refresh)
+        this.emitProgress('Caching Qualtrics responses...', 85);
+        const qualtricsStorage = this.getQualtricsStorage();
+        if (qualtricsStorage) {
+          await qualtricsStorage.setItem('qualtrics_responses', {
+            timestamp: Date.now(),
+            responses: transformedData,
+            surveyId: credentials.qualtricsSurveyId,
+            count: transformedData.length
+          });
+          console.log('[JotFormCache] Qualtrics cache updated');
+        }
+
+        // Step 9: Update main cache with merged data
+        this.emitProgress('Updating main cache...', 90);
+        await this.saveToCache(mergedData);
+        this.cache = mergedData;
+        console.log('[JotFormCache] Main cache updated with merged data');
+
+        // Step 10: Clear validation cache (needs rebuild with TGMD data)
+        this.emitProgress('Clearing validation cache...', 95);
+        await this.clearValidationCache();
+        console.log('[JotFormCache] Validation cache cleared (will rebuild on demand)');
+
+        this.emitProgress('Qualtrics integration complete!', 100);
+        console.log('[JotFormCache] ========== QUALTRICS REFRESH COMPLETE ==========');
+
+        return {
+          success: true,
+          stats: {
+            ...validation,
+            jotformRecords: jotformData.length,
+            qualtricsResponses: rawResponses.length,
+            transformedRecords: transformedData.length,
+            mergedRecords: mergedData.length
+          }
+        };
+      } catch (error) {
+        console.error('[JotFormCache] Qualtrics refresh failed:', error);
+        this.emitProgress('Qualtrics refresh failed: ' + error.message, 0);
+        throw error;
+      }
+    }
+
+    /**
+     * Get Qualtrics cache statistics
+     * @returns {Promise<Object>} Qualtrics cache stats
+     */
+    async getQualtricsStats() {
+      const qualtricsStorage = this.getQualtricsStorage();
+      if (!qualtricsStorage) {
+        return { cached: false };
+      }
+
+      try {
+        const cached = await qualtricsStorage.getItem('qualtrics_responses');
+        if (!cached) {
+          return { cached: false };
+        }
+
+        const age = Date.now() - cached.timestamp;
+        const ageMinutes = Math.floor(age / 60000);
+
+        return {
+          cached: true,
+          count: cached.count,
+          surveyId: cached.surveyId,
+          timestamp: cached.timestamp,
+          age: age,
+          ageMinutes: ageMinutes,
+          ageHours: Math.floor(ageMinutes / 60)
+        };
+      } catch (error) {
+        console.error('[JotFormCache] Failed to get Qualtrics stats:', error);
+        return { cached: false, error: error.message };
+      }
+    }
+
+    /**
+     * Clear Qualtrics cache
+     */
+    async clearQualtricsCache() {
+      const qualtricsStorage = this.getQualtricsStorage();
+      if (qualtricsStorage) {
+        await qualtricsStorage.removeItem('qualtrics_responses');
+        console.log('[JotFormCache] Qualtrics cache cleared');
+      }
+    }
+
+    /**
+     * Get submissions for a specific student from cache (includes Qualtrics-only records)
+     * @param {string} coreId - Student core ID (e.g., "C10947")
+     * @returns {Promise<Array>} Array of submissions matching the student
+     */
+    async getStudentSubmissions(coreId) {
+      const cached = await this.loadFromCache();
+      if (!cached || !cached.submissions) {
+        console.log('[JotFormCache] No cached data available for student lookup');
+        return [];
+      }
+
+      // Extract numeric ID from core ID (e.g., "C10947" -> "10947")
+      const numericId = coreId.replace(/^C/i, '');
+      
+      // Filter submissions where sessionkey contains the student ID
+      const studentSubmissions = cached.submissions.filter(submission => {
+        const sessionkey = submission.sessionkey;
+        if (!sessionkey) return false;
+        
+        // sessionkey format: "10947_YYYYMMDD_HH_MM" or contains the ID
+        return sessionkey.startsWith(numericId + '_') || 
+               sessionkey.includes('_' + numericId + '_');
+      });
+
+      console.log(`[JotFormCache] Found ${studentSubmissions.length} submissions for ${coreId} in cache`);
+      
+      // Log if any are Qualtrics-only records
+      const qualtricsOnly = studentSubmissions.filter(s => s._orphaned || (s._sources && s._sources.length === 1 && s._sources[0] === 'qualtrics'));
+      if (qualtricsOnly.length > 0) {
+        console.log(`[JotFormCache] - ${qualtricsOnly.length} of these are Qualtrics-only records (no JotForm data)`);
+      }
+      
+      return studentSubmissions;
     }
   }
 

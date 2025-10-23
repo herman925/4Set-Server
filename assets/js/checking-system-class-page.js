@@ -833,17 +833,6 @@
         );
         
         if (foundTask) {
-          // Debug logging for CM task
-          if (searchId === 'cm' && student.coreId === 'C10880') {
-            console.log('[ClassPage] CM Status Debug for C10880:', {
-              taskId: foundTask.taskId,
-              complete: foundTask.complete,
-              answered: foundTask.answered,
-              total: foundTask.total,
-              hasPostTerminationAnswers: foundTask.hasPostTerminationAnswers,
-              setId
-            });
-          }
           
           // Post-term detection (yellow): Task has answers after termination
           if (foundTask.hasPostTerminationAnswers) return 'status-yellow';
@@ -858,15 +847,6 @@
           return 'status-grey';
         }
       }
-    }
-    
-    // Debug: If CM not found for C10880, log the issue
-    if (searchTaskIds.some(id => id === 'cm') && student.coreId === 'C10880') {
-      console.warn('[ClassPage] CM NOT FOUND in cache for C10880', {
-        searchTaskIds,
-        taskName: task.name,
-        availableSets: Object.keys(setStatus || {})
-      });
     }
     
     return 'status-grey';
