@@ -219,7 +219,19 @@
                       `&direction=ASC`;
 
           console.log(`[JotFormCache] Fetching page ${pageNum} (offset ${offset}, batch ${currentBatchSize})`);
-          this.emitProgress(`Fetching page ${pageNum} (batch: ${currentBatchSize})...`, 10 + (pageNum * 2));
+          // Progress: 0-70% for fetching (phase 1)
+          // Intelligent progress: estimate based on typical batch patterns
+          // Assume we're roughly halfway done if we're fetching full batches
+          // This provides better UX than fixed 2% per page
+          let fetchProgress;
+          if (pageNum === 1) {
+            fetchProgress = 5; // Starting
+          } else {
+            // Logarithmic curve: slower growth as we fetch more pages
+            // This prevents hitting 70% too early on large datasets
+            fetchProgress = Math.min(65, 5 + Math.log(pageNum) * 15);
+          }
+          this.emitProgress(`Fetching page ${pageNum} (batch: ${currentBatchSize})...`, Math.round(fetchProgress));
           
           let response;
           let result;
@@ -285,7 +297,18 @@
 
             allSubmissions.push(...result.content);
             console.log(`[JotFormCache] Page ${pageNum}: Retrieved ${result.content.length} submissions (total: ${allSubmissions.length})`);
-            this.emitProgress(`Downloaded ${allSubmissions.length} submissions...`, Math.min(90, 10 + (pageNum * 2)));
+            
+            // Progress: 0-70% for fetching (phase 1)
+            // Smart progress: if we got less than batch size, we're near the end!
+            let downloadProgress;
+            if (result.content.length < currentBatchSize) {
+              // Last page - jump to 70% to transition smoothly to validation
+              downloadProgress = 70;
+            } else {
+              // Still fetching - use logarithmic curve
+              downloadProgress = Math.min(65, 5 + Math.log(pageNum) * 15);
+            }
+            this.emitProgress(`Downloaded ${allSubmissions.length} submissions...`, Math.round(downloadProgress));
 
             // Gradually increase batch size if we're below baseline and have multiple consecutive successes
             if (this.reductionIndex > 0 && this.consecutiveSuccesses >= this.config.consecutiveSuccessesForIncrease) {
@@ -310,11 +333,12 @@
           }
         }
 
-        this.emitProgress('Saving to local cache...', 90);
+        // Progress: Phase 1 complete, moving to phase 2
+        this.emitProgress('Saving to local cache...', 70);
         console.log(`[JotFormCache] ========== FETCH COMPLETE ==========`);
         console.log(`[JotFormCache] Total submissions: ${allSubmissions.length}`);
         
-        this.emitProgress('Cache ready! System is now operational.', 100);
+        // Don't emit 100% yet - validation (phase 2) still needs to run
         return allSubmissions;
 
       } catch (error) {
@@ -583,8 +607,8 @@
           
           processed++;
           
-          // Report progress (75% to 95% = 20% range for validation)
-          const validationProgress = 75 + Math.round((processed / totalStudents) * 20);
+          // Report progress (70% to 100% = 30% range for validation, phase 2)
+          const validationProgress = 70 + Math.round((processed / totalStudents) * 30);
           this.emitProgress(`Validating students (${processed}/${totalStudents})`, validationProgress);
           
           if (processed % 10 === 0) {
