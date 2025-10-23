@@ -98,20 +98,61 @@ const ExportUtils = (() => {
   }
   
   /**
+   * Calculate status light color for a task
+   * @param {Object} taskData - Task validation data
+   * @returns {string} Status light indicator (emoji + text)
+   */
+  function calculateTaskStatusLight(taskData) {
+    if (!taskData || taskData.error) return '⚪ Not Started';
+    
+    const answered = taskData.answeredQuestions || 0;
+    const total = taskData.totalQuestions || 0;
+    
+    // No data yet
+    if (total === 0 || answered === 0) {
+      return '⚪ Not Started';
+    }
+    
+    // Post-termination data detected (yellow)
+    if (taskData.hasPostTerminationAnswers) {
+      return '🟡 Post-Term';
+    }
+    
+    // Properly terminated/timed out (green)
+    if ((taskData.terminated || taskData.timedOut) && answered > 0) {
+      return '🟢 Complete';
+    }
+    
+    // All questions answered (green)
+    if (answered === total) {
+      return '🟢 Complete';
+    }
+    
+    // Started but not complete (red)
+    if (answered > 0) {
+      return '🔴 Incomplete';
+    }
+    
+    // Not started (grey)
+    return '⚪ Not Started';
+  }
+
+  /**
    * Generate task validation summary table (ANS/COR/TOT format)
    * @param {Object} taskValidation - Task validation object
    * @returns {string} Markdown table
    */
   function generateTaskSummaryTable(taskValidation) {
     let markdown = `### Task Validation Summary\n\n`;
-    markdown += `| Task | ANS | COR | TOT | Completion | Accuracy | Terminated |\n`;
-    markdown += `|------|-----|-----|-----|------------|----------|------------|\n`;
+    markdown += `| Task | Status Light | ANS | COR | TOT | Completion | Accuracy | Terminated |\n`;
+    markdown += `|------|--------------|-----|-----|-----|------------|----------|------------|\n`;
     
     const tasks = Object.entries(taskValidation).sort((a, b) => a[0].localeCompare(b[0]));
     
     for (const [taskId, taskData] of tasks) {
       if (!taskData || taskData.error) continue;
       
+      const statusLight = calculateTaskStatusLight(taskData);
       const ans = taskData.answeredQuestions || 0;
       const cor = taskData.correctAnswers || 0;
       const tot = taskData.totalQuestions || 0;
@@ -119,7 +160,7 @@ const ExportUtils = (() => {
       const accuracy = taskData.accuracyPercentage || 0;
       const terminated = taskData.terminated ? `✅ Q${(taskData.terminationIndex || 0) + 1}` : '—';
       
-      markdown += `| ${taskId.toUpperCase()} | ${ans} | ${cor} | ${tot} | ${completion}% | ${accuracy}% | ${terminated} |\n`;
+      markdown += `| ${taskId.toUpperCase()} | ${statusLight} | ${ans} | ${cor} | ${tot} | ${completion}% | ${accuracy}% | ${terminated} |\n`;
     }
     
     return markdown;
@@ -288,8 +329,10 @@ const ExportUtils = (() => {
       markdown += `### ${statusEmoji} ${setNames[setId]} (${setData.tasksComplete}/${setData.tasksTotal} tasks complete)\n\n`;
       
       for (const [taskId, taskData] of tasks) {
+        const statusLight = calculateTaskStatusLight(taskData);
         markdown += `#### ${taskData.title || taskId.toUpperCase()}\n\n`;
         markdown += `**Task ID:** \`${taskId}\`  \n`;
+        markdown += `**Status Light:** ${statusLight}  \n`;
         markdown += `**Total Questions:** ${taskData.totalQuestions}  \n`;
         markdown += `**Answered (ANS):** ${taskData.answeredQuestions}/${taskData.totalQuestions} (${taskData.completionPercentage}%)  \n`;
         markdown += `**Correct (COR):** ${taskData.correctAnswers}/${taskData.answeredQuestions} (${taskData.accuracyPercentage}%)  \n`;

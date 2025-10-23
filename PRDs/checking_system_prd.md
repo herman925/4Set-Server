@@ -1978,23 +1978,29 @@ All termination stages are displayed even if:
 #### Status Light Logic (Traffic Light System)
 The task status light (colored circle) indicates data quality and termination correctness:
 
-- **🟢 Green**: Proper termination
-  - Termination triggered correctly
+- **🟢 Green (Complete)**: Proper termination or fully answered
+  - All questions answered OR properly terminated
   - NO answers found after termination point
   - Data quality: Good
   
-- **🟡 Yellow**: Post-termination data detected
+- **🟡 Yellow (Post-Term)**: Post-termination data detected
   - Termination triggered
   - BUT answers exist AFTER termination point
   - Data quality: Requires investigation
   - Example: ERV terminated at Stage 2, but Stage 3 questions answered
   
-- **🔴 Red**: Data quality issues or incomplete
+- **🔴 Red (Incomplete)**: Data quality issues or incomplete
   - Missing data
   - Termination mismatch (recorded ≠ calculated)
   - Incomplete assessment
+  - Started but not finished
 
-- **⚫ Grey**: Not started or no data
+- **⚪ Grey (Not Started)**: Not started or no data
+
+**Export Features (Added 2025-10-23):**
+All exported reports now include a "Status Light" column showing the calculated status using the same logic as the visual display. This enables verification that exported data matches the dashboard display.
+
+Implementation: `export-utils.js` - `calculateTaskStatusLight()` function
 
 ## Question Calculation Logic (Fundamental)
 

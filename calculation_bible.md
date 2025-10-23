@@ -168,11 +168,23 @@ if (question.type === 'radio_text' && question.options) {
 - **Note:** Radio question marked as "Incorrect", _TEXT field hidden to protect assessment integrity
 
 **Questions Using This Logic:**
+
+**Theory of Mind (ToM):**
 - ToM_Q3a / ToM_Q3a_TEXT
 - ToM_Q4a / ToM_Q4a_TEXT
 - ToM_Q6a / ToM_Q6a_TEXT
 - ToM_Q7a / ToM_Q7a_TEXT
 - ToM_Q7b / ToM_Q7b_TEXT
+
+**Math Pattern (Growing Pattern Questions - Added 2025-10-23):**
+- MPT_2_gr_Q1 / MPT_2_gr_Q1_TEXT (Sequence: 2 3 4 5 ? 7, Answer: 6)
+- MPT_2_gr_Q2 / MPT_2_gr_Q2_TEXT (Sequence: 13 14 15 ? 17, Answer: 16)
+- MPT_2_gr_Q3 / MPT_2_gr_Q3_TEXT (Sequence: 9 8 ? 6 5 4, Answer: 7)
+- MPT_2_gr_Q4 / MPT_2_gr_Q4_TEXT (Sequence: 13 12 11 ? 9, Answer: 10)
+- MPT_2_gr_Q5 / MPT_2_gr_Q5_TEXT (Sequence: 18 17 ? 15 14 13, Answer: 16)
+- MPT_2_gr_Q6 / MPT_2_gr_Q6_TEXT (Sequence: 15 14 ? 12 11 10, Answer: 13)
+
+**Note:** For Math Pattern, radio options are Y/N (can you identify the missing number?), with the numeric answer in the _TEXT field. If Y is selected (correct), the text field is ignored. If radio is blank but text is filled, it's marked as incorrect.
 
 #### Text Display Fields (_TEXT)
 
