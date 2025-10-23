@@ -574,11 +574,30 @@ class StudentUIRenderer {
 
     getTaskStatus(taskValidation) {
         if (!taskValidation || taskValidation.answeredQuestions === 0) return 'grey';
+        
+        // Post-term detection (yellow): Task has answers after termination
+        if (taskValidation.hasPostTerminationAnswers) return 'yellow';
+        
+        // Complete (green): All questions answered
         if (taskValidation.answeredQuestions === taskValidation.totalQuestions) {
-            // Check for post-termination
             return 'green';
         }
-        return 'red';
+        
+        // Complete (green): Properly terminated with at least 1 answer
+        if (taskValidation.terminated && taskValidation.answeredQuestions > 0) {
+            return 'green';
+        }
+        
+        // Complete (green): Properly timed out with at least 1 answer
+        if (taskValidation.timedOut && taskValidation.answeredQuestions > 0) {
+            return 'green';
+        }
+        
+        // Incomplete (red): Started but not complete
+        if (taskValidation.answeredQuestions > 0) return 'red';
+        
+        // Not started (grey): No answers yet
+        return 'grey';
     }
 
     getStatusTitle(status) {

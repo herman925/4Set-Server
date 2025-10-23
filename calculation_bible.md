@@ -1212,44 +1212,39 @@ validationCache = Map {
 
 ### Task Status Circle
 
-**Location:** `checking-system-student-page.js` Lines 1815-1847
+**Location:** `student-ui-renderer.js` Lines 575-600 (Fixed October 2025)
+
+**Note:** This was previously inconsistent with the class page implementation. The fix ensures proper handling of terminated/timed-out tasks and post-termination data detection across both class and student drilldown pages.
 
 Each task has a colored circle indicator (`.status-circle`):
 
 ```javascript
-function updateTaskLightingStatus(taskElement, stats) {
-  const statusCircle = taskElement.querySelector('.status-circle');
-  
-  if (stats.total === 0) {
-    // Grey: No data yet
-    statusCircle.classList.add('status-grey');
-    statusCircle.title = 'Not started';
+getTaskStatus(taskValidation) {
+    if (!taskValidation || taskValidation.answeredQuestions === 0) return 'grey';
     
-  } else if (stats.hasPostTerminationAnswers) {
-    // Yellow: Post-termination data detected
-    statusCircle.classList.add('status-yellow');
-    statusCircle.title = 'Post-termination data detected';
+    // Post-term detection (yellow): Task has answers after termination
+    if (taskValidation.hasPostTerminationAnswers) return 'yellow';
     
-  } else if ((stats.hasTerminated || stats.timedOut) && stats.answered > 0) {
-    // Green: Properly terminated/timed out
-    statusCircle.classList.add('status-green');
-    statusCircle.title = stats.timedOut ? 'Timed out correctly' : 'Terminated correctly';
+    // Complete (green): All questions answered
+    if (taskValidation.answeredQuestions === taskValidation.totalQuestions) {
+        return 'green';
+    }
     
-  } else if (stats.answeredPercent === 100 && !stats.hasTerminated && !stats.timedOut) {
-    // Green: Complete - all questions answered
-    statusCircle.classList.add('status-green');
-    statusCircle.title = 'Complete';
+    // Complete (green): Properly terminated with at least 1 answer
+    if (taskValidation.terminated && taskValidation.answeredQuestions > 0) {
+        return 'green';
+    }
     
-  } else if (stats.answered > 0) {
-    // Red: Incomplete - has some answers but not complete
-    statusCircle.classList.add('status-red');
-    statusCircle.title = 'Incomplete';
+    // Complete (green): Properly timed out with at least 1 answer
+    if (taskValidation.timedOut && taskValidation.answeredQuestions > 0) {
+        return 'green';
+    }
     
-  } else {
-    // Grey: Not started
-    statusCircle.classList.add('status-grey');
-    statusCircle.title = 'Not started';
-  }
+    // Incomplete (red): Started but not complete
+    if (taskValidation.answeredQuestions > 0) return 'red';
+    
+    // Not started (grey): No answers yet
+    return 'grey';
 }
 ```
 
