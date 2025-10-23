@@ -41,7 +41,32 @@
       "completeMessage": "Database has been fetched successfully. You can now use the checking system."
     }
   },
-  "taskView": {
+  "classPageTaskView": {
+    "defaultFilter": "all",
+    "defaultExpandState": false,
+    "equalWidthColumns": true,
+    "taskColumnWidth": "60px",
+    "studentNameColumnWidth": "250px",
+    "coreIdColumnWidth": "80px",
+    "taskColumnNames": {
+      "ERV": "ERV",
+      "SYM": "SYM",
+      "TheoryofMind": "ToM",
+      "ChineseWordReading": "CWR",
+      "TEC": "TEC",
+      "TEC_Male": "TEC_M",
+      "TEC_Female": "TEC_F",
+      "MathPattern": "MP",
+      "CCM": "CCM",
+      "HeadToeKneeShoulder": "HTKS",
+      "EPN": "EPN",
+      "CM": "CM",
+      "FineMotor": "FM",
+      "TGMD": "TGMD",
+      "MF": "MF"
+    }
+  },
+  "schoolPageTaskView": {
     "defaultFilter": "all",
     "defaultExpandState": false,
     "equalWidthColumns": true,

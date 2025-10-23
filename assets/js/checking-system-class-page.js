@@ -94,7 +94,7 @@
       return systemConfig;
     } catch (error) {
       console.error('[ClassPage] Failed to load system config:', error);
-      systemConfig = { taskView: { taskColumnNames: {}, equalWidthColumns: false } };
+      systemConfig = { classPageTaskView: { taskColumnNames: {}, equalWidthColumns: false } };
       return systemConfig;
     }
   }
@@ -680,11 +680,11 @@
     }
     
     // Get column width settings from config
-    const taskColumnWidth = systemConfig?.taskView?.taskColumnWidth || '120px';
-    const studentNameColumnWidth = systemConfig?.taskView?.studentNameColumnWidth || '200px';
-    const coreIdColumnWidth = systemConfig?.taskView?.coreIdColumnWidth || '120px';
-    const useEqualWidth = systemConfig?.taskView?.equalWidthColumns !== false;
-    const columnNames = systemConfig?.taskView?.taskColumnNames || {};
+    const taskColumnWidth = systemConfig?.classPageTaskView?.taskColumnWidth || '120px';
+    const studentNameColumnWidth = systemConfig?.classPageTaskView?.studentNameColumnWidth || '200px';
+    const coreIdColumnWidth = systemConfig?.classPageTaskView?.coreIdColumnWidth || '120px';
+    const useEqualWidth = systemConfig?.classPageTaskView?.equalWidthColumns !== false;
+    const columnNames = systemConfig?.classPageTaskView?.taskColumnNames || {};
     
     // Group tasks by set for the set header row
     const setGroups = {};

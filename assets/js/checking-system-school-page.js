@@ -28,7 +28,7 @@
       return systemConfig;
     } catch (error) {
       console.error('[SchoolPage] Failed to load system config:', error);
-      systemConfig = { taskView: { taskColumnNames: {}, equalWidthColumns: false } };
+      systemConfig = { schoolPageTaskView: { taskColumnNames: {}, equalWidthColumns: false } };
       return systemConfig;
     }
   }
@@ -577,13 +577,13 @@
     }
     
     // Get column width settings from config
-    const taskColumnWidth = systemConfig?.taskView?.taskColumnWidth || '120px';
-    const studentNameColumnWidth = systemConfig?.taskView?.studentNameColumnWidth || '200px';
-    const coreIdColumnWidth = systemConfig?.taskView?.coreIdColumnWidth || '120px';
-    const classColumnWidth = systemConfig?.taskView?.classColumnWidth || '150px';
-    const gradeColumnWidth = systemConfig?.taskView?.gradeColumnWidth || '80px';
-    const useEqualWidth = systemConfig?.taskView?.equalWidthColumns !== false;
-    const columnNames = systemConfig?.taskView?.taskColumnNames || {};
+    const taskColumnWidth = systemConfig?.schoolPageTaskView?.taskColumnWidth || '120px';
+    const studentNameColumnWidth = systemConfig?.schoolPageTaskView?.studentNameColumnWidth || '200px';
+    const coreIdColumnWidth = systemConfig?.schoolPageTaskView?.coreIdColumnWidth || '120px';
+    const classColumnWidth = systemConfig?.schoolPageTaskView?.classColumnWidth || '150px';
+    const gradeColumnWidth = systemConfig?.schoolPageTaskView?.gradeColumnWidth || '80px';
+    const useEqualWidth = systemConfig?.schoolPageTaskView?.equalWidthColumns !== false;
+    const columnNames = systemConfig?.schoolPageTaskView?.taskColumnNames || {};
     
     // Group tasks by set for the set header row
     const setGroups = {};
