@@ -1006,6 +1006,177 @@
         validationVersion: "1.0"
       };
     }
+    
+    /**
+     * Fetch Qualtrics data and transform to standard format
+     * @param {Object} credentials - Qualtrics credentials
+     * @returns {Promise<Array>} Transformed Qualtrics responses
+     */
+    async fetchQualtricsData(credentials) {
+      if (!credentials.qualtricsApiKey || !credentials.qualtricsDatacenter || !credentials.qualtricsSurveyId) {
+        throw new Error('Missing Qualtrics credentials (qualtricsApiKey, qualtricsDatacenter, or qualtricsSurveyId)');
+      }
+      
+      console.log('[JotFormCache] Fetching Qualtrics data...');
+      
+      // Initialize API and transformer
+      const api = new window.QualtricsAPI();
+      const transformer = new window.QualtricsTransformer();
+      
+      // Load mapping
+      const mapping = await transformer.loadMapping();
+      
+      // Extract TGMD question IDs for filtered export
+      const tgmdQids = transformer.extractTGMDQuestionIds(mapping);
+      console.log(`[JotFormCache] Requesting ${tgmdQids.length} TGMD questions from Qualtrics`);
+      
+      // Progress callback for UI updates
+      const progressCallback = (message, percent) => {
+        this.emitProgress(message, percent);
+      };
+      
+      // Fetch responses
+      const responses = await api.fetchAllResponses(credentials, tgmdQids, progressCallback);
+      
+      // Transform responses
+      const transformed = await transformer.transformBatch(responses, mapping);
+      
+      // Filter out invalid records
+      const valid = transformed.filter(record => transformer.validateRecord(record));
+      
+      console.log(`[JotFormCache] Fetched and transformed ${valid.length} Qualtrics responses`);
+      return valid;
+    }
+    
+    /**
+     * Merge JotForm and Qualtrics datasets
+     * @param {Array} jotformData - JotForm submissions
+     * @param {Array} qualtricsData - Transformed Qualtrics responses
+     * @returns {Object} { mergedData, statistics }
+     */
+    mergeWithQualtrics(jotformData, qualtricsData) {
+      console.log('[JotFormCache] Merging datasets...');
+      
+      const merger = new window.DataMerger();
+      
+      // Merge datasets
+      const mergedData = merger.mergeDataSources(jotformData, qualtricsData);
+      
+      // Validate and generate statistics
+      const validation = merger.validateMergedData(mergedData);
+      const conflicts = merger.extractConflicts(mergedData);
+      const report = merger.generateMergeReport(validation, conflicts);
+      
+      return {
+        mergedData,
+        statistics: report
+      };
+    }
+    
+    /**
+     * Refresh cache with Qualtrics data integration
+     * @param {Object} credentials - Combined credentials (JotForm + Qualtrics)
+     * @returns {Promise<Object>} Refresh result with statistics
+     */
+    async refreshWithQualtrics(credentials) {
+      console.log('[JotFormCache] Starting Qualtrics-integrated cache refresh...');
+      this.isLoading = true;
+      
+      try {
+        // Step 1: Fetch JotForm data (existing method)
+        this.emitProgress('Fetching JotForm submissions...', 5);
+        const jotformData = await this.getAllSubmissions(credentials);
+        console.log(`[JotFormCache] Fetched ${jotformData.length} JotForm submissions`);
+        
+        // Step 2: Fetch Qualtrics data
+        this.emitProgress('Fetching Qualtrics TGMD data...', 30);
+        let qualtricsData = [];
+        try {
+          qualtricsData = await this.fetchQualtricsData(credentials);
+          console.log(`[JotFormCache] Fetched ${qualtricsData.length} Qualtrics responses`);
+        } catch (qualtricsError) {
+          console.warn('[JotFormCache] Failed to fetch Qualtrics data, continuing with JotForm only:', qualtricsError);
+          // Continue with JotForm-only data
+        }
+        
+        // Step 3: Merge datasets
+        this.emitProgress('Merging datasets...', 85);
+        const { mergedData, statistics } = this.mergeWithQualtrics(jotformData, qualtricsData);
+        
+        // Step 4: Cache merged data
+        this.emitProgress('Saving to cache...', 92);
+        await this.saveToCache(mergedData);
+        
+        // Step 5: Cache Qualtrics data separately (for refresh)
+        if (qualtricsData.length > 0) {
+          const qualtricsStorage = localforage.createInstance({
+            name: 'JotFormCacheDB',
+            storeName: 'qualtrics_cache'
+          });
+          await qualtricsStorage.setItem('qualtrics_responses', {
+            timestamp: Date.now(),
+            responses: qualtricsData,
+            surveyId: credentials.qualtricsSurveyId
+          });
+          console.log('[JotFormCache] Cached Qualtrics responses separately');
+        }
+        
+        // Update in-memory cache
+        this.cache = mergedData;
+        
+        this.emitProgress('Complete!', 100);
+        this.isLoading = false;
+        
+        console.log('[JotFormCache] Qualtrics-integrated refresh complete');
+        
+        return {
+          success: true,
+          statistics: statistics,
+          jotformCount: jotformData.length,
+          qualtricsCount: qualtricsData.length,
+          mergedCount: mergedData.length
+        };
+        
+      } catch (error) {
+        this.isLoading = false;
+        console.error('[JotFormCache] Refresh with Qualtrics failed:', error);
+        throw error;
+      }
+    }
+    
+    /**
+     * Get cached Qualtrics data
+     * @returns {Promise<Object|null>} Cached Qualtrics data or null
+     */
+    async getCachedQualtricsData() {
+      try {
+        const qualtricsStorage = localforage.createInstance({
+          name: 'JotFormCacheDB',
+          storeName: 'qualtrics_cache'
+        });
+        const cached = await qualtricsStorage.getItem('qualtrics_responses');
+        return cached;
+      } catch (error) {
+        console.error('[JotFormCache] Failed to load Qualtrics cache:', error);
+        return null;
+      }
+    }
+    
+    /**
+     * Clear Qualtrics cache
+     */
+    async clearQualtricsCache() {
+      try {
+        const qualtricsStorage = localforage.createInstance({
+          name: 'JotFormCacheDB',
+          storeName: 'qualtrics_cache'
+        });
+        await qualtricsStorage.removeItem('qualtrics_responses');
+        console.log('[JotFormCache] Qualtrics cache cleared');
+      } catch (error) {
+        console.error('[JotFormCache] Failed to clear Qualtrics cache:', error);
+      }
+    }
   }
 
   // Export global instance
