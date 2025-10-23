@@ -165,13 +165,20 @@
       students.forEach(student => {
         const coreId = student['Core ID'];
         const studentId = student['Student ID'];
-        const classId = student['Class ID 25/26'] || student['Class ID 24/25'] || '';
+        const schoolId = student['School ID'];
+        let classId = student['Class ID 25/26'] || student['Class ID 24/25'] || '';
+        
+        // Auto-assign class 99 (無班級) if no classId for 25/26
+        // This ensures students without a class mapping appear in the "no class" category
+        if (!student['Class ID 25/26'] && schoolId) {
+          classId = `C-${schoolId}-99`;
+        }
         
         const studentData = {
           coreId,
           studentId,
           studentName: student['Student Name'],
-          schoolId: student['School ID'],
+          schoolId,
           classId,
           group: parseInt(student['Group']) || 0,
           gender: student['Gender'] || '',
@@ -181,6 +188,38 @@
         studentsMap.set(coreId, studentData);
         coreIdMap.set(coreId, studentData);
         studentIdMap.set(studentId, studentData);
+      });
+
+      // Create class 99 (無班級) entries for schools with unassigned students
+      // Collect unique school IDs that need a class 99 entry
+      const schoolsNeedingClass99 = new Set();
+      Array.from(studentsMap.values()).forEach(student => {
+        if (student.classId && student.classId.endsWith('-99')) {
+          schoolsNeedingClass99.add(student.schoolId);
+        }
+      });
+      
+      // Create class 99 entries for each school that needs one
+      schoolsNeedingClass99.forEach(schoolId => {
+        const classId = `C-${schoolId}-99`;
+        
+        // Only create if it doesn't already exist
+        if (!classesMap.has(classId)) {
+          const school = schoolsMap.get(schoolId);
+          const classData = {
+            classId,
+            schoolId,
+            schoolName: school?.schoolName || '',
+            actualClassName: '無班級',
+            teacherNames: '',
+            grade: 0, // Grade 0 for "Other"
+            gradeDisplay: 'Other',
+            displayName: '無班級'
+          };
+          
+          classesMap.set(classId, classData);
+          classIdMap.set(classId, classData);
+        }
       });
 
       // Get unique districts and groups

@@ -10,6 +10,28 @@
   let classMetrics = new Map(); // classId -> { students: [], completion: {...} }
   let surveyStructure = null;
   let taskToSetMap = new Map();
+  let currentViewMode = 'class'; // 'class' or 'student'
+  let currentStudentViewMode = 'set'; // 'set' or 'task' (only used when currentViewMode is 'student')
+  let systemConfig = null; // Checking system config for column names
+  let studentSubmissionData = new Map(); // coreId -> { submissions: [], setStatus: {}, outstanding: 0 }
+
+  /**
+   * Load system configuration
+   */
+  async function loadSystemConfig() {
+    if (systemConfig) return systemConfig;
+    
+    try {
+      const response = await fetch('config/checking_system_config.json');
+      systemConfig = await response.json();
+      console.log('[SchoolPage] System config loaded');
+      return systemConfig;
+    } catch (error) {
+      console.error('[SchoolPage] Failed to load system config:', error);
+      systemConfig = { taskView: { taskColumnNames: {}, equalWidthColumns: false } };
+      return systemConfig;
+    }
+  }
 
   /**
    * Initialize the page
@@ -26,6 +48,9 @@
       window.location.href = 'checking_system_home.html';
       return;
     }
+
+    // Load system config
+    await loadSystemConfig();
 
     // Load cached data
     const cachedData = window.CheckingSystemData?.getCachedData();
@@ -133,6 +158,21 @@
       
       console.log(`[SchoolPage] Validation cache built for ${validationCache.size} students`);
       
+      // Store student submission data for By Student view
+      for (const [coreId, cache] of validationCache.entries()) {
+        if (cache.error) {
+          console.warn(`[SchoolPage] Validation error for ${coreId}:`, cache.error);
+          continue;
+        }
+        
+        studentSubmissionData.set(coreId, {
+          submissions: cache.submissions,
+          setStatus: convertSetStatus(cache.setStatus),
+          outstanding: calculateOutstanding(cache.setStatus),
+          validationCache: cache  // Store full cache for future use
+        });
+      }
+      
       // Aggregate by class
       for (const cls of classes) {
         const classStudents = students.filter(s => s.classId === cls.classId);
@@ -176,6 +216,42 @@
     } catch (error) {
       console.error('[SchoolPage] Failed to fetch and aggregate data:', error);
     }
+  }
+
+  /**
+   * Convert validation cache set status to school page format
+   * By Set view: green (complete), red (incomplete), grey (not started) - NO yellow
+   */
+  function convertSetStatus(setStatus) {
+    const result = {};
+    for (const setId in setStatus) {
+      const set = setStatus[setId];
+      // Map status to color codes
+      if (set.status === 'complete') {
+        result[setId] = 'green';
+      } else if (set.status === 'incomplete') {
+        result[setId] = 'red';  // Changed from orange to red - no yellow in By Set view
+      } else {
+        result[setId] = 'grey';
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Calculate outstanding count from set status
+   * Returns the number of incomplete TASKS, not sets
+   */
+  function calculateOutstanding(setStatus) {
+    let outstanding = 0;
+    for (const setId in setStatus) {
+      const set = setStatus[setId];
+      // Count incomplete tasks in each set
+      if (set.tasksTotal > 0) {
+        outstanding += (set.tasksTotal - set.tasksComplete);
+      }
+    }
+    return outstanding;
   }
 
   /**
@@ -238,8 +314,11 @@
       document.getElementById(`${setId}-count`).textContent = `${metric.complete}/${metric.total}`;
     }
 
-    // Render classes table
-    renderClassesTable();
+    // Initialize view mode buttons
+    updateMainViewMode();
+    
+    // Render main view (classes or students based on currentViewMode)
+    renderMainView();
   }
 
   /**
@@ -350,6 +429,360 @@
   }
 
   /**
+   * Render students table (By Student view)
+   * Shows unique students aggregated from all classes in the school
+   */
+  function renderStudentsTable() {
+    const container = document.getElementById('students-table');
+    if (!container) return;
+    
+    // Get unique students (by coreId) from all classes in the school
+    const uniqueStudents = students;
+    
+    if (uniqueStudents.length === 0) {
+      container.innerHTML = `
+        <div class="px-4 py-8 text-center text-[color:var(--muted-foreground)]">
+          <i data-lucide="inbox" class="w-12 h-12 mx-auto mb-2 text-[color:var(--muted-foreground)]"></i>
+          <p>No students with Core IDs found in this school</p>
+        </div>
+      `;
+      lucide.createIcons();
+      return;
+    }
+    
+    if (currentStudentViewMode === 'set') {
+      renderStudentsTableBySet(container, uniqueStudents);
+    } else {
+      renderStudentsTableByTask(container, uniqueStudents);
+    }
+    
+    lucide.createIcons();
+  }
+
+  /**
+   * Render students table in Set-by-Set view
+   */
+  function renderStudentsTableBySet(container, filteredStudents) {
+    let html = `
+      <table class="min-w-full text-sm">
+        <thead class="bg-[color:var(--muted)]/30 text-xs text-[color:var(--muted-foreground)]">
+          <tr>
+            <th class="px-4 py-3 text-left font-medium">Student Name</th>
+            <th class="px-4 py-3 text-left font-medium">Core ID</th>
+            <th class="px-4 py-3 text-left font-medium">Class</th>
+            <th class="px-4 py-3 text-left font-medium">Set 1</th>
+            <th class="px-4 py-3 text-left font-medium">Set 2</th>
+            <th class="px-4 py-3 text-left font-medium">Set 3</th>
+            <th class="px-4 py-3 text-left font-medium">Set 4</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[color:var(--border)]">
+    `;
+    
+    if (filteredStudents.length === 0) {
+      html += `
+        <tr>
+          <td colspan="7" class="px-4 py-8 text-center text-[color:var(--muted-foreground)]">
+            <p>No students match the current filter</p>
+          </td>
+        </tr>
+      `;
+    } else {
+      filteredStudents.forEach(student => {
+        const data = studentSubmissionData.get(student.coreId);
+        const setStatus = data?.validationCache?.setStatus;
+        const classInfo = classes.find(c => c.classId === student.classId);
+        
+        html += `
+          <tr class="hover:bg-[color:var(--muted)]/20 transition-colors">
+            <td class="px-4 py-3">
+              <a href="checking_system_4_student.html?coreId=${encodeURIComponent(student.coreId)}" 
+                 class="font-medium text-[color:var(--primary)] hover:underline font-noto">
+                ${student.studentName}
+              </a>
+            </td>
+            <td class="px-4 py-3 text-xs font-mono text-[color:var(--muted-foreground)]">${student.coreId}</td>
+            <td class="px-4 py-3 text-xs text-[color:var(--muted-foreground)]">${classInfo?.actualClassName || '—'}</td>
+            ${renderSetStatus(getSetStatusColor(setStatus, 'set1'))}
+            ${renderSetStatus(getSetStatusColor(setStatus, 'set2'))}
+            ${renderSetStatus(getSetStatusColor(setStatus, 'set3'))}
+            ${renderSetStatus(getSetStatusColor(setStatus, 'set4'))}
+          </tr>
+        `;
+      });
+    }
+    
+    html += `
+        </tbody>
+      </table>
+    `;
+    
+    container.innerHTML = html;
+  }
+
+  /**
+   * Render students table in Task-by-Task view
+   * Similar to class page task view but for school-level aggregation
+   */
+  function renderStudentsTableByTask(container, filteredStudents) {
+    // Get all tasks from survey structure in order
+    const allTasks = [];
+    const genderTasksProcessed = new Set();
+    
+    if (surveyStructure && surveyStructure.sets) {
+      surveyStructure.sets.forEach(set => {
+        set.sections.forEach(section => {
+          const taskName = section.file.replace('.json', '');
+          
+          // Handle gender-conditional tasks (TEC_Male, TEC_Female)
+          if (section.showIf && section.showIf.gender) {
+            const baseTaskName = taskName.replace(/_Male|_Female/i, '');
+            
+            if (!genderTasksProcessed.has(baseTaskName)) {
+              genderTasksProcessed.add(baseTaskName);
+              allTasks.push({
+                name: baseTaskName,
+                originalNames: [taskName],
+                setId: set.id,
+                order: section.order,
+                isGenderConditional: true
+              });
+            } else {
+              const existing = allTasks.find(t => t.name === baseTaskName);
+              if (existing && !existing.originalNames.includes(taskName)) {
+                existing.originalNames.push(taskName);
+              }
+            }
+            return;
+          }
+          
+          // Regular tasks
+          allTasks.push({
+            name: taskName,
+            originalNames: [taskName],
+            setId: set.id,
+            order: section.order,
+            isGenderConditional: false
+          });
+        });
+      });
+    }
+    
+    // Get column width settings from config
+    const taskColumnWidth = systemConfig?.taskView?.taskColumnWidth || '120px';
+    const studentNameColumnWidth = systemConfig?.taskView?.studentNameColumnWidth || '200px';
+    const coreIdColumnWidth = systemConfig?.taskView?.coreIdColumnWidth || '120px';
+    const classColumnWidth = systemConfig?.taskView?.classColumnWidth || '150px';
+    const useEqualWidth = systemConfig?.taskView?.equalWidthColumns !== false;
+    const columnNames = systemConfig?.taskView?.taskColumnNames || {};
+    
+    // Group tasks by set for the set header row
+    const setGroups = {};
+    allTasks.forEach(task => {
+      if (!setGroups[task.setId]) {
+        setGroups[task.setId] = [];
+      }
+      setGroups[task.setId].push(task);
+    });
+    
+    // Define light background colors for each set
+    const setColors = {
+      'set1': 'rgba(43, 57, 144, 0.06)',
+      'set2': 'rgba(141, 190, 80, 0.08)',
+      'set3': 'rgba(147, 51, 234, 0.06)',
+      'set4': 'rgba(249, 157, 51, 0.08)'
+    };
+    
+    let html = `
+      <table class="min-w-full text-sm">
+        <thead class="bg-[color:var(--muted)]/30 text-xs text-[color:var(--muted-foreground)]">
+          <!-- Set grouping row -->
+          <tr class="border-b border-[color:var(--border)]">
+            <th rowspan="2" class="px-4 py-3 text-left font-medium sticky left-0 bg-white z-20" style="width: ${studentNameColumnWidth}; min-width: ${studentNameColumnWidth}; max-width: ${studentNameColumnWidth};">Student Name</th>
+            <th rowspan="2" class="px-4 py-3 text-left font-medium" style="width: ${coreIdColumnWidth}; min-width: ${coreIdColumnWidth}; max-width: ${coreIdColumnWidth};">Core ID</th>
+            <th rowspan="2" class="px-4 py-3 text-left font-medium" style="width: ${classColumnWidth}; min-width: ${classColumnWidth}; max-width: ${classColumnWidth};">Class</th>
+    `;
+    
+    // Add set headers with merged cells and background colors
+    ['set1', 'set2', 'set3', 'set4'].forEach(setId => {
+      const tasksInSet = setGroups[setId] || [];
+      if (tasksInSet.length > 0) {
+        const setLabel = setId.replace('set', 'Set ');
+        const bgColor = setColors[setId];
+        html += `<th colspan="${tasksInSet.length}" class="px-2 py-2 text-center font-semibold text-[color:var(--foreground)]" style="background-color: ${bgColor};">${setLabel}</th>`;
+      }
+    });
+    
+    html += `
+          </tr>
+          <!-- Task name row -->
+          <tr>
+    `;
+    
+    // Add column headers for each task with set background colors
+    allTasks.forEach(task => {
+      const displayName = columnNames[task.name] || task.name;
+      const bgColor = setColors[task.setId];
+      const widthStyle = useEqualWidth ? `width: ${taskColumnWidth}; min-width: ${taskColumnWidth}; max-width: ${taskColumnWidth}; ` : '';
+      html += `<th class="px-4 py-3 text-center font-medium" style="${widthStyle}background-color: ${bgColor};" title="${task.name}">${displayName}</th>`;
+    });
+    
+    html += `
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[color:var(--border)]">
+    `;
+    
+    if (filteredStudents.length === 0) {
+      html += `
+        <tr>
+          <td colspan="${allTasks.length + 3}" class="px-4 py-8 text-center text-[color:var(--muted-foreground)]">
+            <p>No students match the current filter</p>
+          </td>
+        </tr>
+      `;
+    } else {
+      filteredStudents.forEach(student => {
+        const data = studentSubmissionData.get(student.coreId);
+        const setStatus = data?.validationCache?.setStatus;
+        const classInfo = classes.find(c => c.classId === student.classId);
+        
+        html += `
+          <tr class="hover:bg-[color:var(--muted)]/20 transition-colors">
+            <td class="px-4 py-3 sticky left-0 bg-white z-20">
+              <a href="checking_system_4_student.html?coreId=${encodeURIComponent(student.coreId)}" 
+                 class="font-medium text-[color:var(--primary)] hover:underline font-noto">
+                ${student.studentName}
+              </a>
+            </td>
+            <td class="px-4 py-3 text-xs font-mono text-[color:var(--muted-foreground)]">${student.coreId}</td>
+            <td class="px-4 py-3 text-xs text-[color:var(--muted-foreground)]">${classInfo?.actualClassName || '—'}</td>
+        `;
+        
+        // Add status for each task with set background colors
+        allTasks.forEach(task => {
+          const taskStatus = getTaskStatus(setStatus, task, student);
+          const bgColor = setColors[task.setId];
+          html += `
+            <td class="px-4 py-3 text-center" style="background-color: ${bgColor};">
+              <span class="status-circle ${taskStatus}" title="${task.name}"></span>
+            </td>
+          `;
+        });
+        
+        html += `
+          </tr>
+        `;
+      });
+    }
+    
+    html += `
+        </tbody>
+      </table>
+    `;
+    
+    container.innerHTML = html;
+  }
+
+  /**
+   * Get task status for a specific task
+   * Handles gender-conditional tasks (TEC) by checking student gender
+   */
+  function getTaskStatus(setStatus, task, student) {
+    if (!setStatus) return 'status-grey';
+    
+    // For gender-conditional tasks, determine which version to look for based on student gender
+    let searchTaskIds = [];
+    
+    if (task.isGenderConditional && task.originalNames) {
+      // Normalize student gender
+      let studentGender = (student.gender || '').toLowerCase();
+      if (studentGender === 'm') studentGender = 'male';
+      if (studentGender === 'f') studentGender = 'female';
+      
+      // Find the appropriate task based on gender
+      const appropriateTask = task.originalNames.find(name => {
+        const nameLower = name.toLowerCase();
+        if (studentGender === 'male' && nameLower.includes('male') && !nameLower.includes('female')) return true;
+        if (studentGender === 'female' && nameLower.includes('female')) return true;
+        return false;
+      });
+      
+      searchTaskIds = appropriateTask ? [appropriateTask.toLowerCase()] : task.originalNames.map(n => n.toLowerCase());
+    } else {
+      searchTaskIds = task.originalNames.map(n => n.toLowerCase());
+    }
+    
+    // Search through all sets for this task
+    for (const setId of ['set1', 'set2', 'set3', 'set4']) {
+      const set = setStatus[setId];
+      if (!set || !set.tasks) continue;
+      
+      for (const searchId of searchTaskIds) {
+        const foundTask = set.tasks.find(t => 
+          t.taskId === searchId || 
+          t.taskId.includes(searchId) || 
+          searchId.includes(t.taskId)
+        );
+        
+        if (foundTask) {
+          // Post-term detection (yellow): Task has answers after termination
+          if (foundTask.hasPostTerminationAnswers) return 'status-yellow';
+          
+          // Complete (green): All questions answered or properly terminated
+          if (foundTask.complete) return 'status-green';
+          
+          // Incomplete (red): Started but not complete
+          if (foundTask.answered > 0) return 'status-red';
+          
+          // Not started (grey): No answers yet
+          return 'status-grey';
+        }
+      }
+    }
+    
+    return 'status-grey';
+  }
+
+  /**
+   * Get set status color based on validation cache
+   */
+  function getSetStatusColor(setStatus, setId) {
+    if (!setStatus || !setStatus[setId]) return 'grey';
+    
+    const set = setStatus[setId];
+    
+    // Determine color based on set status
+    if (set.status === 'complete') return 'green';
+    if (set.status === 'incomplete') return 'red';
+    if (set.status === 'in-progress') return 'yellow';
+    
+    return 'grey';
+  }
+
+  /**
+   * Render set status indicator (By Set view only - no yellow/post-term)
+   */
+  function renderSetStatus(status, label) {
+    const statusConfig = {
+      green: { class: 'status-green', textClass: 'text-emerald-600', text: 'Complete' },
+      red: { class: 'status-red', textClass: 'text-red-600', text: 'Incomplete' },
+      grey: { class: 'status-grey', textClass: 'text-[color:var(--muted-foreground)]', text: 'Not Started' }
+    };
+    
+    const config = statusConfig[status] || statusConfig.grey;
+    
+    return `
+      <td class="px-4 py-3">
+        <span class="inline-flex items-center gap-2 text-xs ${config.textClass}">
+          <span class="status-circle ${config.class}" title="${config.text}"></span>
+          <span class="hidden sm:inline">${config.text}</span>
+        </span>
+      </td>
+    `;
+  }
+
+  /**
    * Setup export button - exports Markdown validation report
    * Uses centralized ExportUtils.exportReport orchestrator
    */
@@ -367,15 +800,52 @@
   }
 
   /**
-   * Setup view filter for classes table
+   * Setup view filters and mode toggles
    */
   function setupFilters() {
-    const viewFilter = document.getElementById('class-view-filter');
-    if (!viewFilter) return;
+    // Setup main view mode toggle (By Class / By Student)
+    const viewByClassBtn = document.getElementById('view-by-class-btn');
+    const viewByStudentBtn = document.getElementById('view-by-student-btn');
+    
+    if (viewByClassBtn && viewByStudentBtn) {
+      viewByClassBtn.addEventListener('click', () => {
+        currentViewMode = 'class';
+        updateMainViewMode();
+        renderMainView();
+      });
+      
+      viewByStudentBtn.addEventListener('click', () => {
+        currentViewMode = 'student';
+        updateMainViewMode();
+        renderMainView();
+      });
+    }
 
-    viewFilter.addEventListener('change', () => {
-      applyClassFilter(viewFilter.value);
-    });
+    // Setup student view mode toggle (By Set / By Task)
+    const studentViewBySetBtn = document.getElementById('student-view-by-set-btn');
+    const studentViewByTaskBtn = document.getElementById('student-view-by-task-btn');
+    
+    if (studentViewBySetBtn && studentViewByTaskBtn) {
+      studentViewBySetBtn.addEventListener('click', () => {
+        currentStudentViewMode = 'set';
+        updateStudentViewMode();
+        renderMainView();
+      });
+      
+      studentViewByTaskBtn.addEventListener('click', () => {
+        currentStudentViewMode = 'task';
+        updateStudentViewMode();
+        renderMainView();
+      });
+    }
+
+    // Setup data filter
+    const dataFilter = document.getElementById('data-view-filter');
+    if (dataFilter) {
+      dataFilter.addEventListener('change', () => {
+        renderMainView();
+      });
+    }
 
     // Setup grade filter button
     const gradeFilterButton = document.getElementById('grade-filter-button');
@@ -400,6 +870,159 @@
         e.currentTarget.classList.add('border-[color:var(--primary)]', 'bg-blue-50', 'text-[color:var(--primary)]');
       });
     });
+  }
+
+  /**
+   * Update main view mode buttons and UI
+   */
+  function updateMainViewMode() {
+    const viewByClassBtn = document.getElementById('view-by-class-btn');
+    const viewByStudentBtn = document.getElementById('view-by-student-btn');
+    const studentViewModeToggle = document.getElementById('student-view-mode-toggle');
+    const mainViewTitle = document.getElementById('main-view-title');
+    const mainViewSubtitle = document.getElementById('main-view-subtitle');
+    
+    if (!viewByClassBtn || !viewByStudentBtn) return;
+    
+    if (currentViewMode === 'class') {
+      // By Class active - blue (primary)
+      viewByClassBtn.classList.add('bg-[color:var(--primary)]', 'text-white', 'shadow-sm');
+      viewByClassBtn.classList.remove('text-[color:var(--muted-foreground)]', 'hover:bg-[color:var(--secondary)]', 'hover:text-[color:var(--secondary-foreground)]');
+      
+      // By Student inactive - grey
+      viewByStudentBtn.classList.remove('bg-[color:var(--primary)]', 'text-white', 'shadow-sm');
+      viewByStudentBtn.classList.add('text-[color:var(--muted-foreground)]', 'hover:bg-[color:var(--secondary)]', 'hover:text-[color:var(--secondary-foreground)]');
+      
+      // Hide student view mode toggle
+      if (studentViewModeToggle) {
+        studentViewModeToggle.style.display = 'none';
+      }
+      
+      // Update title
+      if (mainViewTitle) mainViewTitle.textContent = 'Classes in this School';
+      if (mainViewSubtitle) mainViewSubtitle.textContent = 'Click to expand/collapse class list';
+    } else {
+      // By Student active - blue (primary)
+      viewByStudentBtn.classList.add('bg-[color:var(--primary)]', 'text-white', 'shadow-sm');
+      viewByStudentBtn.classList.remove('text-[color:var(--muted-foreground)]', 'hover:bg-[color:var(--secondary)]', 'hover:text-[color:var(--secondary-foreground)]');
+      
+      // By Class inactive - grey
+      viewByClassBtn.classList.remove('bg-[color:var(--primary)]', 'text-white', 'shadow-sm');
+      viewByClassBtn.classList.add('text-[color:var(--muted-foreground)]', 'hover:bg-[color:var(--secondary)]', 'hover:text-[color:var(--secondary-foreground)]');
+      
+      // Show student view mode toggle
+      if (studentViewModeToggle) {
+        studentViewModeToggle.style.display = 'inline-flex';
+      }
+      
+      // Update title
+      if (mainViewTitle) mainViewTitle.textContent = 'Students in this School';
+      if (mainViewSubtitle) mainViewSubtitle.textContent = 'Click student name to view detailed assessment data';
+    }
+    
+    // Update legend
+    renderLegend();
+  }
+
+  /**
+   * Update student view mode buttons
+   */
+  function updateStudentViewMode() {
+    const studentViewBySetBtn = document.getElementById('student-view-by-set-btn');
+    const studentViewByTaskBtn = document.getElementById('student-view-by-task-btn');
+    
+    if (!studentViewBySetBtn || !studentViewByTaskBtn) return;
+    
+    if (currentStudentViewMode === 'set') {
+      // By Set active - blue (primary)
+      studentViewBySetBtn.classList.add('bg-[color:var(--primary)]', 'text-white', 'shadow-sm');
+      studentViewBySetBtn.classList.remove('text-[color:var(--muted-foreground)]', 'hover:bg-[color:var(--secondary)]', 'hover:text-[color:var(--secondary-foreground)]');
+      
+      // By Task inactive - grey
+      studentViewByTaskBtn.classList.remove('bg-[color:var(--primary)]', 'text-white', 'shadow-sm', 'bg-[color:var(--secondary)]', 'text-[color:var(--secondary-foreground)]');
+      studentViewByTaskBtn.classList.add('text-[color:var(--muted-foreground)]', 'hover:bg-[color:var(--secondary)]', 'hover:text-[color:var(--secondary-foreground)]');
+    } else {
+      // By Task active - orange (secondary)
+      studentViewByTaskBtn.classList.add('bg-[color:var(--secondary)]', 'text-[color:var(--secondary-foreground)]', 'shadow-sm');
+      studentViewByTaskBtn.classList.remove('text-[color:var(--muted-foreground)]', 'hover:bg-[color:var(--secondary)]', 'hover:text-[color:var(--secondary-foreground)]');
+      
+      // By Set inactive - grey
+      studentViewBySetBtn.classList.remove('bg-[color:var(--primary)]', 'text-white', 'shadow-sm');
+      studentViewBySetBtn.classList.add('text-[color:var(--muted-foreground)]', 'hover:bg-[color:var(--primary)]', 'hover:text-white');
+    }
+    
+    // Update legend
+    renderLegend();
+  }
+
+  /**
+   * Render dynamic legend based on current view mode
+   */
+  function renderLegend() {
+    const legendContainer = document.getElementById('legend-container');
+    if (!legendContainer) return;
+    
+    let legendHtml = '';
+    
+    if (currentViewMode === 'class' || currentStudentViewMode === 'set') {
+      // By Class or By Set view: 3 colors (no yellow/post-term)
+      legendHtml = `
+        <span class="inline-flex items-center gap-1.5">
+          <span class="status-circle status-green"></span>
+          <span>Complete</span>
+        </span>
+        <span class="inline-flex items-center gap-1.5">
+          <span class="status-circle status-red"></span>
+          <span>Incomplete</span>
+        </span>
+        <span class="inline-flex items-center gap-1.5">
+          <span class="status-circle status-grey"></span>
+          <span>Not Started</span>
+        </span>
+      `;
+    } else {
+      // By Task view: 4 colors (includes yellow for Post-Term)
+      legendHtml = `
+        <span class="inline-flex items-center gap-1.5">
+          <span class="status-circle status-green"></span>
+          <span>Complete</span>
+        </span>
+        <span class="inline-flex items-center gap-1.5">
+          <span class="status-circle status-yellow"></span>
+          <span>Post-Term</span>
+        </span>
+        <span class="inline-flex items-center gap-1.5">
+          <span class="status-circle status-red"></span>
+          <span>Incomplete</span>
+        </span>
+        <span class="inline-flex items-center gap-1.5">
+          <span class="status-circle status-grey"></span>
+          <span>Not Started</span>
+        </span>
+      `;
+    }
+    
+    legendContainer.innerHTML = legendHtml;
+  }
+
+  /**
+   * Render main view (either classes or students)
+   */
+  function renderMainView() {
+    const classesTable = document.getElementById('classes-table');
+    const studentsTable = document.getElementById('students-table');
+    
+    if (currentViewMode === 'class') {
+      // Show classes table, hide students table
+      if (classesTable) classesTable.style.display = '';
+      if (studentsTable) studentsTable.style.display = 'none';
+      renderClassesTable();
+    } else {
+      // Show students table, hide classes table
+      if (classesTable) classesTable.style.display = 'none';
+      if (studentsTable) studentsTable.style.display = '';
+      renderStudentsTable();
+    }
   }
 
   /**
