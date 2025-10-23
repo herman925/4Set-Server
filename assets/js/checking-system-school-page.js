@@ -1159,7 +1159,9 @@
       } else if (currentGradeFilter === '1' || currentGradeFilter === '2' || currentGradeFilter === '3') {
         passesGradeFilter = studentGrade === currentGradeFilter;
       } else if (currentGradeFilter === '0') {
-        passesGradeFilter = studentGrade === '0';
+        // "No Class" filter - show students in any 無班級 class (K1, K2, or K3)
+        const is無班級 = classInfo?.actualClassName.includes('無班級');
+        passesGradeFilter = is無班級;
       }
       
       return passesDataFilter && passesGradeFilter;
@@ -1238,6 +1240,11 @@
 
       rows.forEach(row => {
         const rowGrade = row.getAttribute('data-grade');
+        // Get the class name from the row to check if it's a 無班級 class
+        const classNameCell = row.querySelector('td:first-child a');
+        const className = classNameCell ? classNameCell.textContent.trim() : '';
+        const is無班級 = className.includes('無班級');
+        
         let shouldShow = false;
         
         if (grade === 'all') {
@@ -1246,8 +1253,8 @@
           // Filter by specific grade number (numeric comparison)
           shouldShow = String(rowGrade) === grade;
         } else if (grade === '0') {
-          // Filter by "Other" grade (numeric 0)
-          shouldShow = String(rowGrade) === '0';
+          // "No Class" filter - show all 無班級 classes (K1, K2, K3)
+          shouldShow = is無班級;
         }
         
         if (shouldShow) {
@@ -1265,7 +1272,7 @@
                            grade === '1' ? ' (K1 only)' :
                            grade === '2' ? ' (K2 only)' :
                            grade === '3' ? ' (K3 only)' :
-                           ' (Others only)';
+                           ' (No Class only)';
         classCountEl.textContent = `${visibleCount} ${visibleCount === 1 ? 'class' : 'classes'}${gradeLabel}`;
       }
     } else {
