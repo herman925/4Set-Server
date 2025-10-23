@@ -316,6 +316,7 @@ Click any student to see detailed assessment view.
 │  • Not Started: 3 (4%)                  │
 ├─────────────────────────────────────────┤
 │  View Mode: [By Class] [By Student]     │
+│  Filters: [All ▼] [Filter by Grade]    │
 │  ├─ By Class (default)                  │
 │  │  C-023-01      ████████░░ 80%       │
 │  │  C-023-02      █████████░ 90%       │
@@ -325,7 +326,7 @@ Click any student to see detailed assessment view.
 │  │  無班級 (K3)   ███░░░░░░░ 30%       │
 │  │                                      │
 │  └─ By Student (toggle active)          │
-│     [By Set] [By Task]                  │
+│     Filters: [All ▼] [By Set][By Task] [Filter by Grade]
 │     • By Set: Shows Set 1-4 status      │
 │     • By Task: Shows individual tasks   │
 └─────────────────────────────────────────┘
@@ -355,13 +356,14 @@ Click any student to see detailed assessment view.
    - Two sub-modes available:
    
    **By Set** (default student view)
-   - Student Name, Core ID, Class, Set 1-4 status
+   - Student Name, Core ID, Class, Grade, Set 1-4 status
    - Legend: ✅ Complete | 🔴 Incomplete | ⭕ Not Started
    
    **By Task**
-   - Individual task completion for each student
+   - Student Name, Core ID, Class, Grade, and individual task completion
    - Tasks grouped by Set 1-4 with color-coded backgrounds
    - Legend: ✅ Complete | 🟡 Post-Term | 🔴 Incomplete | ⭕ Not Started
+   - Table is horizontally scrollable when task count exceeds viewport width
 
 **Special Features:**
 
@@ -372,15 +374,31 @@ Click any student to see detailed assessment view.
   
 - **Multi-Year Tracking**: Students can appear in multiple 無班級 classes if they lack class IDs for multiple years. This ensures complete visibility across all academic years and helps identify which specific years are missing class assignments.
 
+**Filters:**
+
+Both By Class and By Student views support filtering:
+
+1. **Data Filter** (Dropdown)
+   - All: Show all classes/students
+   - With Data Only: Show only those with submission data
+   - Incomplete Only: Show only those with incomplete tasks
+
+2. **Grade Filter** (Button → Modal)
+   - All Grades: Show all classes/students
+   - K1: Show only K1 classes/students
+   - K2: Show only K2 classes/students
+   - K3: Show only K3 classes/students
+   - Others: Show classes/students with grade 0 or unspecified
+
 **Actions:**
 - Click class to drill down
 - Click student name to view detailed assessment
 - Toggle between By Class / By Student views
-- In By Student view, toggle between By Set / By Task
+- In By Student view, toggle between By Set / By Task sub-views
+- Apply filters to narrow down view to specific grades or data status
 - Export school report
 - View completion trends
 - Identify classes or students needing attention
-- Filter by grade, data status, or completion
 
 ### Class View
 

@@ -157,6 +157,14 @@
           displayName: classItem['Actual Class Name']
         };
         
+        // Fix 無班級 classes without grade suffix in the name
+        // If classId ends with -99 (not -99-K1/K2/K3) and actualClassName is 無班級 without grade
+        if (classId.match(/-99$/) && classData.actualClassName === '無班級' && normalizedGrade > 0) {
+          const gradeLabel = normalizedGrade === 1 ? 'K1' : normalizedGrade === 2 ? 'K2' : 'K3';
+          classData.actualClassName = `無班級 (${gradeLabel})`;
+          classData.displayName = `無班級 (${gradeLabel})`;
+        }
+        
         classesMap.set(classId, classData);
         classIdMap.set(classId, classData);
       });
