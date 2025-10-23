@@ -121,9 +121,20 @@
         return null;
       }
 
+      // Extract sessionkey and normalize format
+      let sessionkey = this.extractValue(response.values, 'sessionkey');
+      
+      // Normalize sessionkey: Qualtrics uses numeric IDs (e.g., "10194_..."), 
+      // but JotForm uses "C" prefix (e.g., "C10194_...")
+      // Add "C" prefix if sessionkey starts with digits
+      if (sessionkey && /^\d/.test(sessionkey)) {
+        sessionkey = 'C' + sessionkey;
+        console.log(`[QualtricsTransformer] Normalized sessionkey: added "C" prefix → ${sessionkey}`);
+      }
+      
       const result = {
         // Core identifiers
-        sessionkey: this.extractValue(response.values, 'sessionkey'),
+        sessionkey: sessionkey,
         'student-id': this.extractValue(response.values, fieldMapping['student-id']),
         'school-id': this.extractValue(response.values, fieldMapping['school-id']),
         

@@ -59,14 +59,20 @@
           const mergedRecord = this.mergeTGMDFields(existing, record);
           merged.set(key, mergedRecord);
           mergedCount++;
+          
+          // Log the match for debugging
+          const studentId = key.split('_')[0]; // Extract student ID from sessionkey
+          console.log(`[DataMerger] ✓ Matched and merged TGMD for student ${studentId} (sessionkey: ${key})`);
         } else {
           // New record from Qualtrics (no matching JotForm record)
+          const studentId = key.split('_')[0]; // Extract student ID from sessionkey
           merged.set(key, {
             ...record,
             _sources: ['qualtrics'],
             _orphaned: true // Flag as Qualtrics-only
           });
           qualtricsOnlyCount++;
+          console.log(`[DataMerger] ℹ️  Qualtrics-only record for student ${studentId} (sessionkey: ${key}) - no JotForm match`);
         }
       }
 
