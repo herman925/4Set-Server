@@ -561,11 +561,15 @@
       return;
     }
     
-    // Validate Qualtrics credentials
-    if (!credentials.qualtricsApiToken || !credentials.qualtricsDatacenter || !credentials.qualtricsSurveyId) {
+    // Validate Qualtrics credentials (support both qualtricsApiToken and qualtricsApiKey)
+    const qualtricsApiToken = credentials.qualtricsApiToken || credentials.qualtricsApiKey;
+    if (!qualtricsApiToken || !credentials.qualtricsDatacenter || !credentials.qualtricsSurveyId) {
       alert('Qualtrics credentials not found in credentials.enc. Please contact administrator.');
       return;
     }
+    
+    // Normalize credentials to use qualtricsApiToken
+    credentials.qualtricsApiToken = qualtricsApiToken;
     
     // Show progress modal
     await showQualtricsProgressModal();
@@ -973,9 +977,16 @@
         console.log('[CacheUI] getAllSubmissions returned:', result ? result.length : 0, 'submissions');
         
         // Step 1.5: Fetch and merge Qualtrics data if credentials available (50-70%)
-        const hasQualtricsCredentials = credentials.qualtricsApiToken && 
+        // Support both qualtricsApiToken and qualtricsApiKey for backwards compatibility
+        const qualtricsApiToken = credentials.qualtricsApiToken || credentials.qualtricsApiKey;
+        const hasQualtricsCredentials = qualtricsApiToken && 
                                        credentials.qualtricsDatacenter && 
                                        credentials.qualtricsSurveyId;
+        
+        // Normalize credentials to use qualtricsApiToken
+        if (hasQualtricsCredentials && !credentials.qualtricsApiToken) {
+          credentials.qualtricsApiToken = qualtricsApiToken;
+        }
         
         if (hasQualtricsCredentials) {
           console.log('[CacheUI] Qualtrics credentials found, fetching TGMD data...');

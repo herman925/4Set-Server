@@ -218,7 +218,6 @@
                       `&orderby=created_at` +
                       `&direction=ASC`;
 
-          console.log(`[JotFormCache] Fetching page ${pageNum} (offset ${offset}, batch ${currentBatchSize})`);
           // Progress: 0-70% for fetching (phase 1)
           // Intelligent progress: estimate based on typical batch patterns
           // Assume we're roughly halfway done if we're fetching full batches
@@ -296,7 +295,6 @@
             }
 
             allSubmissions.push(...result.content);
-            console.log(`[JotFormCache] Page ${pageNum}: Retrieved ${result.content.length} submissions (total: ${allSubmissions.length})`);
             
             // Progress: 0-70% for fetching (phase 1)
             // Smart progress: if we got less than batch size, we're near the end!
@@ -312,10 +310,12 @@
 
             // Gradually increase batch size if we're below baseline and have multiple consecutive successes
             if (this.reductionIndex > 0 && this.consecutiveSuccesses >= this.config.consecutiveSuccessesForIncrease) {
+              const oldSize = currentBatchSize;
               this.reductionIndex = Math.max(0, this.reductionIndex - 1);
               const newSize = this.reductionIndex === 0 ? baseBatchSize : Math.floor(baseBatchSize * this.config.batchSizeReductions[this.reductionIndex]);
               this.consecutiveSuccesses = 0; // Reset counter after increase
-              console.log(`[JotFormCache] After ${this.config.consecutiveSuccessesForIncrease} successes, increasing batch size to ${newSize} (${Math.round((this.reductionIndex === 0 ? 1 : this.config.batchSizeReductions[this.reductionIndex]) * 100)}%)`);
+              currentBatchSize = newSize; // Apply the increase immediately
+              console.log(`[JotFormCache] ✓ After ${this.config.consecutiveSuccessesForIncrease} successes, increased batch size: ${oldSize} → ${newSize}`);
             }
             
             // Check if we got less than current batch size (last page)
@@ -493,12 +493,9 @@
      * @returns {Promise<Object>} - Cache stats
      */
     async getCacheStats() {
-      console.log('[JotFormCache] getCacheStats called');
       const cached = await this.loadFromCache();
-      console.log('[JotFormCache] loadFromCache returned:', cached ? `object with ${cached?.count} submissions` : 'null');
       
       if (!cached) {
-        console.log('[JotFormCache] Cache does not exist, returning false');
         return {
           exists: false,
           count: 0,
@@ -869,7 +866,6 @@
             
             const requiredGender = section.showIf.gender.toLowerCase();
             const matches = studentGender === requiredGender;
-            console.log(`[JotFormCache] Set ${set.id}, File ${section.file}: student.gender="${student.gender}"→"${studentGender}", required="${requiredGender}", match=${matches}`);
             return matches;
           }
           
@@ -877,7 +873,6 @@
         });
         
         setStatus[set.id].tasksTotal = applicableSections.length;
-        console.log(`[JotFormCache] ${student.coreId} (${student.gender}): Set ${set.id} tasksTotal = ${applicableSections.length}`);
       }
       
       // Analyze each task
@@ -1026,10 +1021,14 @@
         throw new Error('DataMerger module not loaded. Include data-merger.js');
       }
 
-      // Validate Qualtrics credentials
-      if (!credentials.qualtricsApiToken || !credentials.qualtricsDatacenter || !credentials.qualtricsSurveyId) {
-        throw new Error('Missing Qualtrics credentials. Please ensure credentials.enc contains qualtricsApiToken, qualtricsDatacenter, and qualtricsSurveyId');
+      // Validate Qualtrics credentials (support both qualtricsApiToken and qualtricsApiKey)
+      const qualtricsApiToken = credentials.qualtricsApiToken || credentials.qualtricsApiKey;
+      if (!qualtricsApiToken || !credentials.qualtricsDatacenter || !credentials.qualtricsSurveyId) {
+        throw new Error('Missing Qualtrics credentials. Please ensure credentials.enc contains qualtricsApiToken (or qualtricsApiKey), qualtricsDatacenter, and qualtricsSurveyId');
       }
+      
+      // Normalize credentials to use qualtricsApiToken
+      credentials.qualtricsApiToken = qualtricsApiToken;
 
       this.emitProgress('Starting Qualtrics integration...', 0);
 
