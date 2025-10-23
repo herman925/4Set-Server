@@ -40,7 +40,7 @@
 
     /**
      * Build Qualtrics API base URL
-     * @param {string} datacenter - Datacenter region (e.g., 'au1')
+     * @param {string} datacenter - Datacenter region (e.g., 'syd1')
      * @returns {string} Base URL
      */
     getBaseUrl(datacenter) {

@@ -1164,10 +1164,11 @@ The 4Set system integrates with **Qualtrics** to retrieve TGMD (Test of Gross Mo
 ```json
 {
   "qualtricsApiToken": "<API_TOKEN>",
-  "qualtricsDatacenter": "au1",
+  "qualtricsDatacenter": "syd1",
   "qualtricsSurveyId": "SV_23Qbs14soOkGo9E"
 }
 ```
+**Note:** The datacenter value has been updated from deprecated `au1` to `syd1` (Sydney datacenter).
 
 ---
 
@@ -1179,7 +1180,7 @@ The 4Set system integrates with **Qualtrics** to retrieve TGMD (Test of Gross Mo
 ```
 https://{datacenter}.qualtrics.com/API/v3/
 ```
-- Example: `https://au1.qualtrics.com/API/v3/` (Australia datacenter)
+- Example: `https://syd1.qualtrics.com/API/v3/` (Sydney datacenter, replaces deprecated au1)
 - Datacenter value stored in `qualtricsDatacenter` credential field
 
 **Authentication:**
@@ -2530,7 +2531,7 @@ console.log(JSON.stringify(log));
 | Field | Location | Example Value |
 |-------|----------|---------------|
 | API Token | `credentials.enc` → `qualtricsApiToken` | `raV8YenlxaFux...` |
-| Datacenter | `credentials.enc` → `qualtricsDatacenter` | `au1` |
+| Datacenter | `credentials.enc` → `qualtricsDatacenter` | `syd1` (Sydney, replaces deprecated au1) |
 | Survey ID | `credentials.enc` → `qualtricsSurveyId` | `SV_23Qbs14soOkGo9E` |
 | Field Mapping | `assets/qualtrics-mapping.json` | QID → field name map |
 
