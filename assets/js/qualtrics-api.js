@@ -61,10 +61,10 @@
       this.emitProgress('Starting Qualtrics export...', 5);
 
       // Build export payload
+      // Note: useLabels parameter is not allowed for JSON/NDJSON exports per Qualtrics API
       const exportPayload = {
         format: 'json',
         compress: false,
-        useLabels: false, // Use QIDs, not labels
         surveyMetadataIds: ['startDate', 'endDate', 'recordedDate', 'status', 'ipAddress', 'progress', 'duration', 'finished']
       };
 

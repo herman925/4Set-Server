@@ -183,6 +183,13 @@ def main():
             initial_response_str = None
             skipped_fields = []
             current_export_options = export_options.copy()
+            
+            # Safety check: Remove useLabels for JSON/NDJSON formats (not allowed by Qualtrics API)
+            export_format = current_export_options.get('format', '').lower()
+            if export_format in ['json', 'ndjson'] and 'useLabels' in current_export_options:
+                print(f"Removing useLabels parameter for {export_format} format (not allowed by Qualtrics API)")
+                del current_export_options['useLabels']
+            
             survey_name = "Unknown Survey" # Default survey name
 
             try:

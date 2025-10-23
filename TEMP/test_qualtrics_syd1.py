@@ -98,10 +98,10 @@ def test_export_start(datacenter, survey_id):
     """Test starting a response export"""
     print_section(f"Testing Export Start for Survey: {survey_id}")
     
+    # Note: useLabels parameter is not allowed for JSON/NDJSON exports per Qualtrics API
     payload = {
         'format': 'json',
         'compress': False,
-        'useLabels': False,
         'surveyMetadataIds': ['startDate', 'endDate', 'recordedDate', 'status']
     }
     
