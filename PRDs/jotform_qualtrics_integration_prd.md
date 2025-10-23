@@ -1163,12 +1163,13 @@ The 4Set system integrates with **Qualtrics** to retrieve TGMD (Test of Gross Mo
 **Credentials Structure (in `credentials.enc`):**
 ```json
 {
-  "qualtricsApiToken": "<API_TOKEN>",
+  "qualtricsApiKey": "<API_KEY>",
   "qualtricsDatacenter": "syd1",
   "qualtricsSurveyId": "SV_23Qbs14soOkGo9E"
 }
 ```
 **Note:** The datacenter value has been updated from deprecated `au1` to `syd1` (Sydney datacenter).
+**Note:** The field name is `qualtricsApiKey` (not `qualtricsApiToken`). The JavaScript code supports both for backwards compatibility.
 
 ---
 
@@ -1185,7 +1186,7 @@ https://{datacenter}.qualtrics.com/API/v3/
 
 **Authentication:**
 - Method: HTTP Header `X-API-TOKEN`
-- Token stored in encrypted credentials: `qualtricsApiToken`
+- Token stored in encrypted credentials: `qualtricsApiKey` (or `qualtricsApiToken` for backwards compatibility)
 - All requests require token authentication
 
 **Common Headers:**
@@ -1572,7 +1573,7 @@ If `compress: true` in export request:
 ├─────────────────────────────────────────────────────────────────┤
 │ • Decrypt credentials.enc using system password                 │
 │ • Extract:                                                       │
-│   - qualtricsApiToken                                            │
+│   - qualtricsApiKey (stored as qualtricsApiKey in credentials)  │
 │   - qualtricsDatacenter                                          │
 │   - qualtricsSurveyId                                            │
 │ • Validate token format and datacenter value                    │
@@ -2146,7 +2147,7 @@ async function loadCache() {
 ```
 
 **Handling:**
-- Verify `qualtricsApiToken` in credentials
+- Verify `qualtricsApiKey` in credentials (field name is `qualtricsApiKey`, not `qualtricsApiToken`)
 - Check token has not expired
 - Prompt user to re-enter credentials
 - Do NOT retry automatically (credential issue)
@@ -2298,7 +2299,7 @@ console.log(JSON.stringify(log));
   - Handle matrix sub-questions
 
 - [ ] Update credentials structure in `credentials.enc`
-  - Add `qualtricsApiToken` (already has datacenter/surveyId)
+  - Add `qualtricsApiKey` (field name is `qualtricsApiKey`, already has datacenter/surveyId)
   - Validate on checking system home page
 
 - [ ] Add Qualtrics cache store to IndexedDB
@@ -2530,10 +2531,12 @@ console.log(JSON.stringify(log));
 
 | Field | Location | Example Value |
 |-------|----------|---------------|
-| API Token | `credentials.enc` → `qualtricsApiToken` | `raV8YenlxaFux...` |
+| API Key | `credentials.enc` → `qualtricsApiKey` | `raV8YenlxaFux...` |
 | Datacenter | `credentials.enc` → `qualtricsDatacenter` | `syd1` (Sydney, replaces deprecated au1) |
 | Survey ID | `credentials.enc` → `qualtricsSurveyId` | `SV_23Qbs14soOkGo9E` |
 | Field Mapping | `assets/qualtrics-mapping.json` | QID → field name map |
+
+**Note:** The field name in credentials.enc is `qualtricsApiKey`. Code examples may use `qualtricsApiToken` as a variable name after normalization.
 
 ### Export Timing
 

@@ -157,7 +157,7 @@ const credentials = await window.decryptCredentials(systemPassword);
 
 // Expected structure (see PRD lines 1164-1170):
 {
-  qualtricsApiToken: "raV8YenlxaFux...",  // API token
+  qualtricsApiKey: "raV8YenlxaFux...",     // API key (field name is qualtricsApiKey, not qualtricsApiToken)
   qualtricsDatacenter: "syd1",             // Datacenter region (Sydney, replaces deprecated au1)
   qualtricsSurveyId: "SV_23Qbs14soOkGo9E" // TGMD survey ID
 }
@@ -969,7 +969,7 @@ async function loadClassData(classId) {
   - Handle matrix sub-questions
 
 - [ ] Update credentials structure in `credentials.enc`
-  - Add `qualtricsApiToken` (if not already present)
+  - Add `qualtricsApiKey` (field name is `qualtricsApiKey`, if not already present)
   - Validate on checking system home page
 
 **Testing:**
@@ -1081,7 +1081,8 @@ async function loadClassData(classId) {
 ```javascript
 /**
  * Start Qualtrics response export
- * @param {Object} credentials - { qualtricsApiToken, qualtricsDatacenter, qualtricsSurveyId }
+ * @param {Object} credentials - { qualtricsApiKey, qualtricsDatacenter, qualtricsSurveyId }
+ *                                 Note: qualtricsApiKey is normalized to qualtricsApiToken in code
  * @param {Array} questionIds - Array of QIDs to include
  * @returns {Promise<string>} progressId
  */
