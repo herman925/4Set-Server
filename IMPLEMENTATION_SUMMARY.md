@@ -1,5 +1,70 @@
 # Implementation Summary
 
+## Qualtrics API useLabels Fix
+
+**Date**: 2025-10-23  
+**Issue**: Qualtrics Debug (Continued) - 400 error: "useLabels cannot be used for JSON or NDJSON exports"  
+**Branch**: `copilot/debug-qualtrics-api`  
+**Status**: ✅ Implementation Complete
+
+### Overview
+
+Fixed Qualtrics API 400 error (RTE_7.2) that occurred when attempting to export survey responses in JSON format. The error message stated: "useLabels cannot be used for JSON or NDJSON exports".
+
+### Problem
+
+The Qualtrics API does not allow the `useLabels` parameter (even when set to `false`) in export requests when the format is JSON or NDJSON. This is a Qualtrics API restriction where:
+- For CSV, TSV, SPSS, XML formats: `useLabels` parameter is allowed and controls whether to export labels or raw values
+- For JSON and NDJSON formats: `useLabels` parameter must be completely omitted from the request payload
+
+### Changes Implemented
+
+#### 1. JavaScript API Module (Production Code)
+**File**: `assets/js/qualtrics-api.js`
+
+- Removed `useLabels: false` from the JSON export payload
+- Added comment documenting the Qualtrics API restriction
+- Export format is hardcoded to JSON in this module, so unconditional removal is appropriate
+
+#### 2. Test Script
+**File**: `TEMP/test_qualtrics_syd1.py`
+
+- Removed `'useLabels': False` from the test payload
+- Added comment explaining why the parameter is excluded
+- Test now passes successfully with 200 status code instead of 400
+
+#### 3. Web UI JavaScript (Qualtrics Test Application)
+**File**: `Qualtrics Test/web/js/main.js`
+
+- Implemented conditional logic to include `useLabels` only for non-JSON/NDJSON formats
+- Added format detection: `if (format !== 'json' && format !== 'ndjson')`
+- This preserves the functionality for CSV/TSV/SPSS/XML while fixing JSON/NDJSON
+
+#### 4. Python Backend (Qualtrics Test Application)
+**File**: `Qualtrics Test/app.py`
+
+- Added safety check in `get_survey_data()` function
+- Automatically removes `useLabels` from export options if format is JSON or NDJSON
+- Provides defense-in-depth: even if frontend sends the parameter, backend will strip it
+- Logs when the parameter is removed for debugging purposes
+
+### Testing
+
+Ran the test script `TEMP/test_qualtrics_syd1.py` which successfully:
+1. Connected to syd1.qualtrics.com (Status 200)
+2. Accessed survey SV_23Qbs14soOkGo9E (Status 200)
+3. Started export with JSON format (Status 200) - **Previously failed with 400**
+4. Polled progress successfully through completion (100%)
+5. Retrieved file ID for download
+
+### Security
+
+- Ran `codeql_checker` - No security alerts found
+- No vulnerabilities introduced by the changes
+- Changes are minimal and focused on API parameter handling
+
+---
+
 ## School Page Enhancements
 
 **Date**: 2025-10-23  
