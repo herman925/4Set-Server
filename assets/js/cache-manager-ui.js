@@ -194,8 +194,11 @@
         
         try {
           // Add timeout to prevent hanging (5 seconds max)
-          const timeoutPromise = new Promise((_, reject) => {
-            setTimeout(() => reject(new Error('Cache check timeout')), 5000);
+          const timeoutPromise = new Promise((resolve) => {
+            setTimeout(() => {
+              console.warn('[CacheUI] Cache check timed out after 5 seconds, defaulting to not ready');
+              resolve(false); // Resolve with false instead of reject
+            }, 5000);
           });
           
           isReady = await Promise.race([
