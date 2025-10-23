@@ -2,7 +2,7 @@
   "oneDrive": {
     "autoDetect": true,
     "relativePath": "\\The Education University of Hong Kong\\o365grp_KeySteps@JC - General\\98 - IT Support\\04 - Homemade Apps\\4Set-Server",
-    "fallbackRoot": "C:\\Users\\Herman"
+    "fallbackRoot": "C:\\Users\\KeySteps"
   },
   "watchPath": "./incoming",
   "stagingPath": "./processing",
