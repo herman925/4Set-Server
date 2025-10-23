@@ -18,9 +18,13 @@
     /**
      * Merge JotForm and Qualtrics datasets by coreId
      * Strategy:
-     * 1. Group all records by coreId (multiple submissions possible)
-     * 2. For each coreId, merge all Qualtrics TGMD data into JotForm submissions
-     * 3. If multiple Qualtrics records exist for same coreId, merge them first
+     * 1. Sort Qualtrics records by date (earliest first)
+     * 2. Group all records by coreId (multiple submissions possible)
+     * 3. For each coreId, merge Qualtrics records using earliest non-empty value wins
+     * 4. Merge grouped Qualtrics TGMD data into JotForm submissions
+     * 
+     * This matches JotForm's merge principle (line 779 in jotform-cache.js):
+     * "Sort by created_at (earliest first), earliest non-empty value wins"
      * 
      * @param {Array} jotformData - JotForm submissions
      * @param {Array} qualtricsData - Transformed Qualtrics responses
@@ -31,10 +35,17 @@
       console.log('[DataMerger] JotForm records:', jotformData.length);
       console.log('[DataMerger] Qualtrics records:', qualtricsData.length);
 
-      // Step 1: Group Qualtrics records by coreId and merge multiple responses
+      // Step 1: Sort Qualtrics records by date (earliest first) to match JotForm merge logic
+      const sortedQualtricsData = qualtricsData.sort((a, b) => {
+        const dateA = a._meta?.startDate ? new Date(a._meta.startDate) : new Date(0);
+        const dateB = b._meta?.startDate ? new Date(b._meta.startDate) : new Date(0);
+        return dateA - dateB;
+      });
+
+      // Step 2: Group Qualtrics records by coreId and merge multiple responses
       const qualtricsByCoreId = new Map(); // coreId → merged TGMD data
       
-      for (const record of qualtricsData) {
+      for (const record of sortedQualtricsData) {
         const coreId = record.coreId;
         if (!coreId) {
           console.warn('[DataMerger] Qualtrics record missing coreId, skipping:', record._meta?.qualtricsResponseId);
@@ -54,7 +65,7 @@
 
       console.log(`[DataMerger] Grouped Qualtrics data into ${qualtricsByCoreId.size} unique students`);
 
-      // Step 2: Process JotForm records and merge with Qualtrics
+      // Step 3: Process JotForm records and merge with Qualtrics
       const mergedRecords = [];
       let jotformOnlyCount = 0;
       let mergedWithQualtricsCount = 0;
@@ -84,7 +95,7 @@
         }
       }
 
-      // Step 3: Add Qualtrics-only records (students not in JotForm)
+      // Step 4: Add Qualtrics-only records (students not in JotForm)
       const jotformCoreIds = new Set(jotformData.map(r => r.coreId).filter(Boolean));
       let qualtricsOnlyCount = 0;
 
@@ -110,29 +121,31 @@
 
     /**
      * Merge multiple Qualtrics responses for the same student
-     * Uses last non-empty value principle for conflicts
-     * @param {Object} record1 - First Qualtrics record
-     * @param {Object} record2 - Second Qualtrics record
+     * Uses earliest non-empty value principle (matches JotForm merge logic)
+     * @param {Object} record1 - First (earlier) Qualtrics record
+     * @param {Object} record2 - Second (later) Qualtrics record
      * @returns {Object} Merged record
      */
     mergeMultipleQualtricsRecords(record1, record2) {
       const merged = { ...record1 };
 
-      // Merge TGMD fields - later values overwrite earlier ones
+      // Merge TGMD fields - ONLY fill in if not already present (earliest non-empty value wins)
+      // This matches JotForm's merge principle: line 779 in jotform-cache.js
       for (const [key, value] of Object.entries(record2)) {
         if (key.startsWith(this.tgmdFieldPrefix) && value) {
-          merged[key] = value;
+          // Only set if not already present (earliest wins)
+          if (!merged[key]) {
+            merged[key] = value;
+          }
         }
       }
 
-      // Keep metadata from most recent response
-      if (record2._meta && record2._meta.recordedDate) {
-        merged._meta = {
-          ...merged._meta,
-          ...record2._meta,
-          multipleResponses: true
-        };
-      }
+      // Track that we had multiple responses
+      merged._meta = {
+        ...(merged._meta || {}),
+        multipleResponses: true,
+        mergedResponseCount: (merged._meta?.mergedResponseCount || 1) + 1
+      };
 
       return merged;
     }
