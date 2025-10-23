@@ -88,16 +88,28 @@
         );
 
         if (!response.ok) {
+          // Try to get detailed error message from response body
+          let errorDetail = '';
+          try {
+            const errorData = await response.json();
+            errorDetail = errorData.meta?.error?.errorMessage || JSON.stringify(errorData);
+          } catch (e) {
+            errorDetail = await response.text();
+          }
+
           if (response.status === 401) {
-            throw new Error('Invalid Qualtrics API token. Please check credentials.');
+            throw new Error(`Invalid Qualtrics API token. Please check credentials. Details: ${errorDetail}`);
           }
           if (response.status === 404) {
-            throw new Error('TGMD survey not found. Please verify survey ID in credentials.');
+            throw new Error(`TGMD survey not found. Please verify survey ID in credentials. Details: ${errorDetail}`);
           }
           if (response.status === 429) {
-            throw new Error('Qualtrics API rate limit exceeded. Please try again later.');
+            throw new Error(`Qualtrics API rate limit exceeded. Please try again later. Details: ${errorDetail}`);
           }
-          throw new Error(`Qualtrics API error: ${response.status}`);
+          if (response.status === 400) {
+            throw new Error(`Bad request to Qualtrics API. URL: ${baseUrl}/surveys/${qualtricsSurveyId}/export-responses. Details: ${errorDetail}`);
+          }
+          throw new Error(`Qualtrics API error: ${response.status}. Details: ${errorDetail}`);
         }
 
         const data = await response.json();
