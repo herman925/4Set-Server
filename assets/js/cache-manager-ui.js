@@ -882,12 +882,165 @@
     console.log('[CacheUI] Setup complete');
   }
 
+  /**
+   * Show Qualtrics sync modal
+   */
+  function showQualtricsSyncModal() {
+    ensureModalCSS();
+    
+    const modal = document.createElement('div');
+    modal.id = 'qualtrics-sync-modal';
+    modal.className = 'modal-overlay';
+    
+    modal.innerHTML = `
+      <div class="modal-backdrop" style="background: rgba(0, 0, 0, 0.5);"></div>
+      <div class="modal-content" style="max-width: 500px; animation: slideDown 0.3s ease-out;">
+        <div class="modal-header">
+          <h3 class="text-lg font-semibold text-[color:var(--foreground)] flex items-center gap-2">
+            <i data-lucide="database" class="w-5 h-5 text-purple-500"></i>
+            <span id="qualtrics-modal-title">Sync with Qualtrics</span>
+          </h3>
+        </div>
+        <div class="modal-body">
+          <p id="qualtrics-modal-message" class="text-sm text-[color:var(--muted-foreground)] mb-4">
+            Fetch TGMD assessment data from Qualtrics and merge with JotForm data. This will take 30-60 seconds.
+          </p>
+          
+          <div id="qualtrics-progress-section" class="hidden">
+            <div class="mb-2">
+              <div class="flex justify-between items-center mb-1">
+                <span id="qualtrics-progress-text" class="text-xs text-[color:var(--muted-foreground)]">Ready to begin</span>
+                <span id="qualtrics-progress-percent" class="text-xs font-mono font-semibold text-purple-600">0%</span>
+              </div>
+              <div class="w-full h-2 bg-[color:var(--muted)] rounded-full overflow-hidden">
+                <div id="qualtrics-progress-bar" class="h-full bg-gradient-to-r from-purple-500 to-blue-500 transition-all duration-300" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+          
+          <div id="qualtrics-results" class="hidden mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+            <h4 class="text-sm font-semibold text-green-800 mb-2">✅ Sync Complete</h4>
+            <div class="text-xs text-green-700 space-y-1">
+              <div>Total records: <span class="font-mono font-semibold" id="qualtrics-total"></span></div>
+              <div>TGMD from Qualtrics: <span class="font-mono font-semibold" id="qualtrics-from-q"></span></div>
+              <div>TGMD from JotForm: <span class="font-mono font-semibold" id="qualtrics-from-j"></span></div>
+              <div>Conflicts detected: <span class="font-mono font-semibold" id="qualtrics-conflicts"></span></div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="qualtrics-modal-cancel" class="hero-button secondary-button px-4 py-2 text-sm font-semibold mr-2">
+            Cancel
+          </button>
+          <button id="qualtrics-modal-confirm" class="hero-button px-4 py-2 text-sm font-semibold" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+            Sync with Qualtrics
+          </button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    lucide.createIcons();
+    
+    const cancelBtn = document.getElementById('qualtrics-modal-cancel');
+    const confirmBtn = document.getElementById('qualtrics-modal-confirm');
+    const progressSection = document.getElementById('qualtrics-progress-section');
+    const progressBar = document.getElementById('qualtrics-progress-bar');
+    const progressText = document.getElementById('qualtrics-progress-text');
+    const progressPercent = document.getElementById('qualtrics-progress-percent');
+    const modalTitle = document.getElementById('qualtrics-modal-title');
+    const modalMessage = document.getElementById('qualtrics-modal-message');
+    const resultsSection = document.getElementById('qualtrics-results');
+    
+    // Cancel button
+    cancelBtn.addEventListener('click', () => {
+      modal.remove();
+    });
+    
+    // Backdrop click
+    const backdrop = modal.querySelector('.modal-backdrop');
+    if (backdrop) {
+      backdrop.addEventListener('click', () => {
+        modal.remove();
+      });
+    }
+    
+    // Confirm button - start Qualtrics sync
+    confirmBtn.addEventListener('click', async () => {
+      // Hide buttons, show progress
+      cancelBtn.classList.add('hidden');
+      confirmBtn.classList.add('hidden');
+      progressSection.classList.remove('hidden');
+      modalTitle.textContent = 'Syncing with Qualtrics...';
+      
+      try {
+        // Get credentials
+        const cachedData = window.CheckingSystemData?.getCachedData();
+        if (!cachedData || !cachedData.credentials) {
+          throw new Error('Credentials not available');
+        }
+        
+        const credentials = cachedData.credentials;
+        
+        // Set up progress callback
+        window.JotFormCache.setProgressCallback((message, progress) => {
+          if (progressText) progressText.textContent = message;
+          if (progressPercent) progressPercent.textContent = `${Math.round(progress)}%`;
+          if (progressBar) progressBar.style.width = `${progress}%`;
+        });
+        
+        // Call refreshWithQualtrics
+        const result = await window.JotFormCache.refreshWithQualtrics({
+          formId: credentials.jotformFormId || credentials.formId,
+          apiKey: credentials.jotformApiKey || credentials.apiKey,
+          qualtricsApiKey: credentials.qualtricsApiKey,
+          qualtricsDatacenter: credentials.qualtricsDatacenter,
+          qualtricsSurveyId: credentials.qualtricsSurveyId
+        });
+        
+        // Show results
+        modalTitle.textContent = 'Sync Complete!';
+        modalMessage.classList.add('hidden');
+        progressSection.classList.add('hidden');
+        resultsSection.classList.remove('hidden');
+        
+        document.getElementById('qualtrics-total').textContent = result.mergedCount || 0;
+        document.getElementById('qualtrics-from-q').textContent = result.statistics?.summary?.tgmdFromQualtrics || 0;
+        document.getElementById('qualtrics-from-j').textContent = result.statistics?.summary?.tgmdFromJotform || 0;
+        document.getElementById('qualtrics-conflicts').textContent = result.statistics?.conflicts?.recordsWithConflicts || 0;
+        
+        // Show close button
+        cancelBtn.textContent = 'Close';
+        cancelBtn.classList.remove('hidden');
+        
+        // Update status pill
+        await updateStatusPill();
+        
+      } catch (error) {
+        console.error('[CacheUI] Qualtrics sync failed:', error);
+        
+        // Show error
+        modalTitle.textContent = 'Sync Failed';
+        modalMessage.textContent = `Error: ${error.message}`;
+        modalMessage.classList.remove('hidden');
+        modalMessage.classList.remove('text-[color:var(--muted-foreground)]');
+        modalMessage.classList.add('text-red-600');
+        progressSection.classList.add('hidden');
+        
+        // Show close button
+        cancelBtn.textContent = 'Close';
+        cancelBtn.classList.remove('hidden');
+      }
+    });
+  }
+
   // Export for manual control
   window.CacheManagerUI = {
     updateStatusPill,
     isCacheReady,
     showSyncModal,
-    showBlockingModal
+    showBlockingModal,
+    showQualtricsSyncModal
   };
 
   // Auto-initialize

@@ -43,20 +43,28 @@
 
             <!-- System Status Pills -->
             <div class="entry-card mb-6 p-4">
-                <div class="flex items-center gap-3 flex-wrap">
-                    <!-- Decryption Status Pill -->
-                    <div id="decryption-status-badge" class="badge-error flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium">
-                        <span class="status-indicator inline-block h-2 w-2 rounded-full"></span>
-                        <span id="decryption-status-text">Not Decrypted</span>
+                <div class="flex items-center justify-between gap-3 flex-wrap">
+                    <div class="flex items-center gap-3 flex-wrap">
+                        <!-- Decryption Status Pill -->
+                        <div id="decryption-status-badge" class="badge-error flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium">
+                            <span class="status-indicator inline-block h-2 w-2 rounded-full"></span>
+                            <span id="decryption-status-text">Not Decrypted</span>
+                        </div>
+                        
+                        <!-- JotForm Cache Status Pill -->
+                        <div id="system-health-badge" class="badge-error flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium">
+                            <span class="status-indicator inline-block h-2 w-2 rounded-full"></span>
+                            <span id="status-text">System Not Ready</span>
+                        </div>
+                        
+                        <span class="text-xs text-[color:var(--muted-foreground)]">Last Synced: <span class="font-mono" id="snapshot-timestamp">—</span></span>
                     </div>
                     
-                    <!-- JotForm Cache Status Pill -->
-                    <div id="system-health-badge" class="badge-error flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium">
-                        <span class="status-indicator inline-block h-2 w-2 rounded-full"></span>
-                        <span id="status-text">System Not Ready</span>
-                    </div>
-                    
-                    <span class="text-xs text-[color:var(--muted-foreground)]">Last Synced: <span class="font-mono" id="snapshot-timestamp">—</span></span>
+                    <!-- Qualtrics Sync Button -->
+                    <button id="qualtrics-sync-btn" class="flex items-center gap-2 px-4 py-2 text-xs font-semibold rounded-lg transition-all duration-200" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;" onclick="window.CacheManagerUI.showQualtricsSyncModal()">
+                        <i data-lucide="database" class="w-4 h-4"></i>
+                        <span>Sync with Qualtrics</span>
+                    </button>
                 </div>
             </div>
 
@@ -164,6 +172,9 @@
     <script src="assets/js/encryption.js"></script>
     <script src="assets/js/checking-system-data-loader.js"></script>
     <script src="assets/js/task-validator.js"></script><!-- TaskValidator (required for validation cache) -->
+    <script src="assets/js/qualtrics-api.js"></script><!-- Qualtrics API wrapper -->
+    <script src="assets/js/qualtrics-transformer.js"></script><!-- Qualtrics response transformer -->
+    <script src="assets/js/data-merger.js"></script><!-- JotForm + Qualtrics data merger -->
     <script src="assets/js/jotform-cache.js"></script><!-- Global JotForm cache (IndexedDB) -->
     <script src="assets/js/cache-manager-ui.js"></script><!-- Cache UI controls -->
     <script src="assets/js/checking-system-filters.js"></script>
