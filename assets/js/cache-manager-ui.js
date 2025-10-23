@@ -19,6 +19,10 @@
       }
       config = await response.json();
       console.log('[CacheUI] Config loaded successfully');
+      
+      // Update status pill now that config is loaded
+      // This handles the case where updateStatusPill was called before config loaded
+      await updateStatusPill();
     } catch (error) {
       console.error('[CacheUI] CRITICAL: Failed to load config file:', error);
       alert('Configuration file (checking_system_config.json) failed to load. Please contact system administrator.');
