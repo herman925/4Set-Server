@@ -156,7 +156,7 @@ python proxy_server.py --port 3000 --host 127.0.0.1
 | `queue_manifest.json` | Persistent queue state for restart recovery |
 | `requirements.txt` | Python dependencies (pypdf, Flask, requests) |
 | `README.md` | This file - comprehensive documentation |
-| `AGENTS.md` | Development roadmap and strategic planning |
+| `development-roadmap.md` | Development roadmap and strategic planning |
 
 ### Key Directories
 
