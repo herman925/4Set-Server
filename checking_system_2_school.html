@@ -149,36 +149,58 @@
                 </div>
             </details>
 
-            <!-- Classes List -->
+            <!-- Classes List / Student List -->
             <details class="entry-card border-l-4 border-l-[color:var(--accent)]">
-                <summary class="flex items-center justify-between px-6 py-4 cursor-pointer list-none border-b border-[color:var(--border)]">
+                <summary class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between px-6 py-4 cursor-pointer list-none border-b border-[color:var(--border)]">
                     <div>
-                        <h2 class="text-sm font-semibold text-[color:var(--foreground)]">Classes in this School</h2>
-                        <p class="text-xs text-[color:var(--muted-foreground)]">Click to expand/collapse class list</p>
+                        <h2 class="text-sm font-semibold text-[color:var(--foreground)]" id="main-view-title">Classes in this School</h2>
+                        <p class="text-xs text-[color:var(--muted-foreground)]" id="main-view-subtitle">Click to expand/collapse class list</p>
                     </div>
-                    <span class="text-xs text-[color:var(--muted-foreground)]" id="class-count">0 classes</span>
+                    <div class="flex items-center gap-3">
+                        <span class="text-[11px] text-[color:var(--muted-foreground)]">View Mode:</span>
+                        <div class="inline-flex items-center bg-[color:var(--muted)]/30 rounded-lg p-1">
+                            <button id="view-by-class-btn" class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors bg-[color:var(--primary)] text-white shadow-sm">
+                                By Class
+                            </button>
+                            <button id="view-by-student-btn" class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors text-[color:var(--muted-foreground)] hover:bg-[color:var(--secondary)] hover:text-[color:var(--secondary-foreground)]">
+                                By Student
+                            </button>
+                        </div>
+                    </div>
                 </summary>
                 
                 <!-- Legend and Filters -->
                 <div class="px-6 py-3 border-b border-[color:var(--border)] bg-[color:var(--muted)]/20 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                     <div class="flex items-center gap-4 text-xs text-[color:var(--muted-foreground)]">
-                        <span class="inline-flex items-center gap-1.5">
-                            <span class="status-circle status-green"></span>
-                            <span>Complete</span>
-                        </span>
-                        <span class="inline-flex items-center gap-1.5">
-                            <span class="status-circle status-red"></span>
-                            <span>Incomplete</span>
-                        </span>
-                        <span class="inline-flex items-center gap-1.5">
-                            <span class="status-circle status-grey"></span>
-                            <span>Not Started</span>
-                        </span>
+                        <!-- Student List View Mode Toggle (only shown when By Student is active) -->
+                        <div id="student-view-mode-toggle" class="inline-flex items-center bg-white/50 rounded-lg p-1 border border-[color:var(--border)]" style="display: none;">
+                            <button id="student-view-by-set-btn" class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors bg-[color:var(--primary)] text-white shadow-sm">
+                                By Set
+                            </button>
+                            <button id="student-view-by-task-btn" class="px-3 py-1.5 text-xs font-medium rounded-md transition-colors text-[color:var(--muted-foreground)] hover:bg-[color:var(--secondary)] hover:text-[color:var(--secondary-foreground)]">
+                                By Task
+                            </button>
+                        </div>
+                        <!-- Legend -->
+                        <div id="legend-container" class="flex items-center gap-4">
+                            <span class="inline-flex items-center gap-1.5">
+                                <span class="status-circle status-green"></span>
+                                <span>Complete</span>
+                            </span>
+                            <span class="inline-flex items-center gap-1.5">
+                                <span class="status-circle status-red"></span>
+                                <span>Incomplete</span>
+                            </span>
+                            <span class="inline-flex items-center gap-1.5">
+                                <span class="status-circle status-grey"></span>
+                                <span>Not Started</span>
+                            </span>
+                        </div>
                     </div>
                     <div class="flex items-center gap-3">
-                        <label for="class-view-filter" class="text-xs font-medium text-[color:var(--foreground)]">View:</label>
-                        <select id="class-view-filter" class="px-2 py-1 border border-[color:var(--border)] rounded-md bg-white text-xs focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]">
-                            <option value="all" selected>All Classes</option>
+                        <label for="data-view-filter" class="text-xs font-medium text-[color:var(--foreground)]">Filter:</label>
+                        <select id="data-view-filter" class="px-2 py-1 border border-[color:var(--border)] rounded-md bg-white text-xs focus:outline-none focus:ring-2 focus:ring-[color:var(--primary)]">
+                            <option value="all" selected>All</option>
                             <option value="with-data">With Data Only</option>
                             <option value="incomplete">Incomplete Only</option>
                         </select>
@@ -191,6 +213,7 @@
                 
                 <div class="px-6 pb-6 pt-3">
                     <div id="classes-table"></div>
+                    <div id="students-table" style="display: none;"></div>
                 </div>
             </details>
         </main>

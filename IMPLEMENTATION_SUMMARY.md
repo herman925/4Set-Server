@@ -1,4 +1,114 @@
-# Implementation Summary: Qualtrics TGMD Integration
+# Implementation Summary
+
+## School Page Enhancements
+
+**Date**: 2025-10-23  
+**Issue**: School Page is not helpful enough. Want more features  
+**Branch**: `copilot/update-school-page-features`  
+**Status**: ✅ Implementation Complete
+
+### Overview
+
+Enhanced the school page to provide better visibility of students without class assignments and added flexible view modes similar to the class page for improved data analysis.
+
+### Changes Implemented
+
+#### 1. Auto-Assignment of Grade-Specific Class 99 (無班級)
+**File**: `assets/js/checking-system-data-loader.js`
+
+Students without a Class ID for any year (23/24, 24/25, or 25/26) are automatically assigned to grade-specific 無班級 classes:
+
+**Three Grade-Specific 無班級 Classes**:
+- **無班級 (K1)**: For students without Class ID 23/24 → `C-{schoolId}-99-K1` (grade 1)
+- **無班級 (K2)**: For students without Class ID 24/25 → `C-{schoolId}-99-K2` (grade 2)
+- **無班級 (K3)**: For students without Class ID 25/26 → `C-{schoolId}-99-K3` (grade 3)
+
+**Student Class Assignment Logic**:
+- Check all three years (23/24, 24/25, 25/26) for Class ID
+- For each year without a class ID, create a student record assigned to the corresponding 無班級 class
+- Students can appear in **multiple** 無班級 classes if they lack class IDs for multiple years
+- Each student record is identified by a composite key: `{coreId}-{year}` (e.g., `C10207-K1`, `C10207-K2`)
+
+**Multi-Year Data Handling**: 
+- Students with missing class IDs for multiple years will have separate records in each corresponding 無班級 class
+- This ensures complete visibility of all unassigned students across all years
+- The grade mapping (K1/K2/K3) helps identify which academic year the student is missing a class assignment for
+
+#### 2. View Mode Toggles
+**Files**: 
+- `checking_system_2_school.html`
+- `assets/js/checking-system-school-page.js`
+
+Added two-level view mode system matching the class page design:
+
+**Level 1: By Class / By Student**
+- **By Class** (default): Shows classes with aggregated completion metrics
+- **By Student**: Shows all unique students across the school
+
+**Level 2: By Set / By Task** (only visible when "By Student" is active)
+- **By Set**: Shows Set 1-4 completion status for each student (3-color legend: green/red/grey)
+- **By Task**: Shows individual task completion status (4-color legend: green/yellow/red/grey, includes post-term detection)
+
+#### 3. Student List View
+**File**: `assets/js/checking-system-school-page.js`
+
+Implemented two rendering modes for student data:
+
+**By Set View**:
+- Displays: Student Name, Core ID, Class, Set 1-4 status
+- Uses 3-color status indicators (green=complete, red=incomplete, grey=not started)
+- Shows unique students aggregated across all classes in the school
+
+**By Task View**:
+- Displays: Student Name, Core ID, Class, plus individual task columns
+- Uses 4-color status indicators (green=complete, yellow=post-term, red=incomplete, grey=not started)
+- Task columns grouped by set with color-coded backgrounds
+- Handles gender-conditional tasks (TEC_Male/TEC_Female merged as "TEC")
+- Configurable column widths via `config/checking_system_config.json`
+
+### UI Components
+
+- **View mode toggle buttons**: Identical styling to class page (blue for active primary mode, grey for inactive)
+- **Legend**: Dynamically updates based on current view mode
+- **Filter options**: Maintains existing filtering by grade, data status, and completion
+- **Sticky columns**: Student name column remains visible during horizontal scroll (task view)
+
+### Technical Implementation
+
+**Data Flow**:
+1. `loadAllData()` processes students and auto-assigns class 99 where needed
+2. `fetchAndAggregateData()` builds validation cache for all students
+3. View mode toggles switch between class and student tables
+4. Student view mode uses same validation logic as class page for consistency
+
+**Validation Consistency**:
+- Uses `JotFormCache.buildStudentValidationCache()` for accurate completion status
+- Same validation logic across school, class, and student pages
+- Handles gender-conditional tasks correctly
+- Supports post-term answer detection in task view
+
+### Files Modified
+
+1. **`assets/js/checking-system-data-loader.js`** (~55 lines added)
+   - Auto-assignment of class 99 for unassigned students
+   - Dynamic class 99 entry creation
+
+2. **`checking_system_2_school.html`** (~30 lines modified)
+   - Added view mode toggle UI (By Class / By Student)
+   - Added student view mode toggle (By Set / By Task)
+   - Separated containers for classes and students tables
+   - Updated filter controls and legend container
+
+3. **`assets/js/checking-system-school-page.js`** (~680 lines added)
+   - Added view mode state management
+   - Implemented `renderStudentsTable()`, `renderStudentsTableBySet()`, `renderStudentsTableByTask()`
+   - Added helper functions: `getTaskStatus()`, `getSetStatusColor()`, `renderSetStatus()`
+   - Implemented `updateMainViewMode()`, `updateStudentViewMode()`, `renderLegend()`
+   - Added system config loading for task column customization
+
+---
+
+## Qualtrics TGMD Integration
 
 **Date**: 2025-10-23  
 **Issue**: #[Issue Number] - Qualtrics TGMD task fetching and loading  

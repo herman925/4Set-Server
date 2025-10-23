@@ -315,10 +315,19 @@ Click any student to see detailed assessment view.
 │  • In Progress: 10 (13%)                │
 │  • Not Started: 3 (4%)                  │
 ├─────────────────────────────────────────┤
-│  Classes                                │
-│  C-023-01  ████████░░ 80%              │
-│  C-023-02  █████████░ 90%              │
-│  C-023-03  ███████░░░ 70%              │
+│  View Mode: [By Class] [By Student]     │
+│  ├─ By Class (default)                  │
+│  │  C-023-01      ████████░░ 80%       │
+│  │  C-023-02      █████████░ 90%       │
+│  │  C-023-03      ███████░░░ 70%       │
+│  │  無班級 (K1)   ████░░░░░░ 40%       │
+│  │  無班級 (K2)   ██████░░░░ 60%       │
+│  │  無班級 (K3)   ███░░░░░░░ 30%       │
+│  │                                      │
+│  └─ By Student (toggle active)          │
+│     [By Set] [By Task]                  │
+│     • By Set: Shows Set 1-4 status      │
+│     • By Task: Shows individual tasks   │
 └─────────────────────────────────────────┘
 ```
 
@@ -326,14 +335,52 @@ Click any student to see detailed assessment view.
 - School identification (ID, names)
 - Geographic/project grouping
 - Overall completion statistics
-- Class-by-class breakdown
+- Class-by-class breakdown OR student-by-student view
 - Progress bars for visual reference
+- **NEW**: 無班級 (No Class) category for unassigned students
+
+**View Modes:**
+
+1. **By Class (Default)**
+   - Shows all classes in the school
+   - Includes three automatically created "無班級" classes for students without class assignments:
+     - **無班級 (K1)**: Students without Class ID for 23/24
+     - **無班級 (K2)**: Students without Class ID for 24/25
+     - **無班級 (K3)**: Students without Class ID for 25/26
+   - Displays Set 1-4 completion status for each class
+   - Legend: ✅ Complete | 🔴 Incomplete | ⭕ Not Started
+
+2. **By Student**
+   - Shows unique students aggregated across all school classes
+   - Two sub-modes available:
+   
+   **By Set** (default student view)
+   - Student Name, Core ID, Class, Set 1-4 status
+   - Legend: ✅ Complete | 🔴 Incomplete | ⭕ Not Started
+   
+   **By Task**
+   - Individual task completion for each student
+   - Tasks grouped by Set 1-4 with color-coded backgrounds
+   - Legend: ✅ Complete | 🟡 Post-Term | 🔴 Incomplete | ⭕ Not Started
+
+**Special Features:**
+
+- **Grade-Specific 無班級 Classes**: Students without class IDs are automatically assigned to grade-specific 無班級 classes:
+  - 無班級 (K1) = `C-{schoolId}-99-K1` for missing 23/24 class
+  - 無班級 (K2) = `C-{schoolId}-99-K2` for missing 24/25 class
+  - 無班級 (K3) = `C-{schoolId}-99-K3` for missing 25/26 class
+  
+- **Multi-Year Tracking**: Students can appear in multiple 無班級 classes if they lack class IDs for multiple years. This ensures complete visibility across all academic years and helps identify which specific years are missing class assignments.
 
 **Actions:**
 - Click class to drill down
+- Click student name to view detailed assessment
+- Toggle between By Class / By Student views
+- In By Student view, toggle between By Set / By Task
 - Export school report
 - View completion trends
-- Identify classes needing attention
+- Identify classes or students needing attention
+- Filter by grade, data status, or completion
 
 ### Class View
 
