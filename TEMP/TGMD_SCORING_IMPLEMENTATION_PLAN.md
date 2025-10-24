@@ -81,6 +81,48 @@ The TGMD matrix-radio scoring has been successfully implemented with the followi
    - TGMD-specific rendering only applies when `tgmdScoring` structure exists
    - No changes to validation logic for non-TGMD tasks
 
+### Data Workflow: Complete Integration
+
+The TGMD data (and all other Qualtrics task data) flows through the system as follows:
+
+**1. Data Collection:**
+- **Qualtrics**: Web-based surveys capture all assessment tasks (TGMD, ERV, SYM, TOM, CM, CWR, HTKS, TEC, etc.)
+- **JotForm**: PDF form uploads capture same assessment tasks
+
+**2. Data Extraction & Transformation:**
+- Qualtrics API exports all survey responses in JSON format
+- `qualtrics-transformer.js` maps 632 Qualtrics QIDs to standard field names
+- All tasks are transformed, not just TGMD (implemented in PR #92)
+
+**3. Data Merging:**
+- `data-merger.js` merges Qualtrics and JotForm data by sessionkey
+- **Qualtrics data takes precedence** for ALL matching fields
+- Conflict detection logs when both sources have different values
+- Grade (K1/K2/K3) automatically detected from assessment dates
+
+**4. Caching:**
+- Merged dataset cached in IndexedDB for offline access
+- Cache includes all tasks from both Qualtrics and JotForm
+- TTL of 1 hour, auto-refreshes when expired
+
+**5. Validation:**
+- `task-validator.js` validates merged data for all tasks
+- TGMD gets special scoring treatment (trial aggregation)
+- Other tasks use standard validation logic
+
+**6. Display:**
+- Student page shows unified view of all assessment data
+- TGMD displays with Success/Fail labels and trial breakdown
+- Other tasks display with standard Correct/Incorrect format
+- Data source indicators show which fields came from Qualtrics
+
+**Key Points:**
+- ✅ ALL Qualtrics tasks are merged (not just TGMD)
+- ✅ Qualtrics data overwrites JotForm for matching fields
+- ✅ TGMD gets special display treatment with trial aggregation
+- ✅ Grade detection integrated into merge process
+- ✅ Complete data integration between both sources
+
 ---
 
 ## Current Behavior
