@@ -4,6 +4,11 @@
 
 This test tool (`test-pipeline-core-id.html`) validates the complete data pipeline for merging JotForm and Qualtrics data for individual students identified by their Core ID. It emulates the same process used by the checking system to display student data in the drilldown view.
 
+**NEW:** The tool now supports multiple fetch strategies with performance comparison:
+- **Direct API Method**: Fetches data directly from APIs (slower but works without cache)
+- **Global Cache Method**: Uses IndexedDB to cache all submissions for instant filtering (much faster)
+- **Comparison Mode**: Runs both methods and shows performance metrics
+
 ## Purpose
 
 The primary goal is to verify that:
@@ -65,11 +70,16 @@ The test executes the following steps in sequence:
 ### Running a Test
 
 1. **Enter Core ID**: Input a numeric Core ID (e.g., `10261`) - do NOT include the "C" prefix
-2. **Click "Run Pipeline Test"**: The pipeline will execute all steps automatically
-3. **Review Results**: 
+2. **Select Test Method**:
+   - **Direct API (Slower)**: Makes individual API calls for this Core ID. No caching. Slower but works independently.
+   - **Global Cache (Faster)**: Uses IndexedDB cache. First run fetches all data and caches it. Subsequent runs are instant. **Recommended for testing multiple students.**
+   - **Compare Both**: Runs both methods sequentially and shows performance comparison with speedup factor.
+3. **Click "Run Pipeline Test"**: The pipeline will execute all steps automatically
+4. **Review Results**: 
    - Check the student overview section
    - Review task completion status with color indicators
    - Examine summary statistics
+   - View performance metrics (execution time, speedup for comparison mode)
    - Optionally inspect raw data for debugging
 
 ### Example Core IDs
@@ -110,6 +120,47 @@ Four expandable sections showing:
 
 ## Technical Details
 
+### Test Methods
+
+The tool supports three different fetch strategies:
+
+#### 1. Direct API Method (Slower)
+- **JotForm**: Uses `:matches` filter on sessionkey field (QID 3) to fetch only this student's submissions
+- **Qualtrics**: Exports all TGMD responses, then filters client-side for this Core ID
+- **Performance**: ~5-15 seconds depending on API response time
+- **Use case**: Testing without pre-cached data, or verifying API filter accuracy
+
+#### 2. Global Cache Method (Faster)
+- **JotForm**: 
+  - First run: Fetches ALL submissions from API and stores in IndexedDB (takes longer initially)
+  - Subsequent runs: Filters from IndexedDB cache (instant, ~0.1-0.5 seconds)
+  - Cache duration: 1 hour (configurable)
+- **Qualtrics**: Same export-poll-download flow (could be enhanced with caching in future)
+- **Performance**: First run ~10-20 seconds, subsequent runs ~2-5 seconds
+- **Use case**: **Recommended for testing multiple students** - dramatically faster after initial cache
+
+#### 3. Comparison Mode
+- Runs both methods sequentially
+- Displays performance metrics:
+  - Execution time for each method
+  - Speedup factor (e.g., "5.2x faster")
+- **Use case**: Demonstrating the performance benefit of caching
+
+### Performance Metrics
+
+The tool now displays:
+- **Total execution time** for the selected method
+- **Method comparison** (in comparison mode):
+  - Direct API time
+  - Global Cache time
+  - Speedup factor (cache time / direct time)
+
+Example output:
+```
+Direct API:  12.45s  (Baseline)
+Global Cache: 2.38s  (5.2x faster)
+```
+
 ### JotForm API Filter
 
 Uses the working `:matches` operator discovered in October 2025:
@@ -132,6 +183,26 @@ This filters on the sessionkey field (QID 3) which has format: `{studentId}_{yyy
 - **JotForm merging**: Multiple submissions merged using "earliest non-empty value wins"
 - **Qualtrics merging**: Multiple responses merged using the same principle
 - **Cross-source merging**: Qualtrics TGMD fields take precedence over JotForm for TGMD_* fields
+
+### Cache Management
+
+The Global Cache method uses **IndexedDB** (via localForage) to store JotForm submissions:
+
+- **Storage location**: Browser's IndexedDB (separate from localStorage)
+- **Cache key**: `jotform_global_cache`
+- **Cache duration**: 1 hour (auto-refreshes if expired)
+- **Storage capacity**: Hundreds of MB (much larger than localStorage's 5-10 MB limit)
+- **Clearing cache**: 
+  - Clear browser data for the site
+  - Use browser DevTools → Application → IndexedDB → Delete `JotFormCacheDB`
+  - Cache automatically refreshes after 1 hour
+
+**Benefits of caching:**
+- ✅ 1 API call instead of N calls (one per student)
+- ✅ Instant filtering from cache (100x+ faster)
+- ✅ Reduced rate limiting risk
+- ✅ Better user experience for bulk testing
+- ✅ Works offline after initial cache
 
 ### Task Validation
 
