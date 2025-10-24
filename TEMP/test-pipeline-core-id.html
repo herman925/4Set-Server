@@ -377,6 +377,7 @@
         };
         
         let qualtricsMapping = null;
+        let jotformQuestionsData = null; // QID to field name mapping
         let performanceData = {}; // Track timing for each method
 
         // Load credentials on page load
@@ -391,6 +392,12 @@
                     qualtricsSurveyId: credentials.qualtricsSurveyId,
                     qualtricsDatacenter: credentials.qualtricsDatacenter
                 });
+
+                // Load JotForm questions mapping (QID to field name)
+                console.log('[Test] Loading JotForm questions mapping...');
+                const questionsResponse = await fetch('../assets/jotformquestions.json');
+                jotformQuestionsData = await questionsResponse.json();
+                console.log('[Test] JotForm questions mapping loaded:', Object.keys(jotformQuestionsData).length, 'fields');
 
                 // Inject mapping directly into transformer instance to avoid 404
                 const transformer = new QualtricsTransformer();
@@ -720,6 +727,7 @@
         }
 
         // Merge multiple JotForm submissions (earliest non-empty wins)
+        // MAPS QIDs to field names using jotformQuestionsData
         function mergeJotFormSubmissions(submissions) {
             console.log('[Test] Merging JotForm submissions (earliest non-empty value wins)...');
             
@@ -727,8 +735,26 @@
                 return {};
             }
 
+            // Create reverse mapping: QID -> field name
+            const qidToFieldName = {};
+            if (jotformQuestionsData) {
+                for (const [fieldName, qid] of Object.entries(jotformQuestionsData)) {
+                    qidToFieldName[qid] = fieldName;
+                }
+            }
+
+            // If only one submission, map its QIDs to field names
             if (submissions.length === 1) {
-                return submissions[0].answers || {};
+                const answers = submissions[0].answers || {};
+                const mapped = {};
+                for (const [qid, answerObj] of Object.entries(answers)) {
+                    const fieldName = qidToFieldName[qid];
+                    if (fieldName && answerObj.answer) {
+                        mapped[fieldName] = answerObj;
+                    }
+                }
+                console.log(`[Test] Mapped ${Object.keys(mapped).length} fields from QIDs to field names`);
+                return mapped;
             }
 
             // Sort by created_at (earliest first)
@@ -739,28 +765,35 @@
             });
 
             // Merge answers - earliest non-empty value wins
+            // Map QIDs to field names during merge
             const merged = {};
             
             for (const submission of sorted) {
                 const answers = submission.answers || {};
                 
                 for (const [qid, answerObj] of Object.entries(answers)) {
+                    const fieldName = qidToFieldName[qid];
+                    
+                    // Skip if no field name mapping or no answer value
+                    if (!fieldName || !answerObj.answer) continue;
+                    
                     // Only set if not already present (earliest wins)
-                    if (!merged[qid]) {
-                        merged[qid] = answerObj;
+                    if (!merged[fieldName]) {
+                        merged[fieldName] = answerObj;
                     } else {
                         // Check if existing is empty and new has value
-                        const existingValue = merged[qid].answer || merged[qid].text;
+                        const existingValue = merged[fieldName].answer || merged[fieldName].text;
                         const newValue = answerObj.answer || answerObj.text;
                         
                         if (!existingValue && newValue) {
-                            merged[qid] = answerObj;
+                            merged[fieldName] = answerObj;
                         }
                     }
                 }
             }
 
             console.log(`[Test] Merged ${submissions.length} submissions into ${Object.keys(merged).length} unique fields`);
+            console.log(`[Test] Sample fields:`, Object.keys(merged).slice(0, 10).join(', '));
             return merged;
         }
 
