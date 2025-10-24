@@ -197,6 +197,14 @@ Utility scripts for testing and development:
 - `test_jotform_filter.ps1` – JotForm API filter validation
 - `test_chunked_update.ps1` – Batch update testing
 
+#### `TEMP/`
+Development test files and utilities:
+- `test-pipeline-core-id.html` – JotForm + Qualtrics merge pipeline test tool
+- `README_PIPELINE_TEST.md` – Documentation for pipeline test tool
+- `test-jotform-filter.html` – Browser-based JotForm filter testing
+- `test_qualtrics_syd1.html` – Qualtrics API connection tester
+- Other temporary development and verification files
+
 #### `filed/`
 Archived processed files (organized by school ID):
 - `S###/` – Successfully processed PDFs and JSON by school
