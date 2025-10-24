@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JotForm + Qualtrics Pipeline Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-green { background-color: #10b981; }
+        .status-yellow { background-color: #f59e0b; }
+        .status-red { background-color: #ef4444; }
+        .status-grey { background-color: #9ca3af; }
+        .loading-spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .step-complete {
+            color: #10b981;
+        }
+        .step-error {
+            color: #ef4444;
+        }
+        .step-pending {
+            color: #9ca3af;
+        }
+        pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 16px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        .metric-card {
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 16px;
+            transition: all 0.3s ease;
+        }
+        .metric-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+    </style>
+</head>
+<body class="p-6">
+    <div class="max-w-6xl mx-auto">
+        <!-- Header -->
+        <div class="glass-card p-6 mb-6">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2">🔬 Pipeline Test: JotForm + Qualtrics Merge</h1>
+            <p class="text-gray-600">Test the complete data pipeline for a specific Core ID</p>
+        </div>
+
+        <!-- Input Section -->
+        <div class="glass-card p-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">📋 Test Configuration</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Core ID (numeric only)</label>
+                    <input type="text" id="coreIdInput" placeholder="e.g., 10261" 
+                           class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                           value="10261">
+                    <p class="text-xs text-gray-500 mt-1">Enter numeric Core ID without 'C' prefix</p>
+                </div>
+                <div class="flex items-end">
+                    <button id="runTestBtn" onclick="runPipelineTest()" 
+                            class="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white px-6 py-3 rounded-lg font-semibold hover:from-purple-700 hover:to-blue-700 transition-all shadow-lg">
+                        🚀 Run Pipeline Test
+                    </button>
+                </div>
+            </div>
+            <div id="credentialsStatus" class="text-sm text-gray-600"></div>
+        </div>
+
+        <!-- Pipeline Steps -->
+        <div class="glass-card p-6 mb-6">
+            <h2 class="text-xl font-semibold text-gray-800 mb-4">⚙️ Pipeline Execution Steps</h2>
+            <div class="space-y-3">
+                <div id="step1" class="flex items-center p-3 bg-gray-50 rounded-lg step-pending">
+                    <span class="mr-3">1️⃣</span>
+                    <span class="flex-1">Load credentials from credentials.json</span>
+                    <span id="step1-status">⏳</span>
+                </div>
+                <div id="step2" class="flex items-center p-3 bg-gray-50 rounded-lg step-pending">
+                    <span class="mr-3">2️⃣</span>
+                    <span class="flex-1">Fetch JotForm submissions (:matches filter on sessionkey)</span>
+                    <span id="step2-status">⏳</span>
+                </div>
+                <div id="step3" class="flex items-center p-3 bg-gray-50 rounded-lg step-pending">
+                    <span class="mr-3">3️⃣</span>
+                    <span class="flex-1">Fetch Qualtrics TGMD responses (export-poll-download)</span>
+                    <span id="step3-status">⏳</span>
+                </div>
+                <div id="step4" class="flex items-center p-3 bg-gray-50 rounded-lg step-pending">
+                    <span class="mr-3">4️⃣</span>
+                    <span class="flex-1">Transform Qualtrics data to standardized format</span>
+                    <span id="step4-status">⏳</span>
+                </div>
+                <div id="step5" class="flex items-center p-3 bg-gray-50 rounded-lg step-pending">
+                    <span class="mr-3">5️⃣</span>
+                    <span class="flex-1">Merge JotForm + Qualtrics by Core ID</span>
+                    <span id="step5-status">⏳</span>
+                </div>
+                <div id="step6" class="flex items-center p-3 bg-gray-50 rounded-lg step-pending">
+                    <span class="mr-3">6️⃣</span>
+                    <span class="flex-1">Validate all tasks (termination rules + completion metrics)</span>
+                    <span id="step6-status">⏳</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" class="hidden">
+            <!-- Student Overview -->
+            <div class="glass-card p-6 mb-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">👤 Student Overview</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="metric-card">
+                        <div class="text-xs text-gray-500 uppercase mb-1">Core ID</div>
+                        <div id="result-coreid" class="text-lg font-bold text-gray-800">-</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="text-xs text-gray-500 uppercase mb-1">Student Name</div>
+                        <div id="result-name" class="text-lg font-bold text-gray-800">-</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="text-xs text-gray-500 uppercase mb-1">JotForm Records</div>
+                        <div id="result-jotform-count" class="text-lg font-bold text-gray-800">-</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="text-xs text-gray-500 uppercase mb-1">Qualtrics Records</div>
+                        <div id="result-qualtrics-count" class="text-lg font-bold text-gray-800">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Task Validation Results -->
+            <div class="glass-card p-6 mb-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">📊 Task Validation Results</h2>
+                <div id="taskResults" class="space-y-4">
+                    <!-- Task cards will be inserted here -->
+                </div>
+            </div>
+
+            <!-- Summary Statistics -->
+            <div class="glass-card p-6 mb-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">📈 Summary Statistics</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="metric-card bg-green-50 border-green-200">
+                        <div class="flex items-center mb-2">
+                            <span class="status-indicator status-green"></span>
+                            <span class="text-sm font-medium text-gray-700">Complete</span>
+                        </div>
+                        <div id="summary-complete" class="text-3xl font-bold text-green-700">0</div>
+                    </div>
+                    <div class="metric-card bg-yellow-50 border-yellow-200">
+                        <div class="flex items-center mb-2">
+                            <span class="status-indicator status-yellow"></span>
+                            <span class="text-sm font-medium text-gray-700">Post-term</span>
+                        </div>
+                        <div id="summary-postterm" class="text-3xl font-bold text-yellow-700">0</div>
+                    </div>
+                    <div class="metric-card bg-red-50 border-red-200">
+                        <div class="flex items-center mb-2">
+                            <span class="status-indicator status-red"></span>
+                            <span class="text-sm font-medium text-gray-700">Incomplete</span>
+                        </div>
+                        <div id="summary-incomplete" class="text-3xl font-bold text-red-700">0</div>
+                    </div>
+                    <div class="metric-card bg-gray-50 border-gray-200">
+                        <div class="flex items-center mb-2">
+                            <span class="status-indicator status-grey"></span>
+                            <span class="text-sm font-medium text-gray-700">Not Started</span>
+                        </div>
+                        <div id="summary-notstarted" class="text-3xl font-bold text-gray-700">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Raw Data Inspector -->
+            <div class="glass-card p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">🔍 Raw Data Inspector</h2>
+                <div class="space-y-4">
+                    <details class="cursor-pointer">
+                        <summary class="font-semibold text-gray-700 p-3 bg-gray-50 rounded-lg hover:bg-gray-100">JotForm Merged Answers</summary>
+                        <pre id="debug-jotform" class="mt-2">-</pre>
+                    </details>
+                    <details class="cursor-pointer">
+                        <summary class="font-semibold text-gray-700 p-3 bg-gray-50 rounded-lg hover:bg-gray-100">Qualtrics Transformed Data</summary>
+                        <pre id="debug-qualtrics" class="mt-2">-</pre>
+                    </details>
+                    <details class="cursor-pointer">
+                        <summary class="font-semibold text-gray-700 p-3 bg-gray-50 rounded-lg hover:bg-gray-100">Merged Data (Final)</summary>
+                        <pre id="debug-merged" class="mt-2">-</pre>
+                    </details>
+                    <details class="cursor-pointer">
+                        <summary class="font-semibold text-gray-700 p-3 bg-gray-50 rounded-lg hover:bg-gray-100">Validation Results (Full)</summary>
+                        <pre id="debug-validation" class="mt-2">-</pre>
+                    </details>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load required scripts (from parent directory since we're in TEMP/) -->
+    <script src="../assets/js/qualtrics-transformer.js"></script>
+    <script src="../assets/js/data-merger.js"></script>
+    <script src="../assets/js/task-validator.js"></script>
+
+    <script>
+        let credentials = null;
+        let qualtricsMapping = null;
+
+        // Load credentials on page load
+        async function loadCredentials() {
+            try {
+                const response = await fetch('../assets/credentials.json');
+                credentials = await response.json();
+                
+                document.getElementById('credentialsStatus').innerHTML = 
+                    '<span class="text-green-600">✅ Credentials loaded successfully</span>';
+                
+                console.log('[Test] Credentials loaded:', {
+                    jotformFormId: credentials.jotformFormId,
+                    qualtricsSurveyId: credentials.qualtricsSurveyId,
+                    qualtricsDatacenter: credentials.qualtricsDatacenter
+                });
+
+                // Also load Qualtrics mapping
+                const transformer = new QualtricsTransformer();
+                qualtricsMapping = await transformer.loadMapping();
+                console.log('[Test] Qualtrics mapping loaded');
+                
+                return true;
+            } catch (error) {
+                console.error('[Test] Failed to load credentials:', error);
+                document.getElementById('credentialsStatus').innerHTML = 
+                    '<span class="text-red-600">❌ Failed to load credentials: ' + error.message + '</span>';
+                return false;
+            }
+        }
+
+        // Update step status
+        function updateStep(stepNum, status, message = '') {
+            const step = document.getElementById(`step${stepNum}`);
+            const statusSpan = document.getElementById(`step${stepNum}-status`);
+            
+            step.classList.remove('step-pending', 'step-complete', 'step-error');
+            
+            if (status === 'complete') {
+                step.classList.add('step-complete');
+                statusSpan.textContent = '✅';
+            } else if (status === 'error') {
+                step.classList.add('step-error');
+                statusSpan.textContent = '❌';
+            } else if (status === 'loading') {
+                statusSpan.innerHTML = '<div class="loading-spinner"></div>';
+            }
+
+            if (message) {
+                const messageEl = step.querySelector('.flex-1');
+                messageEl.innerHTML = messageEl.textContent.split(' (')[0] + ' <span class="text-xs text-gray-500">(' + message + ')</span>';
+            }
+        }
+
+        // Main pipeline test function
+        async function runPipelineTest() {
+            const coreId = document.getElementById('coreIdInput').value.trim();
+            
+            if (!coreId) {
+                alert('Please enter a Core ID');
+                return;
+            }
+
+            // Reset UI
+            document.getElementById('resultsSection').classList.add('hidden');
+            for (let i = 1; i <= 6; i++) {
+                updateStep(i, 'pending');
+            }
+
+            const runBtn = document.getElementById('runTestBtn');
+            runBtn.disabled = true;
+            runBtn.textContent = '⏳ Running Test...';
+
+            try {
+                // Step 1: Load Credentials
+                updateStep(1, 'loading');
+                const credsLoaded = await loadCredentials();
+                if (!credsLoaded) {
+                    updateStep(1, 'error', 'Failed to load credentials');
+                    return;
+                }
+                updateStep(1, 'complete');
+
+                // Step 2: Fetch JotForm Data
+                updateStep(2, 'loading');
+                const jotformData = await fetchJotFormData(coreId);
+                updateStep(2, 'complete', `${jotformData.submissions.length} submissions found`);
+
+                // Step 3: Fetch Qualtrics Data
+                updateStep(3, 'loading');
+                const qualtricsData = await fetchQualtricsData(coreId);
+                updateStep(3, 'complete', `${qualtricsData.responses.length} responses found`);
+
+                // Step 4: Transform Qualtrics Data
+                updateStep(4, 'loading');
+                const transformedQualtrics = await transformQualtricsData(qualtricsData.responses);
+                updateStep(4, 'complete', `${transformedQualtrics.length} records transformed`);
+
+                // Step 5: Merge Data
+                updateStep(5, 'loading');
+                const mergedData = await mergeData(jotformData.mergedAnswers, transformedQualtrics, coreId);
+                updateStep(5, 'complete', 'Data merged successfully');
+
+                // Step 6: Validate Tasks
+                updateStep(6, 'loading');
+                const validationResults = await validateTasks(mergedData);
+                updateStep(6, 'complete', `${Object.keys(validationResults).length} tasks validated`);
+
+                // Display Results
+                displayResults({
+                    coreId,
+                    jotformData,
+                    qualtricsData,
+                    transformedQualtrics,
+                    mergedData,
+                    validationResults
+                });
+
+            } catch (error) {
+                console.error('[Test] Pipeline test failed:', error);
+                alert('Pipeline test failed: ' + error.message);
+            } finally {
+                runBtn.disabled = false;
+                runBtn.textContent = '🚀 Run Pipeline Test';
+            }
+        }
+
+        // Fetch JotForm data using :matches filter
+        async function fetchJotFormData(coreId) {
+            console.log('[Test] ========== FETCHING JOTFORM DATA ==========');
+            console.log('[Test] Core ID:', coreId);
+
+            const { jotformApiKey, jotformFormId } = credentials;
+            
+            // Use :matches filter on sessionkey (QID 3)
+            const filter = { "q3:matches": coreId };
+            
+            const url = `https://api.jotform.com/form/${jotformFormId}/submissions?` +
+                        `apiKey=${jotformApiKey}` +
+                        `&filter=${encodeURIComponent(JSON.stringify(filter))}` +
+                        `&limit=1000` +
+                        `&orderby=created_at` +
+                        `&direction=ASC`;
+
+            console.log('[Test] Filter:', JSON.stringify(filter));
+            console.log('[Test] Fetching from JotForm API...');
+
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`JotForm API error: ${response.status}`);
+            }
+
+            const data = await response.json();
+            const submissions = data.content || [];
+            
+            console.log(`[Test] ✅ Received ${submissions.length} submissions`);
+
+            // Merge multiple submissions for the same student
+            const mergedAnswers = mergeJotFormSubmissions(submissions);
+            
+            return { submissions, mergedAnswers };
+        }
+
+        // Merge multiple JotForm submissions (earliest non-empty wins)
+        function mergeJotFormSubmissions(submissions) {
+            console.log('[Test] Merging JotForm submissions (earliest non-empty value wins)...');
+            
+            if (submissions.length === 0) {
+                return {};
+            }
+
+            if (submissions.length === 1) {
+                return submissions[0].answers || {};
+            }
+
+            // Sort by created_at (earliest first)
+            const sorted = submissions.sort((a, b) => {
+                const dateA = new Date(a.created_at);
+                const dateB = new Date(b.created_at);
+                return dateA - dateB;
+            });
+
+            // Merge answers - earliest non-empty value wins
+            const merged = {};
+            
+            for (const submission of sorted) {
+                const answers = submission.answers || {};
+                
+                for (const [qid, answerObj] of Object.entries(answers)) {
+                    // Only set if not already present (earliest wins)
+                    if (!merged[qid]) {
+                        merged[qid] = answerObj;
+                    } else {
+                        // Check if existing is empty and new has value
+                        const existingValue = merged[qid].answer || merged[qid].text;
+                        const newValue = answerObj.answer || answerObj.text;
+                        
+                        if (!existingValue && newValue) {
+                            merged[qid] = answerObj;
+                        }
+                    }
+                }
+            }
+
+            console.log(`[Test] Merged ${submissions.length} submissions into ${Object.keys(merged).length} unique fields`);
+            return merged;
+        }
+
+        // Fetch Qualtrics data
+        async function fetchQualtricsData(coreId) {
+            console.log('[Test] ========== FETCHING QUALTRICS DATA ==========');
+            console.log('[Test] Core ID:', coreId);
+
+            const { qualtricsApiKey, qualtricsDatacenter, qualtricsSurveyId } = credentials;
+            const baseUrl = `https://${qualtricsDatacenter}.qualtrics.com/API/v3`;
+
+            // Step 1: Start export
+            console.log('[Test] Starting export...');
+            const exportResponse = await fetch(
+                `${baseUrl}/surveys/${qualtricsSurveyId}/export-responses`,
+                {
+                    method: 'POST',
+                    headers: {
+                        'X-API-TOKEN': qualtricsApiKey,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        format: 'json',
+                        compress: false
+                    })
+                }
+            );
+
+            if (!exportResponse.ok) {
+                throw new Error(`Qualtrics export start failed: ${exportResponse.status}`);
+            }
+
+            const exportData = await exportResponse.json();
+            const progressId = exportData.result.progressId;
+            console.log('[Test] Export started, progress ID:', progressId);
+
+            // Step 2: Poll for completion
+            let fileId = null;
+            let attempts = 0;
+            const maxAttempts = 30;
+
+            while (attempts < maxAttempts) {
+                await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds
+                
+                const progressResponse = await fetch(
+                    `${baseUrl}/surveys/${qualtricsSurveyId}/export-responses/${progressId}`,
+                    {
+                        headers: { 'X-API-TOKEN': qualtricsApiKey }
+                    }
+                );
+
+                const progressData = await progressResponse.json();
+                const status = progressData.result.status;
+                const percentComplete = progressData.result.percentComplete;
+
+                console.log(`[Test] Export progress: ${percentComplete}% (${status})`);
+
+                if (status === 'complete') {
+                    fileId = progressData.result.fileId;
+                    console.log('[Test] ✅ Export complete, file ID:', fileId);
+                    break;
+                } else if (status === 'failed') {
+                    throw new Error('Qualtrics export failed');
+                }
+
+                attempts++;
+            }
+
+            if (!fileId) {
+                throw new Error('Qualtrics export timeout');
+            }
+
+            // Step 3: Download file
+            console.log('[Test] Downloading responses...');
+            const fileResponse = await fetch(
+                `${baseUrl}/surveys/${qualtricsSurveyId}/export-responses/${fileId}/file`,
+                {
+                    headers: { 'X-API-TOKEN': qualtricsApiKey }
+                }
+            );
+
+            if (!fileResponse.ok) {
+                throw new Error(`Qualtrics file download failed: ${fileResponse.status}`);
+            }
+
+            const responseData = await fileResponse.json();
+            const responses = responseData.responses || [];
+            
+            console.log(`[Test] ✅ Downloaded ${responses.length} total responses`);
+
+            // Filter for this Core ID
+            const filtered = responses.filter(r => {
+                const responseCoreId = r.values?.coreId || r.values?.coreid;
+                return responseCoreId === coreId || responseCoreId === `C${coreId}`;
+            });
+
+            console.log(`[Test] Filtered to ${filtered.length} responses for Core ID ${coreId}`);
+
+            return { responses: filtered, allResponses: responses.length };
+        }
+
+        // Transform Qualtrics data
+        async function transformQualtricsData(responses) {
+            console.log('[Test] ========== TRANSFORMING QUALTRICS DATA ==========');
+            
+            if (!window.QualtricsTransformer) {
+                console.warn('[Test] QualtricsTransformer not available, returning raw data');
+                return responses;
+            }
+
+            const transformer = new window.QualtricsTransformer();
+            await transformer.loadMapping();
+
+            const transformed = responses.map(response => {
+                return transformer.transformResponse(response);
+            });
+
+            console.log(`[Test] ✅ Transformed ${transformed.length} responses`);
+            return transformed;
+        }
+
+        // Merge JotForm + Qualtrics data
+        async function mergeData(jotformAnswers, qualtricsRecords, coreId) {
+            console.log('[Test] ========== MERGING DATA ==========');
+            console.log('[Test] JotForm fields:', Object.keys(jotformAnswers).length);
+            console.log('[Test] Qualtrics records:', qualtricsRecords.length);
+
+            // Start with JotForm data
+            const merged = { ...jotformAnswers };
+
+            // Merge Qualtrics TGMD fields (prefer Qualtrics for TGMD_* fields)
+            for (const record of qualtricsRecords) {
+                for (const [key, value] of Object.entries(record)) {
+                    if (key.startsWith('TGMD_') && value) {
+                        // Qualtrics TGMD data takes precedence
+                        merged[key] = { answer: value, text: value };
+                    }
+                }
+            }
+
+            console.log('[Test] ✅ Merged data contains', Object.keys(merged).length, 'fields');
+            return merged;
+        }
+
+        // Validate tasks using TaskValidator
+        async function validateTasks(mergedData) {
+            console.log('[Test] ========== VALIDATING TASKS ==========');
+            
+            if (!window.TaskValidator) {
+                throw new Error('TaskValidator not available');
+            }
+
+            const results = await window.TaskValidator.validateAllTasks(mergedData);
+            
+            console.log('[Test] ✅ Validated', Object.keys(results).length, 'tasks');
+            return results;
+        }
+
+        // Display results
+        function displayResults(data) {
+            console.log('[Test] ========== DISPLAYING RESULTS ==========');
+            
+            // Show results section
+            document.getElementById('resultsSection').classList.remove('hidden');
+
+            // Student Overview
+            document.getElementById('result-coreid').textContent = `C${data.coreId}`;
+            document.getElementById('result-name').textContent = 
+                data.mergedData['student-name-chinese']?.answer || 
+                data.mergedData['student-name-english']?.answer || 
+                'Unknown';
+            document.getElementById('result-jotform-count').textContent = data.jotformData.submissions.length;
+            document.getElementById('result-qualtrics-count').textContent = data.qualtricsData.responses.length;
+
+            // Task Results
+            const taskContainer = document.getElementById('taskResults');
+            taskContainer.innerHTML = '';
+
+            let complete = 0, postterm = 0, incomplete = 0, notstarted = 0;
+
+            for (const [taskId, result] of Object.entries(data.validationResults)) {
+                const completionPct = result.completionPercentage || 0;
+                const accuracyPct = result.accuracyPercentage || 0;
+                
+                // Determine status
+                let status = 'grey';
+                let statusText = 'Not Started';
+                
+                if (completionPct === 0) {
+                    status = 'grey';
+                    statusText = 'Not Started';
+                    notstarted++;
+                } else if (completionPct === 100) {
+                    status = 'green';
+                    statusText = 'Complete';
+                    complete++;
+                } else if (result.terminated || result.timedOut) {
+                    status = 'yellow';
+                    statusText = result.timedOut ? 'Timed Out' : 'Terminated';
+                    postterm++;
+                } else {
+                    status = 'red';
+                    statusText = 'Incomplete';
+                    incomplete++;
+                }
+
+                const taskCard = `
+                    <div class="metric-card">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center">
+                                <span class="status-indicator status-${status}"></span>
+                                <h3 class="font-semibold text-gray-800">${result.title || taskId.toUpperCase()}</h3>
+                            </div>
+                            <span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">${statusText}</span>
+                        </div>
+                        <div class="grid grid-cols-3 gap-4 text-sm">
+                            <div>
+                                <div class="text-xs text-gray-500">Answered</div>
+                                <div class="font-semibold">${result.answeredQuestions} / ${result.totalQuestions}</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-gray-500">Correct</div>
+                                <div class="font-semibold text-green-600">${result.correctAnswers}</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-gray-500">Accuracy</div>
+                                <div class="font-semibold">${accuracyPct}%</div>
+                            </div>
+                        </div>
+                        <div class="mt-3">
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="bg-${status === 'green' ? 'green' : status === 'yellow' ? 'yellow' : status === 'red' ? 'red' : 'gray'}-500 h-2 rounded-full" 
+                                     style="width: ${completionPct}%"></div>
+                            </div>
+                            <div class="text-xs text-gray-500 mt-1 text-right">${completionPct}% complete</div>
+                        </div>
+                    </div>
+                `;
+                
+                taskContainer.innerHTML += taskCard;
+            }
+
+            // Summary Statistics
+            document.getElementById('summary-complete').textContent = complete;
+            document.getElementById('summary-postterm').textContent = postterm;
+            document.getElementById('summary-incomplete').textContent = incomplete;
+            document.getElementById('summary-notstarted').textContent = notstarted;
+
+            // Debug Data
+            document.getElementById('debug-jotform').textContent = 
+                JSON.stringify(data.jotformData.mergedAnswers, null, 2).substring(0, 5000) + '...';
+            document.getElementById('debug-qualtrics').textContent = 
+                JSON.stringify(data.transformedQualtrics, null, 2).substring(0, 5000) + '...';
+            document.getElementById('debug-merged').textContent = 
+                JSON.stringify(data.mergedData, null, 2).substring(0, 5000) + '...';
+            document.getElementById('debug-validation').textContent = 
+                JSON.stringify(data.validationResults, null, 2);
+
+            console.log('[Test] ✅ Results displayed successfully');
+        }
+
+        // Load credentials on page load
+        window.addEventListener('DOMContentLoaded', loadCredentials);
+    </script>
+</body>
+</html>
