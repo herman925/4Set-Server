@@ -1,0 +1,909 @@
+{
+  "id": "tec_female",
+  "title": "Test of Emotion Comprehension (Girl)",
+  "questions": [
+    {
+      "id": "TEC_Cover",
+      "type": "instruction",
+      "label": {
+        "zh": "情緒遊戲 (Girl)\n\n確認進入測試請按右下方箭頭（➜）。",
+        "attention": "右下方箭頭（➜）"
+      }
+    },
+    {
+      "id": "TEC_ins1",
+      "type": "instruction",
+      "label": {
+        "zh": "「小朋友，我而家會俾啲圖片你睇，然後問你啲問題，我想你用手指指出答案，好冇？」",
+        "instruction": ["小朋友，我而家會俾啲圖片你睇，然後問你啲問題，我想你用手指指出答案，好冇？"]
+      }
+    },
+    {
+      "id": "TEC_F_Q1",
+      "type": "image-choice",
+      "label": {
+        "zh": "「呢四張圖，指俾我睇，邊個係 難過 ?」",
+        "instruction": ["呢四張圖，指俾我睇，邊個係","?"],
+        "emphasize": ["難過"]
+      },
+      "options": [
+        {
+          "value": "1",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q1.1.1.jpeg"
+          }
+        },
+        {
+          "value": "2",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q1.1.2.jpeg"
+          }
+        },
+        {
+          "value": "3",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q1.1.3.jpeg"
+          }
+        },
+        {
+          "value": "4",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q1.1.4.jpeg"
+          }
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "1"
+      }
+    },
+    {
+      "id": "TEC_F_Q2",
+      "type": "image-choice",
+      "label": {
+        "zh": "「呢四張圖，指俾我睇，邊個係 開心 ?」",
+        "instruction": ["呢四張圖，指俾我睇，邊個係","?"],
+        "emphasize": ["開心"]
+      },
+      "options": [
+        {
+          "value": "1",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q2.1.1.jpeg"
+          }
+        },
+        {
+          "value": "2",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q2.1.2.jpeg"
+          }
+        },
+        {
+          "value": "3",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q2.1.3.jpeg"
+          }
+        },
+        {
+          "value": "4",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q2.1.4.jpeg"
+          }
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "1"
+      }
+    },
+    {
+      "id": "TEC_F_Q3",
+      "type": "image-choice",
+      "label": {
+        "zh": "「呢四張圖，指俾我睇，邊個係 生氣 ?」",
+        "instruction": ["呢四張圖，指俾我睇，邊個係","?"],
+        "emphasize": ["生氣"]
+      },
+      "options": [
+        {
+          "value": "1",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q3.1.1.jpeg"
+          }
+        },
+        {
+          "value": "2",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q3.1.2.jpeg"
+          }
+        },
+        {
+          "value": "3",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q3.1.3.jpeg"
+          }
+        },
+        {
+          "value": "4",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q3.1.4.jpeg"
+          }
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "1"
+      }
+    },
+    {
+      "id": "TEC_F_Q4",
+      "type": "image-choice",
+      "label": {
+        "zh": "「呢四張圖，指俾我睇，邊個係 無表情 ?」",
+        "instruction": ["呢四張圖，指俾我睇，邊個係","?"],
+        "emphasize": ["無表情"]
+      },
+      "options": [
+        {
+          "value": "1",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q4.1.1.jpeg"
+          }
+        },
+        {
+          "value": "2",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q4.1.2.jpeg"
+          }
+        },
+        {
+          "value": "3",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q4.1.3.jpeg"
+          }
+        },
+        {
+          "value": "4",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q4.1.4.jpeg"
+          }
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "1"
+      }
+    },
+    {
+      "id": "TEC_F_Q5",
+      "type": "image-choice",
+      "label": {
+        "zh": "「呢四張圖，指俾我睇，邊個係 害怕 ?」",
+        "instruction": ["呢四張圖，指俾我睇，邊個係","?"],
+        "emphasize": ["害怕"]
+      },
+      "options": [
+        {
+          "value": "1",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q5.1.1.jpeg"
+          }
+        },
+        {
+          "value": "2",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q5.1.2.jpeg"
+          }
+        },
+        {
+          "value": "3",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q5.1.3.jpeg"
+          }
+        },
+        {
+          "value": "4",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q5.1.4.jpeg"
+          }
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "1"
+      }
+    },
+    {
+      "id": "TEC_ins2",
+      "type": "instruction",
+      "label": {
+        "zh": "「跟住我會講故事俾你聽，然後問你一啲問題，你用手指指出答案俾我。」",
+        "instruction": "跟住我會講故事俾你聽，然後問你一啲問題，你用手指指出答案俾我。"
+      }
+    },
+    {
+      "id": "TEC_F_Q6",
+      "type": "image-choice",
+      "label": {
+        "parts": [
+          {
+            "zh": "「呢個女仔喺度望住佢死咗嘅小烏龜。」",
+            "instruction": "呢個女仔喺度望住佢死咗嘅小烏龜。",
+            "image": "images/TEC_F/TEC_F_Q6.1.jpeg"
+          },
+          {
+            "zh": "「呢個女仔嘅心情係點？佢係 開心、難過、生氣 定 無表情 ?」",
+            "instruction": ["呢個女仔嘅心情係點？佢係","定","?"],
+            "emphasize": ["開心", "難過", "生氣", "無表情", "害怕"]
+          }
+        ]
+      },
+      "options": [
+        {
+          "value": "1",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q6.2.1.jpeg"
+          }
+        },
+        {
+          "value": "2",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q6.2.2.jpeg"
+          }
+        },
+        {
+          "value": "3",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q6.2.3.jpeg"
+          }
+        },
+        {
+          "value": "4",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q6.2.4.jpeg"
+          }
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "2"
+      }
+    },
+    {
+      "id": "TEC_F_Q7",
+      "type": "image-choice",
+      "label": {
+        "parts": [
+          {
+            "zh": "「呢個女仔得到一份生日禮物。」",
+            "instruction": "呢個女仔得到一份生日禮物。",
+            "image": "images/TEC_F/TEC_F_Q7.1.jpeg"
+          },
+          {
+            "zh": "「呢個女仔嘅心情係點？佢係 開心、難過、無表情 定 害怕 ?」",
+            "instruction": ["呢個女仔嘅心情係點？佢係","定","?"],
+            "emphasize": ["開心", "難過", "無表情", "害怕"]
+          }
+        ]
+      },
+      "options": [
+        {
+          "value": "1",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q7.2.1.jpeg"
+          }
+        },
+        {
+          "value": "2",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q7.2.2.jpeg"
+          }
+        },
+        {
+          "value": "3",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q7.2.3.jpeg"
+          }
+        },
+        {
+          "value": "4",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q7.2.4.jpeg"
+          }
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "1"
+      }
+    },
+    {
+      "id": "TEC_F_Q8",
+      "type": "image-choice",
+      "label": {
+        "parts": [
+          {
+            "zh": "「呢個女仔喺度畫緊畫，但係佢嘅細佬唔俾佢畫畫。」",
+            "instruction": "呢個女仔喺度畫緊畫，但係佢嘅細佬唔俾佢畫畫。",
+            "image": "images/TEC_F/TEC_F_Q8.1.jpeg"
+          },
+          {
+            "zh": "「呢個女仔嘅心情係點？佢係 開心、無表情、生氣 定 害怕 ?」",
+            "instruction": ["呢個女仔嘅心情係點？佢係","定","?"],
+            "emphasize": ["開心", "無表情", "生氣", "害怕"]
+          }
+        ]
+      },
+      "options": [
+        {
+          "value": "1",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q8.2.1.jpeg"
+          }
+        },
+        {
+          "value": "2",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q8.2.2.jpeg"
+          }
+        },
+        {
+          "value": "3",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q8.2.3.jpeg"
+          }
+        },
+        {
+          "value": "4",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q8.2.4.jpeg"
+          }
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "3"
+      }
+    },
+    {
+      "id": "TEC_F_Q9",
+      "type": "image-choice",
+      "label": {
+        "parts": [
+          {
+            "zh": "「呢個女仔喺度等緊巴士。」",
+            "instruction": "呢個女仔喺度等緊巴士。",
+            "image": "images/TEC_F/TEC_F_Q9.1.jpeg"
+          },
+          {
+            "zh": "「呢個女仔嘅心情會係點？佢係 開心、難過、生氣 定 無表情 ?」",
+            "instruction": ["呢個女仔嘅心情會係點？佢係","定","?"],
+            "emphasize": ["開心", "難過", "生氣", "無表情"]
+          }
+        ]
+      },
+      "options": [
+        {
+          "value": "1",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q9.2.1.jpeg"
+          }
+        },
+        {
+          "value": "2",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q9.2.2.jpeg"
+          }
+        },
+        {
+          "value": "3",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q9.2.3.jpeg"
+          }
+        },
+        {
+          "value": "4",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q9.2.4.jpeg"
+          }
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "4"
+      }
+    },
+    {
+      "id": "TEC_F_Q10",
+      "type": "image-choice",
+      "label": {
+        "parts": [
+          {
+            "zh": "「有隻怪物喺度追緊呢個女仔。」",
+            "instruction": "有隻怪物喺度追緊呢個女仔。",
+            "image": "images/TEC_F/TEC_F_Q10.1.jpeg"
+          },
+          {
+            "zh": "「呢個女仔嘅心情係點？佢係 開心、無表情、生氣 定 害怕?」",
+            "instruction": ["呢個女仔嘅心情係點？佢係","定","?"],
+            "emphasize": ["開心", "無表情", "生氣", "害怕"]
+          }
+        ]
+      },
+      "options": [
+        {
+          "value": "1",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q10.2.1.jpeg"
+          }
+        },
+        {
+          "value": "2",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q10.2.2.jpeg"
+          }
+        },
+        {
+          "value": "3",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q10.2.3.jpeg"
+          }
+        },
+        {
+          "value": "4",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q10.2.4.jpeg"
+          }
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "4"
+      }
+    },
+    {
+      "id": "TEC_F_Q11",
+      "type": "image-choice",
+      "label": {
+        "parts": [
+          {
+            "zh": "情境：\n「呢個係小花，呢個係小美。小花同小美都好口渴，小花 好鍾意 可樂，但係小美 唔鍾意 可樂。\n\n控制題：\n「小花鍾唔鍾意可樂呢？」(鍾意)\n「咁小美又鍾唔鍾意可樂呢？」(唔鍾意)\n(等幼兒分別回答完小花和小美的問題後再作出回應。)\n\n→ 若參加者回答正確：「答啱咗，小花 鍾意 可樂，而小美 唔鍾意 可樂。」\n→ 若參加者回答錯誤：「實際上，小花 鍾意 可樂（協助），而小美 唔鍾意 可樂（協助）。」",
+            "emphasize": ["唔鍾意", "鍾意"],
+            "instruction":["可樂","呢個係小花，呢個係小美。小花同小美都好口渴，小花","可樂，但係小美","小花鍾唔鍾意可樂呢？","咁小美又鍾唔鍾意可樂呢？","答啱咗，小花","而小美","實際上，小花","可樂（協助）","而小美"],
+            "image": "images/TEC_F/TEC_F_Q11.1.jpeg"
+          },
+          {
+            "zh": "情境：「而家睇吓呢一幅圖入面有個箱，打開個箱，入面有一樽可樂。」",
+            "instruction": "而家睇吓呢一幅圖入面有個箱，打開個箱，入面有一樽可樂。",
+            "image": "images/TEC_F/TEC_F_Q11.2.jpeg"
+          },
+          {
+            "zh": "「小花睇到可樂嘅時候，佢嘅心情會係點？佢係 開心、難過、無表情 定 害怕 ?」",
+            "instruction": ["小花睇到可樂嘅時候，佢嘅心情會係點？佢係","定","?"],
+            "emphasize": ["開心", "難過", "無表情", "害怕"]
+          }
+        ]
+      },
+      "options": [
+        {
+          "value": "1",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q11.3.1.jpeg"
+          }
+        },
+        {
+          "value": "2",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q11.3.2.jpeg"
+          }
+        },
+        {
+          "value": "3",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q11.3.3.jpeg"
+          }
+        },
+        {
+          "value": "4",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q11.3.4.jpeg"
+          }
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "1"
+      }
+    },
+    {
+      "id": "TEC_F_Q12",
+      "type": "image-choice",
+      "label": {
+        "zh": "小美睇到可樂嘅時候，佢嘅心情係點？佢係 開心、難過、無表情 定 害怕 ?",
+        "instruction": ["小美睇到可樂嘅時候，佢嘅心情係點？佢係","定","?"],
+        "emphasize": ["開心", "難過", "無表情", "害怕"],
+        "image": "images/TEC_F/TEC_F_Q12.1.jpeg"
+      },
+      "options": [
+        {
+          "value": "1",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q12.2.1.jpeg"
+          }
+        },
+        {
+          "value": "2",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q12.2.2.jpeg"
+          }
+        },
+        {
+          "value": "3",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q12.2.3.jpeg"
+          }
+        },
+        {
+          "value": "4",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q12.2.4.jpeg"
+          }
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "2"
+      }
+    },
+    {
+      "id": "TEC_F_Q13",
+      "type": "image-choice",
+      "label": {
+        "parts": [
+          {
+            "zh": "情境：\n「呢個係小花，呢個係小美。小花同小美非常餓，小花 唔鍾意 青菜，但係小美 好鍾意 青菜。\n\n控制題：\n「小花鍾唔鍾意食菜？」(唔鍾意)\n「小美鍾唔鍾意食菜？」(鍾意)\n(等幼兒分別回答完小花和小美的問題後再作出回應。)\n\n→ 若參加者回答正確：「答啱咗，小花 唔鍾意 食菜，而小美 鍾意 食菜。」\n→ 若參加者回答錯誤：「實際上，小花 唔鍾意 食菜，而小美 鍾意 食菜。」",
+            "emphasize": ["唔鍾意", "鍾意"],
+            "instruction":["青菜","食菜","呢個係小花，呢個係小美。小花同小美非常餓，小花","青菜，但係小美","小花鍾唔鍾意食菜？","小美鍾唔鍾意食菜？","答啱咗，小花","而小美","實際上，小花","食菜，而小美"],
+            "image": "images/TEC_F/TEC_F_Q13.1.jpeg"
+          },
+          {
+            "zh": "情境：\n「而家睇吓呢一張圖入邊嘅箱，打開個箱，原來個箱入面係有菜。」",
+            "instruction": "而家睇吓呢一張圖入邊嘅箱，打開個箱，原來個箱入面係有菜。",
+            "image": "images/TEC_F/TEC_F_Q13.2.jpeg"
+          },
+          {
+            "zh": "「小花睇到菜嘅時候，佢嘅心情會係點？佢係 開心、難過、無表情 定 害怕 ?」",
+            "instruction": ["小花睇到菜嘅時候，佢嘅心情會係點？佢係","定","?"],
+            "emphasize": ["開心", "難過", "無表情", "害怕"]
+          }
+        ]
+      },
+      "options": [
+        {
+          "value": "1",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q13.3.1.jpeg"
+          }
+        },
+        {
+          "value": "2",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q13.3.2.jpeg"
+          }
+        },
+        {
+          "value": "3",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q13.3.3.jpeg"
+          }
+        },
+        {
+          "value": "4",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q13.3.4.jpeg"
+          }
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "2"
+      }
+    },
+    {
+      "id": "TEC_F_Q14",
+      "type": "image-choice",
+      "label": {
+        "zh": "小美睇到菜嘅時候，佢嘅心情係點？佢係 開心、難過、無表情 定 害怕 ?",
+        "emphasize": ["開心", "難過", "無表情", "害怕"],
+        "instruction": ["小美睇到菜嘅時候，佢嘅心情係點？佢係","定","?"],
+        "image": "images/TEC_F/TEC_F_Q14.1.jpeg"
+      },
+      "options": [
+        {
+          "value": "1",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q14.2.1.jpeg"
+          }
+        },
+        {
+          "value": "2",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q14.2.2.jpeg"
+          }
+        },
+        {
+          "value": "3",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q14.2.3.jpeg"
+          }
+        },
+        {
+          "value": "4",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q14.2.4.jpeg"
+          }
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "1"
+      }
+    },
+    {
+      "id": "TEC_F_Q15",
+      "type": "image-choice",
+      "label": {
+        "parts": [
+          {
+            "zh": "情境：\n「呢隻係小花嘅兔仔，佢喺度食緊紅蘿蔔，佢非常鍾意食紅蘿蔔。\n 而家我哋睇吓草叢後面，有一隻野狼。」",
+            "instruction": ["呢隻係小花嘅兔仔，佢喺度食緊紅蘿蔔，佢非常鍾意食紅蘿蔔。","而家我哋睇吓草叢後面，有一隻野狼。"],
+            "image": "images/TEC_F/TEC_F_Q15.1.jpeg"
+          },
+          {
+            "zh": "情境：\n「因為佢想食兔仔，所以佢匿埋咗喺草叢後面，咁樣兔仔就睇唔到佢。」",
+            "instruction": "因為佢想食兔仔，所以佢匿埋咗喺草叢後面，咁樣兔仔就睇唔到佢。",
+            "image": "images/TEC_F/TEC_F_Q15.2.jpeg"
+          },
+          {
+            "zh": "「\n\n控制題：\n「兔仔知唔知道野狼匿埋咗喺草叢後面？」\n\n→ 若參加者回答正確：「答啱呀，兔仔 唔知道 野狼匿埋咗喺草叢後面。」\n→ 若參加者回答錯誤：「實際上，兔仔 唔知道 野狼匿埋咗喺草叢後面。（協助）」\n\n「咁而家想問吓你，呢隻兔仔嘅心情係點樣？佢係 開心、無表情、生氣 定 害怕 ?」",
+            "instruction": ["兔仔知唔知道野狼匿埋咗喺草叢後面？","答啱呀，兔仔 唔知道 野狼匿埋咗喺草叢後面。","實際上，兔仔 唔知道 野狼匿埋咗喺草叢後面。（協助）","咁而家想問吓你，呢隻兔仔嘅心情係點樣？佢係","定","?"],
+            "emphasize": ["唔知道","開心", "無表情", "生氣", "害怕"]
+          }
+        ]
+      },
+      "options": [
+        {
+          "value": "1",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q15.3.1.jpeg"
+          }
+        },
+        {
+          "value": "2",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q15.3.2.jpeg"
+          }
+        },
+        {
+          "value": "3",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q15.3.3.jpeg"
+          }
+        },
+        {
+          "value": "4",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q15.3.4.jpeg"
+          }
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "1"
+      }
+    },
+    {
+      "id": "TEC_P4",
+      "type": "instruction",
+      "label": {
+        "zh": "情境：\n「小花非常難過，因為野狼食咗佢隻兔仔。」",
+        "instruction": "小花非常難過，因為野狼食咗佢隻兔仔。",
+        "image": "images/TEC_F/TEC_F_Q16a.1.jpeg"
+      }
+    },
+    {
+      "id": "TEC_P5",
+      "type": "instruction",
+      "label": {
+        "zh": "「嗰一日嘅夜晚，小花上床瞓覺，第二日……」",
+        "instruction": "嗰一日嘅夜晚，小花上床瞓覺，第二日……",
+        "image": "images/TEC_F/TEC_F_Q16a.2.jpeg"
+      }
+    },
+    {
+      "id": "TEC_F_Q16a",
+      "type": "image-choice",
+      "label": {
+        "parts": [
+          {
+            "zh": "情境：\n「小花望住佢嘅相簿，佢望住相片入邊自己最好嘅好朋友。」",
+            "instruction": "小花望住佢嘅相簿，佢望住相片入邊自己最好嘅好朋友。",
+            "image": "images/TEC_F/TEC_F_Q16a.3.jpeg"
+          },
+          {
+            "zh": "\n\n控制題：\n「當小花望住自己最好朋友啲相片嘅時候，佢嘅心情會係點？佢係 開心、難過、無表情 定 害怕 ?」\n\n→ 若參加者回答正確：「答啱呀，當小花望住相片，見到自己好朋友嘅時候，佢係開心。」\n→ 若參加者回答錯誤：「實際上，當小花望住相片，見到自己好朋友嘅時候，佢係開心。（協助）」",
+            "instruction": ["當小花望住自己最好朋友啲相片嘅時候，佢嘅心情會係點？佢係 開心、難過、無表情 定 害怕 ?","答啱呀，當小花望住相片，見到自己好朋友嘅時候，佢係開心。","實際上，當小花望住相片，見到自己好朋友嘅時候，佢係開心。（協助）"],
+            "emphasize": ["開心", "難過", "無表情", "害怕"]
+          }
+        ]
+      },
+      "options": [
+        {
+          "value": "1",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q16a.4.1.jpeg"
+          }
+        },
+        {
+          "value": "2",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q16a.4.2.jpeg"
+          }
+        },
+        {
+          "value": "3",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q16a.4.3.jpeg"
+          }
+        },
+        {
+          "value": "4",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q16a.4.4.jpeg"
+          }
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "1"
+      }
+    },
+    {
+      "id": "TEC_F_Q16b",
+      "type": "image-choice",
+      "label": {
+        "parts": [
+          {
+            "zh": "情境：\n「而家小花喺度望緊相片入面自己嘅兔仔。」",
+            "instruction": "而家小花喺度望緊相片入面自己嘅兔仔。",
+            "image": "images/TEC_F/TEC_F_Q16b.1.jpeg"
+          },
+          {
+            "zh":"「佢嘅心情會係點？佢係 開心、難過、無表情 定 害怕 ?」",
+            "instruction": ["佢嘅心情會係點？佢係","定","?"],
+            "emphasize": ["開心", "難過", "無表情", "害怕"]
+          }
+        ]
+      },
+      "options": [
+        {
+          "value": "1",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q16b.2.1.jpeg"
+          }
+        },
+        {
+          "value": "2",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q16b.2.2.jpeg"
+          }
+        },
+        {
+          "value": "3",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q16b.2.3.jpeg"
+          }
+        },
+        {
+          "value": "4",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q16b.2.4.jpeg"
+          }
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "2"
+      }
+    },
+    {
+      "id": "TEC_F_Q17",
+      "type": "image-choice",
+      "label": {
+        "parts": [
+          {
+            "zh": "情境：\n「小花喺度望住自己兔仔嘅相片，小花好傷心，因為野狼將兔仔食咗。有咩方法可以令小花停止傷心？\n\n若幼兒回答：小花可以買一隻新兔仔。\n→你可以回答「啱喇！佢可以買一隻新兔仔，但係小花對於失去自己嘅兔仔感到好傷心，佢好鍾意佢隻兔仔。有咩方法可以令小花停止傷心？」",
+            "instruction": ["小花喺度望住自己兔仔嘅相片，小花好傷心，因為野狼將兔仔食咗。有咩方法可以令小花停止傷心？", "啱喇！佢可以買一隻新兔仔，但係小花對於失去自己嘅兔仔感到好傷心，佢好鍾意佢隻兔仔。有咩方法可以令小花停止傷心？"],
+            "image": "images/TEC_F/TEC_F_Q17.1.jpeg"
+          }
+        ]
+      },
+      "options": [
+        {
+          "value": "1",
+          "label": "「小花合埋眼，然後佢就可以停止傷心！」",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q17.2.1.jpeg"
+          }
+        },
+        {
+          "value": "2",
+          "label": "「小花可以出街，然後佢就可以停止傷心！」",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q17.2.2.jpeg"
+          }
+        },
+        {
+          "value": "3",
+          "label": "「小花可以諗下其他野，然後佢就可以停止傷心！」",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q17.2.3.jpeg"
+          }
+        },
+        {
+          "value": "4",
+          "label": "「小花冇任何辦法令佢停止傷心！」",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q17.2.4.jpeg"
+          }
+        }
+      ]
+    },
+    {
+      "id": "TEC_F_Q18",
+      "type": "image-choice",
+      "label": {
+        "parts": [
+          {
+            "zh": "情境：\n「呢個係小花，呢個係小玲。\n小玲喺度取笑緊小花，因為小玲有好多粒波子，但係小花一粒波子都冇。\n小花喺到笑，因為佢唔鐘意比小玲知道佢心入邊嘅感受。」",
+            "instruction": ["呢個係小花，呢個係小玲。", "小玲喺度取笑緊小花，因為小玲有好多粒波子，但係小花一粒波子都冇。", "小花喺到笑，因為佢唔鐘意比小玲知道佢心入邊嘅感受。"],
+            "image": "images/TEC_F/TEC_F_Q18.1.jpeg"
+          },
+          {
+            "zh": "\n\n「小花嘅內心感受係點樣？佢係 開心、無表情、生氣 定 害怕 ？」",
+            "instruction": ["小花嘅內心感受係點樣？佢係","定","?"],
+            "emphasize": ["開心", "無表情", "生氣", "害怕"]
+          }
+        ]
+      },
+      "options": [
+        {
+          "value": "1",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q18.2.1.jpeg"
+          }
+        },
+        {
+          "value": "2",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q18.2.2.jpeg"
+          }
+        },
+        {
+          "value": "3",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q18.2.3.jpeg"
+          }
+        },
+        {
+          "value": "4",
+          "media": {
+            "image": "images/TEC_F/TEC_F_Q18.2.4.jpeg"
+          }
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "1"
+      }
+    },
+    {
+      "id": "TEC_F_Date",
+      "type": "text",
+      "label": "完成日期："
+    },
+    {
+      "id": "TEC_F_Com",
+      "type": "completion",
+      "dateId": "TEC_F_Date",
+      "label": {
+        "zh": "情緒遊戲 (Girl) 測試已完成.\n\n請按右下方箭頭（➜），並填寫checklist内容.",
+        "word_compound": "測試已完成",
+        "super_emphasize": ["請按右下方箭頭（➜）", "填寫checklist"]
+      },
+      "buttonLabel": "已完成"
+    }
+  ]
+}

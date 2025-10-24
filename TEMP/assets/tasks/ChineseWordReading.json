@@ -1,0 +1,1044 @@
+{
+  "id": "chinesewordreading",
+  "title": "Chinese Word Reading",
+  "questions": [
+    {
+      "id": "CWR_Cover",
+      "type": "instruction",
+      "label": {
+        "zh": "確認進入測試請按右下方箭頭（➜）",
+        "attention": "右下方箭頭（➜）"
+    }
+    },
+    {
+      "id": "CWR_ins1",
+      "type": "instruction",
+      "label": {
+        "parts": [
+          {
+            "zh": "「小朋友，跟住落嚟有啲中文字，有啲深有啲淺。如果你識嘅就讀出嚟，如果唔識唔緊要，你話唔識就得喇。」\n Here are some chinese words, please read the word you know.\n\n",
+            "orange_text": "Here are some chinese words, please read the word you know.",
+            "instruction": "小朋友，跟住落嚟有啲中文字，有啲深有啲淺。如果你識嘅就讀出嚟，如果唔識唔緊要，你話唔識就得喇。"
+          },
+          {
+            "zh": "記錄規則：\n單字題目，正確讀出單字=Y，錯誤或不知道=N；\n詞語題目，正確讀出整個詞語=Y，錯誤或不會讀其中一個字=N。\n\n如在作答過程中出現POP UP 提示(已連續錯10題)，請評估員和小朋友停止作答，及按\"Return to Task List\"離開此Task。\n\n小朋友自我改正算正確，若小朋友連續錯10題即可停止。",
+            "bold": [
+              "如在作答過程中出現",
+              "(已連續錯10題)",
+              "請評估員和小朋友停止作答，及按\"Return to Task List\"離開此Task",
+              "自我改正算正確",
+              "連續錯10題"
+            ],
+            "emphasize": [
+              "POP UP 提示(已連續錯10題)",
+              "停止作答"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "CWR_Q1",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n山",
+        "cwr_text": "山"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q2",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n牛",
+        "cwr_text": "牛"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q3",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n花",
+        "cwr_text": "花"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q4",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n車",
+        "cwr_text": "車"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q5",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n水",
+        "cwr_text": "水"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q6",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n爸",
+        "cwr_text": "爸"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q7",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n哥",
+        "cwr_text": "哥"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q8",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n色",
+        "cwr_text": "色"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q9",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n風",
+        "cwr_text": "風"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q10",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n早",
+        "cwr_text": "早"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q11",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n生",
+        "cwr_text": "生"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q12",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n狗",
+        "cwr_text": "狗"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q13",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n媽",
+        "cwr_text": "媽"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q14",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n手",
+        "cwr_text": "手"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q15",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n秋",
+        "cwr_text": "秋"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q16",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n我",
+        "cwr_text": "我"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q17",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n樹",
+        "cwr_text": "樹"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q18",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n球",
+        "cwr_text": "球"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q19",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n藍",
+        "cwr_text": "藍"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q20",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n好",
+        "cwr_text": "好"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q21",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n兒",
+        "cwr_text": "兒"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q22",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n飛",
+        "cwr_text": "飛"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q23",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n多",
+        "cwr_text": "多"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q24",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n快",
+        "cwr_text": "快"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q25",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n<span class=\"cwr-word\">個</span>"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q26",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n的",
+        "cwr_text": "的"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q27",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n蕉",
+        "cwr_text": "蕉"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q28",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n去",
+        "cwr_text": "去"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q29",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n在",
+        "cwr_text": "在"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q30",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n說",
+        "cwr_text": "說"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q31",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n香港",
+        "cwr_text": "香港"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q32",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n市場",
+        "cwr_text": "市場"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q33",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n新年",
+        "cwr_text": "新年"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q34",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n星期",
+        "cwr_text": "星期"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q35",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n耳朵",
+        "cwr_text": "耳朵"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q36",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n中午",
+        "cwr_text": "中午"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q37",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n眼睛",
+        "cwr_text": "眼睛"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q38",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n晚上",
+        "cwr_text": "晚上"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q39",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n老師",
+        "cwr_text": "老師"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q40",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n房屋",
+        "cwr_text": "房屋"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q41",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n美麗",
+        "cwr_text": "美麗"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q42",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n衣服",
+        "cwr_text": "衣服"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q43",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n鼻子",
+        "cwr_text": "鼻子"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q44",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n再見",
+        "cwr_text": "再見"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q45",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n禮物",
+        "cwr_text": "禮物"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q46",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n蜜蜂",
+        "cwr_text": "蜜蜂"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q47",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n書包",
+        "cwr_text": "書包"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q48",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n電腦",
+        "cwr_text": "電腦"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q49",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n馬路",
+        "cwr_text": "馬路"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q50",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n糖果",
+        "cwr_text": "糖果"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q51",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n你們",
+        "cwr_text": "你們"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q52",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n家庭",
+        "cwr_text": "家庭"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q53",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n飲食",
+        "cwr_text": "飲食"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q54",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n牙刷",
+        "cwr_text": "牙刷"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Q55",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個係咩字？」\n\n\n海灘",
+        "cwr_text": "海灘"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ]
+    },
+    {
+      "id": "CWR_Com",
+      "type": "completion",
+      "dateId": "CWR_Date",
+      "label": {
+        "zh": "Chinese Word Reading 測試已完成.\n\n請按右下方箭頭（➜），並填寫checklist内容.",
+        "word_compound": "測試已完成",
+        "super_emphasize": [
+          "請按右下方箭頭（➜）",
+          "填寫checklist"
+        ]
+      },
+      "buttonLabel": "已完成"
+    }
+  ]
+}

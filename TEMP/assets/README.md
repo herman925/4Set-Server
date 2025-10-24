@@ -1,38 +1,41 @@
 # TEMP/assets Directory
 
-This directory contains a minimal set of asset files needed by the test page.
+This directory contains test-specific asset files for the pipeline test page.
 
-## Self-Contained Test Page
+## Test-Isolated Environment
 
-The test page `test-pipeline-core-id.html` is designed to be as self-contained as possible:
+The test page `test-pipeline-core-id.html` uses **test-specific versions** of files to avoid interfering with the main checking system:
 
 - **Credentials**: Embedded directly in the HTML (no credentials.json needed)
 - **Qualtrics Mapping**: Embedded directly in the HTML (no qualtrics-mapping.json needed)
-- **Task Structure**: Single file needed for TaskValidator module
+- **Task Validator**: Test-specific `task-validator-test.js` in TEMP/ folder
+- **Task Definitions**: Complete set of task JSON files in `tasks/` subdirectory
 
 ## Files
 
-- **tasks/survey-structure.json**: Task metadata file required by `task-validator.js`. This file cannot be embedded without modifying the core JavaScript modules, so a copy is maintained here.
+### tasks/ subdirectory
+Contains copies of all task definition files from `assets/tasks/`:
+
+- **survey-structure.json**: Task metadata file (15 tasks)
+- **Task definitions**: ERV.json, SYM.json, NONSYM.json, TheoryofMind.json, ChineseWordReading.json, TEC_Female.json, TEC_Male.json, MathPattern.json, CCM.json, HeadToeKneeShoulder.json, EPN.json, CM.json, FineMotor.json, TGMD.json, MF.json, background.json
 
 ## Why This Approach?
 
-The test page embeds credentials and the Qualtrics mapping directly to avoid:
-1. Dependency on external credential files
-2. 404 errors when loading mapping data
-3. Complex directory mirroring
+Per issue requirements: "I would expect you to use another file instead of the those that are already used by the main core checking system. build these files in the temp folder instead."
 
-However, `task-validator.js` still needs `tasks/survey-structure.json` because:
-- It's a core JavaScript module that cannot be modified per issue requirements
-- It hardcodes the path to `assets/tasks/survey-structure.json`
-- The file is small (2.6KB) and rarely changes
+Benefits:
+1. **Test Isolation**: Test page doesn't interfere with production checking system
+2. **No 404 Errors**: All task files are local to TEMP folder
+3. **Self-Contained**: Test environment is independent and portable
+4. **Safe Testing**: Changes to test files don't affect production system
 
 ## Maintenance
 
-If `assets/tasks/survey-structure.json` is updated in the main directory, sync it here:
+If task definition files are updated in the main `assets/tasks/` directory, sync them here:
 
 ```bash
 # From repository root
-cp assets/tasks/survey-structure.json TEMP/assets/tasks/
+cp assets/tasks/*.json TEMP/assets/tasks/
 ```
 
 If credentials or mapping data needs to be updated, edit them directly in the `test-pipeline-core-id.html` file (they are embedded as JavaScript constants).
