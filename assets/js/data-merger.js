@@ -2,7 +2,7 @@
  * Data Merger Module
  * 
  * Purpose: Merge JotForm and Qualtrics datasets with conflict resolution
- * Key Principle: Qualtrics data takes precedence for TGMD fields
+ * Key Principle: Earliest non-empty value wins (consistent across all merges)
  */
 
 (() => {
@@ -24,10 +24,15 @@
      * 1. Sort Qualtrics records by date (earliest first)
      * 2. Group all records by coreId (multiple submissions possible)
      * 3. For each coreId, merge Qualtrics records using earliest non-empty value wins
-     * 4. Merge grouped Qualtrics data into JotForm submissions (ALL fields, not just TGMD)
+     * 4. Merge grouped Qualtrics data with JotForm submissions using earliest non-empty value wins
      * 
-     * This matches JotForm's merge principle (line 779 in jotform-cache.js):
+     * This matches JotForm's merge principle (line 795 in jotform-cache.js):
      * "Sort by created_at (earliest first), earliest non-empty value wins"
+     * 
+     * The same principle now applies to cross-source merging (Qualtrics + JotForm):
+     * - JotForm timestamp: created_at
+     * - Qualtrics timestamp: _meta.startDate or recordedDate
+     * - Earliest non-empty value wins across both sources
      * 
      * @param {Array} jotformData - JotForm submissions
      * @param {Array} qualtricsData - Transformed Qualtrics responses
@@ -176,8 +181,8 @@
     }
 
     /**
-     * Merge Qualtrics fields (ALL tasks) with conflict detection
-     * Precedence: Qualtrics data overwrites JotForm data for matching fields
+     * Merge Qualtrics fields (ALL tasks) with JotForm data using earliest non-empty wins
+     * Strategy: Compare timestamps and keep the earliest non-empty value
      * @param {Object} jotformRecord - Base JotForm record
      * @param {Object} qualtricsRecord - Qualtrics record with task data
      * @returns {Object} Merged record with conflict metadata
@@ -185,6 +190,12 @@
     mergeTGMDFields(jotformRecord, qualtricsRecord) {
       const merged = { ...jotformRecord };
       const conflicts = [];
+
+      // Get timestamps for comparison
+      const jotformTimestamp = jotformRecord.created_at ? new Date(jotformRecord.created_at) : new Date();
+      const qualtricsTimestamp = qualtricsRecord._meta?.startDate 
+        ? new Date(qualtricsRecord._meta.startDate) 
+        : (qualtricsRecord.recordedDate ? new Date(qualtricsRecord.recordedDate) : new Date());
 
       // Extract ALL task fields from Qualtrics (not just TGMD)
       for (const [key, value] of Object.entries(qualtricsRecord)) {
@@ -196,19 +207,34 @@
         const jotformValue = jotformRecord[key];
         const qualtricsValue = value;
 
-        // Detect conflicts (both have values but they differ)
-        if (jotformValue && qualtricsValue && jotformValue !== qualtricsValue) {
+        // Skip if Qualtrics value is empty
+        if (qualtricsValue === null || qualtricsValue === undefined || qualtricsValue === '') {
+          continue;
+        }
+
+        // If JotForm doesn't have this field, use Qualtrics value
+        if (!jotformValue || jotformValue === '') {
+          merged[key] = qualtricsValue;
+          continue;
+        }
+
+        // Both have values - use earliest non-empty value
+        if (jotformValue !== qualtricsValue) {
+          // Detect conflict
           conflicts.push({
             field: key,
             jotform: jotformValue,
+            jotformTimestamp: jotformTimestamp.toISOString(),
             qualtrics: qualtricsValue,
-            resolution: 'qualtrics' // Always use Qualtrics value
+            qualtricsTimestamp: qualtricsTimestamp.toISOString(),
+            resolution: jotformTimestamp <= qualtricsTimestamp ? 'jotform' : 'qualtrics'
           });
-        }
 
-        // Always use Qualtrics value when present (Qualtrics takes precedence)
-        if (qualtricsValue !== null && qualtricsValue !== undefined && qualtricsValue !== '') {
-          merged[key] = qualtricsValue;
+          // Keep earliest value based on timestamp
+          if (qualtricsTimestamp < jotformTimestamp) {
+            merged[key] = qualtricsValue;
+          }
+          // else: keep JotForm value (already in merged via spread)
         }
       }
 
@@ -222,7 +248,8 @@
         // Log merge details
         const coreId = jotformRecord.coreId;
         const qualtricsFieldCount = Object.keys(qualtricsRecord).filter(k => !this.excludeFields.has(k) && !k.startsWith('_')).length;
-        console.log(`[DataMerger] Merged Qualtrics data for student ${coreId}: ${conflicts.length} conflicts resolved, ${qualtricsFieldCount} fields from Qualtrics`);
+        const earliestWins = conflicts.filter(c => c.resolution === 'jotform').length;
+        console.log(`[DataMerger] Merged data for student ${coreId}: ${conflicts.length} conflicts resolved (${earliestWins} from JotForm, ${conflicts.length - earliestWins} from Qualtrics based on timestamps), ${qualtricsFieldCount} fields from Qualtrics`);
       }
 
       // Preserve Qualtrics metadata
@@ -232,7 +259,8 @@
           qualtricsResponseId: qualtricsRecord._meta.qualtricsResponseId,
           qualtricsRetrievedAt: qualtricsRecord._meta.retrievedAt,
           qualtricsStartDate: qualtricsRecord._meta.startDate,
-          qualtricsEndDate: qualtricsRecord._meta.endDate
+          qualtricsEndDate: qualtricsRecord._meta.endDate,
+          jotformCreatedAt: jotformRecord.created_at
         };
       }
 
