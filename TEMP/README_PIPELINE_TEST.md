@@ -60,12 +60,25 @@ The test executes the following steps in sequence:
    }
    ```
 
-2. **Web Server**: The file must be served via HTTP (not opened directly as `file://`)
+2. **CORS Handling for Local Testing**: When running locally, browsers block cross-origin API requests. Use one of these methods:
+
+   **Option A: Use Startup Scripts (Recommended)**
+   - **Windows**: Double-click `start_pipeline_test.bat` in the TEMP folder
+   - **Linux/Mac**: Run `./start_pipeline_test.sh` from terminal in the TEMP folder
+   
+   These scripts will:
+   - Start a local CORS proxy server on `http://127.0.0.1:3000`
+   - Automatically open the test page in your browser
+   - Allow API requests to work properly
+   
+   **Option B: Manual Server Setup**
    ```bash
    # From repository root
-   python3 -m http.server 8080
-   # Then open: http://localhost:8080/TEMP/test-pipeline-core-id.html
+   python3 proxy_server.py --port 3000 --host 127.0.0.1
+   # Then open: http://127.0.0.1:3000/TEMP/test-pipeline-core-id.html
    ```
+   
+   **Note**: CORS proxy is only needed for local development. GitHub Pages deployment doesn't need this.
 
 ### Running a Test
 

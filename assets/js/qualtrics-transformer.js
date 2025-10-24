@@ -197,7 +197,8 @@
           if (record && record.coreId) {
             transformed.push(record);
           } else {
-            console.warn('[QualtricsTransformer] Skipping response without coreId:', response.responseId);
+            // This is expected for responses that don't have coreId yet - not an error
+            console.log('[QualtricsTransformer] Skipping response without coreId (incomplete):', response.responseId);
             skipped++;
           }
         } catch (error) {
@@ -206,7 +207,7 @@
         }
       }
 
-      console.log(`[QualtricsTransformer] Transformed ${transformed.length} responses (${skipped} skipped)`);
+      console.log(`[QualtricsTransformer] Transformed ${transformed.length} responses (${skipped} skipped without coreId)`);
       return transformed;
     }
 

@@ -471,7 +471,10 @@
      * @returns {boolean} - True if structure is valid
      */
     validateCacheStructure(cached) {
-      if (!cached) return false;
+      if (!cached) {
+        console.log('[JotFormCache] Cache validation: No cached data found');
+        return false;
+      }
       
       // Check required fields
       if (!cached.submissions || !Array.isArray(cached.submissions)) {
@@ -480,7 +483,7 @@
       }
       
       if (cached.submissions.length === 0) {
-        console.warn('[JotFormCache] Invalid: submissions array is empty');
+        console.log('[JotFormCache] Cache validation: submissions array is empty (no data synced yet)');
         return false;
       }
       
@@ -580,7 +583,7 @@
       const submissions = await this.getAllSubmissions();
       
       if (!submissions || submissions.length === 0) {
-        console.warn('[JotFormCache] No submissions to validate');
+        console.log('[JotFormCache] No submissions available for validation (cache may be empty or not synced yet)');
         return validationCache;
       }
       
