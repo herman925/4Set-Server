@@ -1417,6 +1417,9 @@
   }
 
   // Export global instance and constant
+  // STUDENT_ID_QID is exported so other modules can use the same constant
+  // instead of hardcoding '20'. This makes it easier to update if the
+  // JotForm question structure changes.
   window.JotFormCache = new JotFormCache();
   window.JotFormCache.STUDENT_ID_QID = STUDENT_ID_QID;
   console.log('[JotFormCache] Global cache manager initialized');
