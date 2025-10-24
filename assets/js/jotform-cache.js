@@ -1114,6 +1114,16 @@
      * IMPORTANT: This method assumes student ID is in answers[STUDENT_ID_QID].
      * If JotForm's question structure changes, the STUDENT_ID_QID constant must be updated.
      * 
+     * PERFORMANCE OPTIMIZATION:
+     * This method uses a reverse lookup map (fieldName → qid) to avoid O(n²) complexity.
+     * Without this optimization, updating each field would require searching through all answers,
+     * resulting in O(records × fields × answers) complexity. With the reverse map, we achieve
+     * O(records × (answers + fields)) complexity - a significant improvement for large datasets.
+     * 
+     * Example: For 100 records with 50 fields each and 100 answers per submission:
+     * - Without optimization: 100 × 50 × 100 = 500,000 operations
+     * - With optimization: 100 × (100 + 50) = 15,000 operations (33x faster!)
+     * 
      * @param {Array} records - Merged records with flat structure
      * @param {Array} originalSubmissions - Original JotForm submissions for structure reference
      * @returns {Array} Submissions in JotForm format
@@ -1150,7 +1160,9 @@
           // Update answers with merged data
           // Merge TGMD fields and any other updated fields from Qualtrics
           if (submission.answers) {
-            // Build reverse lookup map (fieldName → qid) for O(1) lookups
+            // PERFORMANCE OPTIMIZATION: Build reverse lookup map (fieldName → qid) for O(1) lookups
+            // This prevents O(n²) nested loop when updating multiple fields.
+            // We build the map once per submission and reuse it for all field updates.
             const fieldNameToQid = {};
             for (const [qid, answerObj] of Object.entries(submission.answers)) {
               if (answerObj.name) {
@@ -1159,6 +1171,7 @@
             }
             
             // Update fields from merged record
+            // Each field lookup is now O(1) instead of O(n) thanks to the reverse map above
             for (const [fieldName, value] of Object.entries(record)) {
               // Skip metadata and already-handled fields
               if (fieldName === 'coreId' || 
