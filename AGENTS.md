@@ -532,11 +532,49 @@ Documented in `PRDs/processor_agent_runbook_prd.md`:
 - **Python**: PEP 8 compliant, type hints where applicable
 - **HTML/CSS**: Semantic markup, Tailwind CSS utilities
 
+### Test Environment Isolation
+**CRITICAL REQUIREMENT**: Test environment files **must always be isolated** from production checking system files.
+
+#### Isolation Principles
+1. **Separate Test Files**: Test pages and utilities must use test-specific versions of shared modules
+   - Example: `TEMP/task-validator-test.js` instead of `assets/js/task-validator.js`
+   - Example: `TEMP/jotform-cache-test.js` instead of `assets/js/jotform-cache.js`
+
+2. **Dedicated Test Assets**: All supporting files (JSON, configuration) must be copied to test directories
+   - Test task definitions: `TEMP/assets/tasks/*.json` (16 files)
+   - Test mappings and configurations isolated in `TEMP/` folder
+
+3. **No Production File Modification**: Test code must never modify or depend on production checking system files
+   - Prevents accidental corruption of production validation logic
+   - Ensures test changes don't impact live monitoring dashboards
+   - Maintains clear separation of concerns
+
+4. **Documentation Requirements**: All test-specific files must be clearly marked
+   - Comments indicating "TEST VERSION" at the top of files
+   - README files explaining the isolation strategy
+   - Maintenance instructions for syncing test files when production changes
+
+#### Implementation Example
+```javascript
+// ❌ INCORRECT - Test file loading production validator
+<script src="../assets/js/task-validator.js"></script>
+
+// ✅ CORRECT - Test file loading isolated test validator
+<script src="task-validator-test.js"></script>
+```
+
+#### Benefits
+- **Safety**: Production system remains stable during testing
+- **Independence**: Tests can be modified without affecting production
+- **Clarity**: Clear distinction between test and production code
+- **Maintainability**: Easier to track test-specific changes
+
 ### Testing Requirements
 - Unit tests for all data transformation functions
 - Integration tests for end-to-end pipeline flows
 - Security tests for encryption/decryption workflows
 - Performance tests for throughput benchmarks
+- **Test isolation compliance**: All test files must follow isolation principles above
 
 ### Git Workflow
 - Feature branches: `feature/description`
