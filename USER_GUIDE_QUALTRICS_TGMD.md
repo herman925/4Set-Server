@@ -1,8 +1,8 @@
-# User Guide: Qualtrics TGMD Integration
+# User Guide: Qualtrics Data Integration
 
 ## Overview
 
-The 4Set system now supports fetching TGMD (Test of Gross Motor Development) assessment data from Qualtrics surveys and merging it with JotForm submission data. This provides a unified view of all assessment data in one place.
+The 4Set system now supports fetching **all assessment task data** from Qualtrics surveys and merging it with JotForm submission data. This includes TGMD (Test of Gross Motor Development) as well as all other tasks such as ERV, SYM, TOM, CM, CWR, HTKS, TEC, and more. This provides a unified view of all assessment data in one place.
 
 > **⚠️ Important Update (October 2024):** Qualtrics has deprecated the `au1.qualtrics.com` datacenter. The system now uses `syd1.qualtrics.com` (Sydney datacenter). If you encounter 400 Bad Request errors when syncing with Qualtrics, please ensure your `credentials.enc` file has been updated with `qualtricsDatacenter: "syd1"` instead of `"au1"`. Contact your system administrator for assistance.
 
@@ -10,11 +10,13 @@ The 4Set system now supports fetching TGMD (Test of Gross Motor Development) ass
 
 ## Key Features
 
-- **Automatic Data Merging**: Qualtrics TGMD responses are automatically merged with JotForm data by sessionkey
-- **Conflict Resolution**: When both sources have TGMD data, Qualtrics values take precedence (as the primary TGMD platform)
+- **Complete Data Integration**: Qualtrics responses for **all tasks** are automatically merged with JotForm data by sessionkey
+- **Comprehensive Task Coverage**: Merges data for TGMD, ERV, SYM, TOM, CM, CWR, HTKS, TEC, and all other assessment tasks
+- **Conflict Resolution**: When both sources have data for the same field, Qualtrics values take precedence
 - **Offline Caching**: Merged data is cached locally for instant access
 - **Progress Tracking**: Real-time progress display during Qualtrics sync
 - **Conflict Reporting**: Detailed statistics on data conflicts and resolution
+- **Grade Detection**: Automatic K1/K2/K3 classification based on assessment dates
 
 ## How to Use
 
@@ -43,45 +45,67 @@ Once JotForm data is cached, you can fetch and merge Qualtrics TGMD data:
    - Merging datasets (70-80%)
    - Updating cache (85-100%)
 4. When complete, a summary modal shows:
-   - Total records
-   - Records with TGMD data
-   - TGMD from Qualtrics vs JotForm
-   - Any conflicts detected
+   - Total records processed
+   - Records with Qualtrics data
+   - Data merged from both sources
+   - Any conflicts detected and resolved
 
 ### Step 3: View Merged Data
 
 After syncing, navigate to student detail pages to see:
 
-- TGMD assessment data populated from Qualtrics
-- Data source indicator showing "Source: Qualtrics"
-- All other assessment data from JotForm
+- **All task data** from Qualtrics (TGMD, ERV, SYM, TOM, CM, CWR, HTKS, TEC, etc.)
+- Data source indicators showing which fields came from Qualtrics vs JotForm
+- Automatically calculated grade (K1/K2/K3) based on assessment dates
+- Unified view combining the best data from both sources
 
 ## Understanding the Data
 
 ### Data Sources
 
-- **JotForm**: Primary source for all non-TGMD assessments (ERV, SYM, CM, etc.)
-- **Qualtrics**: Primary source for TGMD assessments (Hand/Leg preference, Hop, Jump, Slide, etc.)
+- **JotForm**: Form submission data from PDF uploads (all assessment tasks)
+- **Qualtrics**: Web survey data (all assessment tasks including TGMD, ERV, SYM, TOM, CM, CWR, HTKS, TEC, etc.)
 
 ### Merge Logic
 
-The system merges data as follows:
+The system intelligently merges data from both sources:
 
-1. **By Sessionkey**: Records are matched using the unique `sessionkey` field
-2. **Qualtrics Priority**: For TGMD fields, Qualtrics data overwrites JotForm data
-3. **Non-TGMD Fields**: All non-TGMD fields remain from JotForm
-4. **Conflict Detection**: When values differ, both are logged but Qualtrics is used
+1. **By Sessionkey**: Records are matched using the unique `sessionkey` field (format: `coreId_YYYYMMDD_HH_MM`)
+2. **Qualtrics Priority**: When both sources have data for the same field, **Qualtrics data takes precedence**
+3. **Complete Field Merge**: ALL Qualtrics fields are merged (not just TGMD), including:
+   - TGMD: Gross motor development assessments
+   - ERV: Expressive vocabulary
+   - SYM: Symbolic understanding
+   - TOM: Theory of mind
+   - CM: Counting and magnitude
+   - CWR: Chinese word reading
+   - HTKS: Head-toes-knees-shoulders
+   - TEC: Test of emotional comprehension
+   - And all other assessment tasks
+4. **Conflict Detection**: When values differ, both are logged for audit purposes, but Qualtrics is used
+5. **Grade Assignment**: Automatically determines K1/K2/K3 based on assessment date using August-July school year boundaries
 
 ### Field Mapping
 
-Qualtrics uses Question IDs (QIDs) that are mapped to standard field names:
+Qualtrics uses Question IDs (QIDs) that are automatically mapped to standard field names. The system uses `assets/qualtrics-mapping.json` which contains **632 field mappings** covering all assessment tasks:
+
+**Example TGMD Mappings:**
 
 | Standard Field | Qualtrics QID | Description |
 |---------------|---------------|-------------|
 | TGMD_Hand | QID126166418 | Hand preference |
 | TGMD_Leg | QID126166419 | Leg preference |
 | TGMD_111_Hop_t1 | QID126166420#1_1 | Hopping criterion 1, trial 1 |
-| ... | ... | 45 total TGMD fields |
+
+**Example Other Task Mappings:**
+
+| Standard Field | Qualtrics QID | Task |
+|---------------|---------------|------|
+| ERV_Q1 | QID123456789 | Expressive Vocabulary Q1 |
+| SYM_Q1 | QID987654321 | Symbolic Understanding Q1 |
+| TOM_Q1 | QID456789123 | Theory of Mind Q1 |
+
+**Total**: 632 fields mapped across all assessment tasks
 
 ## Troubleshooting
 
