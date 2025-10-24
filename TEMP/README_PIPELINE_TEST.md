@@ -49,22 +49,9 @@ The test executes the following steps in sequence:
 
 ### Prerequisites
 
-1. **Credentials File**: Ensure `assets/credentials.json` exists with valid credentials:
-   ```json
-   {
-     "jotformApiKey": "your-jotform-api-key",
-     "jotformFormId": "your-form-id",
-     "qualtricsApiKey": "your-qualtrics-api-key",
-     "qualtricsDatacenter": "syd1",
-     "qualtricsSurveyId": "your-survey-id"
-   }
-   ```
+1. **Self-Contained Test Page**: The test page has credentials and Qualtrics mapping embedded directly in the HTML file. No external `credentials.json` or `qualtrics-mapping.json` files are needed. If you need to update credentials or mapping data, edit them directly in the test HTML file.
 
-2. **Asset Files**: The test tool requires copies of asset files in `TEMP/assets/` because the test page is in a subdirectory:
-   - `TEMP/assets/qualtrics-mapping.json` - Maps Qualtrics QID fields to standardized field names
-   - `TEMP/assets/tasks/` - Directory containing task definition files for validation
-
-3. **CORS Handling for Local Testing**: When running locally, browsers block cross-origin API requests. Use one of these methods:
+2. **CORS Handling for Local Testing**: When running locally, browsers block cross-origin API requests. Use one of these methods:
 
    **Option A: Use Startup Scripts (Recommended)**
    - **Windows**: Double-click `start_pipeline_test.bat` in the TEMP folder
@@ -233,29 +220,25 @@ Uses the centralized `TaskValidator` module which implements:
 
 ### Common Issues
 
-1. **"Failed to load mapping: 404"**
-   - Ensure `TEMP/assets/qualtrics-mapping.json` exists
-   - This should be a copy of the main `assets/qualtrics-mapping.json` file
-   - The file is required because the test page is in a subdirectory
+1. **"Credentials not available"** or **"Failed to load mapping"**
+   - Credentials and Qualtrics mapping are embedded in the test HTML file
+   - If you see these errors, the embedded data may be corrupted
+   - Check the `EMBEDDED_QUALTRICS_MAPPING` and `credentials` variables in the test HTML
 
-2. **"Credentials not available"**
-   - Ensure `assets/credentials.json` exists and is valid JSON
-   - Check that file paths are correct (test file is in `TEMP/` directory)
-
-3. **"JotForm API error: 401"**
+2. **"JotForm API error: 401"**
    - Verify `jotformApiKey` is correct
    - Check API key hasn't expired
 
-4. **"Qualtrics export failed"**
+3. **"Qualtrics export failed"**
    - Verify `qualtricsApiKey` and `qualtricsSurveyId` are correct
    - Check datacenter region is correct (e.g., `syd1`)
 
-5. **"No submissions found"**
+4. **"No submissions found"**
    - Verify the Core ID exists in the system
    - Check that the student has submitted data
    - Try a different Core ID
 
-6. **"TaskValidator not available"**
+5. **"TaskValidator not available"**
    - Ensure `assets/js/task-validator.js` is loaded correctly
    - Check browser console for script loading errors
 
