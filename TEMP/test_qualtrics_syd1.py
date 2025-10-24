@@ -1,9 +1,3 @@
-#!/usr/bin/env python3
-"""
-Test script for Qualtrics API with syd1 datacenter
-Tests the new Sydney datacenter endpoint to verify API connectivity
-"""
-
 import http.client
 import json
 import time
