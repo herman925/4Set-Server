@@ -117,11 +117,11 @@
    * ⚠️ DEPRECATED: Uses client-side filtering from global cache.
    * For new code, use fetchStudentSubmissionsDirectly() instead.
    * @param {string} coreId - Student Core ID (e.g., "C10261")
-   * @param {string} [studentIdQid='20'] - QID for student-id field
+   * @param {string} [studentIdQid=window.JotFormCache.STUDENT_ID_QID] - QID for student-id field
    * @param {boolean} [verbose=true] - Enable detailed logging
    * @returns {Promise<Array>} - Array of submissions
    */
-  async function fetchStudentSubmissions(coreId, studentIdQid = '20', verbose = true) {
+  async function fetchStudentSubmissions(coreId, studentIdQid = window.JotFormCache.STUDENT_ID_QID, verbose = true) {
     // Strip "C" prefix from Core ID for Jotform query
     const coreIdNumeric = coreId.startsWith('C') ? coreId.substring(1) : coreId;
 
@@ -222,8 +222,8 @@
       for (const submission of submissions) {
         const sessionKey = submission.answers?.[sessionKeyQid]?.answer || 
                           submission.answers?.[sessionKeyQid]?.text;
-        const studentId = submission.answers?.['20']?.answer || 
-                         submission.answers?.['20']?.text;
+        const studentId = submission.answers?.[window.JotFormCache.STUDENT_ID_QID]?.answer || 
+                         submission.answers?.[window.JotFormCache.STUDENT_ID_QID]?.text;
 
         // Primary check: sessionkey contains the pattern
         if (sessionKey && sessionKey.includes(studentIdNumeric)) {

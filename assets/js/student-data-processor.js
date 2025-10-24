@@ -203,8 +203,8 @@ class StudentDataProcessor {
 
             console.log('[StudentData] Total submissions in cache:', allSubmissions.length);
 
-            // Filter by CoreID client-side
-            const filteredSubmissions = window.JotFormCache.filterByCoreId(allSubmissions, coreId, '20');
+            // Filter by CoreID client-side (using default STUDENT_ID_QID from JotFormCache)
+            const filteredSubmissions = window.JotFormCache.filterByCoreId(allSubmissions, coreId);
 
             console.log('[StudentData] Filtered submissions for', coreId + ':', filteredSubmissions.length);
 
