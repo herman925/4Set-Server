@@ -113,7 +113,7 @@
                         <li><strong>JotForm Data:</strong> Either uses <code>:matches</code> filter (direct) or global IndexedDB cache (fast)</li>
                         <li><strong>Qualtrics Data:</strong> Uses export-poll-download API flow (can be cached on subsequent runs)</li>
                         <li>Transforms Qualtrics data to standardized format using <code>qualtrics-mapping.json</code></li>
-                        <li>Merges JotForm + Qualtrics data by Core ID (Qualtrics TGMD fields take precedence)</li>
+                        <li>Merges JotForm + Qualtrics data by Core ID using "earliest non-empty wins" strategy (same as main system)</li>
                         <li>Validates all tasks using TaskValidator with termination rules and completion metrics</li>
                     </ol>
                     
@@ -352,6 +352,7 @@
     <script src="../assets/js/qualtrics-api.js"></script>
     <script src="qualtrics-transformer-test.js"></script>
     <script src="../assets/js/data-merger.js"></script>
+    <script src="../assets/js/grade-detector.js"></script>
     <script src="task-validator-test.js"></script>
 
     <script>
@@ -957,44 +958,165 @@
             return transformed;
         }
 
-        // Merge JotForm + Qualtrics data
+        // Merge JotForm + Qualtrics data using "earliest non-empty wins" strategy
+        // This matches the merge logic in jotform-cache.js (line 795-815)
+        // Also groups data by grade (K1/K2/K3) for separate display
         async function mergeData(jotformAnswers, qualtricsRecords, coreId) {
             console.log('[Test] ========== MERGING DATA ==========');
             console.log('[Test] JotForm fields:', Object.keys(jotformAnswers).length);
             console.log('[Test] Qualtrics records:', qualtricsRecords.length);
 
-            // Start with JotForm data
-            const merged = { ...jotformAnswers };
-
-            // Merge Qualtrics TGMD fields (prefer Qualtrics for TGMD_* fields)
+            // Group all data by grade first (to show K1/K2/K3 separately)
+            const dataByGrade = {};
+            
+            // Process Qualtrics records and group by grade
             for (const record of qualtricsRecords) {
-                for (const [key, value] of Object.entries(record)) {
-                    if (key.startsWith('TGMD_') && value) {
-                        // Qualtrics TGMD data takes precedence
-                        merged[key] = { answer: value, text: value };
+                let grade = 'Unknown';
+                if (window.GradeDetector && record.recordedDate) {
+                    const gradeData = { recordedDate: record.recordedDate };
+                    grade = window.GradeDetector.determineGrade(gradeData);
+                }
+                
+                if (!dataByGrade[grade]) {
+                    dataByGrade[grade] = {
+                        qualtrics: [],
+                        jotform: {},
+                        merged: null
+                    };
+                }
+                
+                dataByGrade[grade].qualtrics.push(record);
+            }
+            
+            // Add JotForm data (try to extract date from sessionkey for grading)
+            // sessionkey format: {coreId}_{YYYYMMDD}_{HH}_{MM}
+            for (const [fieldName, answerObj] of Object.entries(jotformAnswers)) {
+                if (fieldName === 'sessionkey') {
+                    const sessionkey = answerObj.answer || answerObj.text;
+                    if (sessionkey && window.GradeDetector) {
+                        const gradeData = { sessionkey: sessionkey };
+                        const grade = window.GradeDetector.determineGrade(gradeData);
+                        
+                        if (!dataByGrade[grade]) {
+                            dataByGrade[grade] = {
+                                qualtrics: [],
+                                jotform: {},
+                                merged: null
+                            };
+                        }
+                        
+                        // Store all JotForm data in this grade bucket
+                        dataByGrade[grade].jotform = { ...jotformAnswers };
+                        break; // Found sessionkey, no need to continue
                     }
                 }
             }
+            
+            // If no grade detected from sessionkey, put JotForm data in Unknown
+            if (Object.keys(dataByGrade).length === 0 || !Object.values(dataByGrade).some(g => Object.keys(g.jotform).length > 0)) {
+                if (!dataByGrade['Unknown']) {
+                    dataByGrade['Unknown'] = {
+                        qualtrics: [],
+                        jotform: {},
+                        merged: null
+                    };
+                }
+                dataByGrade['Unknown'].jotform = { ...jotformAnswers };
+            }
+            
+            // Now merge data within each grade using "earliest non-empty wins"
+            for (const [grade, gradeData] of Object.entries(dataByGrade)) {
+                const allSources = [];
+                
+                // Add JotForm data
+                for (const [fieldName, answerObj] of Object.entries(gradeData.jotform)) {
+                    allSources.push({
+                        fieldName,
+                        value: answerObj,
+                        source: 'jotform',
+                        timestamp: new Date(0) // JotForm already sorted, treat as earliest
+                    });
+                }
+                
+                // Add Qualtrics data with recordedDate timestamps
+                for (const record of gradeData.qualtrics) {
+                    const timestamp = record.recordedDate ? new Date(record.recordedDate) : new Date();
+                    for (const [key, value] of Object.entries(record)) {
+                        // Skip metadata fields
+                        if (key.startsWith('_') || !value || key === 'recordedDate') continue;
+                        
+                        allSources.push({
+                            fieldName: key,
+                            value: { answer: value, text: value },
+                            source: 'qualtrics',
+                            timestamp: timestamp
+                        });
+                    }
+                }
+                
+                // Sort by timestamp (earliest first)
+                allSources.sort((a, b) => a.timestamp - b.timestamp);
+                
+                // Merge: earliest non-empty value wins
+                const merged = {};
+                const conflicts = [];
+                
+                for (const item of allSources) {
+                    const { fieldName, value, source, timestamp } = item;
+                    
+                    // Only set if not already present (earliest non-empty value wins)
+                    if (!merged[fieldName]) {
+                        merged[fieldName] = value;
+                        merged[fieldName]._source = source;
+                        merged[fieldName]._timestamp = timestamp;
+                    } else {
+                        // Track conflicts when both sources have values
+                        const existingSource = merged[fieldName]._source;
+                        if (existingSource !== source) {
+                            conflicts.push({
+                                field: fieldName,
+                                kept: existingSource,
+                                discarded: source,
+                                keptValue: merged[fieldName].answer || merged[fieldName].text,
+                                discardedValue: value.answer || value.text
+                            });
+                        }
+                    }
+                }
+                
+                dataByGrade[grade].merged = merged;
+                dataByGrade[grade].conflicts = conflicts;
+                
+                console.log(`[Test] Grade ${grade}: merged ${Object.keys(merged).length} fields, ${conflicts.length} conflicts`);
+            }
 
-            console.log('[Test] ✅ Merged data contains', Object.keys(merged).length, 'fields');
-            return merged;
+            console.log('[Test] ✅ Data grouped by grade:', Object.keys(dataByGrade).join(', '));
+            
+            return dataByGrade;
         }
 
         // Validate tasks using TaskValidator
-        async function validateTasks(mergedData) {
+        // Now accepts dataByGrade object and validates each grade separately
+        async function validateTasks(dataByGrade) {
             console.log('[Test] ========== VALIDATING TASKS ==========');
             
             if (!window.TaskValidator) {
                 throw new Error('TaskValidator not available');
             }
 
-            const results = await window.TaskValidator.validateAllTasks(mergedData);
+            const validationByGrade = {};
             
-            console.log('[Test] ✅ Validated', Object.keys(results).length, 'tasks');
-            return results;
+            for (const [grade, gradeData] of Object.entries(dataByGrade)) {
+                console.log(`[Test] Validating grade ${grade}...`);
+                const results = await window.TaskValidator.validateAllTasks(gradeData.merged);
+                validationByGrade[grade] = results;
+                console.log(`[Test] ✅ Validated ${Object.keys(results).length} tasks for grade ${grade}`);
+            }
+            
+            return validationByGrade;
         }
 
-        // Display results
+        // Display results - now shows separate results for each grade (K1/K2/K3)
         function displayResults(data) {
             console.log('[Test] ========== DISPLAYING RESULTS ==========');
             
@@ -1004,99 +1126,162 @@
             // Student Overview
             document.getElementById('result-coreid').textContent = `C${data.coreId}`;
             
-            // Get student name from merged data
-            const childName = data.mergedData['child-name'] || data.mergedData['21'];
-            const studentName = childName ? (childName.answer || childName.text || 'Unknown') : 'Unknown';
+            // Get student name from first available merged data
+            let studentName = 'Unknown';
+            for (const gradeData of Object.values(data.mergedData)) {
+                const childName = gradeData.merged['child-name'] || gradeData.merged['21'];
+                if (childName) {
+                    studentName = childName.answer || childName.text || 'Unknown';
+                    break;
+                }
+            }
             document.getElementById('result-name').textContent = studentName + (data.method ? ` (${data.method})` : '');
             
             document.getElementById('result-jotform-count').textContent = data.jotformData.submissions.length;
             document.getElementById('result-qualtrics-count').textContent = data.qualtricsData.responses.length;
 
-            // Task Results
+            // Task Results - grouped by grade
             const taskContainer = document.getElementById('taskResults');
             taskContainer.innerHTML = '';
-
-            let complete = 0, postterm = 0, incomplete = 0, notstarted = 0;
-
-            for (const [taskId, result] of Object.entries(data.validationResults)) {
-                const completionPct = result.completionPercentage || 0;
-                const accuracyPct = result.accuracyPercentage || 0;
+            
+            let totalComplete = 0, totalPostterm = 0, totalIncomplete = 0, totalNotstarted = 0;
+            
+            // Sort grades: K1, K2, K3, then Unknown
+            const gradeOrder = ['K1', 'K2', 'K3', 'Unknown'];
+            const sortedGrades = Object.keys(data.validationResults).sort((a, b) => {
+                const indexA = gradeOrder.indexOf(a);
+                const indexB = gradeOrder.indexOf(b);
+                return (indexA === -1 ? 999 : indexA) - (indexB === -1 ? 999 : indexB);
+            });
+            
+            for (const grade of sortedGrades) {
+                const validationResults = data.validationResults[grade];
+                const gradeData = data.mergedData[grade];
                 
-                // Determine status
-                let status = 'grey';
-                let statusText = 'Not Started';
+                // Add grade section header
+                const gradeHeader = document.createElement('div');
+                gradeHeader.className = 'mb-4 mt-6';
+                gradeHeader.innerHTML = `
+                    <h3 class="text-lg font-bold text-gray-800 flex items-center gap-2 mb-3">
+                        <span class="px-3 py-1 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white text-sm">
+                            ${grade}
+                        </span>
+                        <span class="text-sm font-normal text-gray-600">
+                            (${gradeData.qualtrics.length} Qualtrics records, 
+                            ${Object.keys(gradeData.jotform).length > 0 ? 'JotForm data present' : 'No JotForm data'})
+                        </span>
+                    </h3>
+                `;
+                taskContainer.appendChild(gradeHeader);
                 
-                if (completionPct === 0) {
-                    status = 'grey';
-                    statusText = 'Not Started';
-                    notstarted++;
-                } else if (completionPct === 100) {
-                    status = 'green';
-                    statusText = 'Complete';
-                    complete++;
-                } else if (result.terminated || result.timedOut) {
-                    status = 'yellow';
-                    statusText = result.timedOut ? 'Timed Out' : 'Terminated';
-                    postterm++;
-                } else {
-                    status = 'red';
-                    statusText = 'Incomplete';
-                    incomplete++;
+                let complete = 0, postterm = 0, incomplete = 0, notstarted = 0;
+
+                for (const [taskId, result] of Object.entries(validationResults)) {
+                    const completionPct = result.completionPercentage || 0;
+                    const accuracyPct = result.accuracyPercentage || 0;
+                    
+                    // Determine status
+                    let status = 'grey';
+                    let statusText = 'Not Started';
+                    
+                    if (completionPct === 0) {
+                        status = 'grey';
+                        statusText = 'Not Started';
+                        notstarted++;
+                    } else if (completionPct === 100) {
+                        status = 'green';
+                        statusText = 'Complete';
+                        complete++;
+                    } else if (result.terminated || result.timedOut) {
+                        status = 'yellow';
+                        statusText = result.timedOut ? 'Timed Out' : 'Terminated';
+                        postterm++;
+                    } else {
+                        status = 'red';
+                        statusText = 'Incomplete';
+                        incomplete++;
+                    }
+
+                    const taskCard = `
+                        <div class="metric-card">
+                            <div class="flex items-center justify-between mb-3">
+                                <div class="flex items-center">
+                                    <span class="status-indicator status-${status}"></span>
+                                    <span class="font-semibold text-gray-800">${result.title || taskId}</span>
+                                </div>
+                                <span class="text-xs px-2 py-1 rounded-full bg-${status === 'green' ? 'green' : status === 'yellow' ? 'yellow' : status === 'red' ? 'red' : 'gray'}-100 text-${status === 'green' ? 'green' : status === 'yellow' ? 'yellow' : status === 'red' ? 'red' : 'gray'}-700">
+                                    ${statusText}
+                                </span>
+                            </div>
+                            <div class="grid grid-cols-3 gap-2 text-sm">
+                                <div>
+                                    <div class="text-xs text-gray-500">Answered</div>
+                                    <div class="font-bold text-gray-800">${result.answeredQuestions || 0}/${result.totalQuestions || 0}</div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-gray-500">Correct</div>
+                                    <div class="font-bold text-gray-800">${result.correctAnswers || 0}</div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-gray-500">Accuracy</div>
+                                    <div class="font-bold text-gray-800">${accuracyPct.toFixed(0)}%</div>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <div class="flex justify-between text-xs text-gray-600 mb-1">
+                                    <span>Progress</span>
+                                    <span>${completionPct.toFixed(0)}%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-${status === 'green' ? 'green' : status === 'yellow' ? 'yellow' : status === 'red' ? 'red' : 'gray'}-500 h-2 rounded-full transition-all" style="width: ${completionPct}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    taskContainer.insertAdjacentHTML('beforeend', taskCard);
                 }
-
-                const taskCard = `
-                    <div class="metric-card">
-                        <div class="flex items-center justify-between mb-3">
-                            <div class="flex items-center">
-                                <span class="status-indicator status-${status}"></span>
-                                <h3 class="font-semibold text-gray-800">${result.title || taskId.toUpperCase()}</h3>
-                            </div>
-                            <span class="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">${statusText}</span>
-                        </div>
-                        <div class="grid grid-cols-3 gap-4 text-sm">
-                            <div>
-                                <div class="text-xs text-gray-500">Answered</div>
-                                <div class="font-semibold">${result.answeredQuestions} / ${result.totalQuestions}</div>
-                            </div>
-                            <div>
-                                <div class="text-xs text-gray-500">Correct</div>
-                                <div class="font-semibold text-green-600">${result.correctAnswers}</div>
-                            </div>
-                            <div>
-                                <div class="text-xs text-gray-500">Accuracy</div>
-                                <div class="font-semibold">${accuracyPct}%</div>
-                            </div>
-                        </div>
-                        <div class="mt-3">
-                            <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="bg-${status === 'green' ? 'green' : status === 'yellow' ? 'yellow' : status === 'red' ? 'red' : 'gray'}-500 h-2 rounded-full" 
-                                     style="width: ${completionPct}%"></div>
-                            </div>
-                            <div class="text-xs text-gray-500 mt-1 text-right">${completionPct}% complete</div>
-                        </div>
+                
+                // Add grade summary
+                const gradeSummary = document.createElement('div');
+                gradeSummary.className = 'mb-6 p-4 bg-gray-50 rounded-lg';
+                gradeSummary.innerHTML = `
+                    <div class="text-sm font-semibold text-gray-700 mb-2">${grade} Summary:</div>
+                    <div class="grid grid-cols-4 gap-2 text-xs">
+                        <div><span class="status-indicator status-green"></span>Complete: ${complete}</div>
+                        <div><span class="status-indicator status-yellow"></span>Post-term: ${postterm}</div>
+                        <div><span class="status-indicator status-red"></span>Incomplete: ${incomplete}</div>
+                        <div><span class="status-indicator status-grey"></span>Not Started: ${notstarted}</div>
                     </div>
                 `;
+                taskContainer.appendChild(gradeSummary);
                 
-                taskContainer.innerHTML += taskCard;
+                // Add to totals
+                totalComplete += complete;
+                totalPostterm += postterm;
+                totalIncomplete += incomplete;
+                totalNotstarted += notstarted;
             }
 
-            // Summary Statistics
-            document.getElementById('summary-complete').textContent = complete;
-            document.getElementById('summary-postterm').textContent = postterm;
-            document.getElementById('summary-incomplete').textContent = incomplete;
-            document.getElementById('summary-notstarted').textContent = notstarted;
+            // Summary Statistics (totals across all grades)
+            document.getElementById('summary-complete').textContent = totalComplete;
+            document.getElementById('summary-postterm').textContent = totalPostterm;
+            document.getElementById('summary-incomplete').textContent = totalIncomplete;
+            document.getElementById('summary-notstarted').textContent = totalNotstarted;
 
-            // Debug Data
-            document.getElementById('debug-jotform').textContent = 
-                JSON.stringify(data.jotformData.mergedAnswers, null, 2).substring(0, 5000) + '...';
-            document.getElementById('debug-qualtrics-raw').textContent = 
-                JSON.stringify(data.qualtricsData.rawResponses, null, 2).substring(0, 5000) + '...';
-            document.getElementById('debug-qualtrics').textContent = 
-                JSON.stringify(data.transformedQualtrics, null, 2).substring(0, 5000) + '...';
-            document.getElementById('debug-merged').textContent = 
-                JSON.stringify(data.mergedData, null, 2).substring(0, 5000) + '...';
-            document.getElementById('debug-validation').textContent = 
-                JSON.stringify(data.validationResults, null, 2);
+            // Debug Data - show first grade's data as example
+            const firstGrade = sortedGrades[0];
+            if (firstGrade && data.mergedData[firstGrade]) {
+                document.getElementById('debug-jotform').textContent = 
+                    JSON.stringify(data.jotformData.mergedAnswers, null, 2).substring(0, 5000) + '...';
+                document.getElementById('debug-qualtrics-raw').textContent = 
+                    JSON.stringify(data.qualtricsData.rawResponses, null, 2).substring(0, 5000) + '...';
+                document.getElementById('debug-qualtrics').textContent = 
+                    JSON.stringify(data.transformedQualtrics, null, 2).substring(0, 5000) + '...';
+                document.getElementById('debug-merged').textContent = 
+                    JSON.stringify(data.mergedData, null, 2).substring(0, 5000) + '...';
+                document.getElementById('debug-validation').textContent = 
+                    JSON.stringify(data.validationResults, null, 2);
+            }
 
             console.log('[Test] ✅ Results displayed successfully');
         }
