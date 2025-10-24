@@ -73,7 +73,7 @@
       for (const jotformRecord of jotformData) {
         const coreId = jotformRecord.coreId;
         if (!coreId) {
-          console.log('[DataMerger] JotForm record missing coreId (incomplete submission), skipping');
+          console.warn('[DataMerger] JotForm record missing coreId, skipping');
           continue;
         }
 
