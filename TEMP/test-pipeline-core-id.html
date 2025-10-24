@@ -325,6 +325,10 @@
                         <pre id="debug-jotform" class="mt-2">-</pre>
                     </details>
                     <details class="cursor-pointer">
+                        <summary class="font-semibold text-gray-700 p-3 bg-gray-50 rounded-lg hover:bg-gray-100">Qualtrics Raw API Response</summary>
+                        <pre id="debug-qualtrics-raw" class="mt-2">-</pre>
+                    </details>
+                    <details class="cursor-pointer">
                         <summary class="font-semibold text-gray-700 p-3 bg-gray-50 rounded-lg hover:bg-gray-100">Qualtrics Transformed Data</summary>
                         <pre id="debug-qualtrics" class="mt-2">-</pre>
                     </details>
@@ -377,6 +381,7 @@
         };
         
         let qualtricsMapping = null;
+        let jotformQuestionsData = null; // QID to field name mapping
         let performanceData = {}; // Track timing for each method
 
         // Load credentials on page load
@@ -391,6 +396,12 @@
                     qualtricsSurveyId: credentials.qualtricsSurveyId,
                     qualtricsDatacenter: credentials.qualtricsDatacenter
                 });
+
+                // Load JotForm questions mapping (QID to field name)
+                console.log('[Test] Loading JotForm questions mapping...');
+                const questionsResponse = await fetch('../assets/jotformquestions.json');
+                jotformQuestionsData = await questionsResponse.json();
+                console.log('[Test] JotForm questions mapping loaded:', Object.keys(jotformQuestionsData).length, 'fields');
 
                 // Inject mapping directly into transformer instance to avoid 404
                 const transformer = new QualtricsTransformer();
@@ -669,10 +680,21 @@
             });
 
             console.log(`[Test] ✅ Downloaded ${allResponses.length} total responses`);
+            
+            // DEBUG: Log structure of first response to understand data format
+            if (allResponses.length > 0) {
+                console.log('[Test] DEBUG: First response structure:', allResponses[0]);
+                console.log('[Test] DEBUG: First response values:', allResponses[0].values);
+                if (allResponses[0].values) {
+                    const keys = Object.keys(allResponses[0].values);
+                    console.log(`[Test] DEBUG: Available fields in values (${keys.length} total):`, keys.slice(0, 20));
+                }
+            }
 
-            // Filter for this Core ID (handles multiple format variations)
+            // Filter for this Core ID using the correct QID from Qualtrics
+            // According to qualtrics-mapping.json: "student-id": "QID125287935_TEXT"
             const filtered = allResponses.filter(r => {
-                const responseCoreId = r.values?.coreId || r.values?.coreid || r.values?.['student-id'];
+                const responseCoreId = r.values?.QID125287935_TEXT || r.values?.coreId || r.values?.coreid;
                 return responseCoreId === coreId || 
                        responseCoreId === `C${coreId}` ||
                        responseCoreId === coreId.replace(/^C/, '');
@@ -680,7 +702,7 @@
 
             console.log(`[Test] Filtered to ${filtered.length} responses for Core ID ${coreId}`);
 
-            return { responses: filtered, allResponses: allResponses.length };
+            return { responses: filtered, rawResponses: filtered, allResponses: allResponses.length };
         }
 
         // Fetch JotForm data using :matches filter
@@ -720,6 +742,7 @@
         }
 
         // Merge multiple JotForm submissions (earliest non-empty wins)
+        // MAPS QIDs to field names using jotformQuestionsData
         function mergeJotFormSubmissions(submissions) {
             console.log('[Test] Merging JotForm submissions (earliest non-empty value wins)...');
             
@@ -727,8 +750,35 @@
                 return {};
             }
 
+            // Create reverse mapping: QID -> field name
+            const qidToFieldName = {};
+            if (jotformQuestionsData) {
+                for (const [fieldName, qid] of Object.entries(jotformQuestionsData)) {
+                    qidToFieldName[qid] = fieldName;
+                }
+                console.log(`[Test] Loaded QID mapping: ${Object.keys(qidToFieldName).length} QIDs mapped to field names`);
+            } else {
+                console.error('[Test] ❌ jotformQuestionsData is NULL! Cannot map QIDs to field names!');
+                console.error('[Test] This means TaskValidator will not be able to find any fields!');
+            }
+
+            // If only one submission, map its QIDs to field names
             if (submissions.length === 1) {
-                return submissions[0].answers || {};
+                const answers = submissions[0].answers || {};
+                const mapped = {};
+                for (const [qid, answerObj] of Object.entries(answers)) {
+                    const fieldName = qidToFieldName[qid];
+                    if (fieldName) {
+                        // Include field if it has either answer or text
+                        const hasValue = answerObj.answer || answerObj.text;
+                        if (hasValue) {
+                            mapped[fieldName] = answerObj;
+                        }
+                    }
+                }
+                console.log(`[Test] Mapped ${Object.keys(mapped).length} fields from QIDs to field names`);
+                console.log(`[Test] Sample mapped fields:`, Object.keys(mapped).slice(0, 10).join(', '));
+                return mapped;
             }
 
             // Sort by created_at (earliest first)
@@ -739,28 +789,39 @@
             });
 
             // Merge answers - earliest non-empty value wins
+            // Map QIDs to field names during merge
             const merged = {};
             
             for (const submission of sorted) {
                 const answers = submission.answers || {};
                 
                 for (const [qid, answerObj] of Object.entries(answers)) {
+                    const fieldName = qidToFieldName[qid];
+                    
+                    // Skip if no field name mapping
+                    if (!fieldName) continue;
+                    
+                    // Check if field has any value (answer or text)
+                    const hasValue = answerObj.answer || answerObj.text;
+                    if (!hasValue) continue;
+                    
                     // Only set if not already present (earliest wins)
-                    if (!merged[qid]) {
-                        merged[qid] = answerObj;
+                    if (!merged[fieldName]) {
+                        merged[fieldName] = answerObj;
                     } else {
                         // Check if existing is empty and new has value
-                        const existingValue = merged[qid].answer || merged[qid].text;
+                        const existingValue = merged[fieldName].answer || merged[fieldName].text;
                         const newValue = answerObj.answer || answerObj.text;
                         
                         if (!existingValue && newValue) {
-                            merged[qid] = answerObj;
+                            merged[fieldName] = answerObj;
                         }
                     }
                 }
             }
 
             console.log(`[Test] Merged ${submissions.length} submissions into ${Object.keys(merged).length} unique fields`);
+            console.log(`[Test] Sample fields:`, Object.keys(merged).slice(0, 10).join(', '));
             return merged;
         }
 
@@ -850,10 +911,21 @@
             const responses = responseData.responses || [];
             
             console.log(`[Test] ✅ Downloaded ${responses.length} total responses`);
+            
+            // DEBUG: Log structure of first response to understand data format
+            if (responses.length > 0) {
+                console.log('[Test] DEBUG: First response structure:', responses[0]);
+                console.log('[Test] DEBUG: First response values:', responses[0].values);
+                if (responses[0].values) {
+                    const keys = Object.keys(responses[0].values);
+                    console.log(`[Test] DEBUG: Available fields in values (${keys.length} total):`, keys.slice(0, 20));
+                }
+            }
 
-            // Filter for this Core ID (check both with and without "C" prefix)
+            // Filter for this Core ID using the correct QID from Qualtrics
+            // According to qualtrics-mapping.json: "student-id": "QID125287935_TEXT"
             const filtered = responses.filter(r => {
-                const responseCoreId = r.values?.coreId || r.values?.coreid || r.values?.['student-id'];
+                const responseCoreId = r.values?.QID125287935_TEXT || r.values?.coreId || r.values?.coreid;
                 // Match with or without C prefix
                 return responseCoreId === coreId || 
                        responseCoreId === `C${coreId}` ||
@@ -862,7 +934,7 @@
 
             console.log(`[Test] Filtered to ${filtered.length} responses for Core ID ${coreId}`);
 
-            return { responses: filtered, allResponses: responses.length };
+            return { responses: filtered, rawResponses: filtered, allResponses: responses.length };
         }
 
         // Transform Qualtrics data
@@ -1017,6 +1089,8 @@
             // Debug Data
             document.getElementById('debug-jotform').textContent = 
                 JSON.stringify(data.jotformData.mergedAnswers, null, 2).substring(0, 5000) + '...';
+            document.getElementById('debug-qualtrics-raw').textContent = 
+                JSON.stringify(data.qualtricsData.rawResponses, null, 2).substring(0, 5000) + '...';
             document.getElementById('debug-qualtrics').textContent = 
                 JSON.stringify(data.transformedQualtrics, null, 2).substring(0, 5000) + '...';
             document.getElementById('debug-merged').textContent = 

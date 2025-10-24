@@ -646,7 +646,17 @@
       );
     }
     
-    filtered = filtered.slice(0, 50);
+    // PHASE 4: Deduplicate by Core ID to show unique students only
+    // Students may have multiple grade records, but should appear once in filter
+    const uniqueStudents = new Map();
+    filtered.forEach(student => {
+      // Keep the first occurrence of each Core ID
+      if (!uniqueStudents.has(student.coreId)) {
+        uniqueStudents.set(student.coreId, student);
+      }
+    });
+    
+    filtered = Array.from(uniqueStudents.values()).slice(0, 50);
 
     if (filtered.length === 0) {
       dropdown.classList.add('hidden');
