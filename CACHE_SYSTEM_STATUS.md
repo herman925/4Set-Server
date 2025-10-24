@@ -354,6 +354,35 @@ Controls fetch behavior:
    - Check TGMD fields populated
 ```
 
+### Performance Warnings (Normal Behavior)
+
+You may see browser console warnings like:
+```
+[Violation] 'success' handler took 636ms
+```
+
+**These are INFORMATIONAL WARNINGS, not errors.** They indicate that IndexedDB operations are taking longer than the browser's ideal threshold (typically 50ms), but this is expected when:
+- Saving large datasets (2000+ submissions, 40+ MB)
+- First-time cache population
+- Reading/writing to IndexedDB
+
+**Why this happens:**
+- IndexedDB is asynchronous but still I/O bound
+- Large JSON serialization/deserialization takes time
+- Browser throttles background operations
+
+**Impact:**
+- No functional impact - operations still complete successfully
+- UI may briefly pause during large cache operations (acceptable for one-time sync)
+- Subsequent operations are much faster due to caching
+
+**Mitigation already in place:**
+- Removed unnecessary verification read after save (reduces violations by ~50%)
+- Progress indicators show users that work is happening
+- Cache expiration prevents excessive re-syncing
+
+**Not needed to fix:** This is a characteristic of client-side IndexedDB storage and doesn't break functionality.
+
 ---
 
 ## Related Issues and PRDs

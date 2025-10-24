@@ -20,6 +20,11 @@
   const CACHE_KEY = 'jotform_global_cache';
   const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hour
   
+  // JotForm question IDs - these are hardcoded based on current form structure
+  // CRITICAL: If the JotForm structure changes, these QIDs must be updated
+  // The student-id field (QID 20) is used throughout the system to identify students
+  const STUDENT_ID_QID = '20';
+  
   // Initialize localForage (uses IndexedDB, falls back to WebSQL/localStorage)
   if (typeof localforage === 'undefined') {
     console.error('[JotFormCache] localForage not loaded! Include <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>');
@@ -385,6 +390,16 @@
       try {
         console.log('[JotFormCache] saveToCache called with', submissions.length, 'submissions');
         
+        // Validate that submissions have the expected structure
+        if (submissions.length > 0) {
+          const sampleSubmission = submissions[0];
+          if (!sampleSubmission.answers) {
+            console.warn('[JotFormCache] WARNING: First submission is missing "answers" field. Structure:', Object.keys(sampleSubmission));
+          } else {
+            console.log('[JotFormCache] First submission has', Object.keys(sampleSubmission.answers).length, 'answer fields');
+          }
+        }
+        
         const cacheEntry = {
           submissions: submissions,
           timestamp: Date.now(),
@@ -395,11 +410,7 @@
         console.log('[JotFormCache] Cache data size:', Math.round(jsonString.length / 1024), 'KB');
         
         await storage.setItem(CACHE_KEY, cacheEntry);
-        console.log('[JotFormCache] Cached', submissions.length, 'submissions to IndexedDB');
-        
-        // Verify it was saved
-        const verification = await storage.getItem(CACHE_KEY);
-        console.log('[JotFormCache] Verification:', verification ? 'SUCCESS' : 'FAILED');
+        console.log('[JotFormCache] ✅ Cached', submissions.length, 'submissions to IndexedDB');
       } catch (error) {
         console.error('[JotFormCache] Failed to save cache:', error);
       }
@@ -1024,6 +1035,164 @@
     }
 
     /**
+     * Ensure coreId has "C" prefix
+     * @param {string} studentId - Student ID (may or may not have "C" prefix)
+     * @returns {string} CoreId with "C" prefix
+     */
+    ensureCoreIdPrefix(studentId) {
+      return studentId.startsWith('C') ? studentId : `C${studentId}`;
+    }
+
+    /**
+     * Transform JotForm submissions to records format expected by data-merger
+     * Converts from submission format (with answers object) to flat record format
+     * 
+     * IMPORTANT: This method assumes student ID is in answers[STUDENT_ID_QID].
+     * If JotForm's question structure changes, the STUDENT_ID_QID constant must be updated.
+     * 
+     * @param {Array} submissions - Raw JotForm submissions
+     * @returns {Array} Transformed records with coreId at root level
+     */
+    transformSubmissionsToRecords(submissions) {
+      console.log('[JotFormCache] Transforming submissions to records format...');
+      const records = [];
+      
+      for (const submission of submissions) {
+        try {
+          // Extract student ID from answers using configured QID
+          const studentIdAnswer = submission.answers?.[STUDENT_ID_QID];
+          const studentId = studentIdAnswer?.answer || studentIdAnswer?.text;
+          
+          if (!studentId) {
+            console.warn('[JotFormCache] Submission missing student ID, skipping:', submission.id);
+            continue;
+          }
+          
+          // Create coreId with "C" prefix
+          const coreId = this.ensureCoreIdPrefix(studentId);
+          
+          // Build flat record with all answer fields
+          const record = {
+            coreId: coreId,
+            'student-id': studentId,
+            _meta: {
+              source: 'jotform',
+              submissionId: submission.id,
+              created_at: submission.created_at,
+              updated_at: submission.updated_at
+            }
+          };
+          
+          // Flatten answers object to record fields
+          if (submission.answers) {
+            for (const [qid, answerObj] of Object.entries(submission.answers)) {
+              // Use the field name if available, otherwise use QID
+              const fieldName = answerObj.name || `q${qid}`;
+              const value = answerObj.answer || answerObj.text || '';
+              
+              // Skip empty values and the student-id we already processed
+              if (value && qid !== STUDENT_ID_QID) {
+                record[fieldName] = value;
+              }
+            }
+          }
+          
+          records.push(record);
+        } catch (error) {
+          console.error('[JotFormCache] Failed to transform submission:', submission.id, error);
+        }
+      }
+      
+      console.log(`[JotFormCache] Transformed ${records.length} submissions to records (${submissions.length - records.length} skipped)`);
+      return records;
+    }
+
+    /**
+     * Transform merged records back to submission format for caching
+     * Converts from flat record format back to JotForm submission structure
+     * 
+     * IMPORTANT: This method assumes student ID is in answers[STUDENT_ID_QID].
+     * If JotForm's question structure changes, the STUDENT_ID_QID constant must be updated.
+     * 
+     * @param {Array} records - Merged records with flat structure
+     * @param {Array} originalSubmissions - Original JotForm submissions for structure reference
+     * @returns {Array} Submissions in JotForm format
+     */
+    transformRecordsToSubmissions(records, originalSubmissions) {
+      console.log('[JotFormCache] Converting records back to submission format...');
+      
+      // Create a map of original submissions by coreId for easy lookup
+      const submissionMap = new Map();
+      for (const submission of originalSubmissions) {
+        const studentIdAnswer = submission.answers?.[STUDENT_ID_QID];
+        const studentId = studentIdAnswer?.answer || studentIdAnswer?.text;
+        if (studentId) {
+          const coreId = this.ensureCoreIdPrefix(studentId);
+          submissionMap.set(coreId, submission);
+        }
+      }
+      
+      const submissions = [];
+      
+      for (const record of records) {
+        try {
+          // Get original submission structure
+          const originalSubmission = submissionMap.get(record.coreId);
+          
+          if (!originalSubmission) {
+            console.warn('[JotFormCache] No original submission found for coreId:', record.coreId);
+            continue;
+          }
+          
+          // Clone the original submission
+          const submission = JSON.parse(JSON.stringify(originalSubmission));
+          
+          // Update answers with merged data
+          // Merge TGMD fields and any other updated fields from Qualtrics
+          if (submission.answers) {
+            // Build reverse lookup map (fieldName → qid) for O(1) lookups
+            const fieldNameToQid = {};
+            for (const [qid, answerObj] of Object.entries(submission.answers)) {
+              if (answerObj.name) {
+                fieldNameToQid[answerObj.name] = qid;
+              }
+            }
+            
+            // Update fields from merged record
+            for (const [fieldName, value] of Object.entries(record)) {
+              // Skip metadata and already-handled fields
+              if (fieldName === 'coreId' || 
+                  fieldName === 'student-id' || 
+                  fieldName === '_meta' || 
+                  fieldName === '_sources' ||
+                  fieldName === '_orphaned') {
+                continue;
+              }
+              
+              // Look up QID using reverse map (O(1) instead of O(n))
+              const qidToUpdate = fieldNameToQid[fieldName];
+              
+              // Update the answer if we found the QID
+              if (qidToUpdate && submission.answers[qidToUpdate]) {
+                submission.answers[qidToUpdate].answer = value;
+                if (submission.answers[qidToUpdate].text !== undefined) {
+                  submission.answers[qidToUpdate].text = value;
+                }
+              }
+            }
+          }
+          
+          submissions.push(submission);
+        } catch (error) {
+          console.error('[JotFormCache] Failed to convert record to submission:', record.coreId, error);
+        }
+      }
+      
+      console.log(`[JotFormCache] Converted ${submissions.length} records to submissions`);
+      return submissions;
+    }
+
+    /**
      * Fetch Qualtrics data and merge with JotForm
      * @param {Object} credentials - Must include Qualtrics credentials
      * @returns {Promise<Object>} Merge statistics
@@ -1056,10 +1225,15 @@
       try {
         // Step 1: Fetch JotForm data (use existing cache system)
         this.emitProgress('Loading JotForm data...', 5);
-        const jotformData = await this.getAllSubmissions(credentials);
-        console.log('[JotFormCache] JotForm data loaded:', jotformData.length, 'submissions');
+        const jotformSubmissions = await this.getAllSubmissions(credentials);
+        console.log('[JotFormCache] JotForm data loaded:', jotformSubmissions.length, 'submissions');
 
-        // Step 2: Initialize Qualtrics modules
+        // Step 2: Transform JotForm submissions to records format expected by data-merger
+        this.emitProgress('Transforming JotForm data...', 8);
+        const jotformData = this.transformSubmissionsToRecords(jotformSubmissions);
+        console.log('[JotFormCache] JotForm data transformed:', jotformData.length, 'records');
+
+        // Step 3: Initialize Qualtrics modules
         const qualtricsAPI = new window.QualtricsAPI();
         const transformer = new window.QualtricsTransformer();
         const merger = new window.DataMerger();
@@ -1071,21 +1245,21 @@
           this.emitProgress(msg, mappedProgress);
         });
 
-        // Step 3: Load Qualtrics field mapping
-        this.emitProgress('Loading Qualtrics field mapping...', 8);
+        // Step 4: Load Qualtrics field mapping
+        this.emitProgress('Loading Qualtrics field mapping...', 10);
         await transformer.loadMapping();
 
-        // Step 4: Fetch Qualtrics responses
-        this.emitProgress('Fetching Qualtrics responses...', 10);
+        // Step 5: Fetch Qualtrics responses
+        this.emitProgress('Fetching Qualtrics responses...', 12);
         const rawResponses = await qualtricsAPI.fetchAllResponses(credentials);
         console.log('[JotFormCache] Qualtrics responses fetched:', rawResponses.length);
 
-        // Step 5: Transform Qualtrics responses
+        // Step 6: Transform Qualtrics responses
         this.emitProgress('Transforming Qualtrics data...', 65);
         const transformedData = transformer.transformBatch(rawResponses);
         console.log('[JotFormCache] Qualtrics data transformed:', transformedData.length, 'records');
 
-        // Step 6: Merge datasets
+        // Step 7: Merge datasets
         this.emitProgress('Merging JotForm and Qualtrics data...', 70);
         const mergedData = merger.mergeDataSources(jotformData, transformedData);
         console.log('[JotFormCache] Data merged:', mergedData.length, 'records');
@@ -1107,13 +1281,18 @@
           console.log('[JotFormCache] Qualtrics cache updated');
         }
 
-        // Step 9: Update main cache with merged data
-        this.emitProgress('Updating main cache...', 90);
-        await this.saveToCache(mergedData);
-        this.cache = mergedData;
+        // Step 9: Convert merged records back to submission format
+        this.emitProgress('Converting merged data to cache format...', 90);
+        const mergedSubmissions = this.transformRecordsToSubmissions(mergedData, jotformSubmissions);
+        console.log('[JotFormCache] Converted', mergedSubmissions.length, 'records back to submission format');
+
+        // Step 10: Update main cache with merged data
+        this.emitProgress('Updating main cache...', 93);
+        await this.saveToCache(mergedSubmissions);
+        this.cache = mergedSubmissions;
         console.log('[JotFormCache] Main cache updated with merged data');
 
-        // Step 10: Clear validation cache (needs rebuild with TGMD data)
+        // Step 11: Clear validation cache (needs rebuild with TGMD data)
         this.emitProgress('Clearing validation cache...', 95);
         await this.clearValidationCache();
         console.log('[JotFormCache] Validation cache cleared (will rebuild on demand)');
