@@ -11,8 +11,11 @@
    */
   class DataMerger {
     constructor() {
-      // Configuration
-      this.tgmdFieldPrefix = 'TGMD_';
+      // Configuration - fields to exclude from merge
+      this.excludeFields = new Set([
+        '_recordId', 'responseId', '_meta', '_sources', 
+        '_orphaned', '_qualtricsConflicts'
+      ]);
     }
 
     /**
@@ -21,7 +24,7 @@
      * 1. Sort Qualtrics records by date (earliest first)
      * 2. Group all records by coreId (multiple submissions possible)
      * 3. For each coreId, merge Qualtrics records using earliest non-empty value wins
-     * 4. Merge grouped Qualtrics TGMD data into JotForm submissions
+     * 4. Merge grouped Qualtrics data into JotForm submissions (ALL fields, not just TGMD)
      * 
      * This matches JotForm's merge principle (line 779 in jotform-cache.js):
      * "Sort by created_at (earliest first), earliest non-empty value wins"
@@ -43,7 +46,7 @@
       });
 
       // Step 2: Group Qualtrics records by coreId and merge multiple responses
-      const qualtricsByCoreId = new Map(); // coreId → merged TGMD data
+      const qualtricsByCoreId = new Map(); // coreId → merged Qualtrics data (ALL fields)
       
       for (const record of sortedQualtricsData) {
         const coreId = record.coreId;
@@ -87,10 +90,19 @@
           console.log(`[DataMerger] ✓ Matched and merged TGMD for student ${coreId}`);
         } else {
           // JotForm-only record
-          mergedRecords.push({
+          const jotformOnly = {
             ...jotformRecord,
             _sources: ['jotform']
-          });
+          };
+          
+          // Add grade detection for JotForm-only records
+          if (window.GradeDetector) {
+            jotformOnly.grade = window.GradeDetector.determineGrade({
+              sessionkey: jotformRecord.sessionkey
+            });
+          }
+          
+          mergedRecords.push(jotformOnly);
           jotformOnlyCount++;
         }
       }
@@ -101,11 +113,20 @@
 
       for (const [coreId, qualtricsRecord] of qualtricsByCoreId.entries()) {
         if (!jotformCoreIds.has(coreId)) {
-          mergedRecords.push({
+          const qualtricsOnly = {
             ...qualtricsRecord,
             _sources: ['qualtrics'],
             _orphaned: true // Flag as Qualtrics-only
-          });
+          };
+          
+          // Add grade detection for Qualtrics-only records
+          if (window.GradeDetector) {
+            qualtricsOnly.grade = window.GradeDetector.determineGrade({
+              recordedDate: qualtricsRecord._meta?.startDate || qualtricsRecord.recordedDate
+            });
+          }
+          
+          mergedRecords.push(qualtricsOnly);
           qualtricsOnlyCount++;
           console.log(`[DataMerger] ℹ️  Qualtrics-only record for student ${coreId} - no JotForm match`);
         }
@@ -122,6 +143,7 @@
     /**
      * Merge multiple Qualtrics responses for the same student
      * Uses earliest non-empty value principle (matches JotForm merge logic)
+     * Merges ALL fields, not just TGMD
      * @param {Object} record1 - First (earlier) Qualtrics record
      * @param {Object} record2 - Second (later) Qualtrics record
      * @returns {Object} Merged record
@@ -129,14 +151,17 @@
     mergeMultipleQualtricsRecords(record1, record2) {
       const merged = { ...record1 };
 
-      // Merge TGMD fields - ONLY fill in if not already present (earliest non-empty value wins)
+      // Merge ALL Qualtrics fields - ONLY fill in if not already present (earliest non-empty value wins)
       // This matches JotForm's merge principle: line 779 in jotform-cache.js
       for (const [key, value] of Object.entries(record2)) {
-        if (key.startsWith(this.tgmdFieldPrefix) && value) {
-          // Only set if not already present (earliest wins)
-          if (!merged[key]) {
-            merged[key] = value;
-          }
+        // Skip metadata fields
+        if (this.excludeFields.has(key) || key.startsWith('_')) {
+          continue;
+        }
+        
+        // Only set if not already present and value is not empty (earliest wins)
+        if (value !== null && value !== undefined && value !== '' && !merged[key]) {
+          merged[key] = value;
         }
       }
 
@@ -151,19 +176,20 @@
     }
 
     /**
-     * Merge TGMD fields with conflict detection
+     * Merge Qualtrics fields (ALL tasks) with conflict detection
+     * Precedence: Qualtrics data overwrites JotForm data for matching fields
      * @param {Object} jotformRecord - Base JotForm record
-     * @param {Object} qualtricsRecord - Qualtrics record with TGMD data
+     * @param {Object} qualtricsRecord - Qualtrics record with task data
      * @returns {Object} Merged record with conflict metadata
      */
     mergeTGMDFields(jotformRecord, qualtricsRecord) {
       const merged = { ...jotformRecord };
       const conflicts = [];
 
-      // Extract TGMD fields from Qualtrics
+      // Extract ALL task fields from Qualtrics (not just TGMD)
       for (const [key, value] of Object.entries(qualtricsRecord)) {
-        // Skip non-TGMD fields and metadata
-        if (!key.startsWith(this.tgmdFieldPrefix)) {
+        // Skip metadata fields
+        if (this.excludeFields.has(key) || key.startsWith('_')) {
           continue;
         }
 
@@ -180,20 +206,23 @@
           });
         }
 
-        // Always use Qualtrics value for TGMD fields
-        merged[key] = qualtricsValue;
+        // Always use Qualtrics value when present (Qualtrics takes precedence)
+        if (qualtricsValue !== null && qualtricsValue !== undefined && qualtricsValue !== '') {
+          merged[key] = qualtricsValue;
+        }
       }
 
       // Update metadata
       merged._sources = ['jotform', 'qualtrics'];
-      merged._tgmdSource = 'qualtrics';
+      merged._qualtricsDataMerged = true;
 
       if (conflicts.length > 0) {
-        merged._tgmdConflicts = conflicts;
+        merged._qualtricsConflicts = conflicts;
         
         // Log merge details
         const coreId = jotformRecord.coreId;
-        console.log(`[DataMerger] Merged TGMD for student ${coreId}: ${conflicts.length} conflicts resolved, ${Object.keys(qualtricsRecord).filter(k => k.startsWith(this.tgmdFieldPrefix)).length} TGMD fields from Qualtrics`);
+        const qualtricsFieldCount = Object.keys(qualtricsRecord).filter(k => !this.excludeFields.has(k) && !k.startsWith('_')).length;
+        console.log(`[DataMerger] Merged Qualtrics data for student ${coreId}: ${conflicts.length} conflicts resolved, ${qualtricsFieldCount} fields from Qualtrics`);
       }
 
       // Preserve Qualtrics metadata
@@ -205,6 +234,15 @@
           qualtricsStartDate: qualtricsRecord._meta.startDate,
           qualtricsEndDate: qualtricsRecord._meta.endDate
         };
+      }
+
+      // Add grade detection (K1/K2/K3) based on assessment date
+      if (window.GradeDetector) {
+        const gradeData = {
+          recordedDate: qualtricsRecord._meta?.startDate || qualtricsRecord.recordedDate,
+          sessionkey: jotformRecord.sessionkey
+        };
+        merged.grade = window.GradeDetector.determineGrade(gradeData);
       }
 
       return merged;
@@ -220,63 +258,50 @@
 
       const validation = {
         total: mergedRecords.length,
-        withTGMD: 0,
-        tgmdFromQualtrics: 0,
-        tgmdFromJotform: 0,
-        tgmdConflicts: 0,
+        withQualtricsData: 0,
         qualtricsOnly: 0,
-        missingTGMD: [],
+        jotformOnly: 0,
+        merged: 0,
+        qualtricsConflicts: 0,
         conflictDetails: []
       };
 
       for (const record of mergedRecords) {
-        // Check if has any TGMD data
-        const hasTGMD = Object.keys(record).some(key => 
-          key.startsWith(this.tgmdFieldPrefix) && record[key]
-        );
+        // Check if has Qualtrics data
+        const hasQualtricsData = record._sources?.includes('qualtrics') || record._orphaned;
 
-        if (hasTGMD) {
-          validation.withTGMD++;
-
-          // Determine source
-          if (record._tgmdSource === 'qualtrics') {
-            validation.tgmdFromQualtrics++;
-          } else if (record._sources && record._sources.includes('jotform')) {
-            validation.tgmdFromJotform++;
-          }
-
-          // Check for conflicts
-          if (record._tgmdConflicts && record._tgmdConflicts.length > 0) {
-            validation.tgmdConflicts++;
-            validation.conflictDetails.push({
-              coreId: record.coreId,
-              studentId: record['student-id'],
-              childName: record['child-name'],
-              conflicts: record._tgmdConflicts
-            });
-          }
-        } else {
-          validation.missingTGMD.push({
-            coreId: record.coreId,
-            studentId: record['student-id'],
-            sources: record._sources
-          });
+        if (hasQualtricsData) {
+          validation.withQualtricsData++;
         }
 
-        // Track Qualtrics-only records
+        // Count by source type
         if (record._orphaned) {
           validation.qualtricsOnly++;
+        } else if (record._sources?.includes('qualtrics') && record._sources?.includes('jotform')) {
+          validation.merged++;
+        } else if (record._sources?.includes('jotform')) {
+          validation.jotformOnly++;
+        }
+
+        // Check for conflicts
+        if (record._qualtricsConflicts && record._qualtricsConflicts.length > 0) {
+          validation.qualtricsConflicts++;
+          validation.conflictDetails.push({
+            coreId: record.coreId,
+            studentId: record['student-id'],
+            childName: record['child-name'],
+            conflicts: record._qualtricsConflicts
+          });
         }
       }
 
       console.log('[DataMerger] Validation complete:', {
         total: validation.total,
-        withTGMD: validation.withTGMD,
-        tgmdFromQualtrics: validation.tgmdFromQualtrics,
-        tgmdFromJotform: validation.tgmdFromJotform,
-        tgmdConflicts: validation.tgmdConflicts,
+        withQualtricsData: validation.withQualtricsData,
+        merged: validation.merged,
+        jotformOnly: validation.jotformOnly,
         qualtricsOnly: validation.qualtricsOnly,
-        missingTGMD: validation.missingTGMD.length
+        qualtricsConflicts: validation.qualtricsConflicts
       });
 
       return validation;

@@ -17,6 +17,9 @@ The 4Set System is a comprehensive web-based assessment data processing pipeline
 ✅ **Data Enrichment** - Automatic field calculation and metadata injection  
 ✅ **Termination Rules** - Intelligent assessment exit criteria based on threshold logic  
 ✅ **JotForm Integration** - Idempotent upsert workflow with retry mechanisms  
+✅ **Qualtrics Integration** - Complete data extraction from Qualtrics surveys (all tasks)  
+✅ **Grade Detection** - Automatic K1/K2/K3 classification based on assessment dates (Aug-Jul school year)  
+✅ **Unique Student Filtering** - Deduplicated Core ID display in filter dropdowns  
 ✅ **Quality Monitoring** - Multi-level dashboards for data completeness verification  
 ✅ **Security First** - AES-256-GCM encryption for all sensitive assets  
 ✅ **Production Ready** - Windows Service + Synology Docker deployment support
@@ -1078,6 +1081,80 @@ The processor agent exposes upload status via telemetry API:
 ```
 
 **Alternative for GitHub Pages**: Write `status/upload_status.json` every 60 seconds with same structure for static hosting.
+
+---
+
+## Qualtrics Integration & Data Merging
+
+The system integrates Qualtrics survey data with JotForm submissions to provide a comprehensive view of student assessments. All Qualtrics task data (TGMD, ERV, SYM, TOM, etc.) is automatically extracted and merged with JotForm data.
+
+### Data Extraction
+
+#### Qualtrics API Integration
+1. **Export & Poll** - Creates survey export and polls for completion
+2. **Download** - Retrieves completed export file
+3. **Transform** - Maps 632 Qualtrics QIDs to field names using `assets/qualtrics-mapping.json`
+4. **Merge** - Combines with JotForm data by Core ID
+
+#### Supported Tasks
+All tasks from qualtrics-mapping.json are extracted:
+- **TGMD** - Test of Gross Motor Development (observational assessment)
+- **ERV** - Expressive Vocabulary
+- **SYM** - Symbolic Understanding  
+- **TOM** - Theory of Mind
+- **CM** - Counting & Magnitude
+- **CWR** - Chinese Word Reading
+- **HTKS** - Head-Toes-Knees-Shoulders
+- **TEC** - Test of Emotional Comprehension
+- And more...
+
+### Data Merge Strategy
+
+#### Precedence Rules
+- **Qualtrics data overwrites JotForm** for matching fields
+- **Earliest non-empty value wins** when multiple Qualtrics responses exist
+- **Conflict detection** logs all overwrites for audit trail
+
+#### Merge Process
+1. Sort Qualtrics records by date (earliest first)
+2. Group multiple responses per student (same Core ID)
+3. Merge grouped Qualtrics data with JotForm base record
+4. Add metadata: `_sources`, `_qualtricsConflicts`, `_orphaned`
+
+```javascript
+// Example merged record
+{
+  "coreId": "10261",
+  "sessionkey": "10261_20240915_10_30",
+  "grade": "K2",  // Auto-detected from assessment date
+  "ERV_Q1": "answer1",  // From JotForm
+  "TGMD_111_Hop_t1": 1,  // From Qualtrics (overwrites JotForm)
+  "_sources": ["jotform", "qualtrics"],
+  "_qualtricsConflicts": [...]  // List of overwrites
+}
+```
+
+### Grade Detection
+
+Students are automatically classified into K1/K2/K3 based on assessment dates using August-July school year boundaries:
+
+- **K1 (2023/24)**: August 2023 - July 2024
+- **K2 (2024/25)**: August 2024 - July 2025  
+- **K3 (2025/26)**: August 2025 - July 2026
+
+#### Detection Logic
+1. Try `recordedDate` from Qualtrics (ISO 8601 format)
+2. Fallback to `sessionkey` from JotForm (format: `{coreId}_{YYYYMMDD}_{HH}_{MM}`)
+3. Calculate school year: `month >= 8 ? year : year - 1`
+4. Map to grade: `2023 → K1, 2024 → K2, 2025 → K3`
+
+Implemented in `assets/js/grade-detector.js` and integrated into data merger.
+
+### Student Filtering
+
+Filter dropdowns deduplicate students by Core ID to prevent showing multiple entries for students with records in different grades (K1, K2, K3). Each student appears once regardless of how many grade-level assessments they have completed.
+
+Implemented in `assets/js/checking-system-filters.js` using Map-based deduplication.
 
 ---
 
