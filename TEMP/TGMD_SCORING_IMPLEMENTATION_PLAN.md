@@ -96,9 +96,9 @@ function processTGMDScoring(validationResult, taskDef) {
       
       const row = rowMap.get(rowId);
       if (q.id.endsWith('_t1')) {
-        row.t1 = parseInt(q.studentAnswer) || 0;
+        row.t1 = parseInt(q.studentAnswer, 10) || 0;
       } else {
-        row.t2 = parseInt(q.studentAnswer) || 0;
+        row.t2 = parseInt(q.studentAnswer, 10) || 0;
       }
       
       // Get task from definition
@@ -177,8 +177,8 @@ async function validateTGMDTask(taskId, mergedAnswers) {
       const t1Key = `${row.id}_t1`;
       const t2Key = `${row.id}_t2`;
       
-      const t1Value = parseInt(mergedAnswers[t1Key]?.answer || 0);
-      const t2Value = parseInt(mergedAnswers[t2Key]?.answer || 0);
+      const t1Value = parseInt(mergedAnswers[t1Key]?.answer || 0, 10);
+      const t2Value = parseInt(mergedAnswers[t2Key]?.answer || 0, 10);
       
       const rowScore = t1Value + t2Value;
       results.totalScore += rowScore;
