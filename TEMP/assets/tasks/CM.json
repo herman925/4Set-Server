@@ -1,0 +1,833 @@
+{
+  "id": "cm",
+  "title": "Chinese Morphology",
+  "questions": [
+    {
+      "id": "CM_Cover",
+      "type": "instruction",
+      "label": {
+        "zh": "改名遊戲\n\n確認進入測試請按右下方箭頭（➜）",
+        "attention": "右下方箭頭（➜）"
+      }
+    },
+    {
+      "id": "CM_ins1",
+      "type": "instruction",
+      "label": {
+        "zh": "「小朋友而家請你幫啲物件改個新名。」\nPlease help me to give a new name of the following objects.\n\n「例如，呢度有一支原子筆，佢寫出嚟嘅顏色係藍色嘅，我哋就會叫佢做藍原子筆。咁而家呢度有一支原子筆，佢寫出嚟嘅顏色係紅色嘅，我哋就會叫佢做紅原子筆。」\n\n「我哋而家試下好唔好？｣",
+        "instruction": [
+          "小朋友而家請你幫啲物件改個新名",
+          "例如，呢度有一支原子筆，佢寫出嚟嘅顏色係藍色嘅，我哋就會叫佢做藍原子筆。咁而家呢度有一支原子筆，佢寫出嚟嘅顏色係紅色嘅，我哋就會叫佢做紅原子筆。",
+          "我哋而家試下好唔好？"
+        ],
+        "orange_text": "Please help me to give a new name of the following objects."
+      }
+    },
+    {
+      "id": "CM_P1a",
+      "type": "instruction",
+      "label": {
+        "zh": "第一題,\n\n「呢度有張紙，佢係白色嘅，我哋就會叫佢做白紙.\n咁而家又有張紙，佢係紅色嘅，我哋會點叫佢呀？",
+        "instruction": "呢度有張紙，佢係白色嘅，我哋就會叫佢做白紙.\n咁而家又有張紙，佢係紅色嘅，我哋會點叫佢呀？"
+      }
+    },
+    {
+      "id": "CM_P1",
+      "type": "radio",
+      "label": {
+        "zh": "（正確答案：紅紙）\n\n若小朋友回答錯誤，則可告訴正確答案。",
+        "orange": "正確答案：紅紙"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "CM_P2a",
+      "type": "instruction",
+      "label": "第二題，\n「平時行街會見到交通燈，佢上面有紅色同綠色嘅燈，我哋就會叫佢做紅綠燈。\n咁而家又有一盞交通燈，佢上面有藍色同綠色嘅燈，我哋會點叫佢呀？」"
+    },
+    {
+      "id": "CM_P2",
+      "type": "radio",
+      "label": {
+        "zh": "（正確答案：紅綠燈）\n若小朋友回答錯誤，則可告訴正確答案。",
+        "orange": "正確答案：紅綠燈"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "CM_ins3",
+      "type": "instruction",
+      "label": {
+        "zh": "記錄規則：\n必須標準答案才能比分。\n請勿在現場教導他們相關知識。\n\n提示語：\n「我哋而家正式開始，我唔會再比提示同埋答案你。」\nLet's start.",
+        "orange_text": "Let's start.",
+        "emphasize": "請勿在現場教導他們相關知識。",
+        "attention": "「我哋而家正式開始，我唔會再比提示同埋答案你。」"
+      }
+    },
+    {
+      "id": "CM_1a",
+      "type": "instruction",
+      "label": "「戴喺手上面嘅鏈，我哋會叫佢做手鏈。\n咁戴喺腳上面嘅鏈，我哋會點叫佢呀？」"
+    },
+    {
+      "id": "CM_Q1",
+      "type": "radio",
+      "label": {
+        "zh": "（正確答案：腳鏈）",
+        "orange": "正確答案：腳鏈"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "CM_2a",
+      "type": "instruction",
+      "label": "「用手開嘅槍叫手槍。 咁如果用腳開嘅槍，我哋會點叫佢呀？」"
+    },
+    {
+      "id": "CM_Q2",
+      "type": "radio",
+      "label": {
+        "zh": "（正確答案：腳槍）",
+        "orange": "正確答案：腳槍"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "CM_3a",
+      "type": "instruction",
+      "label": "「用花生嚟做嘅油，我哋會叫佢做花生油。\n咁用冬菇嚟做嘅油，我哋會點叫佢呀？」"
+    },
+    {
+      "id": "CM_Q3",
+      "type": "radio",
+      "label": {
+        "zh": "（正確答案：冬菇油）",
+        "orange": "正確答案：冬菇油"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "CM_4a",
+      "type": "instruction",
+      "label": "「由一隻蜘蛛織成嘅網，我哋會叫佢做蜘蛛網。\n咁由一隻螞蟻織成嘅網，我哋會點叫佢呀？」"
+    },
+    {
+      "id": "CM_Q4",
+      "type": "radio",
+      "label": {
+        "zh": "（正確答案：螞蟻網）",
+        "orange": "正確答案：螞蟻網"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "CM_5a",
+      "type": "instruction",
+      "label": "「一隻好香嘅蕉，我哋會叫佢做香蕉。\n咁一隻好臭嘅蕉，我哋會點叫佢呀？」"
+    },
+    {
+      "id": "CM_Q5",
+      "type": "radio",
+      "label": {
+        "zh": "（正確答案：臭蕉）",
+        "orange": "正確答案：臭蕉"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "CM_6a",
+      "type": "instruction",
+      "label": "「有一種家庭電器係會將水變熱嘅，我哋會叫佢做熱水爐。\n有一種家庭電器係會將水變凍嘅，我哋會點叫佢呀？」"
+    },
+    {
+      "id": "CM_Q6",
+      "type": "radio",
+      "label": {
+        "zh": "（正確答案：凍水爐）",
+        "orange": "正確答案：凍水爐"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "CM_7a",
+      "type": "instruction",
+      "label": "「有啲油係用牛奶嚟做嘅，我哋會叫佢做牛油。\n咁如果啲油系用羊奶嚟做嘅，我哋會點叫佢呀？」"
+    },
+    {
+      "id": "CM_Q7",
+      "type": "radio",
+      "label": {
+        "zh": "（正確答案：羊油）",
+        "orange": "正確答案：羊油"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "CM_Ter1",
+      "type": "instruction",
+      "label": "part 1 得分：\n再按右下方箭頭（➜）進入下一環節。"
+    },
+    {
+      "id": "CM_8a",
+      "type": "instruction",
+      "label": "「聖誕節嘅時候見到嗰啲又大又紅嘅花，我哋會叫佢做大紅花。\n咁如果啲花係又大又紫嘅，我哋會點叫佢呀？」"
+    },
+    {
+      "id": "CM_Q8",
+      "type": "radio",
+      "label": {
+        "zh": "（正確答案：大紫花）",
+        "orange": "正確答案：大紫花"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "CM_9a",
+      "type": "instruction",
+      "label": "「落雨嘅時候，我哋用嚟擋雨嘅遮叫做雨遮，\n咁落雪嘅時候，我哋用嚟擋雪嘅遮，我哋會點叫佢呀？」"
+    },
+    {
+      "id": "CM_Q9",
+      "type": "radio",
+      "label": {
+        "zh": "（正確答案：雪遮）",
+        "orange": "正確答案：雪遮"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "CM_Q10_TEXT",
+      "type": "text",
+      "label": "「有一種鹿，佢條頸好長嘅，我哋會叫佢做長頸鹿。\n咁如果有種鹿，佢條頸好短嘅，我哋會點叫佢呀？ 」"
+    },
+    {
+      "id": "CM_Q10",
+      "type": "radio",
+      "label": {
+        "zh": "（正確答案：短頸鹿）",
+        "orange": "正確答案：短頸鹿"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "CM_Q11_TEXT",
+      "type": "text",
+      "label": "「用膠造嘅袋，我哋會叫佢做膠袋。\n咁用鐵造嘅袋，我哋會點叫佢呀？」"
+    },
+    {
+      "id": "CM_Q11",
+      "type": "radio",
+      "label": {
+        "zh": "（正確答案：鐵袋）",
+        "orange": "正確答案：鐵袋"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "CM_Q12_TEXT",
+      "type": "text",
+      "label": "「有一塊布簾，將佢掛喺窗前面，我哋會叫佢做窗簾。\n咁如果有塊布簾，將佢掛喺門前面，我哋會點叫佢呀？」"
+    },
+    {
+      "id": "CM_Q12",
+      "type": "radio",
+      "label": {
+        "zh": "（正確答案：門簾）",
+        "orange": "正確答案：門簾"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "CM_Ter2",
+      "type": "instruction",
+      "label": "part 2 得分：\n再按右下方箭頭（➜）進入下一環節。"
+    },
+    {
+      "id": "CM_Q13_TEXT",
+      "type": "text",
+      "label": "「有一種家庭電器可以用嚟洗衣服嘅，我哋會叫佢做洗衣機。\n如果有一種家庭電器可以用嚟洗鞋嘅，我哋會點叫佢呀？」"
+    },
+    {
+      "id": "CM_Q13",
+      "type": "radio",
+      "label": {
+        "zh": "（正確答案：洗鞋機）",
+        "orange": "正確答案：洗鞋機"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "CM_Q14_TEXT",
+      "type": "text",
+      "label": "「喺陸地上嘅龍捲風叫「陸龍捲」。\n咁喺水上嘅龍捲風叫咩嘢呀？」"
+    },
+    {
+      "id": "CM_Q14",
+      "type": "radio",
+      "label": {
+        "zh": "（正確答案：水龍捲）",
+        "orange": "正確答案：水龍捲"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "CM_Q15_TEXT",
+      "type": "text",
+      "label": "「有一種鐵路係會經過地下面嘅，我哋會叫佢做地下鐵。\n咁如果有一種鐵路係會經過地上面嘅，我哋會點叫佢呀？ 」"
+    },
+    {
+      "id": "CM_Q15",
+      "type": "radio",
+      "label": {
+        "zh": "（正確答案：地上鐵）",
+        "orange": "正確答案：地上鐵"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "CM_Q16_TEXT",
+      "type": "text",
+      "label": "「BB 出牙仔流口水要戴口水肩，\n咁流鼻水嘅時候戴嗰啲，我哋會點叫佢呀？」"
+    },
+    {
+      "id": "CM_Q16",
+      "type": "radio",
+      "label": {
+        "zh": "（正確答案：鼻水肩）",
+        "orange": "正確答案：鼻水肩"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "CM_Q17_TEXT",
+      "type": "text",
+      "label": "「用麵粉做嘅包叫麵包。\n咁用奶粉做嘅包，我哋會點叫佢呀？」"
+    },
+    {
+      "id": "CM_Q17",
+      "type": "radio",
+      "label": {
+        "zh": "（正確答案：奶包）",
+        "orange": "正確答案：奶包"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "CM_Ter3",
+      "type": "text",
+      "label": "part 3 得分\n再按右下方箭頭（➜）進入下一環節"
+    },
+    {
+      "id": "CM_Q18_TEXT",
+      "type": "text",
+      "label": "「用芝麻煮成糊狀嘅糖水，我哋會叫做芝麻糊，\n咁用蕃茄煮成糊狀嘅糖水，我哋會點叫佢呀？」"
+    },
+    {
+      "id": "CM_Q18",
+      "type": "radio",
+      "label": {
+        "zh": "（正確答案：蕃茄糊）",
+        "orange": "正確答案：蕃茄糊"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "CM_Q19_TEXT",
+      "type": "text",
+      "label": "「早上嘅時候日頭出嚟，我哋會叫佢做日出。\n夜晚嘅時候月亮出嚟，我哋會點叫佢呀？」"
+    },
+    {
+      "id": "CM_Q19",
+      "type": "radio",
+      "label": {
+        "zh": "（正確答案：月出）",
+        "orange": "正確答案：月出"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "CM_Q20_TEXT",
+      "type": "text",
+      "label": "「有啲樓起得好高嘅，我哋會叫佢哋做高樓大廈。\n咁如果有啲樓起得好矮嘅，我哋會點叫佢呀？」"
+    },
+    {
+      "id": "CM_Q20",
+      "type": "radio",
+      "label": {
+        "zh": "（正確答案：矮樓大廈）",
+        "orange": "正確答案：矮樓大廈"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "CM_Q21_TEXT",
+      "type": "text",
+      "label": "「如果有一條大橋係跨過大海嘅，我哋會叫佢做「跨海大橋」。\n咁如果條大橋係跨過大江嘅，我哋會點叫佢呀？」"
+    },
+    {
+      "id": "CM_Q21",
+      "type": "radio",
+      "label": {
+        "zh": "（正確答案：跨江大橋）",
+        "orange": "正確答案：跨江大橋"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "CM_Q22_TEXT",
+      "type": "text",
+      "label": "「一個慶祝國家成立嘅日子，我哋會叫做「國慶」，\n咁一個慶祝市成立嘅日子，我哋會點叫佢呀？ 」"
+    },
+    {
+      "id": "CM_Q22",
+      "type": "radio",
+      "label": {
+        "zh": "（正確答案：市慶）",
+        "orange": "正確答案：市慶"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "CM_Ter4",
+      "type": "text",
+      "label": "part 4 得分：5\n再按右下方箭頭（➜）進入下一環節。"
+    },
+    {
+      "id": "CM_Q23_TEXT",
+      "type": "text",
+      "label": "「我哋夜晚上山頂睇到嘅風景，我哋會叫佢做夜景。\n咁如果我哋日頭上山頂睇到嘅風景，我哋會點叫佢呢？ 」"
+    },
+    {
+      "id": "CM_Q23",
+      "type": "radio",
+      "label": {
+        "zh": "（正確答案：日景）",
+        "orange": "正確答案：日景"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "CM_Q24_TEXT",
+      "type": "text",
+      "label": "「住喺我哋屋企左邊同右邊嘅人，我哋會叫佢做左鄰右里。\n咁如果住喺我哋屋企上邊同下邊嘅人，我哋會點叫佢呀？」"
+    },
+    {
+      "id": "CM_Q24",
+      "type": "radio",
+      "label": {
+        "zh": "（正確答案：上鄰下里）",
+        "orange": "正確答案：上鄰下里"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "CM_Q25_TEXT",
+      "type": "text",
+      "label": "「一條路有好多人喺度來來往往，我哋會叫佢做「人來人往」。\n咁一條路有好多車喺度來來往往，我哋會點叫佢呀？」"
+    },
+    {
+      "id": "CM_Q25",
+      "type": "radio",
+      "label": {
+        "zh": "（正確答案：車來車往）",
+        "orange": "正確答案：車來車往"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "CM_Q26_TEXT",
+      "type": "text",
+      "label": "「如果我哋望下東又望下西，我哋會叫佢做「東張西望」。\n咁如果我哋望下上又望下下，我哋會點叫佢呀？ 」"
+    },
+    {
+      "id": "CM_Q26",
+      "type": "radio",
+      "label": {
+        "zh": "（正確答案：上張下望）",
+        "orange": "正確答案：上張下望"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "CM_Q27_TEXT",
+      "type": "text",
+      "label": "「有個成語嘅意思係：兩個人由朝早到夕陽嘅時候都喺埋一齊，我哋話佢哋朝夕相對，\n咁如果有個成語話有兩個人由春天到秋天嘅時候都喺埋一齊，呢個成語係咩呀？」"
+    },
+    {
+      "id": "CM_Q27",
+      "type": "radio",
+      "label": {
+        "zh": "（正確答案：春秋相對）",
+        "orange": "正確答案：春秋相對"
+      },
+      "options": [
+        {
+          "value": "Y",
+          "label": "Y"
+        },
+        {
+          "value": "N",
+          "label": "N"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "Y"
+      }
+    },
+    {
+      "id": "CM_S5",
+      "type": "text",
+      "label": "part 5 得分："
+    },
+    {
+      "id": "CM_Com",
+      "type": "completion",
+      "dateId": "CM_Date",
+      "label": {
+        "zh": "改名遊戲 (Chinese Morphology) 測試已完成.\n\n請按右下方箭頭（➜），並填寫checklist内容.",
+        "word_compound": "測試已完成",
+        "super_emphasize": [
+          "請按右下方箭頭（➜）",
+          "填寫checklist"
+        ]
+      },
+      "buttonLabel": "已完成"
+    }
+  ]
+}
