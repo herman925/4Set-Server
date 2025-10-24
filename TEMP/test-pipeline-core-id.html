@@ -680,6 +680,16 @@
             });
 
             console.log(`[Test] ✅ Downloaded ${allResponses.length} total responses`);
+            
+            // DEBUG: Log structure of first response to understand data format
+            if (allResponses.length > 0) {
+                console.log('[Test] DEBUG: First response structure:', allResponses[0]);
+                console.log('[Test] DEBUG: First response values:', allResponses[0].values);
+                if (allResponses[0].values) {
+                    const keys = Object.keys(allResponses[0].values);
+                    console.log(`[Test] DEBUG: Available fields in values (${keys.length} total):`, keys.slice(0, 20));
+                }
+            }
 
             // Filter for this Core ID (handles multiple format variations)
             const filtered = allResponses.filter(r => {
@@ -900,6 +910,16 @@
             const responses = responseData.responses || [];
             
             console.log(`[Test] ✅ Downloaded ${responses.length} total responses`);
+            
+            // DEBUG: Log structure of first response to understand data format
+            if (responses.length > 0) {
+                console.log('[Test] DEBUG: First response structure:', responses[0]);
+                console.log('[Test] DEBUG: First response values:', responses[0].values);
+                if (responses[0].values) {
+                    const keys = Object.keys(responses[0].values);
+                    console.log(`[Test] DEBUG: Available fields in values (${keys.length} total):`, keys.slice(0, 20));
+                }
+            }
 
             // Filter for this Core ID (check both with and without "C" prefix)
             const filtered = responses.filter(r => {
