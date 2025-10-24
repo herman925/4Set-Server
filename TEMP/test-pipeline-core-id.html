@@ -81,13 +81,20 @@
             <details class="mt-4 p-4 bg-blue-50 rounded-lg">
                 <summary class="cursor-pointer font-semibold text-blue-900">📖 How to Use This Test</summary>
                 <div class="mt-3 text-sm text-gray-700 space-y-2">
-                    <p><strong>Purpose:</strong> This tool tests the complete JotForm + Qualtrics merge pipeline for a specific student (Core ID).</p>
+                    <p><strong>Purpose:</strong> This tool tests the complete JotForm + Qualtrics merge pipeline for a specific student (Core ID) using different fetch strategies.</p>
+                    
+                    <p><strong>Test Methods:</strong></p>
+                    <ul class="list-disc ml-6 space-y-1">
+                        <li><strong>Direct API (Slower)</strong> - Fetches data directly from JotForm and Qualtrics APIs for this specific Core ID. Slower but doesn't require pre-cached data.</li>
+                        <li><strong>Global Cache (Faster)</strong> - Uses IndexedDB cache to store all submissions, then filters client-side. Much faster for repeated lookups. First run will cache all data.</li>
+                        <li><strong>Compare Both</strong> - Runs both methods sequentially and shows performance comparison. Use this to see the speedup from caching.</li>
+                    </ul>
                     
                     <p><strong>What it does:</strong></p>
                     <ol class="list-decimal ml-6 space-y-1">
                         <li>Loads credentials from <code>assets/credentials.json</code></li>
-                        <li>Fetches JotForm submissions using the <code>:matches</code> filter on sessionkey field (QID 3)</li>
-                        <li>Fetches Qualtrics TGMD responses using export-poll-download API flow</li>
+                        <li><strong>JotForm Data:</strong> Either uses <code>:matches</code> filter (direct) or global IndexedDB cache (fast)</li>
+                        <li><strong>Qualtrics Data:</strong> Uses export-poll-download API flow (can be cached on subsequent runs)</li>
                         <li>Transforms Qualtrics data to standardized format using <code>qualtrics-mapping.json</code></li>
                         <li>Merges JotForm + Qualtrics data by Core ID (Qualtrics TGMD fields take precedence)</li>
                         <li>Validates all tasks using TaskValidator with termination rules and completion metrics</li>
@@ -96,6 +103,13 @@
                     <p><strong>How to use:</strong></p>
                     <ol class="list-decimal ml-6 space-y-1">
                         <li>Enter a numeric Core ID (e.g., <code>10261</code>) - do NOT include the "C" prefix</li>
+                        <li>Select a test method:
+                            <ul class="list-circle ml-6">
+                                <li><strong>Direct API</strong> - Slower, but works without cache</li>
+                                <li><strong>Global Cache</strong> - Faster (recommended for testing multiple students)</li>
+                                <li><strong>Compare Both</strong> - See performance difference</li>
+                            </ul>
+                        </li>
                         <li>Click "Run Pipeline Test" button</li>
                         <li>Watch the pipeline steps execute in real-time</li>
                         <li>Review the results: task completion status, light indicators, answered/correct counts</li>
@@ -125,13 +139,23 @@
         <!-- Input Section -->
         <div class="glass-card p-6 mb-6">
             <h2 class="text-xl font-semibold text-gray-800 mb-4">📋 Test Configuration</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Core ID (numeric only)</label>
                     <input type="text" id="coreIdInput" placeholder="e.g., 10261" 
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                            value="10261">
                     <p class="text-xs text-gray-500 mt-1">Enter numeric Core ID without 'C' prefix</p>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Test Method</label>
+                    <select id="testMethod" 
+                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                        <option value="direct">Direct API (Slower)</option>
+                        <option value="cache" selected>Global Cache (Faster)</option>
+                        <option value="comparison">Compare Both</option>
+                    </select>
+                    <p class="text-xs text-gray-500 mt-1">Choose fetch strategy</p>
                 </div>
                 <div class="flex items-end">
                     <button id="runTestBtn" onclick="runPipelineTest()" 
@@ -146,6 +170,33 @@
         <!-- Pipeline Steps -->
         <div class="glass-card p-6 mb-6">
             <h2 class="text-xl font-semibold text-gray-800 mb-4">⚙️ Pipeline Execution Steps</h2>
+            
+            <!-- Performance Metrics -->
+            <div id="performanceMetrics" class="hidden mb-4 p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="font-semibold text-gray-800">⚡ Performance Metrics</h3>
+                        <p class="text-sm text-gray-600">Total execution time and method comparison</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-2xl font-bold text-green-600" id="totalTime">-</div>
+                        <div class="text-xs text-gray-500">Total Time</div>
+                    </div>
+                </div>
+                <div id="comparisonResults" class="hidden mt-3 grid grid-cols-2 gap-3">
+                    <div class="bg-white p-3 rounded-lg border border-gray-200">
+                        <div class="text-xs text-gray-500 uppercase mb-1">Direct API</div>
+                        <div class="text-lg font-bold text-gray-800" id="directTime">-</div>
+                        <div class="text-xs text-gray-500" id="directSpeed">-</div>
+                    </div>
+                    <div class="bg-white p-3 rounded-lg border border-gray-200">
+                        <div class="text-xs text-gray-500 uppercase mb-1">Global Cache</div>
+                        <div class="text-lg font-bold text-green-600" id="cacheTime">-</div>
+                        <div class="text-xs text-gray-500" id="cacheSpeed">-</div>
+                    </div>
+                </div>
+            </div>
+            
             <div class="space-y-3">
                 <div id="step1" class="flex items-center p-3 bg-gray-50 rounded-lg step-pending">
                     <span class="mr-3">1️⃣</span>
@@ -274,6 +325,9 @@
     </div>
 
     <!-- Load required scripts (from parent directory since we're in TEMP/) -->
+    <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>
+    <script src="../assets/js/jotform-cache.js"></script>
+    <script src="../assets/js/qualtrics-api.js"></script>
     <script src="../assets/js/qualtrics-transformer.js"></script>
     <script src="../assets/js/data-merger.js"></script>
     <script src="../assets/js/task-validator.js"></script>
@@ -281,6 +335,7 @@
     <script>
         let credentials = null;
         let qualtricsMapping = null;
+        let performanceData = {}; // Track timing for each method
 
         // Load credentials on page load
         async function loadCredentials() {
@@ -337,6 +392,7 @@
         // Main pipeline test function
         async function runPipelineTest() {
             const coreId = document.getElementById('coreIdInput').value.trim();
+            const testMethod = document.getElementById('testMethod').value;
             
             if (!coreId) {
                 alert('Please enter a Core ID');
@@ -345,6 +401,8 @@
 
             // Reset UI
             document.getElementById('resultsSection').classList.add('hidden');
+            document.getElementById('performanceMetrics').classList.add('hidden');
+            document.getElementById('comparisonResults').classList.add('hidden');
             for (let i = 1; i <= 6; i++) {
                 updateStep(i, 'pending');
             }
@@ -352,6 +410,8 @@
             const runBtn = document.getElementById('runTestBtn');
             runBtn.disabled = true;
             runBtn.textContent = '⏳ Running Test...';
+
+            const startTime = performance.now();
 
             try {
                 // Step 1: Load Credentials
@@ -363,40 +423,40 @@
                 }
                 updateStep(1, 'complete');
 
-                // Step 2: Fetch JotForm Data
-                updateStep(2, 'loading');
-                const jotformData = await fetchJotFormData(coreId);
-                updateStep(2, 'complete', `${jotformData.submissions.length} submissions found`);
+                let results;
+                
+                if (testMethod === 'comparison') {
+                    // Run both methods and compare
+                    results = await runComparisonTest(coreId);
+                } else if (testMethod === 'cache') {
+                    // Use global cache method
+                    results = await runCacheMethod(coreId);
+                } else {
+                    // Use direct API method
+                    results = await runDirectMethod(coreId);
+                }
 
-                // Step 3: Fetch Qualtrics Data
-                updateStep(3, 'loading');
-                const qualtricsData = await fetchQualtricsData(coreId);
-                updateStep(3, 'complete', `${qualtricsData.responses.length} responses found`);
-
-                // Step 4: Transform Qualtrics Data
-                updateStep(4, 'loading');
-                const transformedQualtrics = await transformQualtricsData(qualtricsData.responses);
-                updateStep(4, 'complete', `${transformedQualtrics.length} records transformed`);
-
-                // Step 5: Merge Data
-                updateStep(5, 'loading');
-                const mergedData = await mergeData(jotformData.mergedAnswers, transformedQualtrics, coreId);
-                updateStep(5, 'complete', 'Data merged successfully');
-
-                // Step 6: Validate Tasks
-                updateStep(6, 'loading');
-                const validationResults = await validateTasks(mergedData);
-                updateStep(6, 'complete', `${Object.keys(validationResults).length} tasks validated`);
+                const endTime = performance.now();
+                const totalTime = ((endTime - startTime) / 1000).toFixed(2);
+                
+                // Show performance metrics
+                document.getElementById('performanceMetrics').classList.remove('hidden');
+                document.getElementById('totalTime').textContent = `${totalTime}s`;
+                
+                if (testMethod === 'comparison') {
+                    document.getElementById('comparisonResults').classList.remove('hidden');
+                    const directTime = performanceData.direct || 0;
+                    const cacheTime = performanceData.cache || 0;
+                    const speedup = (directTime / cacheTime).toFixed(1);
+                    
+                    document.getElementById('directTime').textContent = `${directTime.toFixed(2)}s`;
+                    document.getElementById('cacheTime').textContent = `${cacheTime.toFixed(2)}s`;
+                    document.getElementById('directSpeed').textContent = 'Baseline';
+                    document.getElementById('cacheSpeed').textContent = `${speedup}x faster`;
+                }
 
                 // Display Results
-                displayResults({
-                    coreId,
-                    jotformData,
-                    qualtricsData,
-                    transformedQualtrics,
-                    mergedData,
-                    validationResults
-                });
+                displayResults(results);
 
             } catch (error) {
                 console.error('[Test] Pipeline test failed:', error);
@@ -405,6 +465,179 @@
                 runBtn.disabled = false;
                 runBtn.textContent = '🚀 Run Pipeline Test';
             }
+        }
+
+        // Run test using direct API calls
+        async function runDirectMethod(coreId) {
+            console.log('[Test] ========== USING DIRECT API METHOD ==========');
+            const methodStart = performance.now();
+            
+            // Step 2: Fetch JotForm Data
+            updateStep(2, 'loading');
+            const jotformData = await fetchJotFormData(coreId);
+            updateStep(2, 'complete', `${jotformData.submissions.length} submissions found`);
+
+            // Step 3: Fetch Qualtrics Data
+            updateStep(3, 'loading');
+            const qualtricsData = await fetchQualtricsData(coreId);
+            updateStep(3, 'complete', `${qualtricsData.responses.length} responses found`);
+
+            // Step 4: Transform Qualtrics Data
+            updateStep(4, 'loading');
+            const transformedQualtrics = await transformQualtricsData(qualtricsData.responses);
+            updateStep(4, 'complete', `${transformedQualtrics.length} records transformed`);
+
+            // Step 5: Merge Data
+            updateStep(5, 'loading');
+            const mergedData = await mergeData(jotformData.mergedAnswers, transformedQualtrics, coreId);
+            updateStep(5, 'complete', 'Data merged successfully');
+
+            // Step 6: Validate Tasks
+            updateStep(6, 'loading');
+            const validationResults = await validateTasks(mergedData);
+            updateStep(6, 'complete', `${Object.keys(validationResults).length} tasks validated`);
+
+            const methodEnd = performance.now();
+            performanceData.direct = (methodEnd - methodStart) / 1000;
+
+            return {
+                coreId,
+                jotformData,
+                qualtricsData,
+                transformedQualtrics,
+                mergedData,
+                validationResults,
+                method: 'Direct API'
+            };
+        }
+
+        // Run test using global cache
+        async function runCacheMethod(coreId) {
+            console.log('[Test] ========== USING GLOBAL CACHE METHOD ==========');
+            const methodStart = performance.now();
+            
+            // Step 2: Fetch JotForm Data from Cache
+            updateStep(2, 'loading');
+            const jotformData = await fetchJotFormDataFromCache(coreId);
+            updateStep(2, 'complete', `${jotformData.submissions.length} submissions found (cached)`);
+
+            // Step 3: Fetch Qualtrics Data from Cache
+            updateStep(3, 'loading');
+            const qualtricsData = await fetchQualtricsDataFromCache(coreId);
+            updateStep(3, 'complete', `${qualtricsData.responses.length} responses found (cached)`);
+
+            // Step 4: Transform Qualtrics Data
+            updateStep(4, 'loading');
+            const transformedQualtrics = await transformQualtricsData(qualtricsData.responses);
+            updateStep(4, 'complete', `${transformedQualtrics.length} records transformed`);
+
+            // Step 5: Merge Data
+            updateStep(5, 'loading');
+            const mergedData = await mergeData(jotformData.mergedAnswers, transformedQualtrics, coreId);
+            updateStep(5, 'complete', 'Data merged successfully');
+
+            // Step 6: Validate Tasks
+            updateStep(6, 'loading');
+            const validationResults = await validateTasks(mergedData);
+            updateStep(6, 'complete', `${Object.keys(validationResults).length} tasks validated`);
+
+            const methodEnd = performance.now();
+            performanceData.cache = (methodEnd - methodStart) / 1000;
+
+            return {
+                coreId,
+                jotformData,
+                qualtricsData,
+                transformedQualtrics,
+                mergedData,
+                validationResults,
+                method: 'Global Cache'
+            };
+        }
+
+        // Run both methods and compare
+        async function runComparisonTest(coreId) {
+            console.log('[Test] ========== RUNNING COMPARISON TEST ==========');
+            
+            // Run direct method first
+            const directResults = await runDirectMethod(coreId);
+            
+            // Reset steps for cache method
+            for (let i = 2; i <= 6; i++) {
+                updateStep(i, 'pending');
+            }
+            
+            // Run cache method
+            const cacheResults = await runCacheMethod(coreId);
+            
+            // Return cache results (they should be identical)
+            return cacheResults;
+        }
+
+        // Fetch JotForm data using global cache
+        async function fetchJotFormDataFromCache(coreId) {
+            console.log('[Test] ========== FETCHING JOTFORM DATA (CACHE) ==========');
+            console.log('[Test] Core ID:', coreId);
+
+            if (!window.JotFormCache) {
+                throw new Error('JotFormCache not available');
+            }
+
+            const { jotformApiKey, jotformFormId } = credentials;
+            
+            // Get all submissions from cache (will fetch from API if not cached)
+            const allSubmissions = await window.JotFormCache.getAllSubmissions({
+                formId: jotformFormId,
+                apiKey: jotformApiKey
+            });
+
+            console.log(`[Test] Retrieved ${allSubmissions.length} total submissions from cache`);
+
+            // Filter for this Core ID
+            const submissions = window.JotFormCache.filterByCoreId(allSubmissions, coreId);
+            
+            console.log(`[Test] ✅ Filtered to ${submissions.length} submissions for Core ID ${coreId}`);
+
+            // Merge multiple submissions for the same student
+            const mergedAnswers = mergeJotFormSubmissions(submissions);
+            
+            return { submissions, mergedAnswers };
+        }
+
+        // Fetch Qualtrics data from cache/API
+        async function fetchQualtricsDataFromCache(coreId) {
+            console.log('[Test] ========== FETCHING QUALTRICS DATA (CACHE) ==========');
+            console.log('[Test] Core ID:', coreId);
+
+            if (!window.QualtricsAPI) {
+                throw new Error('QualtricsAPI not available');
+            }
+
+            const { qualtricsApiKey, qualtricsDatacenter, qualtricsSurveyId } = credentials;
+
+            // Initialize API instance
+            const qualtricsAPI = new window.QualtricsAPI();
+
+            // Fetch all responses (QualtricsAPI may implement caching internally)
+            const allResponses = await qualtricsAPI.fetchAllResponses({
+                qualtricsApiToken: qualtricsApiKey,
+                qualtricsDatacenter: qualtricsDatacenter,
+                qualtricsSurveyId: qualtricsSurveyId
+            });
+
+            console.log(`[Test] ✅ Downloaded ${allResponses.length} total responses`);
+
+            // Filter for this Core ID (handles multiple format variations)
+            const filtered = allResponses.filter(r => {
+                const responseCoreId = r.values?.coreId || r.values?.coreid || r.values?.['student-id'];
+                return responseCoreId === coreId || 
+                       responseCoreId === `C${coreId}` ||
+                       responseCoreId === coreId.replace(/^C/, '');
+            });
+
+            console.log(`[Test] Filtered to ${filtered.length} responses for Core ID ${coreId}`);
+
+            return { responses: filtered, allResponses: allResponses.length };
         }
 
         // Fetch JotForm data using :matches filter
@@ -659,7 +892,7 @@
             // Get student name from merged data
             const childName = data.mergedData['child-name'] || data.mergedData['21'];
             const studentName = childName ? (childName.answer || childName.text || 'Unknown') : 'Unknown';
-            document.getElementById('result-name').textContent = studentName;
+            document.getElementById('result-name').textContent = studentName + (data.method ? ` (${data.method})` : '');
             
             document.getElementById('result-jotform-count').textContent = data.jotformData.submissions.length;
             document.getElementById('result-qualtrics-count').textContent = data.qualtricsData.responses.length;
