@@ -1,0 +1,179 @@
+{
+  "id": "epn",
+  "title": "English Picture Naming",
+  "questions": [
+    {
+      "id": "EPN_Cover",
+      "type": "instruction",
+      "label": {
+        "zh": "確認進入測試請按右下方箭頭（➜）",
+        "attention": "右下方箭頭（➜）"
+      }
+    },
+    {
+      "id": "EPN_P1",
+      "type": "instruction",
+      "label": {
+        "zh": "「小朋友，我而家會俾啲圖片你睇，我想你用一個英文字話俾我聽呢啲係乜嘢嚟嘅。」\nI will show you some pictures, can you tell me what it is in English?\n\n測試員指住第一張圖，講：\n「例如呢幅圖係 \"dog\"。」\n\nFor example, this picture is \"dog\".\n\nPractice 1",
+        "instruction": ["小朋友，我而家會俾啲圖片你睇，我想你用一個英文字話俾我聽呢啲係乜嘢嚟嘅。", "例如呢幅圖係 \"dog\"。"],
+        "orange_text": ["I will show you some pictures, can you tell me what it is in English?", "For example, this picture is \"dog\"."]
+      },
+      "media": { "image": "images/EPN/EPN_P1.png" }
+    },
+    {
+      "id": "EPN_P2",
+      "type": "instruction",
+      "label": {
+        "parts": [
+          {
+            "zh": "問小朋友: \n「呢幅圖係乜嘢？」\nWhat is this?\n\n",
+            "instruction": "呢幅圖係乜嘢？",
+            "orange_text": "What is this?"
+          },
+          {
+            "zh": "如小朋友回答正確 \"hat\"，\n「做得好好，呢幅係 \"hat\"，請你繼續話俾我聽其他圖片（即正式Trials）係乜嘢。」\n\nWell done, this is \"hat\". Please tell me what the other pictures are?\n\n如小朋友回答錯誤或唔識，\n「呢幅圖畫係 \"hat\"，咁你試下話俾我聽其他嘅圖片係乜嘢啦喎。」\n\nAlright, this is \"hat\". Can you try and tell me what the other pictures are?\n\n測試員逐一指著以下 1至8 幅圖片詢問小朋友，請測試員用手指指住每一幅圖片問問題。\n\n正確答案= Y，錯誤或不知道= N，並輸入小朋友的答案作記錄。\n兒童自我改正算其對。\n\n必須標準答案才能比分。\n不限時，需要全部做完。",
+            "instruction": [
+              "做得好好,呢幅係 \"hat\"，請你繼續話俾我聽其他圖片（即正式Trials）係乜嘢。",
+              "呢幅圖畫係 \"hat\"，咁你試下話俾我聽其他嘅圖片係乜嘢啦喎。"],
+            "orange_text": [
+              "Well done, this is \"hat\". Please tell me what the other pictures are?",
+              "Alright, this is \"hat\". Can you try and tell me what the other pictures are?"],
+            "emphasize":"必須標準答案才能比分"
+          }
+        ]
+      },
+      "media": { "image": "images/EPN/EPN_P2.png" }
+    },
+    {
+      "id": "EPN_Q1",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個呢?」What about this?\n(sun)",
+        "instruction": "呢個呢?",
+        "orange_text": "What about this?",
+        "answer": "sun",
+        "image": "images/EPN/EPN_Q1.png"
+      },
+      "options": [
+        { "value": "Y", "label": "Y" },
+        { "value": "N", "label": "N" }
+      ]
+    },
+    {
+      "id": "EPN_Q2",
+      "type": "radio",
+      "label": {
+        "zh": "「呢個呢?」What about this?\n(boy)",
+        "instruction": "呢個呢?",
+        "orange_text": "What about this?",
+        "answer": "boy",
+        "image": "images/EPN/EPN_Q2.png"
+      },
+      "options": [
+        { "value": "Y", "label": "Y" },
+        { "value": "N", "label": "N" }
+      ]
+    },
+    {
+      "id": "EPN_Q3",
+      "type": "radio",
+      "label": {
+        "zh": "\"呢個呢?\" What about this?\n(fish)",
+        "instruction": "\"呢個呢?\"",
+        "orange_text": "What about this?",
+        "answer": "fish",
+        "image": "images/EPN/EPN_Q3.png"
+      },
+      "options": [
+        { "value": "Y", "label": "Y" },
+        { "value": "N", "label": "N" }
+      ]
+    },
+    {
+      "id": "EPN_Q4",
+      "type": "radio",
+      "label": {
+        "zh": "\"呢個呢?\" What about this?\n(chair)",
+        "instruction": "\"呢個呢?\"",
+        "orange_text": "What about this?",
+        "answer": "chair",
+        "image": "images/EPN/EPN_Q4.png"
+      },
+      "options": [
+        { "value": "Y", "label": "Y" },
+        { "value": "N", "label": "N" }
+      ]
+    },
+    {
+      "id": "EPN_Q5",
+      "type": "radio",
+      "label": {
+        "zh": "\"呢個呢?\" What about this?\n(pig)",
+        "instruction": "\"呢個呢?\"",
+        "orange_text": "What about this?",
+        "answer": "pig",
+        "image": "images/EPN/EPN_Q5.png"
+      },
+      "options": [
+        { "value": "Y", "label": "Y" },
+        { "value": "N", "label": "N" }
+      ]
+    },
+    {
+      "id": "EPN_Q6",
+      "type": "radio",
+      "label": {
+        "zh": "\"呢個呢?\" What about this?\n(bed)",
+        "instruction": "\"呢個呢?\"",
+        "orange_text": "What about this?",
+        "answer": "bed",
+        "image": "images/EPN/EPN_Q6.png"
+      },
+      "options": [
+        { "value": "Y", "label": "Y" },
+        { "value": "N", "label": "N" }
+      ]
+    },
+    {
+      "id": "EPN_Q7",
+      "type": "radio",
+      "label": {
+        "zh": "\"呢個呢?\" What about this?\n(frog)",
+        "instruction": "\"呢個呢?\"",
+        "orange_text": "What about this?",
+        "answer": "frog",
+        "image": "images/EPN/EPN_Q7.png"
+      },
+      "options": [
+        { "value": "Y", "label": "Y" },
+        { "value": "N", "label": "N" }
+      ]
+    },
+    {
+      "id": "EPN_Q8",
+      "type": "radio",
+      "label": {
+        "zh": "\"呢個呢?\" What about this?\n(star)",
+        "instruction": "\"呢個呢?\"",
+        "orange_text": "What about this?",
+        "answer": "star",
+        "image": "images/EPN/EPN_Q8.png"
+      },
+      "options": [
+        { "value": "Y", "label": "Y" },
+        { "value": "N", "label": "N" }
+      ]
+    },
+    {
+      "id": "EPN_Com",
+      "type": "completion",
+      "dateId": "EPN_Date",
+      "label": {
+        "zh": "英文圖片命名 (English Picture Naming) 測試已完成.\n\n請按右下方箭頭（➜），並填寫checklist内容.",
+        "word_compound": "測試已完成",
+        "super_emphasize": ["請按右下方箭頭（➜）", "填寫checklist"]
+      },
+      "buttonLabel": "已完成"
+    }
+  ]
+}

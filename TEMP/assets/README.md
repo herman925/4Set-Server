@@ -12,6 +12,10 @@ When the test pages run from the TEMP subdirectory, the JavaScript modules still
 
 - **qualtrics-mapping.json**: Copy of `/assets/qualtrics-mapping.json` - Maps Qualtrics QID fields to standardized field names. This file is loaded by `qualtrics-transformer.js` and is required for transforming Qualtrics responses.
 
+- **tasks/**: Directory containing copies of all task definition files from `/assets/tasks/`:
+  - **survey-structure.json**: Overall survey structure and task definitions. Loaded by `task-validator.js`.
+  - **[TaskName].json**: Individual task definition files (e.g., `ERV.json`, `CM.json`, `SYM.json`, etc.) containing questions, correct answers, and termination rules. May be loaded dynamically by various modules.
+
 ## Maintenance
 
 When the main asset files are updated, remember to update the copies here:
@@ -19,6 +23,7 @@ When the main asset files are updated, remember to update the copies here:
 ```bash
 # From repository root
 cp assets/qualtrics-mapping.json TEMP/assets/
+cp assets/tasks/*.json TEMP/assets/tasks/
 ```
 
 ## Alternative Solutions Considered

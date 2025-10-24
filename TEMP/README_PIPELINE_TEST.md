@@ -60,7 +60,9 @@ The test executes the following steps in sequence:
    }
    ```
 
-2. **Qualtrics Mapping File**: The test tool requires `TEMP/assets/qualtrics-mapping.json` to transform Qualtrics data. This file is a copy of the main `assets/qualtrics-mapping.json` needed because the test page is in a subdirectory.
+2. **Asset Files**: The test tool requires copies of asset files in `TEMP/assets/` because the test page is in a subdirectory:
+   - `TEMP/assets/qualtrics-mapping.json` - Maps Qualtrics QID fields to standardized field names
+   - `TEMP/assets/tasks/` - Directory containing task definition files for validation
 
 3. **CORS Handling for Local Testing**: When running locally, browsers block cross-origin API requests. Use one of these methods:
 

@@ -1,0 +1,299 @@
+{
+  "id": "ccm",
+  "title": "Chinese Character Matching",
+  "questions": [
+    {
+      "id": "CCM_Cover",
+      "type": "instruction",
+      "label": {
+        "zh": "搵字遊戲\n\n確認進入測試請按右下方箭頭（➜）",
+        "attention": "右下方箭頭（➜）"
+      }
+    },
+    {
+      "id": "CCM_ins1",
+      "type": "instruction",
+      "label": {
+        "zh": "「一陣有啲字，請你跟住我讀一次，然後你用手指指出我想要嘅係邊一個字。」\nI will show you some words, please read after me, and point out the character I need.\n\n記錄規則： 正確答案=1，錯誤或不知道=0，兒童自我改正算其對。\n\n注意：請勿提供回饋。測試員不可用手逐隻逐隻字指著讀詞語，只可以示意係邊個 trial，例如以手指圍繞詞組打圈示意。",
+        "instruction": "一陣有啲字，請你跟住我讀一次，然後你用手指指出我想要嘅係邊一個字",
+        "orange_text": "I will show you some words, please read after me, and point out the character I need.",
+        "emphasize": ["請勿","不可"]
+      }
+    },
+    {
+      "id": "CCM_Q1",
+      "type": "radio-largechar",
+      "label": {
+        "parts": [
+          {
+            "zh": "「請跟我讀，降落傘，而家請你指出『傘』字。」\n",
+            "answer": ["降落傘", "傘"]
+          },
+          {
+            "zh": "Read after me, which one is \"傘\"?",
+            "orange_text": "Read after me, which one is \"傘\"?"
+          }
+        ]
+      },
+      "options": [
+        {
+          "value": "1",
+          "label": "卬"
+        },
+        {
+          "value": "2",
+          "label": "埒"
+        },
+        {
+          "value": "3",
+          "label": "氝"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "3"
+      }
+    },
+    {
+      "id": "CCM_Q2",
+      "type": "radio-largechar",
+      "label": {
+        "parts": [
+          {
+            "zh": "「請跟我讀，行李箱，而家請你指出『李』字。」\n",
+            "answer": ["行李箱", "李"]
+          },
+          {
+            "zh": "Read after me, which one is \"李\"?",
+            "orange_text": "Read after me, which one is \"李\"?"
+          }
+        ]
+      },
+      "options": [
+        {
+          "value": "1",
+          "label": "婇"
+        },
+        {
+          "value": "2",
+          "label": "柟"
+        },
+        {
+          "value": "3",
+          "label": "灝"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "2"
+      }
+    },
+    {
+      "id": "CCM_Q3",
+      "type": "radio-largechar",
+      "label": {
+        "parts": [
+          {
+            "zh": "「請跟我讀，保温杯，而家請你指出『温』字。」\n",
+            "answer": ["保温杯", "温"]
+          },
+          {
+            "zh": "Read after me, which one is \"温\"?",
+            "orange_text": "Read after me, which one is \"温\"?"
+          }
+        ]
+      },
+      "options": [
+        {
+          "value": "1",
+          "label": "朼"
+        },
+        {
+          "value": "2",
+          "label": "胗"
+        },
+        {
+          "value": "3",
+          "label": "忷"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "2"
+      }
+    },
+    {
+      "id": "CCM_Q4",
+      "type": "radio-largechar",
+      "label": {
+        "parts": [
+          {
+            "zh": "「請跟我讀，漢堡包，而家請你指出『包』字。」\n",
+            "answer": ["漢堡包", "包"]
+          },
+          {
+            "zh": "Read after me, which one is \"包\"?",
+            "orange_text": "Read after me, which one is \"包\"?"
+          }
+        ]
+      },
+      "options": [
+        {
+          "value": "1",
+          "label": "痻"
+        },
+        {
+          "value": "2",
+          "label": "溾"
+        },
+        {
+          "value": "3",
+          "label": "圪"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "3"
+      }
+    },
+    {
+      "id": "CCM_Q5",
+      "type": "radio-largechar",
+      "label": {
+        "parts": [
+          {
+            "zh": "「請跟我讀，原子筆，而家請你指出『原』字。」\n",
+            "answer": ["原子筆", "原"]
+          },
+          {
+            "zh": "Read after me, which one is \"原\"?",
+            "orange_text": "Read after me, which one is \"原\"?"
+          }
+        ]
+      },
+      "options": [
+        {
+          "value": "1",
+          "label": "尌"
+        },
+        {
+          "value": "2",
+          "label": "婒"
+        },
+        {
+          "value": "3",
+          "label": "哱"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "1"
+      }
+    },
+    {
+      "id": "CCM_Q6",
+      "type": "radio-largechar",
+      "label": {
+        "parts": [
+          {
+            "zh": "「請跟我讀，遊戲機，而家請你指出『機』字。」\n",
+            "answer": ["遊戲機", "機"]
+          },
+          {
+            "zh": "Read after me, which one is \"機\"?",
+            "orange_text": "Read after me, which one is \"機\"?"
+          }
+        ]
+      },
+      "options": [
+        {
+          "value": "1",
+          "label": "祅"
+        },
+        {
+          "value": "2",
+          "label": "杋"
+        },
+        {
+          "value": "3",
+          "label": "稗"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "3"
+      }
+    },
+    {
+      "id": "CCM_Q7",
+      "type": "radio-largechar",
+      "label": {
+        "parts": [
+          {
+            "zh": "「請跟我讀，斑馬線，而家請你指出『斑』字。」\n",
+            "answer": ["斑馬線", "斑"]
+          },
+          {
+            "zh": "Read after me, which one is \"斑\"?",
+            "orange_text": "Read after me, which one is \"斑\"?"
+          }
+        ]
+      },
+      "options": [
+        {
+          "value": "1",
+          "label": "僛"
+        },
+        {
+          "value": "2",
+          "label": "醍"
+        },
+        {
+          "value": "3",
+          "label": "仉"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "1"
+      }
+    },
+    {
+      "id": "CCM_Q8",
+      "type": "radio-largechar",
+      "label": {
+        "parts": [
+          {
+            "zh": "「請跟我讀，交通燈，而家請你指出『交』字。」\n",
+            "answer": ["交通燈", "交"]
+          },
+          {
+            "zh": "Read after me, which one is \"交\"?",
+            "orange_text": "Read after me, which one is \"交\"?"
+          }
+        ]
+      },
+      "options": [
+        {
+          "value": "1",
+          "label": "乇"
+        },
+        {
+          "value": "2",
+          "label": "嶈"
+        },
+        {
+          "value": "3",
+          "label": "丮"
+        }
+      ],
+      "scoring": {
+        "correctAnswer": "1"
+      }
+    },
+    {
+      "id": "CCM_Com",
+      "type": "completion",
+      "dateId": "CCM_Date",
+      "label": {
+        "zh": "搵字遊戲已完成.\n\n請按右下方箭頭（➜），並填寫checklist内容.",
+        "word_compound": "測試已完成",
+        "super_emphasize": ["請按右下方箭頭（➜）", "填寫checklist"]
+      },
+      "buttonLabel": "已完成"
+    }
+  ]
+}

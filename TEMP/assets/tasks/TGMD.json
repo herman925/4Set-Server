@@ -1,0 +1,241 @@
+{
+  "id": "tgmd",
+  "title": "TGMD",
+  "questions": [
+    {
+      "id": "TGMD_Cover",
+      "type": "instruction",
+      "label": {
+        "zh": "TGMD\n\n掃描QR code後按右下方箭頭（➜）繼續。",
+        "attention": "右下方箭頭（➜）"
+      }
+    },
+    {
+      "id": "TGMD_Leg",
+      "type": "radio",
+      "label": "慣用腳",
+      "options": [
+        {
+          "value": "Left",
+          "label": "左腳"
+        },
+        {
+          "value": "Right",
+          "label": "右腳"
+        },
+        {
+          "value": "Undetermined",
+          "label": "未形成"
+        }
+      ]
+    },
+    {
+      "id": "Hop",
+      "type": "matrix-radio",
+      "label": {
+        "zh": "1.單腳跳\n\n用慣用腳連續單腳跳四次",
+        "emphasize":"四"
+      },
+      "task": "hop",
+      "columns": [
+        { "id": "t1", "label": "第一次" },
+        { "id": "t2", "label": "第二次" }
+      ],
+      "rows": [
+        {
+          "id": "TGMD_111_Hop",
+          "description": "離地腳有自然彎曲並向前擺動以提供動力"
+        },
+        {
+          "id": "TGMD_112_Hop",
+          "description": "離地腳的鞋沒有越過慣用腳"
+        },
+        {
+          "id": "TGMD_113_Hop",
+          "description": "雙臂彎曲向前擺動產生動力"
+        },
+        {
+          "id": "TGMD_114_Hop",
+          "description": "慣用的腳完成4次連續單腳跳"
+        }
+      ],
+      "options": [
+        { "value": 0, "label": "0" },
+        { "value": 1, "label": "1" }
+      ]
+    },
+    {
+      "id": "Jum",
+      "type": "matrix-radio",
+      "label": {
+        "zh": "2.立定跳遠"
+      },
+      "task": "long_jump",
+      "columns": [
+        { "id": "t1", "label": "第一次" },
+        { "id": "t2", "label": "第二次" }
+      ],
+      "rows": [
+        {
+          "id": "TGMD_211_Jum",
+          "description": "準備起跳前，雙膝彎曲，雙臂在身體後面"
+        },
+        {
+          "id": "TGMD_212_Jum",
+          "description": "踺地起跳時，雙臂有力向前上方擺動高於頭頂"
+        },
+        {
+          "id": "TGMD_213_Jum",
+          "description": "雙腳同時起跳同時落地"
+        },
+        {
+          "id": "TGMD_214_Jum",
+          "description": "雙腳落地時，雙臂隨之向下擺動"
+        }
+      ],
+      "options": [
+        { "value": 0, "label": "0" },
+        { "value": 1, "label": "1" }
+      ]
+    },
+    {
+      "id": "Sli",
+      "type": "matrix-radio",
+      "label": {
+        "zh": "3.側滑步"
+      },
+      "task": "slide",
+      "columns": [
+        { "id": "t1", "label": "第一次" },
+        { "id": "t2", "label": "第二次" }
+      ],
+      "rows": [
+        {
+          "id": "TGMD_311_Sli",
+          "description": "身體側對滑步方向，胸頭大致與地面保持平行、一致（此題計分只需計第一個方向）"
+        },
+        {
+          "id": "TGMD_312_Sli",
+          "description": "慣用腳向側滑步，另一隻腳隨後滑動，側跳時雙腳有短暫的離地騰空（此題計分只需計第一個方向）"
+        },
+        {
+          "id": "TGMD_313_Sli",
+          "description": "以第一個方向連續四次側滑步"
+        },
+        {
+          "id": "TGMD_314_Sli",
+          "description": "不用轉身，反方向重複側滑步連續四次"
+        }
+      ],
+      "options": [
+        { "value": 0, "label": "0" },
+        { "value": 1, "label": "1" }
+      ]
+    },
+    {
+      "id": "Dri",
+      "type": "matrix-radio",
+      "label": {
+        "zh": "4.單手原地拍球\n\n單手原地連續4次拍球，停止後，用手接住球",
+        "emphasize":"4"
+      },
+      "task": "dribble",
+      "columns": [
+        { "id": "t1", "label": "第一次" },
+        { "id": "t2", "label": "第二次" }
+      ],
+      "rows": [
+        {
+          "id": "TGMD_411_Dri",
+          "description": "一隻手拍球的時候，球有回彈至腰間高度"
+        },
+        {
+          "id": "TGMD_412_Dri",
+          "description": "用指尖控球，而不是用手掌拍打籃球"
+        },
+        {
+          "id": "TGMD_413_Dri",
+          "description": "能連續拍球4次，腳不移動控制住球"
+        }
+      ],
+      "options": [
+        { "value": 0, "label": "0" },
+        { "value": 1, "label": "1" }
+      ]
+    },
+    {
+      "id": "Cat",
+      "type": "matrix-radio",
+      "label": {
+        "zh": "5.雙手接球"
+      },
+      "task": "catch",
+      "columns": [
+        { "id": "t1", "label": "第一次" },
+        { "id": "t2", "label": "第二次" }
+      ],
+      "rows": [
+        {
+          "id": "TGMD_511_Cat",
+          "description": "準備接球前，雙手自然伸展置於胸前，肘關節自然彎曲"
+        },
+        {
+          "id": "TGMD_512_Cat",
+          "description": "雙臂自然伸展去迎接球"
+        },
+        {
+          "id": "TGMD_513_Cat",
+          "description": "僅靠雙手接住球"
+        }
+      ],
+      "options": [
+        { "value": 0, "label": "0" },
+        { "value": 1, "label": "1" }
+      ]
+    },
+    {
+      "id": "Thr",
+      "type": "matrix-radio",
+      "label": {
+        "zh": "6.下手拋球"
+      },
+      "task": "underhand_throw",
+      "columns": [
+        { "id": "t1", "label": "第一次" },
+        { "id": "t2", "label": "第二次" }
+      ],
+      "rows": [
+        {
+          "id": "TGMD_611_Thr",
+          "description": "拋球前慣用手持球向後下方擺動，並置於身體後方"
+        },
+        {
+          "id": "TGMD_612_Thr",
+          "description": "於慣用手另一邊的腳踏前一步"
+        },
+        {
+          "id": "TGMD_613_Thr",
+          "description": "球拋出後直接擊打牆面，沒有彈地"
+        },
+        {
+          "id": "TGMD_614_Thr",
+          "description": "球離手時，投球的手至少達胸部位置"
+        }
+      ],
+      "options": [
+        { "value": 0, "label": "0" },
+        { "value": 1, "label": "1" }
+      ]
+    },
+    {
+      "id": "TGMD_Com",
+      "type": "completion",
+      "label": {
+        "zh": "大肌肉動作發展測試已完成.\n\n請按右下方箭頭（➜）繼續。",
+        "word_compound": "測試已完成",
+        "super_emphasize": "右下方箭頭（➜）"
+      },
+      "buttonLabel": "已完成"
+    }
+  ]
+}
