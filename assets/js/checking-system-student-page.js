@@ -809,6 +809,110 @@
   }
 
   /**
+   * Render TGMD results with grouped task display and trial breakdown
+   * 
+   * Displays TGMD assessment results grouped by motor task (hop, jump, slide, etc.)
+   * with individual trial results and row scores for each performance criterion.
+   * 
+   * @param {HTMLElement} tbody - Table body element to populate
+   * @param {Object} tgmdScoring - TGMD scoring data from task validator
+   * @param {HTMLElement} taskElement - Task details element for styling
+   */
+  function renderTGMDResults(tbody, tgmdScoring, taskElement) {
+    console.log('[StudentPage] Rendering TGMD grouped results');
+    
+    // Iterate through each motor task (hop, long_jump, slide, etc.)
+    for (const [taskName, taskData] of Object.entries(tgmdScoring.byTask)) {
+      // Add task header row
+      const headerRow = document.createElement('tr');
+      headerRow.className = 'bg-[color:var(--muted)] font-semibold';
+      headerRow.innerHTML = `
+        <td colspan="4" class="py-3 px-2">
+          <div class="flex items-center gap-2">
+            <i data-lucide="activity" class="w-4 h-4 text-[color:var(--primary)]"></i>
+            <span>${taskData.taskLabel || taskName}</span>
+            <span class="ml-auto text-sm font-normal text-[color:var(--muted-foreground)]">
+              Task Score: ${taskData.taskScore}/${taskData.taskMaxScore}
+            </span>
+          </div>
+        </td>
+      `;
+      tbody.appendChild(headerRow);
+      
+      // Add rows for each performance criterion
+      for (const criterion of taskData.criteria) {
+        const row = document.createElement('tr');
+        row.className = 'hover:bg-[color:var(--muted)]/30';
+        
+        // Determine trial statuses
+        const t1Status = criterion.trials.t1 === 1 ? 'success' : 'fail';
+        const t2Status = criterion.trials.t2 === 1 ? 'success' : 'fail';
+        
+        // Create trial pills with Success/Fail labels
+        const t1Pill = criterion.trials.t1 === 1
+          ? '<span class="trial-pill trial-success"><i data-lucide="check" class="w-3 h-3"></i>Success</span>'
+          : '<span class="trial-pill trial-fail"><i data-lucide="x" class="w-3 h-3"></i>Fail</span>';
+        
+        const t2Pill = criterion.trials.t2 === 1
+          ? '<span class="trial-pill trial-success"><i data-lucide="check" class="w-3 h-3"></i>Success</span>'
+          : '<span class="trial-pill trial-fail"><i data-lucide="x" class="w-3 h-3"></i>Fail</span>';
+        
+        row.innerHTML = `
+          <td class="py-2 px-2 text-[color:var(--foreground)]">
+            <div class="text-xs text-[color:var(--muted-foreground)] font-mono">${criterion.id}</div>
+            <div class="text-sm mt-1">${criterion.description}</div>
+          </td>
+          <td class="py-2 px-2">
+            <div class="flex flex-col gap-1">
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-[color:var(--muted-foreground)] w-12">Trial 1:</span>
+                ${t1Pill}
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="text-xs text-[color:var(--muted-foreground)] w-12">Trial 2:</span>
+                ${t2Pill}
+              </div>
+            </div>
+          </td>
+          <td class="py-2 px-2 text-center">
+            <div class="text-sm font-semibold">
+              ${criterion.rowScore}/${criterion.maxScore}
+            </div>
+          </td>
+          <td class="py-2 px-2">
+            <span class="answer-pill" style="background: #f0fdf4; color: #166534; border-color: #bbf7d0;">
+              <i data-lucide="hash" class="w-3 h-3"></i>Row Score
+            </span>
+          </td>
+        `;
+        
+        tbody.appendChild(row);
+      }
+    }
+    
+    // Add overall summary row
+    const summaryRow = document.createElement('tr');
+    summaryRow.className = 'bg-[color:var(--accent)] font-bold border-t-2 border-[color:var(--border)]';
+    summaryRow.innerHTML = `
+      <td colspan="2" class="py-3 px-2">
+        <div class="flex items-center gap-2">
+          <i data-lucide="target" class="w-4 h-4 text-[color:var(--primary)]"></i>
+          <span>Overall TGMD Score</span>
+        </div>
+      </td>
+      <td class="py-3 px-2 text-center text-lg">
+        ${tgmdScoring.totalScore}/${tgmdScoring.maxScore}
+      </td>
+      <td class="py-3 px-2">
+        <span class="text-sm text-[color:var(--muted-foreground)]">
+          ${tgmdScoring.percentage}%
+        </span>
+      </td>
+    `;
+    tbody.appendChild(summaryRow);
+  }
+
+  /**
    * Populate task tables with validated question data
    */
   function populateTaskTables(taskValidation, mergedAnswers) {
@@ -879,6 +983,31 @@
       
       // Clear dummy data
       tbody.innerHTML = '';
+      
+      // Check if this is TGMD task with special scoring
+      if (taskId === 'tgmd' && validation.tgmdScoring) {
+        // Render TGMD with grouped task display
+        renderTGMDResults(tbody, validation.tgmdScoring, taskElement);
+        
+        // Update task summary with TGMD-specific stats
+        updateTaskSummary(taskElement, taskId, {
+          total: validation.totalQuestions,
+          answered: validation.answeredQuestions,
+          correct: validation.tgmdScoring.totalScore,
+          percentage: validation.completionPercentage
+        });
+        
+        updateTaskLightingStatus(taskElement, {
+          total: validation.totalQuestions,
+          answered: validation.answeredQuestions,
+          percentage: validation.completionPercentage
+        });
+        
+        console.log(`[StudentPage] ✅ Populated TGMD with grouped scoring: ${validation.tgmdScoring.totalScore}/${validation.tgmdScoring.maxScore}`);
+        
+        // Skip standard rendering for TGMD
+        continue;
+      }
       
       // Check if this is a Y/N task (all questions are Y/N)
       const isYNTask = validation.questions.length > 0 && 

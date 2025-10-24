@@ -473,7 +473,7 @@ window.TaskValidator = (() => {
     const correctCount = scoredQuestions.filter(q => q.isCorrect).length;
     const totalQuestions = scoredQuestions.length;
 
-    return {
+    const result = {
       taskId,
       title: taskDef.title,
       questions: validatedQuestions, // Include ALL questions (including _TEXT for display)
@@ -482,6 +482,145 @@ window.TaskValidator = (() => {
       correctAnswers: correctCount,
       completionPercentage: totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0,
       accuracyPercentage: answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0
+    };
+
+    // Post-process TGMD tasks for matrix-radio scoring with trial summation
+    if (taskId === 'tgmd') {
+      return processTGMDScoring(result, taskDef);
+    }
+
+    return result;
+  }
+
+  /**
+   * Process TGMD scoring to aggregate trial results and group by task
+   * 
+   * TGMD uses matrix-radio questions where:
+   * - Each row represents a performance criterion
+   * - Each column represents a trial (t1, t2)
+   * - Values are 0 (not performed) or 1 (performed correctly)
+   * 
+   * This function:
+   * 1. Groups trial cells (t1, t2) by row (criterion)
+   * 2. Calculates row score = t1 + t2 (max 2 per criterion)
+   * 3. Groups criteria by task field (hop, long_jump, slide, etc.)
+   * 4. Calculates task totals and overall score
+   * 
+   * @param {Object} validationResult - Standard validation result from validateTask
+   * @param {Object} taskDef - TGMD task definition with matrix-radio questions
+   * @returns {Object} Enhanced validation result with TGMD scoring structure
+   */
+  function processTGMDScoring(validationResult, taskDef) {
+    console.log('[TaskValidator] Processing TGMD matrix-radio scoring');
+    
+    // Group questions by row ID (e.g., TGMD_111_Hop_t1 and TGMD_111_Hop_t2 → TGMD_111_Hop)
+    const rowMap = new Map();
+    
+    for (const q of validationResult.questions) {
+      // Only process matrix-cell questions (skip TGMD_Leg, TGMD_Hand, etc.)
+      if (q.id.includes('_t1') || q.id.includes('_t2')) {
+        const rowId = q.id.replace(/_t[12]$/, ''); // Remove _t1 or _t2 suffix
+        
+        if (!rowMap.has(rowId)) {
+          rowMap.set(rowId, { 
+            rowId: rowId,
+            t1: null, 
+            t2: null, 
+            task: null,
+            description: null,
+            matrixQuestionId: null
+          });
+        }
+        
+        const row = rowMap.get(rowId);
+        
+        // Get trial value (convert to number, default to 0)
+        const trialValue = parseInt(q.studentAnswer, 10) || 0;
+        
+        if (q.id.endsWith('_t1')) {
+          row.t1 = trialValue;
+        } else {
+          row.t2 = trialValue;
+        }
+      }
+    }
+    
+    // Find task field and description for each row from task definition
+    for (const [rowId, row] of rowMap) {
+      // Find the matrix question that contains this row
+      for (const matrixQ of taskDef.questions) {
+        if (matrixQ.type === 'matrix-radio' && matrixQ.rows) {
+          const rowDef = matrixQ.rows.find(r => r.id === rowId);
+          if (rowDef) {
+            row.task = matrixQ.task; // e.g., "hop", "long_jump"
+            row.description = rowDef.description; // e.g., "離地腳有自然彎曲..."
+            row.matrixQuestionId = matrixQ.id; // e.g., "Hop"
+            row.taskLabel = matrixQ.label?.zh || matrixQ.id; // e.g., "1.單腳跳..."
+            break;
+          }
+        }
+      }
+    }
+    
+    // Create aggregated TGMD questions with row scores
+    const tgmdRows = [];
+    for (const [rowId, row] of rowMap) {
+      const t1 = row.t1 !== null ? row.t1 : 0;
+      const t2 = row.t2 !== null ? row.t2 : 0;
+      const rowScore = t1 + t2;
+      
+      tgmdRows.push({
+        id: rowId,
+        rowScore: rowScore,
+        maxScore: 2,
+        trials: { t1: t1, t2: t2 },
+        task: row.task,
+        taskLabel: row.taskLabel,
+        description: row.description || rowId,
+        matrixQuestionId: row.matrixQuestionId
+      });
+    }
+    
+    // Group rows by task
+    const taskGroups = {};
+    for (const row of tgmdRows) {
+      if (!taskGroups[row.task]) {
+        taskGroups[row.task] = {
+          taskName: row.task,
+          taskLabel: row.taskLabel,
+          matrixQuestionId: row.matrixQuestionId,
+          criteria: []
+        };
+      }
+      taskGroups[row.task].criteria.push({
+        id: row.id,
+        description: row.description,
+        trials: row.trials,
+        rowScore: row.rowScore,
+        maxScore: row.maxScore
+      });
+    }
+    
+    // Calculate task totals
+    for (const task of Object.values(taskGroups)) {
+      task.taskScore = task.criteria.reduce((sum, c) => sum + c.rowScore, 0);
+      task.taskMaxScore = task.criteria.length * 2;
+    }
+    
+    // Calculate overall totals
+    const totalScore = tgmdRows.reduce((sum, row) => sum + row.rowScore, 0);
+    const maxScore = tgmdRows.length * 2;
+    
+    console.log(`[TaskValidator] TGMD scoring complete: ${totalScore}/${maxScore} (${Object.keys(taskGroups).length} tasks)`);
+    
+    return {
+      ...validationResult,
+      tgmdScoring: {
+        byTask: taskGroups,
+        totalScore: totalScore,
+        maxScore: maxScore,
+        percentage: maxScore > 0 ? Math.round((totalScore / maxScore) * 100) : 0
+      }
     };
   }
 
