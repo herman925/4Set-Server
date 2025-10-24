@@ -39,10 +39,7 @@
  * 
  * NO OTHER FILE should implement validation logic - all pages must use TaskValidator.
  */
-(function(global) {
-  'use strict';
-  
-  const TaskValidator = (() => {
+window.TaskValidator = (() => {
   // Task metadata loaded from survey-structure.json
   let taskMetadata = null;
   let taskFiles = {}; // Will be built from taskMetadata
@@ -931,13 +928,3 @@
     extractQuestions
   };
 })();
-
-  // Export for both Node.js and browser environments
-  if (typeof module !== 'undefined' && module.exports) {
-    // Node.js
-    module.exports = TaskValidator;
-  } else if (typeof global !== 'undefined') {
-    // Browser (attach to window or global)
-    global.TaskValidator = TaskValidator;
-  }
-})(typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : this);
