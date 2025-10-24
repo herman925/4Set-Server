@@ -49,16 +49,7 @@ The test executes the following steps in sequence:
 
 ### Prerequisites
 
-1. **Credentials File**: Ensure `assets/credentials.json` exists with valid credentials:
-   ```json
-   {
-     "jotformApiKey": "your-jotform-api-key",
-     "jotformFormId": "your-form-id",
-     "qualtricsApiKey": "your-qualtrics-api-key",
-     "qualtricsDatacenter": "syd1",
-     "qualtricsSurveyId": "your-survey-id"
-   }
-   ```
+1. **Self-Contained Test Page**: The test page has credentials and Qualtrics mapping embedded directly in the HTML file. No external `credentials.json` or `qualtrics-mapping.json` files are needed. If you need to update credentials or mapping data, edit them directly in the test HTML file.
 
 2. **CORS Handling for Local Testing**: When running locally, browsers block cross-origin API requests. Use one of these methods:
 
@@ -229,9 +220,10 @@ Uses the centralized `TaskValidator` module which implements:
 
 ### Common Issues
 
-1. **"Credentials not available"**
-   - Ensure `assets/credentials.json` exists and is valid JSON
-   - Check that file paths are correct (test file is in `TEMP/` directory)
+1. **"Credentials not available"** or **"Failed to load mapping"**
+   - Credentials and Qualtrics mapping are embedded in the test HTML file
+   - If you see these errors, the embedded data may be corrupted
+   - Check the `EMBEDDED_QUALTRICS_MAPPING` and `credentials` variables in the test HTML
 
 2. **"JotForm API error: 401"**
    - Verify `jotformApiKey` is correct
