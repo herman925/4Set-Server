@@ -87,10 +87,19 @@
           console.log(`[DataMerger] ✓ Matched and merged TGMD for student ${coreId}`);
         } else {
           // JotForm-only record
-          mergedRecords.push({
+          const jotformOnly = {
             ...jotformRecord,
             _sources: ['jotform']
-          });
+          };
+          
+          // Add grade detection for JotForm-only records
+          if (window.GradeDetector) {
+            jotformOnly.grade = window.GradeDetector.determineGrade({
+              sessionkey: jotformRecord.sessionkey
+            });
+          }
+          
+          mergedRecords.push(jotformOnly);
           jotformOnlyCount++;
         }
       }
@@ -101,11 +110,20 @@
 
       for (const [coreId, qualtricsRecord] of qualtricsByCoreId.entries()) {
         if (!jotformCoreIds.has(coreId)) {
-          mergedRecords.push({
+          const qualtricsOnly = {
             ...qualtricsRecord,
             _sources: ['qualtrics'],
             _orphaned: true // Flag as Qualtrics-only
-          });
+          };
+          
+          // Add grade detection for Qualtrics-only records
+          if (window.GradeDetector) {
+            qualtricsOnly.grade = window.GradeDetector.determineGrade({
+              recordedDate: qualtricsRecord._meta?.startDate || qualtricsRecord.recordedDate
+            });
+          }
+          
+          mergedRecords.push(qualtricsOnly);
           qualtricsOnlyCount++;
           console.log(`[DataMerger] ℹ️  Qualtrics-only record for student ${coreId} - no JotForm match`);
         }
@@ -205,6 +223,15 @@
           qualtricsStartDate: qualtricsRecord._meta.startDate,
           qualtricsEndDate: qualtricsRecord._meta.endDate
         };
+      }
+
+      // Add grade detection (K1/K2/K3) based on assessment date
+      if (window.GradeDetector) {
+        const gradeData = {
+          recordedDate: qualtricsRecord._meta?.startDate || qualtricsRecord.recordedDate,
+          sessionkey: jotformRecord.sessionkey
+        };
+        merged.grade = window.GradeDetector.determineGrade(gradeData);
       }
 
       return merged;
