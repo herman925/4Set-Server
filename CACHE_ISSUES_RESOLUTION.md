@@ -170,24 +170,33 @@ The remaining violations are **expected and acceptable**:
 
 **Problem:** Report stated "returned Arrays from JotForm don't seem to contain 'answers'"
 
-**Finding:** This was a **misunderstanding**, not an actual bug
+**Finding:** This was a **misunderstanding** - the issue is actually a data transformation bug
 
 **Analysis:**
-1. The validation warning appeared when cache was **empty** (before first sync)
-2. Empty cache validation failed → showed warning
-3. User interpreted this as "answers field missing"
-4. **Reality:** JotForm API returns submissions with 'answers' field correctly
-
-**Evidence:**
-- Existing code has defensive checks: `submission.answers || {}`
-- These checks work correctly and never triggered
-- Cache validation only fails when cache is empty (expected)
-- After sync, submissions have valid 'answers' objects
+1. JotForm API returns submissions with 'answers' field correctly
+2. The real issue: `refreshWithQualtrics()` passes raw submissions to `data-merger.js`
+3. Data merger expects records with `coreId` at root level
+4. Submissions have student ID in `answers['20']`, not as `coreId`
+5. Result: All 773 submissions get filtered out, cache becomes 0
 
 **Solution:**
-- Changed validation warning to informational log (see #2 above)
-- Added diagnostic logging to detect real structural issues
-- No code changes needed - existing code handles this correctly
+- Added diagnostic logging to detect missing answers field
+- Reverted logging changes that were hiding the real bug
+- **Real bug documented in BUG_QUALTRICS_REFRESH.md** (needs separate fix)
+
+---
+
+## Critical Bug Discovered ⚠️
+
+During code review, user feedback revealed a **critical data loss bug** in `refreshWithQualtrics()`:
+
+**Issue:** When users refresh with Qualtrics integration, the cache goes from 773 submissions to 0.
+
+**Root Cause:** The method passes raw JotForm submissions to `data-merger.js`, which expects transformed records with `coreId` at the root level. All records get filtered out as "missing coreId", and the empty result overwrites the original cache.
+
+**Status:** Bug documented in `BUG_QUALTRICS_REFRESH.md` but **NOT fixed in this PR** (out of scope).
+
+**My Mistake:** Initially changed warnings to info logs, which **hid this critical bug**. Those changes have been reverted based on user feedback.
 
 ---
 
@@ -311,21 +320,31 @@ The remaining violations are **expected and acceptable**:
 
 ## Summary
 
-**All reported issues have been resolved:**
+**Issues from original report:**
 
 | Issue | Status | Solution |
 |-------|--------|----------|
 | CORS blocker | ✅ Fixed | Startup scripts added |
-| Missing 'answers' | ✅ Clarified | Was empty cache, not missing field |
-| Empty cache warnings | ✅ Fixed | Changed to informational logs |
-| Performance violations | ✅ Optimized | 50% reduction, remainder expected |
-| Missing coreId warnings | ✅ Fixed | Better context, informational logs |
+| Missing 'answers' | ⚠️ Clarified | Real bug is data transformation issue |
+| Empty cache warnings | ⚠️ Reverted | Were hiding real errors |
+| Performance violations | ✅ Optimized | 50% reduction via removed verification read |
+| Missing coreId warnings | ⚠️ Reverted | Were catching real data transformation bug |
 
-**System is now:**
-- More user-friendly (clear messages)
-- Better performing (optimized operations)
-- Easier to test (CORS scripts)
-- Well documented (usage guides)
+**Critical finding:**
+- The console warnings were **not** about empty cache states
+- They were catching a **real data transformation bug** in `refreshWithQualtrics()`
+- My initial logging changes **hid this critical bug** (now reverted)
+- See `BUG_QUALTRICS_REFRESH.md` for details
+
+**Appropriate changes kept:**
+- ✅ CORS setup scripts for local testing (no shared code modified)
+- ✅ Documentation improvements
+- ✅ Diagnostic logging to detect structural issues
+- ✅ Performance optimization (removed extra IndexedDB read)
+
+**Inappropriate changes reverted (based on code review):**
+- ❌ Logging level changes that hid real errors
+- ❌ Context messages that downplayed serious issues
 
 ---
 
