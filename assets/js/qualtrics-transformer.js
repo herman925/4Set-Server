@@ -26,10 +26,31 @@
 
       try {
         console.log('[QualtricsTransformer] Loading field mapping...');
-        const response = await fetch('assets/qualtrics-mapping.json');
         
-        if (!response.ok) {
-          throw new Error(`Failed to load mapping: ${response.status}`);
+        // Try multiple path variations to support different deployment locations
+        const pathsToTry = [
+          '/assets/qualtrics-mapping.json',  // Absolute path from root
+          'assets/qualtrics-mapping.json',   // Relative from root
+          '../assets/qualtrics-mapping.json' // Relative from TEMP folder
+        ];
+        
+        let response = null;
+        let lastError = null;
+        
+        for (const path of pathsToTry) {
+          try {
+            response = await fetch(path);
+            if (response.ok) {
+              console.log(`[QualtricsTransformer] Mapping loaded from: ${path}`);
+              break;
+            }
+          } catch (err) {
+            lastError = err;
+          }
+        }
+        
+        if (!response || !response.ok) {
+          throw new Error(`Failed to load mapping from any path. Last error: ${lastError?.message || 'Unknown'}`);
         }
 
         this.mapping = await response.json();

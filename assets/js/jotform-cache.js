@@ -248,8 +248,9 @@
               if (response.status === 429) {
                 throw new Error('Rate limited by JotForm API. Please try again later.');
               }
-              if (response.status === 504) {
-                throw new Error('Gateway timeout - batch too large');
+              // 502 Bad Gateway and 504 Gateway Timeout indicate batch too large
+              if (response.status === 502 || response.status === 504) {
+                throw new Error('Gateway error - batch too large');
               }
               throw new Error(`JotForm API error: ${response.status}`);
             }
@@ -270,7 +271,10 @@
             console.error(`[JotFormCache] Fetch failed: ${parseError.message}`);
             
             // Adaptive response to errors (like processor_agent.ps1)
-            if (parseError.message.includes('timeout') || parseError.message.includes('Unexpected end of JSON')) {
+            // Handle gateway errors (502/504), timeouts, and truncated JSON
+            if (parseError.message.includes('Gateway error') || 
+                parseError.message.includes('timeout') || 
+                parseError.message.includes('Unexpected end of JSON')) {
               this.consecutiveSuccesses = 0; // Reset on failure
               
               if (this.reductionIndex < this.config.batchSizeReductions.length - 1) {
