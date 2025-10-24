@@ -242,6 +242,24 @@ Uses the centralized `TaskValidator` module which implements:
    - Ensure `assets/js/task-validator.js` is loaded correctly
    - Check browser console for script loading errors
 
+6. **"JotForm API error: 502" (Bad Gateway)**
+   - This error indicates the batch size is too large for the JotForm API to handle
+   - The system now automatically handles this by reducing batch size (adaptive chunking)
+   - Initial batch size: 50 submissions
+   - Reduction levels: 50% → 30% → 20% → 10% (down to minimum of 10)
+   - After 2 consecutive successes, batch size increases back up
+   - Configuration is in `config/jotform_config.json` under `webFetch`
+   - If you see this error repeatedly, the system will retry with smaller batches automatically
+
+7. **"Failed to load mapping: 404" for qualtrics-mapping.json**
+   - This error occurred when running tests from the TEMP folder
+   - The system now tries multiple path variations automatically:
+     - `/assets/qualtrics-mapping.json` (absolute from root)
+     - `assets/qualtrics-mapping.json` (relative from root)  
+     - `../assets/qualtrics-mapping.json` (relative from TEMP folder)
+   - Check browser console to see which path was successfully used
+   - No manual intervention needed - path resolution is automatic
+
 ### Debug Mode
 
 Open browser DevTools (F12) and check the Console tab for detailed logs:
