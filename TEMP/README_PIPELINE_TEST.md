@@ -270,13 +270,22 @@ Open browser DevTools (F12) and check the Console tab for detailed logs:
 
 ## Related Files
 
+### Test-Specific Files (TEMP folder)
+- **Test JotForm Cache**: `TEMP/jotform-cache-test.js` - Test-specific version with 502 error handling
+- **Test Qualtrics Transformer**: `TEMP/qualtrics-transformer-test.js` - Test-specific version with multi-path resolution
+- **Test HTML**: `TEMP/test-pipeline-core-id.html` - Main test interface
+
+### Shared Files (used by main checking system)
 - **Main Implementation**: `assets/js/checking-system-student-page.js`
 - **JotForm API**: `assets/js/jotform-api.js`
+- **JotForm Cache**: `assets/js/jotform-cache.js` (shared - not modified for tests)
 - **Qualtrics API**: `assets/js/qualtrics-api.js`
-- **Qualtrics Transformer**: `assets/js/qualtrics-transformer.js`
+- **Qualtrics Transformer**: `assets/js/qualtrics-transformer.js` (shared - not modified for tests)
 - **Data Merger**: `assets/js/data-merger.js`
 - **Task Validator**: `assets/js/task-validator.js`
 - **PRD Documentation**: `PRDs/checking_system_pipeline_prd.md`
+
+**Note**: The test uses specialized versions of `jotform-cache.js` and `qualtrics-transformer.js` located in the TEMP folder to avoid modifying the shared files used by the main checking system.
 
 ## Future Enhancements
 

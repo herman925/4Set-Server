@@ -1,4 +1,15 @@
 /**
+ * TEST-SPECIFIC VERSION - JotForm Cache System
+ * 
+ * This is a modified version for test-pipeline-core-id.html
+ * DO NOT use this in the main checking system - use assets/js/jotform-cache.js instead
+ * 
+ * Changes from original:
+ * - Handles 502 Bad Gateway errors with adaptive batch sizing
+ * - Treats 502 like 504 as a signal to reduce batch size
+ * 
+ * ---
+ * 
  * Global JotForm Cache System (using IndexedDB via localForage)
  * 
  * Purpose: Cache the ENTIRE JotForm submissions response to avoid redundant API calls
@@ -248,8 +259,9 @@
               if (response.status === 429) {
                 throw new Error('Rate limited by JotForm API. Please try again later.');
               }
-              if (response.status === 504) {
-                throw new Error('Gateway timeout - batch too large');
+              // 502 Bad Gateway and 504 Gateway Timeout indicate batch too large
+              if (response.status === 502 || response.status === 504) {
+                throw new Error('Gateway error - batch too large');
               }
               throw new Error(`JotForm API error: ${response.status}`);
             }
@@ -270,7 +282,10 @@
             console.error(`[JotFormCache] Fetch failed: ${parseError.message}`);
             
             // Adaptive response to errors (like processor_agent.ps1)
-            if (parseError.message.includes('timeout') || parseError.message.includes('Unexpected end of JSON')) {
+            // Handle gateway errors (502/504), timeouts, and truncated JSON
+            if (parseError.message.includes('Gateway error') || 
+                parseError.message.includes('timeout') || 
+                parseError.message.includes('Unexpected end of JSON')) {
               this.consecutiveSuccesses = 0; // Reset on failure
               
               if (this.reductionIndex < this.config.batchSizeReductions.length - 1) {

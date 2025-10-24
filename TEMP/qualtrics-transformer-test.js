@@ -1,5 +1,14 @@
 /**
- * Qualtrics Transformer Module
+ * TEST-SPECIFIC VERSION - Qualtrics Transformer Module
+ * 
+ * This is a modified version for test-pipeline-core-id.html
+ * DO NOT use this in the main checking system - use assets/js/qualtrics-transformer.js instead
+ * 
+ * Changes from original:
+ * - Multi-path resolution for qualtrics-mapping.json to support TEMP folder location
+ * - Tries absolute, relative from root, and relative from TEMP paths
+ * 
+ * ---
  * 
  * Purpose: Transform Qualtrics QID-based responses to standardized field format
  * Compatible with existing JotForm data structure
@@ -26,10 +35,31 @@
 
       try {
         console.log('[QualtricsTransformer] Loading field mapping...');
-        const response = await fetch('assets/qualtrics-mapping.json');
         
-        if (!response.ok) {
-          throw new Error(`Failed to load mapping: ${response.status}`);
+        // Try multiple path variations to support different deployment locations
+        const pathsToTry = [
+          '/assets/qualtrics-mapping.json',  // Absolute path from root
+          'assets/qualtrics-mapping.json',   // Relative from root
+          '../assets/qualtrics-mapping.json' // Relative from TEMP folder
+        ];
+        
+        let response = null;
+        let lastError = null;
+        
+        for (const path of pathsToTry) {
+          try {
+            response = await fetch(path);
+            if (response.ok) {
+              console.log(`[QualtricsTransformer] Mapping loaded from: ${path}`);
+              break;
+            }
+          } catch (err) {
+            lastError = err;
+          }
+        }
+        
+        if (!response || !response.ok) {
+          throw new Error(`Failed to load mapping from any path. Last error: ${lastError?.message || 'Unknown'}`);
         }
 
         this.mapping = await response.json();
