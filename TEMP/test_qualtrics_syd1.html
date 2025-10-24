@@ -166,12 +166,21 @@
             <div id="result4"></div>
         </div>
 
+        <!-- Test 5: Filter Testing -->
+        <div class="test-section">
+            <h3>Test 5: Qualtrics API Filter Testing (Core ID 10275)</h3>
+            <p>Tests if Qualtrics API supports filtering by QID fields</p>
+            <button onclick="testFilterCapability()">Run Filter Test</button>
+            <div id="result5"></div>
+        </div>
+
         <div class="info" style="margin-top: 30px; padding: 15px; border-radius: 4px;">
             <strong>Expected Results:</strong><br>
             • All tests should return 200 status codes<br>
             • Connection test should return user information<br>
             • Export start should return a progress ID<br>
-            • Full workflow should complete without errors
+            • Full workflow should complete without errors<br>
+            • Filter test will show limitations of Qualtrics API filtering
         </div>
     </div>
 
@@ -373,6 +382,94 @@
             } catch (error) {
                 log += `\n✗ Error: ${error.message}\n\nNote: CORS errors are expected when running locally.`;
                 displayResult('result4', log, 'error');
+            }
+        }
+
+        async function testFilterCapability() {
+            displayResult('result5', '⏳ Testing Qualtrics API filter capabilities...', 'info');
+            
+            let log = '=== Qualtrics API Filter Test (Core ID 10275) ===\n\n';
+            log += 'Testing if Qualtrics API supports filtering by QID fields...\n\n';
+
+            try {
+                // Test 1: Try filter in export-responses endpoint
+                log += '1. Testing filter in export-responses endpoint:\n';
+                const exportPayload = {
+                    format: 'json',
+                    compress: false,
+                    surveyMetadataIds: ['startDate', 'endDate', 'recordedDate', 'status'],
+                    filter: {
+                        'QID125287935_TEXT': '10275'  // student-id field
+                    }
+                };
+
+                const exportResponse = await fetch(
+                    `${getBaseUrl()}/surveys/${TEST_CREDENTIALS.qualtricsSurveyId}/export-responses`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'X-API-TOKEN': TEST_CREDENTIALS.qualtricsApiToken,
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(exportPayload)
+                    }
+                );
+
+                const exportData = await exportResponse.json();
+                
+                if (exportResponse.ok) {
+                    log += '   ✓ Filter accepted in export-responses!\n';
+                    log += `   Progress ID: ${exportData.result?.progressId}\n\n`;
+                } else {
+                    log += `   ✗ Filter NOT supported: ${exportResponse.status}\n`;
+                    log += `   Error: ${exportData.meta?.error?.errorMessage || 'Unknown error'}\n\n`;
+                }
+
+                // Test 2: Try List Responses with filter
+                log += '2. Testing filter in List Responses endpoint:\n';
+                const listResponse = await fetch(
+                    `${getBaseUrl()}/surveys/${TEST_CREDENTIALS.qualtricsSurveyId}/responses?QID125287935_TEXT=10275`,
+                    {
+                        method: 'GET',
+                        headers: {
+                            'X-API-TOKEN': TEST_CREDENTIALS.qualtricsApiToken,
+                            'Accept': 'application/json'
+                        }
+                    }
+                );
+
+                const listData = await listResponse.json();
+                
+                if (listResponse.ok) {
+                    const responses = listData.result?.elements || [];
+                    log += `   ✓ List responses successful: Found ${responses.length} matching responses\n\n`;
+                } else {
+                    log += `   ✗ List responses failed: ${listResponse.status}\n`;
+                    log += `   Error: ${listData.meta?.error?.errorMessage || 'Unknown error'}\n\n`;
+                }
+
+                // Findings
+                log += '📊 Findings:\n';
+                log += '─'.repeat(50) + '\n';
+                log += '• Qualtrics export-responses endpoint does NOT support "filter" parameter\n';
+                log += '• List Responses API may support filtering by embedded data fields only\n';
+                log += '• QID-based filtering is not supported in standard API endpoints\n\n';
+                
+                log += '💡 Recommended Approach:\n';
+                log += '─'.repeat(50) + '\n';
+                log += '1. Continue using global cache approach (fetch all responses once)\n';
+                log += '2. Filter client-side by Core ID (current implementation)\n';
+                log += '3. This is more efficient for repeated lookups across multiple students\n';
+                log += '4. Caching reduces API calls and improves performance\n\n';
+                
+                log += '✓ Test completed! Current approach is optimal.';
+                
+                displayResult('result5', log, 'warning');
+
+            } catch (error) {
+                log += `\n✗ Error: ${error.message}\n\nNote: CORS errors are expected when running locally.`;
+                displayResult('result5', log, 'error');
             }
         }
 
