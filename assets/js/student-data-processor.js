@@ -40,7 +40,6 @@ class StudentDataProcessor {
     constructor() {
         this.coreId = null;
         this.qidMapping = null;
-        this.qidToFieldNameMap = null; // Reverse lookup map for O(1) QID to field name conversion
         this.taskDefinitions = {};
         this.mergedData = null;
         this.jotformApiBase = 'https://api.jotform.com';
@@ -114,10 +113,6 @@ class StudentDataProcessor {
 
     /**
      * Load QID to field name mapping from jotformquestions.json
-     * 
-     * PERFORMANCE OPTIMIZATION: Also builds a reverse lookup map (qid → fieldName)
-     * to avoid O(n) searches when converting QIDs to field names. This is crucial
-     * for the mergeSubmissions method which processes many QIDs.
      */
     async loadQIDMapping() {
         try {
@@ -134,21 +129,11 @@ class StudentDataProcessor {
             }
 
             this.qidMapping = await response.json();
-            
-            // Build reverse lookup map for O(1) QID to field name conversion
-            this.qidToFieldNameMap = {};
-            for (const [fieldName, qid] of Object.entries(this.qidMapping)) {
-                // Store both string and numeric versions of QID for robust lookup
-                this.qidToFieldNameMap[qid] = fieldName;
-                this.qidToFieldNameMap[String(qid)] = fieldName;
-            }
-            
             console.log('[StudentData] Loaded QID mapping:', Object.keys(this.qidMapping).length, 'fields');
         } catch (error) {
             console.error('[StudentData] Failed to load QID mapping:', error);
             // Provide empty mapping as fallback to keep UI responsive
             this.qidMapping = {};
-            this.qidToFieldNameMap = {};
         }
     }
 
@@ -359,18 +344,16 @@ class StudentDataProcessor {
 
     /**
      * Get field name from QID using jotformquestions.json mapping
-     * 
-     * PERFORMANCE OPTIMIZATION: Uses reverse lookup map for O(1) access instead
-     * of O(n) iteration. This is critical when called repeatedly in loops.
-     * 
-     * Before optimization: O(n) - had to iterate through all qidMapping entries
-     * After optimization: O(1) - direct hash map lookup
      */
     getFieldNameFromQID(qid) {
-        if (!this.qidToFieldNameMap) return null;
+        if (!this.qidMapping) return null;
         
-        // O(1) lookup using reverse map built in loadQIDMapping()
-        return this.qidToFieldNameMap[qid] || this.qidToFieldNameMap[String(qid)] || null;
+        for (const [fieldName, mappedQid] of Object.entries(this.qidMapping)) {
+            if (mappedQid === qid || mappedQid === qid.toString()) {
+                return fieldName;
+            }
+        }
+        return null;
     }
 
     /**
