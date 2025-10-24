@@ -20,6 +20,11 @@
   const CACHE_KEY = 'jotform_global_cache';
   const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hour
   
+  // JotForm question IDs - these are hardcoded based on current form structure
+  // CRITICAL: If the JotForm structure changes, these QIDs must be updated
+  // The student-id field (QID 20) is used throughout the system to identify students
+  const STUDENT_ID_QID = '20';
+  
   // Initialize localForage (uses IndexedDB, falls back to WebSQL/localStorage)
   if (typeof localforage === 'undefined') {
     console.error('[JotFormCache] localForage not loaded! Include <script src="https://cdn.jsdelivr.net/npm/localforage@1.10.0/dist/localforage.min.js"></script>');
@@ -1030,8 +1035,21 @@
     }
 
     /**
+     * Ensure coreId has "C" prefix
+     * @param {string} studentId - Student ID (may or may not have "C" prefix)
+     * @returns {string} CoreId with "C" prefix
+     */
+    ensureCoreIdPrefix(studentId) {
+      return studentId.startsWith('C') ? studentId : `C${studentId}`;
+    }
+
+    /**
      * Transform JotForm submissions to records format expected by data-merger
      * Converts from submission format (with answers object) to flat record format
+     * 
+     * IMPORTANT: This method assumes student ID is in answers[STUDENT_ID_QID].
+     * If JotForm's question structure changes, the STUDENT_ID_QID constant must be updated.
+     * 
      * @param {Array} submissions - Raw JotForm submissions
      * @returns {Array} Transformed records with coreId at root level
      */
@@ -1041,8 +1059,8 @@
       
       for (const submission of submissions) {
         try {
-          // Extract student ID from answers (QID 20)
-          const studentIdAnswer = submission.answers?.['20'];
+          // Extract student ID from answers using configured QID
+          const studentIdAnswer = submission.answers?.[STUDENT_ID_QID];
           const studentId = studentIdAnswer?.answer || studentIdAnswer?.text;
           
           if (!studentId) {
@@ -1050,8 +1068,8 @@
             continue;
           }
           
-          // Create coreId (add "C" prefix if not present)
-          const coreId = studentId.startsWith('C') ? studentId : `C${studentId}`;
+          // Create coreId with "C" prefix
+          const coreId = this.ensureCoreIdPrefix(studentId);
           
           // Build flat record with all answer fields
           const record = {
@@ -1073,7 +1091,7 @@
               const value = answerObj.answer || answerObj.text || '';
               
               // Skip empty values and the student-id we already processed
-              if (value && qid !== '20') {
+              if (value && qid !== STUDENT_ID_QID) {
                 record[fieldName] = value;
               }
             }
@@ -1092,6 +1110,10 @@
     /**
      * Transform merged records back to submission format for caching
      * Converts from flat record format back to JotForm submission structure
+     * 
+     * IMPORTANT: This method assumes student ID is in answers[STUDENT_ID_QID].
+     * If JotForm's question structure changes, the STUDENT_ID_QID constant must be updated.
+     * 
      * @param {Array} records - Merged records with flat structure
      * @param {Array} originalSubmissions - Original JotForm submissions for structure reference
      * @returns {Array} Submissions in JotForm format
@@ -1102,10 +1124,10 @@
       // Create a map of original submissions by coreId for easy lookup
       const submissionMap = new Map();
       for (const submission of originalSubmissions) {
-        const studentIdAnswer = submission.answers?.['20'];
+        const studentIdAnswer = submission.answers?.[STUDENT_ID_QID];
         const studentId = studentIdAnswer?.answer || studentIdAnswer?.text;
         if (studentId) {
-          const coreId = studentId.startsWith('C') ? studentId : `C${studentId}`;
+          const coreId = this.ensureCoreIdPrefix(studentId);
           submissionMap.set(coreId, submission);
         }
       }
@@ -1128,6 +1150,15 @@
           // Update answers with merged data
           // Merge TGMD fields and any other updated fields from Qualtrics
           if (submission.answers) {
+            // Build reverse lookup map (fieldName → qid) for O(1) lookups
+            const fieldNameToQid = {};
+            for (const [qid, answerObj] of Object.entries(submission.answers)) {
+              if (answerObj.name) {
+                fieldNameToQid[answerObj.name] = qid;
+              }
+            }
+            
+            // Update fields from merged record
             for (const [fieldName, value] of Object.entries(record)) {
               // Skip metadata and already-handled fields
               if (fieldName === 'coreId' || 
@@ -1138,14 +1169,8 @@
                 continue;
               }
               
-              // Find the QID for this field name in the answers
-              let qidToUpdate = null;
-              for (const [qid, answerObj] of Object.entries(submission.answers)) {
-                if (answerObj.name === fieldName) {
-                  qidToUpdate = qid;
-                  break;
-                }
-              }
+              // Look up QID using reverse map (O(1) instead of O(n))
+              const qidToUpdate = fieldNameToQid[fieldName];
               
               // Update the answer if we found the QID
               if (qidToUpdate && submission.answers[qidToUpdate]) {
