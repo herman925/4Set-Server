@@ -385,6 +385,16 @@
       try {
         console.log('[JotFormCache] saveToCache called with', submissions.length, 'submissions');
         
+        // Validate that submissions have the expected structure
+        if (submissions.length > 0) {
+          const sampleSubmission = submissions[0];
+          if (!sampleSubmission.answers) {
+            console.warn('[JotFormCache] WARNING: First submission is missing "answers" field. Structure:', Object.keys(sampleSubmission));
+          } else {
+            console.log('[JotFormCache] First submission has', Object.keys(sampleSubmission.answers).length, 'answer fields');
+          }
+        }
+        
         const cacheEntry = {
           submissions: submissions,
           timestamp: Date.now(),
@@ -395,11 +405,7 @@
         console.log('[JotFormCache] Cache data size:', Math.round(jsonString.length / 1024), 'KB');
         
         await storage.setItem(CACHE_KEY, cacheEntry);
-        console.log('[JotFormCache] Cached', submissions.length, 'submissions to IndexedDB');
-        
-        // Verify it was saved
-        const verification = await storage.getItem(CACHE_KEY);
-        console.log('[JotFormCache] Verification:', verification ? 'SUCCESS' : 'FAILED');
+        console.log('[JotFormCache] ✅ Cached', submissions.length, 'submissions to IndexedDB');
       } catch (error) {
         console.error('[JotFormCache] Failed to save cache:', error);
       }
