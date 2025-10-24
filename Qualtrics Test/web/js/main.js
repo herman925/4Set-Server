@@ -270,12 +270,18 @@ async function extractSurveyData() {
     const surveyId = selectedSurveyId;
     
     // Get base export options
+    const format = document.getElementById('format').value;
     let exportOptions = {
-        format: document.getElementById('format').value,
-        useLabels: document.getElementById('use-labels').checked,
+        format: format,
         compress: document.getElementById('compress').checked,
         // Add other static options if needed in the future
     };
+    
+    // Note: useLabels parameter is not allowed for JSON/NDJSON exports per Qualtrics API
+    // Only include useLabels for non-JSON/NDJSON formats
+    if (format !== 'json' && format !== 'ndjson') {
+        exportOptions.useLabels = document.getElementById('use-labels').checked;
+    }
 
     // Get selected field IDs if the area is visible
     const fieldArea = document.getElementById('field-selection-area');
