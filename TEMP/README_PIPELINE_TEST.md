@@ -60,7 +60,9 @@ The test executes the following steps in sequence:
    }
    ```
 
-2. **CORS Handling for Local Testing**: When running locally, browsers block cross-origin API requests. Use one of these methods:
+2. **Qualtrics Mapping File**: The test tool requires `TEMP/assets/qualtrics-mapping.json` to transform Qualtrics data. This file is a copy of the main `assets/qualtrics-mapping.json` needed because the test page is in a subdirectory.
+
+3. **CORS Handling for Local Testing**: When running locally, browsers block cross-origin API requests. Use one of these methods:
 
    **Option A: Use Startup Scripts (Recommended)**
    - **Windows**: Double-click `start_pipeline_test.bat` in the TEMP folder
@@ -229,24 +231,29 @@ Uses the centralized `TaskValidator` module which implements:
 
 ### Common Issues
 
-1. **"Credentials not available"**
+1. **"Failed to load mapping: 404"**
+   - Ensure `TEMP/assets/qualtrics-mapping.json` exists
+   - This should be a copy of the main `assets/qualtrics-mapping.json` file
+   - The file is required because the test page is in a subdirectory
+
+2. **"Credentials not available"**
    - Ensure `assets/credentials.json` exists and is valid JSON
    - Check that file paths are correct (test file is in `TEMP/` directory)
 
-2. **"JotForm API error: 401"**
+3. **"JotForm API error: 401"**
    - Verify `jotformApiKey` is correct
    - Check API key hasn't expired
 
-3. **"Qualtrics export failed"**
+4. **"Qualtrics export failed"**
    - Verify `qualtricsApiKey` and `qualtricsSurveyId` are correct
    - Check datacenter region is correct (e.g., `syd1`)
 
-4. **"No submissions found"**
+5. **"No submissions found"**
    - Verify the Core ID exists in the system
    - Check that the student has submitted data
    - Try a different Core ID
 
-5. **"TaskValidator not available"**
+6. **"TaskValidator not available"**
    - Ensure `assets/js/task-validator.js` is loaded correctly
    - Check browser console for script loading errors
 
