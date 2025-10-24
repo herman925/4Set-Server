@@ -325,6 +325,10 @@
                         <pre id="debug-jotform" class="mt-2">-</pre>
                     </details>
                     <details class="cursor-pointer">
+                        <summary class="font-semibold text-gray-700 p-3 bg-gray-50 rounded-lg hover:bg-gray-100">Qualtrics Raw API Response</summary>
+                        <pre id="debug-qualtrics-raw" class="mt-2">-</pre>
+                    </details>
+                    <details class="cursor-pointer">
                         <summary class="font-semibold text-gray-700 p-3 bg-gray-50 rounded-lg hover:bg-gray-100">Qualtrics Transformed Data</summary>
                         <pre id="debug-qualtrics" class="mt-2">-</pre>
                     </details>
@@ -687,7 +691,7 @@
 
             console.log(`[Test] Filtered to ${filtered.length} responses for Core ID ${coreId}`);
 
-            return { responses: filtered, allResponses: allResponses.length };
+            return { responses: filtered, rawResponses: filtered, allResponses: allResponses.length };
         }
 
         // Fetch JotForm data using :matches filter
@@ -741,6 +745,10 @@
                 for (const [fieldName, qid] of Object.entries(jotformQuestionsData)) {
                     qidToFieldName[qid] = fieldName;
                 }
+                console.log(`[Test] Loaded QID mapping: ${Object.keys(qidToFieldName).length} QIDs mapped to field names`);
+            } else {
+                console.error('[Test] ❌ jotformQuestionsData is NULL! Cannot map QIDs to field names!');
+                console.error('[Test] This means TaskValidator will not be able to find any fields!');
             }
 
             // If only one submission, map its QIDs to field names
@@ -749,11 +757,16 @@
                 const mapped = {};
                 for (const [qid, answerObj] of Object.entries(answers)) {
                     const fieldName = qidToFieldName[qid];
-                    if (fieldName && answerObj.answer) {
-                        mapped[fieldName] = answerObj;
+                    if (fieldName) {
+                        // Include field if it has either answer or text
+                        const hasValue = answerObj.answer || answerObj.text;
+                        if (hasValue) {
+                            mapped[fieldName] = answerObj;
+                        }
                     }
                 }
                 console.log(`[Test] Mapped ${Object.keys(mapped).length} fields from QIDs to field names`);
+                console.log(`[Test] Sample mapped fields:`, Object.keys(mapped).slice(0, 10).join(', '));
                 return mapped;
             }
 
@@ -774,8 +787,12 @@
                 for (const [qid, answerObj] of Object.entries(answers)) {
                     const fieldName = qidToFieldName[qid];
                     
-                    // Skip if no field name mapping or no answer value
-                    if (!fieldName || !answerObj.answer) continue;
+                    // Skip if no field name mapping
+                    if (!fieldName) continue;
+                    
+                    // Check if field has any value (answer or text)
+                    const hasValue = answerObj.answer || answerObj.text;
+                    if (!hasValue) continue;
                     
                     // Only set if not already present (earliest wins)
                     if (!merged[fieldName]) {
@@ -895,7 +912,7 @@
 
             console.log(`[Test] Filtered to ${filtered.length} responses for Core ID ${coreId}`);
 
-            return { responses: filtered, allResponses: responses.length };
+            return { responses: filtered, rawResponses: filtered, allResponses: responses.length };
         }
 
         // Transform Qualtrics data
@@ -1050,6 +1067,8 @@
             // Debug Data
             document.getElementById('debug-jotform').textContent = 
                 JSON.stringify(data.jotformData.mergedAnswers, null, 2).substring(0, 5000) + '...';
+            document.getElementById('debug-qualtrics-raw').textContent = 
+                JSON.stringify(data.qualtricsData.rawResponses, null, 2).substring(0, 5000) + '...';
             document.getElementById('debug-qualtrics').textContent = 
                 JSON.stringify(data.transformedQualtrics, null, 2).substring(0, 5000) + '...';
             document.getElementById('debug-merged').textContent = 
