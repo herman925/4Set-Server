@@ -2127,8 +2127,8 @@
         
         // Filter submissions by student ID (from cache data)
         const studentSubmissions = allSubmissions.filter(sub => {
-          // Get student-id from answers (QID 20)
-          const studentIdAnswer = sub.answers?.['20'];
+          // Get student-id from answers using the constant from JotFormCache
+          const studentIdAnswer = sub.answers?.[window.JotFormCache.STUDENT_ID_QID];
           const studentId = studentIdAnswer?.answer || studentIdAnswer?.text || '';
           
           // Match Core ID (remove "C" prefix if present)

@@ -359,7 +359,7 @@
      * @param {string} studentIdQid - QID for student-id field (e.g., "20")
      * @returns {Array} - Filtered submissions
      */
-    filterByCoreId(submissions, coreId, studentIdQid = '20') {
+    filterByCoreId(submissions, coreId, studentIdQid = STUDENT_ID_QID) {
       // Strip "C" prefix from Core ID for matching
       const coreIdNumeric = coreId.startsWith('C') ? coreId.substring(1) : coreId;
 
@@ -598,7 +598,7 @@
       // Group submissions by student
       const studentSubmissions = new Map();
       for (const submission of submissions) {
-        const studentIdAnswer = submission.answers?.['20'];
+        const studentIdAnswer = submission.answers?.[STUDENT_ID_QID];
         const studentId = studentIdAnswer?.answer || studentIdAnswer?.text;
         if (!studentId) continue;
         
@@ -1416,7 +1416,11 @@
     }
   }
 
-  // Export global instance
+  // Export global instance and constant
+  // STUDENT_ID_QID is exported so other modules can use the same constant
+  // instead of hardcoding '20'. This makes it easier to update if the
+  // JotForm question structure changes.
   window.JotFormCache = new JotFormCache();
+  window.JotFormCache.STUDENT_ID_QID = STUDENT_ID_QID;
   console.log('[JotFormCache] Global cache manager initialized');
 })();
