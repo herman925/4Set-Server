@@ -242,6 +242,24 @@ Uses the centralized `TaskValidator` module which implements:
    - Ensure `assets/js/task-validator.js` is loaded correctly
    - Check browser console for script loading errors
 
+6. **"JotForm API error: 502" (Bad Gateway)**
+   - This error indicates the batch size is too large for the JotForm API to handle
+   - The system now automatically handles this by reducing batch size (adaptive chunking)
+   - Initial batch size: 50 submissions
+   - Reduction levels: 50% → 30% → 20% → 10% (down to minimum of 10)
+   - After 2 consecutive successes, batch size increases back up
+   - Configuration is in `config/jotform_config.json` under `webFetch`
+   - If you see this error repeatedly, the system will retry with smaller batches automatically
+
+7. **"Failed to load mapping: 404" for qualtrics-mapping.json**
+   - This error occurred when running tests from the TEMP folder
+   - The system now tries multiple path variations automatically:
+     - `/assets/qualtrics-mapping.json` (absolute from root)
+     - `assets/qualtrics-mapping.json` (relative from root)  
+     - `../assets/qualtrics-mapping.json` (relative from TEMP folder)
+   - Check browser console to see which path was successfully used
+   - No manual intervention needed - path resolution is automatic
+
 ### Debug Mode
 
 Open browser DevTools (F12) and check the Console tab for detailed logs:
@@ -252,13 +270,22 @@ Open browser DevTools (F12) and check the Console tab for detailed logs:
 
 ## Related Files
 
+### Test-Specific Files (TEMP folder)
+- **Test JotForm Cache**: `TEMP/jotform-cache-test.js` - Test-specific version with 502 error handling
+- **Test Qualtrics Transformer**: `TEMP/qualtrics-transformer-test.js` - Test-specific version with multi-path resolution
+- **Test HTML**: `TEMP/test-pipeline-core-id.html` - Main test interface
+
+### Shared Files (used by main checking system)
 - **Main Implementation**: `assets/js/checking-system-student-page.js`
 - **JotForm API**: `assets/js/jotform-api.js`
+- **JotForm Cache**: `assets/js/jotform-cache.js` (shared - not modified for tests)
 - **Qualtrics API**: `assets/js/qualtrics-api.js`
-- **Qualtrics Transformer**: `assets/js/qualtrics-transformer.js`
+- **Qualtrics Transformer**: `assets/js/qualtrics-transformer.js` (shared - not modified for tests)
 - **Data Merger**: `assets/js/data-merger.js`
 - **Task Validator**: `assets/js/task-validator.js`
 - **PRD Documentation**: `PRDs/checking_system_pipeline_prd.md`
+
+**Note**: The test uses specialized versions of `jotform-cache.js` and `qualtrics-transformer.js` located in the TEMP folder to avoid modifying the shared files used by the main checking system.
 
 ## Future Enhancements
 
