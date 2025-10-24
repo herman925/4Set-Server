@@ -75,7 +75,51 @@
         <!-- Header -->
         <div class="glass-card p-6 mb-6">
             <h1 class="text-3xl font-bold text-gray-800 mb-2">🔬 Pipeline Test: JotForm + Qualtrics Merge</h1>
-            <p class="text-gray-600">Test the complete data pipeline for a specific Core ID</p>
+            <p class="text-gray-600 mb-4">Test the complete data pipeline for a specific Core ID</p>
+            
+            <!-- Documentation Section -->
+            <details class="mt-4 p-4 bg-blue-50 rounded-lg">
+                <summary class="cursor-pointer font-semibold text-blue-900">📖 How to Use This Test</summary>
+                <div class="mt-3 text-sm text-gray-700 space-y-2">
+                    <p><strong>Purpose:</strong> This tool tests the complete JotForm + Qualtrics merge pipeline for a specific student (Core ID).</p>
+                    
+                    <p><strong>What it does:</strong></p>
+                    <ol class="list-decimal ml-6 space-y-1">
+                        <li>Loads credentials from <code>assets/credentials.json</code></li>
+                        <li>Fetches JotForm submissions using the <code>:matches</code> filter on sessionkey field (QID 3)</li>
+                        <li>Fetches Qualtrics TGMD responses using export-poll-download API flow</li>
+                        <li>Transforms Qualtrics data to standardized format using <code>qualtrics-mapping.json</code></li>
+                        <li>Merges JotForm + Qualtrics data by Core ID (Qualtrics TGMD fields take precedence)</li>
+                        <li>Validates all tasks using TaskValidator with termination rules and completion metrics</li>
+                    </ol>
+                    
+                    <p><strong>How to use:</strong></p>
+                    <ol class="list-decimal ml-6 space-y-1">
+                        <li>Enter a numeric Core ID (e.g., <code>10261</code>) - do NOT include the "C" prefix</li>
+                        <li>Click "Run Pipeline Test" button</li>
+                        <li>Watch the pipeline steps execute in real-time</li>
+                        <li>Review the results: task completion status, light indicators, answered/correct counts</li>
+                        <li>Inspect raw data in the debug section if needed</li>
+                    </ol>
+                    
+                    <p><strong>Expected Output:</strong></p>
+                    <ul class="list-disc ml-6 space-y-1">
+                        <li>Student overview (Core ID, name, submission counts)</li>
+                        <li>Task validation results with status lights:
+                            <ul class="list-circle ml-6">
+                                <li><span class="text-green-600">🟢 Green</span> - Complete (100%)</li>
+                                <li><span class="text-yellow-600">🟡 Yellow</span> - Post-term (terminated/timed out)</li>
+                                <li><span class="text-red-600">🔴 Red</span> - Incomplete (&lt;100%)</li>
+                                <li><span class="text-gray-600">⚪ Grey</span> - Not started (0%)</li>
+                            </ul>
+                        </li>
+                        <li>Summary statistics (count of tasks in each status)</li>
+                        <li>Raw data inspector for debugging</li>
+                    </ul>
+                    
+                    <p><strong>Note:</strong> This tool requires <code>credentials.json</code> to be present in the <code>assets/</code> directory with valid JotForm and Qualtrics API credentials.</p>
+                </div>
+            </details>
         </div>
 
         <!-- Input Section -->
@@ -531,10 +575,13 @@
             
             console.log(`[Test] ✅ Downloaded ${responses.length} total responses`);
 
-            // Filter for this Core ID
+            // Filter for this Core ID (check both with and without "C" prefix)
             const filtered = responses.filter(r => {
-                const responseCoreId = r.values?.coreId || r.values?.coreid;
-                return responseCoreId === coreId || responseCoreId === `C${coreId}`;
+                const responseCoreId = r.values?.coreId || r.values?.coreid || r.values?.['student-id'];
+                // Match with or without C prefix
+                return responseCoreId === coreId || 
+                       responseCoreId === `C${coreId}` ||
+                       responseCoreId === coreId.replace(/^C/, '');
             });
 
             console.log(`[Test] Filtered to ${filtered.length} responses for Core ID ${coreId}`);
@@ -608,10 +655,12 @@
 
             // Student Overview
             document.getElementById('result-coreid').textContent = `C${data.coreId}`;
-            document.getElementById('result-name').textContent = 
-                data.mergedData['student-name-chinese']?.answer || 
-                data.mergedData['student-name-english']?.answer || 
-                'Unknown';
+            
+            // Get student name from merged data
+            const childName = data.mergedData['child-name'] || data.mergedData['21'];
+            const studentName = childName ? (childName.answer || childName.text || 'Unknown') : 'Unknown';
+            document.getElementById('result-name').textContent = studentName;
+            
             document.getElementById('result-jotform-count').textContent = data.jotformData.submissions.length;
             document.getElementById('result-qualtrics-count').textContent = data.qualtricsData.responses.length;
 
