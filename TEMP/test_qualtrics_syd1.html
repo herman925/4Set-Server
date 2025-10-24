@@ -252,10 +252,10 @@
         async function testExportStart() {
             displayResult('result3', '⏳ Starting export...', 'info');
             
+            // Note: useLabels parameter is not allowed for JSON/NDJSON exports per Qualtrics API
             const payload = {
                 format: 'json',
                 compress: false,
-                useLabels: false,
                 surveyMetadataIds: ['startDate', 'endDate', 'recordedDate', 'status']
             };
 
@@ -297,10 +297,10 @@
             try {
                 // Step 1: Start export
                 log += '1. Starting export...\n';
+                // Note: useLabels parameter is not allowed for JSON/NDJSON exports per Qualtrics API
                 const exportPayload = {
                     format: 'json',
                     compress: false,
-                    useLabels: false,
                     surveyMetadataIds: ['startDate', 'endDate', 'recordedDate', 'status']
                 };
 
