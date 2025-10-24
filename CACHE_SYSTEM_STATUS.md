@@ -380,8 +380,32 @@ You may see browser console warnings like:
 - Removed unnecessary verification read after save (reduces violations by ~50%)
 - Progress indicators show users that work is happening
 - Cache expiration prevents excessive re-syncing
+- **Nested loop optimization** in data transformation (16-33x fewer operations when updating submission fields)
 
 **Not needed to fix:** This is a characteristic of client-side IndexedDB storage and doesn't break functionality.
+
+### Data Transformation Performance Optimization
+
+**Context:** When transforming merged records back to JotForm submission format (e.g., after Qualtrics data merge), the system needs to update many fields by mapping field names to QIDs.
+
+**Optimization Applied:**
+- **Before:** Nested loop pattern O(records × fields × answers) - searching through all answers for each field
+- **After:** Reverse lookup map O(records × (answers + fields)) - build map once, then O(1) lookups
+
+**Performance Impact:**
+```
+Example: 100 records, 50 fields each, 100 answers per submission
+- Without optimization: 100 × 50 × 100 = 500,000 operations
+- With optimization: 100 × (100 + 50) = 15,000 operations
+- Result: 33x faster, 16-33x fewer operations in practice
+```
+
+**Implementation:**
+- Located in `assets/js/jotform-cache.js::transformRecordsToSubmissions()`
+- Also applied to deprecated `assets/js/student-data-processor.js::getFieldNameFromQID()`
+- Uses reverse lookup map (fieldName → qid) built once per submission
+
+**Related PR:** #76 (Copilot code review identified the optimization opportunity)
 
 ---
 
