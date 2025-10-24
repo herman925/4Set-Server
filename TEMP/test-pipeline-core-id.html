@@ -691,9 +691,10 @@
                 }
             }
 
-            // Filter for this Core ID (handles multiple format variations)
+            // Filter for this Core ID using the correct QID from Qualtrics
+            // According to qualtrics-mapping.json: "student-id": "QID125287935_TEXT"
             const filtered = allResponses.filter(r => {
-                const responseCoreId = r.values?.coreId || r.values?.coreid || r.values?.['student-id'];
+                const responseCoreId = r.values?.QID125287935_TEXT || r.values?.coreId || r.values?.coreid;
                 return responseCoreId === coreId || 
                        responseCoreId === `C${coreId}` ||
                        responseCoreId === coreId.replace(/^C/, '');
@@ -921,9 +922,10 @@
                 }
             }
 
-            // Filter for this Core ID (check both with and without "C" prefix)
+            // Filter for this Core ID using the correct QID from Qualtrics
+            // According to qualtrics-mapping.json: "student-id": "QID125287935_TEXT"
             const filtered = responses.filter(r => {
-                const responseCoreId = r.values?.coreId || r.values?.coreid || r.values?.['student-id'];
+                const responseCoreId = r.values?.QID125287935_TEXT || r.values?.coreId || r.values?.coreid;
                 // Match with or without C prefix
                 return responseCoreId === coreId || 
                        responseCoreId === `C${coreId}` ||
