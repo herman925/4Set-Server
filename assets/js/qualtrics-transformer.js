@@ -83,6 +83,12 @@
 
       // Handle text entry sub-fields: "QID125287935_TEXT"
       if (qidSpec.endsWith('_TEXT')) {
+        // Try direct lookup first (some Qualtrics responses store _TEXT fields directly)
+        if (values[qidSpec] !== undefined && values[qidSpec] !== null) {
+          return String(values[qidSpec]);
+        }
+        
+        // Fall back to stripping _TEXT and looking for base QID
         const qid = qidSpec.replace('_TEXT', '');
         const textData = values[qid];
         

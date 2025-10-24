@@ -88,8 +88,58 @@ def test_survey_access(datacenter, survey_id):
     finally:
         conn.close()
 
-def test_export_start(datacenter, survey_id):
-    """Test starting a response export"""
+def test_list_responses_with_filter(datacenter, survey_id, filter_qid, filter_value):
+    """Test listing responses with filter (before export)"""
+    print_section(f"Testing List Responses with Filter")
+    print(f"Filter: {filter_qid} = {filter_value}")
+    
+    try:
+        conn = http.client.HTTPSConnection(f"{datacenter}.qualtrics.com")
+        
+        # Build filter URL parameter
+        # Qualtrics uses URL parameters for filtering in list responses
+        filter_param = f"{filter_qid}={filter_value}"
+        url = f"/API/v3/surveys/{survey_id}/responses?{filter_param}"
+        
+        print(f"Request URL: {url}")
+        
+        conn.request("GET", url, headers={
+            'X-API-TOKEN': TEST_CREDENTIALS['qualtricsApiKey'],
+            'Accept': 'application/json'
+        })
+        res = conn.getresponse()
+        status = res.status
+        data = res.read().decode("utf-8")
+        
+        print(f"Status Code: {status}")
+        if 200 <= status < 300:
+            response_data = json.loads(data)
+            responses = response_data.get('result', {}).get('elements', [])
+            print("✓ List responses with filter successful!")
+            print(f"Found {len(responses)} matching responses")
+            
+            if len(responses) > 0:
+                print(f"\nSample Response IDs:")
+                for i, resp in enumerate(responses[:3]):  # Show first 3
+                    print(f"  {i+1}. {resp.get('responseId', 'N/A')}")
+                    
+            return responses
+        else:
+            print(f"✗ List responses failed with status {status}")
+            try:
+                error_data = json.loads(data)
+                print(f"Error: {json.dumps(error_data, indent=2)}")
+            except:
+                print(f"Response: {data}")
+            return None
+    except Exception as e:
+        print(f"✗ Exception occurred: {e}")
+        return None
+    finally:
+        conn.close()
+
+def test_export_start(datacenter, survey_id, filter_value=None):
+    """Test starting a response export with optional embedded data filter"""
     print_section(f"Testing Export Start for Survey: {survey_id}")
     
     # Note: useLabels parameter is not allowed for JSON/NDJSON exports per Qualtrics API
@@ -98,6 +148,12 @@ def test_export_start(datacenter, survey_id):
         'compress': False,
         'surveyMetadataIds': ['startDate', 'endDate', 'recordedDate', 'status']
     }
+    
+    # The 'filter' parameter in export-responses is NOT supported
+    # Instead, we need to use embedded data filters or get response IDs first
+    if filter_value:
+        print(f"Note: Cannot use filter in export-responses endpoint")
+        print(f"Alternative: Use List Responses API with filter first, then export by responseId")
     
     try:
         conn = http.client.HTTPSConnection(f"{datacenter}.qualtrics.com")
@@ -236,14 +292,46 @@ def main():
             print("\n✗ Export failed!")
             break
     
+    # Test 5: Test filtered list responses for Core ID 10275
+    print_section("Testing List Responses with Filter (Core ID 10275)")
+    print("Testing Qualtrics List Responses API with filter...")
+    print("Note: Qualtrics export-responses endpoint does NOT support filters")
+    print("Alternative: Use List Responses API to get filtered response IDs")
+    
+    # Try filtering by QID (may not work, embedded data is preferred)
+    filtered_responses = test_list_responses_with_filter(
+        TEST_CREDENTIALS['qualtricsDatacenter'],
+        TEST_CREDENTIALS['qualtricsSurveyId'],
+        'QID125287935_TEXT',
+        '10275'
+    )
+    
+    if filtered_responses is None or len(filtered_responses) == 0:
+        print("\n⚠️  QID filter not supported in List Responses.")
+        print("Alternative approach:")
+        print("1. Use embedded data field (e.g., 'studentid' instead of QID)")
+        print("2. Or fetch all responses and filter client-side (current approach)")
+        print("\n💡 Recommendation: Continue using global cache + client-side filter")
+        print("   This is more efficient for repeated lookups across multiple students.")
+    
     # Summary
     print_section("Test Summary")
     print("All basic connectivity tests completed.")
     print(f"Datacenter {TEST_CREDENTIALS['qualtricsDatacenter']} is accessible.")
+    print("\n✅ Tested Features:")
+    print("1. Basic API connection")
+    print("2. Survey access")
+    print("3. Full export (all responses)")
+    print("4. List Responses with filter (attempted)")
+    print("\n📊 Findings:")
+    print("• Qualtrics export-responses endpoint does NOT support 'filter' parameter")
+    print("• List Responses API may support filtering by embedded data fields")
+    print("• Current approach (global cache + client-side filter) is recommended")
     print("\nNext steps:")
-    print("1. Update credentials.enc with qualtricsDatacenter: 'syd1'")
-    print("2. Test in the actual checking system UI")
-    print("3. Verify data sync works as expected")
+    print("1. Continue using global cache approach in test-pipeline-core-id.html")
+    print("2. Update credentials.enc with qualtricsDatacenter: 'syd1'")
+    print("3. Test in the actual checking system UI")
+    print("4. Verify data sync works as expected")
 
 if __name__ == "__main__":
     main()
