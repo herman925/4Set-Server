@@ -176,8 +176,8 @@ def proxy_questions(form_id):
 
 @app.route('/')
 def index():
-    """Redirect root to checking system home"""
-    return app.send_static_file('checking_system_home.html')
+    """Serve index landing page at root"""
+    return app.send_static_file('index.html')
 
 
 def print_banner(host, port):
@@ -188,7 +188,7 @@ def print_banner(host, port):
 ╠════════════════════════════════════════════════════════════╣
 ║  Status: Running on http://{host}:{port:<28} ║
 ║  Health: http://{host}:{port}/health{' ' * (28 - len(str(port)))}║
-║  Homepage: http://{host}:{port}/checking_system_home.html{' ' * (7 - len(str(port)))}║
+║  Homepage: http://{host}:{port}/index.html{' ' * (18 - len(str(port)))}║
 ╠════════════════════════════════════════════════════════════╣
 ║  API Routes:                                              ║
 ║  • /api/jotform/form/<id>/submissions                    ║

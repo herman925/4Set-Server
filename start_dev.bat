@@ -48,7 +48,7 @@ REM Wait 3 seconds for server to start
 timeout /t 3 /nobreak >nul
 
 REM Open browser
-start http://127.0.0.1:3000/checking_system_home.html
+start http://127.0.0.1:3000/index.html
 
 echo.
 echo Server is running! Browser should open automatically.

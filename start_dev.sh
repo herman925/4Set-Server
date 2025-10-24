@@ -47,7 +47,7 @@ SERVER_PID=$!
 sleep 3
 
 # Open browser (cross-platform detection)
-URL="http://127.0.0.1:3000/checking_system_home.html"
+URL="http://127.0.0.1:3000/index.html"
 if command -v xdg-open &> /dev/null; then
     xdg-open "$URL"  # Linux
 elif command -v open &> /dev/null; then

@@ -117,7 +117,7 @@ start_dev.bat
 This will:
 1. Install Flask dependencies (if needed)
 2. Start the CORS proxy server on `http://127.0.0.1:3000`
-3. Automatically open your browser to the Checking System
+3. Automatically open your browser to the main entry page (`index.html`)
 
 **Manual Startup:**
 
@@ -128,7 +128,7 @@ pip install -r requirements.txt
 # Start proxy server
 python proxy_server.py --port 3000 --host 127.0.0.1
 
-# Access at: http://127.0.0.1:3000/checking_system_home.html
+# Access at: http://127.0.0.1:3000/index.html
 ```
 
 **Why Needed:**
