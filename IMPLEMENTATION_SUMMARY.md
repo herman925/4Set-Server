@@ -26,12 +26,14 @@ The Qualtrics API does not allow the `useLabels` parameter (even when set to `fa
 - Added comment documenting the Qualtrics API restriction
 - Export format is hardcoded to JSON in this module, so unconditional removal is appropriate
 
-#### 2. Test Script
-**File**: `TEMP/test_qualtrics_syd1.py`
+#### 2. Test Scripts
+**Files**: 
+- `TEMP/test_qualtrics_syd1.py` (Python test script)
+- `TEMP/test_qualtrics_syd1.html` (HTML test page)
 
-- Removed `'useLabels': False` from the test payload
+- Removed `'useLabels': False` / `useLabels: false` from the test payloads
 - Added comment explaining why the parameter is excluded
-- Test now passes successfully with 200 status code instead of 400
+- Tests now pass successfully with 200 status code instead of 400
 
 #### 3. Web UI JavaScript (Qualtrics Test Application)
 **File**: `Qualtrics Test/web/js/main.js`
