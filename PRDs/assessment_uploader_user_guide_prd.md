@@ -326,23 +326,26 @@ The **Processor Agent** is an autonomous PowerShell service that continuously mo
 
 ```mermaid
 flowchart TD
-    Start([📂 File Detected]) --> Phase1{Is filename<br/>valid?<br/>Phase 1}
+    Start([📂 File Detected]) --> NameCheck{Filename<br/>approximately<br/>correct?}
     
-    Phase1 -->|NO| Reject1[❌ REJECTED<br/>→ Unsorted/]
+    NameCheck -->|NO - Invalid format| Reject1[❌ REJECTED<br/>→ Quarantine folder]
+    NameCheck -->|YES - Lenient match| Phase1{Is filename<br/>valid?<br/>Phase 1}
+    
+    Phase1 -->|NO| Reject2[❌ REJECTED<br/>→ Quarantine folder]
     Phase1 -->|YES| Phase2{PDF fields<br/>valid?<br/>Phase 2}
     
-    Phase2 -->|NO| Reject2[❌ REJECTED<br/>→ Unsorted/]
+    Phase2 -->|NO| Reject3[❌ REJECTED<br/>→ Quarantine folder]
     Phase2 -->|YES| Process[🔄 Processing<br/>1. Parse PDF<br/>2. Calculate termination<br/>3. Enrich metadata<br/>4. Prepare JSON]
     
     Process --> Conflict{Data<br/>conflict?}
     
-    Conflict -->|CONFLICT| Blocked[⚠️ BLOCKED<br/>→ Unsorted/]
+    Conflict -->|CONFLICT| Blocked[⚠️ BLOCKED<br/>→ Quarantine folder]
     Conflict -->|SAFE| Upload[📤 Upload to Jotform<br/>Max 3 retries + backoff]
     
     Upload --> UploadResult{Upload<br/>success?}
     
-    UploadResult -->|FAILED| Error[❌ ERROR<br/>→ Unsorted/]
-    UploadResult -->|SUCCESS| File["📁 File to School<br/>→ 97/PDF/{school}/"]
+    UploadResult -->|FAILED| Error[❌ ERROR<br/>→ Quarantine folder]
+    UploadResult -->|SUCCESS| File["📁 File to School Folder<br/>→ School-specific folder"]
     
     File --> Complete([✅ COMPLETE])
     
@@ -353,15 +356,18 @@ flowchart TD
     style File fill:#C8E6C9,stroke:#4CAF50,color:#1B5E20
     style Reject1 fill:#FFE0E0,stroke:#E57373,color:#C62828
     style Reject2 fill:#FFE0E0,stroke:#E57373,color:#C62828
+    style Reject3 fill:#FFE0E0,stroke:#E57373,color:#C62828
     style Blocked fill:#FFE0B2,stroke:#FF9800,color:#E65100
     style Error fill:#FFE0E0,stroke:#E57373,color:#C62828
+    style NameCheck fill:#E1F5FE,stroke:#03A9F4,color:#01579B
     style Phase1 fill:#FFF9E0,stroke:#FFD54F,color:#F57C00
     style Phase2 fill:#FFE0B2,stroke:#FF9800,color:#E65100
     style Conflict fill:#F8BBD0,stroke:#F06292,color:#880E4F
     style UploadResult fill:#B2DFDB,stroke:#26A69A,color:#004D40
 ```
 
-**Total Processing Time:** 5-30 seconds per PDF (typical)
+**Total Processing Time:** 5-30 seconds per PDF (typical)  
+**Note:** Filename validation uses lenient matching - slight variations in format are accepted
 
 #### Validation Phases Explained
 
@@ -409,26 +415,26 @@ flowchart TD
     
     CheckFields --> FieldType{Field<br/>Type?}
     
-    FieldType -->|Metadata Field| MetaCheck{Current<br/>Value?}
-    MetaCheck -->|Empty/Null| AllowMeta[✅ ALLOW<br/>Fill Empty<br/>Metadata]
-    MetaCheck -->|Has Value| AllowUpdate[✅ ALLOW<br/>Update Metadata<br/>student-id, school-id, etc.]
+    FieldType -->|Admin Info<br/>student-id, name,<br/>school-id, class| MetaCheck{Current<br/>Value?}
+    MetaCheck -->|Empty/Null| AllowMeta[✅ ALLOW<br/>Fill Empty<br/>Admin Info]
+    MetaCheck -->|Has Value| AllowUpdate[✅ ALLOW<br/>Update Admin Info]
     
-    FieldType -->|Assessment Data| DataCheck{Current<br/>Value?}
-    DataCheck -->|Empty/Null| AllowData[✅ ALLOW<br/>Fill Empty<br/>Assessment]
-    DataCheck -->|Has Value| BlockData[❌ BLOCK<br/>Protect Existing<br/>Assessment Data]
+    FieldType -->|Test Answers<br/>ERV, CM, CWR,<br/>termination| DataCheck{Current<br/>Value?}
+    DataCheck -->|Empty/Null| AllowData[✅ ALLOW<br/>Fill Empty<br/>Test Data]
+    DataCheck -->|Has Value| BlockData[❌ BLOCK<br/>Protect Existing<br/>Test Answers]
     
-    AllowNew --> LogSuccess[📝 Log: Success<br/>New submission created]
+    AllowNew --> LogSuccess[📝 Log to CSV:<br/>Success entry]
     AllowMeta --> LogSuccess
     AllowUpdate --> LogSuccess
     AllowData --> LogSuccess
     
-    BlockData --> LogConflict["📝 Log: CONFLICT<br/>Field: {fieldName}<br/>Existing: {oldValue}<br/>Attempted: {newValue}"]
+    BlockData --> LogConflict["📝 Log to CSV:<br/>CONFLICT entry<br/>with field details"]
     
-    LogConflict --> MoveUnsorted["⚠️ Move PDF to<br/>Unsorted/<br/>+ Create Error Log"]
+    LogConflict --> MoveQuarantine["⚠️ Move PDF to<br/>Quarantine Folder"]
     
-    MoveUnsorted --> NotifyAdmin[🔔 Admin Can Review<br/>processor_agent.log<br/>+ PDF in Unsorted/]
+    MoveQuarantine --> NotifyAdmin["🔔 Admin Reviews<br/>CSV Log Entry<br/>+ Quarantined PDF"]
     
-    LogSuccess --> FileSchool["📁 Move PDF to<br/>97/PDF/{school}/<br/>+ Create JSON"]
+    LogSuccess --> FileSchool["📁 Move PDF to<br/>School's Folder<br/>+ Create JSON"]
     
     FileSchool --> Complete([✅ Upload Complete])
     NotifyAdmin --> End([❌ Upload Blocked])
@@ -441,7 +447,7 @@ flowchart TD
     style AllowUpdate fill:#C8E6C9,stroke:#4CAF50,color:#1B5E20
     style AllowData fill:#C8E6C9,stroke:#4CAF50,color:#1B5E20
     style BlockData fill:#FFCDD2,stroke:#E57373,color:#C62828
-    style MoveUnsorted fill:#FFE0B2,stroke:#FF9800,color:#E65100
+    style MoveQuarantine fill:#FFE0B2,stroke:#FF9800,color:#E65100
     style LogConflict fill:#FFF9C4,stroke:#FDD835,color:#F57F17
     style LogSuccess fill:#E8F5E9,stroke:#66BB6A,color:#2E7D32
     style Search fill:#E1F5FE,stroke:#03A9F4,color:#01579B
@@ -453,10 +459,11 @@ flowchart TD
 
 **Key Decision Points:**
 1. **New vs Existing:** New students always allowed; existing students trigger protection checks
-2. **Field Type:** Metadata fields (admin data) have different rules than assessment data (student answers)
-3. **Metadata Fields:** Can be updated to correct administrative errors (typos in names, wrong school assignment, etc.)
-4. **Assessment Data:** Once recorded, cannot be changed - protects scientific integrity
-5. **Empty Fields:** Can always be filled, whether metadata or assessment data
+2. **Field Type:** Administrative info (student details, school assignment) vs Test Answers (actual assessment responses)
+3. **Admin Info:** Can be updated to correct administrative errors (typos in names, wrong school assignment, PC number, etc.)
+4. **Test Answers:** Once recorded, cannot be changed - protects scientific integrity of the assessment data
+5. **Empty Fields:** Can always be filled, whether admin info or test data
+6. **Logging:** All decisions logged to daily CSV file (YYYYMMDD_processing_agent.csv) for audit trail
 
 ##### Conflict Detection Rules
 
@@ -488,79 +495,55 @@ When the processor agent detects a data conflict and blocks an upload, the files
 
 **File Destination:**
 ```
-97/PDF/Unsorted/
-├── C10207_20251016_14_30.pdf          ← Blocked PDF file
-└── C10207_20251016_14_30_ERROR.log    ← Detailed error log
+quarantine_folder/
+├── C10207_20251016_14_30.pdf
+└── (Logged in CSV: YYYYMMDD_processing_agent.csv)
 ```
+*Note: Quarantine folder path is configurable (default: "unsorted")*
 
 **What Happens:**
-1. **PDF moved to Unsorted/:** The file is not deleted, just quarantined for manual review
-2. **Error log created:** A companion .log file is created with detailed conflict information
+1. **PDF moved to quarantine folder:** The file is not deleted, just quarantined for manual review
+2. **Conflict logged to CSV:** Details written to the daily CSV log file (not individual .log files)
 3. **JSON data deleted:** The processed JSON is not saved to prevent corruption
 4. **Jotform not updated:** No API call is made to Jotform, protecting existing data
-5. **Email notification (optional):** Administrators can be notified of blocked uploads
+5. **PC number recorded:** The uploader's PC number (from upload.html manual setting) is logged for tracking
 
-**⚠️ Important:** Files in Unsorted/ require manual review by administrators to determine if:
+**⚠️ Important:** Files in quarantine folder require manual review by administrators to determine if:
 - It's a legitimate re-upload attempt that should be manually processed
 - It's an accidental duplicate that should be deleted
 - It's a different student with a similar/wrong filename
 
 ##### 📝 How Logs Help Check What Went Wrong
 
-The processor agent maintains detailed logs that help administrators diagnose and resolve conflicts:
+The processor agent maintains a detailed CSV log that helps administrators diagnose and resolve conflicts:
 
-**1. Processor Agent Log** (`logs/processor_agent.log`)
+**Daily Processing Log (CSV Format)**
+- **File:** `logs/YYYYMMDD_processing_agent.csv`
+- **Format:** Timestamp,Level,File,Message
+- **Log Levels:** SUCCESS, REJECT, ERROR, CONFLICT, WARN, FILED
+
+**What's Logged:**
 - Timestamp of each upload attempt
 - Student ID and filename
-- Conflict detection results
-- Which fields caused the conflict
-- Final disposition (Unsorted vs Filed)
+- Log level indicating outcome
+- Detailed message with conflict reasons
+- Final disposition (filed to school folder vs quarantined)
 
-**2. Individual Error Logs** (`Unsorted/{filename}_ERROR.log`)
-- Field-by-field comparison
-- Old value vs new value
-- Exact reason for block
-- Recommended action
-- Troubleshooting steps
-
-**Example Error Log Content:**
+**Example CSV Log Entries:**
 ```
-[2025-10-25 14:30:15] CONFLICT DETECTED
-Student: C10207 (陳小明)
-School: S023
-File: C10207_20251016_14_30.pdf
-
-BLOCKED FIELDS:
-├─ Field: q37_englishReceptive[0]
-│  Current: "1"  (Correct)
-│  Attempted: "0"  (Incorrect)
-│  Reason: Assessment data cannot be changed
-│
-├─ Field: q37_englishReceptive[5]  
-│  Current: "0"  (Incorrect)
-│  Attempted: "1"  (Correct)
-│  Reason: Assessment data cannot be changed
-│
-└─ Field: cm_termination_stage1
-   Current: "0"  (Passed)
-   Attempted: "1"  (Failed)
-   Reason: Termination values are protected
-
-RECOMMENDATION: 
-If the new data is correct and the existing data is wrong,
-contact the data manager to manually delete the incorrect
-submission from Jotform before re-uploading.
-
-DO NOT simply rename the file - this will create a duplicate
-student record with a different ID.
+2025-10-25 14:30:15,REJECT,C10207_20251016_14_30.pdf,"Phase2 validation failed: Student C10207 not in mapping"
+2025-10-25 14:31:22,CONFLICT,C10208_20251016_14_35.pdf,"Field q37_englishReceptive[0]: Current '1' vs Attempted '0'"
+2025-10-25 14:32:10,SUCCESS,C10209_20251016_14_40.pdf,"Validation passed"
+2025-10-25 14:33:05,FILED,C10209_20251016_14_40.pdf,"C10209_20251016_14_40.pdf → S023/"
 ```
 
-**Using Logs for Troubleshooting:**
-1. **Check processor_agent.log** first to see when the conflict occurred and which file was involved
-2. **Locate the PDF in Unsorted/** folder to see the actual file that was blocked
-3. **Read the {filename}_ERROR.log** to understand exactly which fields conflicted and why
-4. **Compare values:** The log shows both the existing (protected) value and the attempted (blocked) value
-5. **Determine action:** Based on which value is correct, decide whether to:
+**Using CSV Logs for Troubleshooting:**
+1. **Open today's CSV log:** Find YYYYMMDD_processing_agent.csv in the logs directory
+2. **Search for filename:** Look for rows with the problematic PDF filename
+3. **Check log level:** REJECT/ERROR/CONFLICT indicate problems; SUCCESS/FILED indicate completion
+4. **Read the message:** Detailed reason explains exactly what went wrong
+5. **Locate quarantined PDF:** Check the quarantine folder for the actual file
+6. **Determine action:** Based on the CSV message, decide whether to:
    - Delete the Unsorted file (if duplicate/wrong)
    - Manually fix Jotform data (if existing data is wrong)
    - Contact test administrator (if assessment needs re-administration)
