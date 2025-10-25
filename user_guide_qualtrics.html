@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Guide: Qualtrics Integration - 4Set System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="assets/js/tailwind.config.js"></script>
+  <link rel="stylesheet" href="assets/css/theme_pantone_light_1.css">
+  <link rel="stylesheet" href="assets/css/global.css">
+  <link rel="stylesheet" href="assets/css/user-guides.css">
+  <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <header class="bg-white shadow-md sticky top-0 z-50">
+    <div class="container mx-auto px-6 py-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <a href="index.html" class="text-2xl font-bold" style="color: var(--primary)">4Set System</a>
+          <span class="text-gray-400">|</span>
+          <h1 class="text-xl font-semibold text-gray-700">User Guide: Qualtrics Integration</h1>
+        </div>
+        <div class="flex items-center gap-4">
+          <a href="user_guide_checking_system.html" class="text-sm text-gray-600 hover:text-primary transition">Checking System</a>
+          <a href="user_guide_uploader.html" class="text-sm text-gray-600 hover:text-primary transition">Uploader Guide</a>
+          <a href="user_guide_conflicts.html" class="text-sm text-gray-600 hover:text-primary transition">Conflicts Guide</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <div class="container mx-auto px-6 py-8">
+    <div class="flex gap-8">
+      <aside class="sidebar w-64 flex-shrink-0">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+          <h2 class="text-lg font-bold mb-4" style="color: var(--primary)">Table of Contents</h2>
+          <nav class="space-y-2">
+            <a href="#overview" class="toc-link block text-sm text-gray-700 py-1">Overview</a>
+            <a href="#features" class="toc-link block text-sm text-gray-700 py-1">Key Features</a>
+            <a href="#how-to-use" class="toc-link block text-sm text-gray-700 py-1">How to Use</a>
+            <a href="#data-merge" class="toc-link block text-sm text-gray-700 py-1">Data Merge Logic</a>
+            <a href="#troubleshooting" class="toc-link block text-sm text-gray-700 py-1">Troubleshooting</a>
+            <a href="#faqs" class="toc-link block text-sm text-gray-700 py-1">FAQs</a>
+          </nav>
+        </div>
+      </aside>
+
+      <main class="flex-1 max-w-4xl">
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+          <div class="mb-8 pb-6 border-b border-gray-200">
+            <div class="flex flex-wrap gap-4 text-sm text-gray-600">
+              <div><strong>Version:</strong> 1.0</div>
+              <div><strong>Last Updated:</strong> October 23, 2025</div>
+            </div>
+          </div>
+
+          <section id="overview" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Overview</h2>
+            
+            <!-- Source Note -->
+            <div class="mb-6 p-4 bg-blue-50 border-l-4 border-blue-500 rounded">
+              <p class="text-sm text-gray-700">
+                📄 <strong>Markdown Source:</strong> This guide is also available in markdown format at 
+                <a href="PRDs/qualtrics_tgmd_user_guide_prd.md" class="text-blue-600 hover:underline font-mono">PRDs/qualtrics_tgmd_user_guide_prd.md</a>
+              </p>
+            </div>
+            
+            <p class="text-gray-700 mb-6 text-lg leading-relaxed">
+              The 4Set system supports fetching <strong>all assessment task data</strong> from Qualtrics surveys and merging it with JotForm submission data. This provides a unified view of all assessment data in one place.
+            </p>
+
+            <div class="alert-box alert-warning mb-6">
+              <p class="font-semibold mb-2">⚠️ Important Update (October 2024)</p>
+              <p class="text-sm">Qualtrics has deprecated the <code>au1.qualtrics.com</code> datacenter. The system now uses <code>syd1.qualtrics.com</code> (Sydney datacenter). If you encounter 400 Bad Request errors, ensure your <code>credentials.enc</code> has been updated.</p>
+            </div>
+
+            <div class="alert-box alert-info">
+              <p class="text-sm"><strong>📝 Credential Field Name:</strong> The correct field name in <code>credentials.enc</code> is <code>qualtricsApiKey</code> (not <code>qualtricsApiToken</code>).</p>
+            </div>
+          </section>
+
+          <section id="features" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Key Features</h2>
+
+            <ul class="space-y-3 text-gray-700">
+              <li>✓ <strong>Complete Data Integration:</strong> Qualtrics responses for all tasks automatically merged with JotForm data by sessionkey</li>
+              <li>✓ <strong>Comprehensive Task Coverage:</strong> TGMD, ERV, SYM, TOM, CM, CWR, HTKS, TEC, and more</li>
+              <li>✓ <strong>Conflict Resolution:</strong> Earliest non-empty value wins when both sources have data</li>
+              <li>✓ <strong>Offline Caching:</strong> Merged data cached locally for instant access</li>
+              <li>✓ <strong>Progress Tracking:</strong> Real-time progress during sync</li>
+              <li>✓ <strong>Conflict Reporting:</strong> Detailed statistics on data conflicts</li>
+              <li>✓ <strong>Grade Detection:</strong> Automatic K1/K2/K3 classification</li>
+            </ul>
+          </section>
+
+          <section id="how-to-use" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">How to Use</h2>
+
+            <div class="space-y-6">
+              <div class="diagram-box bg-blue-50 border-blue-300">
+                <h3 class="text-xl font-semibold mb-4">Step 1: Build JotForm Cache</h3>
+                <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+                  <li>Open the checking system home page</li>
+                  <li>Enter the system password to decrypt credentials</li>
+                  <li>Click the <strong>"System Not Ready"</strong> red pill</li>
+                  <li>Click <strong>"Sync with Jotform"</strong></li>
+                  <li>Wait for the cache to build (~90 seconds for 544 submissions)</li>
+                  <li>The pill will turn green showing <strong>"System Ready"</strong></li>
+                </ol>
+              </div>
+
+              <div class="diagram-box bg-purple-50 border-purple-300">
+                <h3 class="text-xl font-semibold mb-4">Step 2: Refresh with Qualtrics</h3>
+                <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+                  <li>Click the green <strong>"System Ready"</strong> pill</li>
+                  <li>Click <strong>"Refresh with Qualtrics"</strong> (purple button)</li>
+                  <li>Watch the progress modal:
+                    <ul class="list-disc ml-6 mt-2 space-y-1 text-sm">
+                      <li>Starting Qualtrics export (5-10%)</li>
+                      <li>Export progress polling (10-40%)</li>
+                      <li>Downloading responses (45-60%)</li>
+                      <li>Transforming data (65%)</li>
+                      <li>Merging datasets (70-80%)</li>
+                      <li>Updating cache (85-100%)</li>
+                    </ul>
+                  </li>
+                  <li>Review the summary modal when complete</li>
+                </ol>
+              </div>
+
+              <div class="diagram-box bg-green-50 border-green-300">
+                <h3 class="text-xl font-semibold mb-4">Step 3: View Merged Data</h3>
+                <p class="text-gray-700 mb-3">After syncing, navigate to student detail pages to see:</p>
+                <ul class="space-y-2 text-gray-700">
+                  <li>• All task data from Qualtrics (TGMD, ERV, SYM, TOM, etc.)</li>
+                  <li>• Data source indicators</li>
+                  <li>• Automatically calculated grade (K1/K2/K3)</li>
+                  <li>• Unified view combining both sources</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <section id="data-merge" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Data Merge Logic</h2>
+
+            <h3 class="text-2xl font-semibold mb-4">Data Sources</h3>
+            <div class="grid md:grid-cols-2 gap-4 mb-6">
+              <div class="diagram-box bg-blue-50 border-blue-300">
+                <h4 class="font-semibold mb-2">JotForm</h4>
+                <p class="text-sm text-gray-700">Form submission data from PDF uploads (all assessment tasks)</p>
+              </div>
+              <div class="diagram-box bg-purple-50 border-purple-300">
+                <h4 class="font-semibold mb-2">Qualtrics</h4>
+                <p class="text-sm text-gray-700">Web survey data (all assessment tasks including TGMD, ERV, SYM, TOM, etc.)</p>
+              </div>
+            </div>
+
+            <h3 class="text-2xl font-semibold mb-4">Merge Strategy</h3>
+            <div class="diagram-box">
+              <p class="text-gray-700 mb-3"><strong>Earliest Non-Empty Wins:</strong></p>
+              <ol class="list-decimal ml-6 space-y-2 text-gray-700 text-sm">
+                <li><strong>Within-Source:</strong> Multiple submissions from same source are merged with earliest non-empty values winning</li>
+                <li><strong>Cross-Source:</strong> JotForm and Qualtrics data compared by timestamp, earliest wins</li>
+                <li><strong>Matching:</strong> Records matched by unique <code>sessionkey</code> field</li>
+                <li><strong>Conflict Logging:</strong> All overwrites logged with timestamps for audit</li>
+              </ol>
+            </div>
+
+            <div class="mt-6 bg-yellow-50 border-l-4 border-yellow-400 p-4">
+              <p class="text-sm font-semibold text-gray-800 mb-2">Example:</p>
+              <ul class="text-sm text-gray-700 space-y-1">
+                <li>• Student has 3 JotForm submissions (Oct 1, 5, 10) → Oct 1 values win</li>
+                <li>• Student has 2 Qualtrics responses (Oct 3, 8) → Oct 3 values win</li>
+                <li>• Final merge: Compare Oct 1 vs Oct 3 → JotForm wins (earlier)</li>
+              </ul>
+            </div>
+
+            <h3 class="text-2xl font-semibold mb-4 mt-8">Field Mapping</h3>
+            <p class="text-gray-700 mb-3">The system uses <code>assets/qualtrics-mapping.json</code> with <strong>632 field mappings</strong> covering all assessment tasks.</p>
+            
+            <table class="text-sm">
+              <thead>
+                <tr>
+                  <th>Standard Field</th>
+                  <th>Qualtrics QID</th>
+                  <th>Task</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>TGMD_Hand</td>
+                  <td>QID126166418</td>
+                  <td>Hand preference</td>
+                </tr>
+                <tr>
+                  <td>ERV_Q1</td>
+                  <td>QID123456789 <em>(example)</em></td>
+                  <td>Expressive Vocabulary</td>
+                </tr>
+                <tr>
+                  <td>SYM_Q1</td>
+                  <td>QID987654321 <em>(example)</em></td>
+                  <td>Symbolic Understanding</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section id="troubleshooting" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Troubleshooting</h2>
+
+            <div class="space-y-4">
+              <div class="collapsible-section">
+                <div class="collapsible-header">
+                  <h3 class="text-lg font-semibold">"Qualtrics modules not loaded" Error</h3>
+                  <span class="text-xl">▼</span>
+                </div>
+                <div class="collapsible-content">
+                  <p class="mb-3"><strong>Solutions:</strong></p>
+                  <ul class="list-disc ml-6 space-y-1 text-gray-700">
+                    <li>Refresh the page (Ctrl+F5)</li>
+                    <li>Ensure you're accessing from correct URL</li>
+                    <li>Check browser console for errors</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="collapsible-section">
+                <div class="collapsible-header">
+                  <h3 class="text-lg font-semibold">"Qualtrics credentials not found" Error</h3>
+                  <span class="text-xl">▼</span>
+                </div>
+                <div class="collapsible-content">
+                  <p class="text-gray-700 mb-2">Contact system administrator to add credentials to <code>credentials.enc</code></p>
+                  <p class="text-gray-700"><strong>Required fields:</strong> <code>qualtricsApiKey</code>, <code>qualtricsDatacenter</code>, <code>qualtricsSurveyId</code></p>
+                </div>
+              </div>
+
+              <div class="collapsible-section">
+                <div class="collapsible-header">
+                  <h3 class="text-lg font-semibold">"Bad Request" Error (400)</h3>
+                  <span class="text-xl">▼</span>
+                </div>
+                <div class="collapsible-content">
+                  <p class="mb-3"><strong>Cause:</strong> Deprecated datacenter (<code>au1</code>)</p>
+                  <p class="text-gray-700"><strong>Solution:</strong> Update <code>qualtricsDatacenter</code> in <code>credentials.enc</code> from <code>"au1"</code> to <code>"syd1"</code></p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section id="faqs" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">FAQs</h2>
+
+            <div class="space-y-4">
+              <div class="collapsible-section">
+                <div class="collapsible-header">
+                  <h3 class="text-lg font-semibold">How long does Qualtrics sync take?</h3>
+                  <span class="text-xl">▼</span>
+                </div>
+                <div class="collapsible-content">
+                  <p class="text-gray-700">Typically 30-60 seconds for ~200 responses. Includes export request (5-10s), processing (15-30s), download (5-10s), and merge (10-15s).</p>
+                </div>
+              </div>
+
+              <div class="collapsible-section">
+                <div class="collapsible-header">
+                  <h3 class="text-lg font-semibold">Can I use the system while sync is in progress?</h3>
+                  <span class="text-xl">▼</span>
+                </div>
+                <div class="collapsible-content">
+                  <p class="text-gray-700">No, wait for sync to complete. The modal will show "Done" when ready.</p>
+                </div>
+              </div>
+
+              <div class="collapsible-section">
+                <div class="collapsible-header">
+                  <h3 class="text-lg font-semibold">Do I need to sync with Qualtrics every time?</h3>
+                  <span class="text-xl">▼</span>
+                </div>
+                <div class="collapsible-content">
+                  <p class="text-gray-700 mb-2">No. Qualtrics data is cached. Only re-sync when:</p>
+                  <ul class="list-disc ml-6 space-y-1 text-gray-700">
+                    <li>New TGMD assessments are completed</li>
+                    <li>You need latest data</li>
+                    <li>Cache is older than 1 hour</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <footer class="text-center text-gray-600 text-sm py-8">
+          <p><strong>4Set System</strong> - KeySteps@JC (Phase Two)</p>
+          <p class="mt-2">The Education University of Hong Kong | Version 1.0 | October 2025</p>
+        </footer>
+      </main>
+    </div>
+  </div>
+
+  <script src="assets/js/user-guides.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        document.querySelectorAll('.collapsible-header span:last-child').forEach(arrow => {
+          const content = arrow.closest('.collapsible-header').nextElementSibling;
+          arrow.textContent = content.classList.contains('active') ? '▲' : '▼';
+          arrow.classList.add('arrow');
+        });
+      }, 100);
+    });
+  </script>
+</body>
+</html>
