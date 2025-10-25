@@ -115,10 +115,26 @@
           <span class="text-gray-400">|</span>
           <h1 class="text-xl font-semibold text-gray-700">Quick Start Guide</h1>
         </div>
-        <div class="flex items-center gap-4">
-          <a href="user_guide_uploader.html" class="text-sm text-gray-600 hover:text-primary transition">Uploader Guide</a>
-          <a href="user_guide_checking_system.html" class="text-sm text-gray-600 hover:text-primary transition">Checking System</a>
-          <a href="index.html" class="text-sm text-gray-600 hover:text-primary transition">← Back to Home</a>
+        <div class="flex items-center gap-3">
+          <a href="user_guide_uploader.html" class="text-gray-600 hover:text-primary transition p-2 rounded-lg hover:bg-gray-100" title="Assessment Uploader Guide">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+          </a>
+          <a href="user_guide_checking_system.html" class="text-gray-600 hover:text-primary transition p-2 rounded-lg hover:bg-gray-100" title="Checking System Guide">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 11 12 14 22 4"></polyline>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+            </svg>
+          </a>
+          <a href="index.html" class="text-gray-600 hover:text-primary transition p-2 rounded-lg hover:bg-gray-100" title="Back to Home">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+          </a>
         </div>
       </div>
     </div>
@@ -133,12 +149,14 @@
           <h2 class="text-lg font-bold mb-4" style="color: var(--primary)">Quick Navigation</h2>
           <nav class="space-y-2">
             <a href="#welcome" class="toc-link block text-sm text-gray-700 py-1">Welcome</a>
+            <a href="#system-home" class="toc-link block text-sm text-gray-700 py-1">0. System Home Page</a>
             <a href="#onedrive-setup" class="toc-link block text-sm text-gray-700 py-1">1. OneDrive Setup</a>
             <a href="#upload-pdf" class="toc-link block text-sm text-gray-700 py-1">2. Upload PDFs</a>
             <a href="#check-logs" class="toc-link block text-sm text-gray-700 py-1">3. Check Upload Logs</a>
             <a href="#checking-system" class="toc-link block text-sm text-gray-700 py-1">4. Use Checking System</a>
             <a href="#build-cache" class="toc-link block text-sm text-gray-700 py-1">5. Build Cache</a>
             <a href="#filter-data" class="toc-link block text-sm text-gray-700 py-1">6. Filter Data</a>
+            <a href="#export-data" class="toc-link block text-sm text-gray-700 py-1">7. Export Data</a>
             <a href="#learn-more" class="toc-link block text-sm text-gray-700 py-1">Learn More</a>
           </nav>
         </div>
@@ -166,17 +184,155 @@
             <div class="info-box">
               <p class="text-sm font-semibold mb-2">💡 What This Guide Covers</p>
               <ul class="text-sm space-y-1 ml-4">
+                <li>✓ Understanding the system home page</li>
                 <li>✓ Setting up OneDrive for file sync</li>
                 <li>✓ Uploading assessment PDFs</li>
                 <li>✓ Checking upload status and logs</li>
                 <li>✓ Using the checking system to monitor data</li>
                 <li>✓ Building cache for better performance</li>
                 <li>✓ Filtering and finding specific data</li>
+                <li>✓ Exporting data as markdown files</li>
               </ul>
             </div>
 
             <div class="warning-box">
               <p class="text-sm"><strong>⚠️ Note:</strong> This guide focuses on <em>how to do it</em> rather than explaining concepts. For detailed explanations, see the <a href="#learn-more" class="text-blue-600 underline">Learn More</a> section.</p>
+            </div>
+          </section>
+
+          <!-- Section 0: System Home Page -->
+          <section id="system-home" class="mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">
+              <span class="step-number">0</span>
+              System Home Page
+            </h2>
+            
+            <p class="text-gray-700 mb-4">
+              The 4Set System home page is your starting point. It's available at <strong>https://herman925.github.io/4Set-Server/index.html</strong>
+            </p>
+
+            <div class="info-box">
+              <p class="text-sm"><strong>💡 Quick Access:</strong> Bookmark this page for easy access to the system.</p>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 0.1: Understanding the Home Page</h3>
+            <p class="text-gray-700 mb-4">The home page provides quick access to the two main features:</p>
+            
+            <!-- Embedded Screenshot: System Home Page -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg bg-gradient-to-br from-gray-50 to-gray-100">
+              <div class="p-8">
+                <!-- Logo section -->
+                <div class="flex items-center gap-6 mb-8">
+                  <div class="w-32 h-16 bg-white rounded-lg shadow flex items-center justify-center text-xs text-gray-500 border border-gray-200">KeySteps@JC Logo</div>
+                  <div class="w-32 h-16 bg-white rounded-lg shadow flex items-center justify-center text-xs text-gray-500 border border-gray-200">EdUHK Logo</div>
+                </div>
+                
+                <!-- Badge -->
+                <div class="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm text-xs mb-4">
+                  <span class="w-2 h-2 rounded-full bg-blue-600"></span>
+                  <span class="text-gray-700">KeySteps@JC (Phase Two)</span>
+                </div>
+                
+                <!-- Title -->
+                <h1 class="text-4xl font-bold text-blue-600 mb-4">4Set System (2025/26)</h1>
+                <p class="text-gray-600 mb-6 max-w-2xl">Web-based PDF uploads trigger the processor agent to validate, parse, and submit survey data to Jotform...</p>
+                
+                <!-- Main action buttons -->
+                <div class="flex gap-4 mb-8">
+                  <div class="bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg">
+                    <div class="font-semibold">Assessment Uploader</div>
+                    <div class="text-xs opacity-90">Upload PDFs</div>
+                  </div>
+                  <div class="bg-white border-2 border-blue-600 text-blue-600 px-6 py-3 rounded-lg shadow">
+                    <div class="font-semibold">Checking System</div>
+                    <div class="text-xs">See What's Missing</div>
+                  </div>
+                </div>
+                
+                <!-- Recent Submission Card -->
+                <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
+                  <div class="flex items-center justify-between mb-4">
+                    <div>
+                      <p class="text-xs text-gray-500 uppercase">JotForm Latest</p>
+                      <h2 class="text-xl font-semibold text-gray-800">Recent Submission</h2>
+                    </div>
+                    <div class="flex items-center gap-2 bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs">
+                      <span class="w-2 h-2 rounded-full bg-green-500"></span>
+                      <span>Last Sync: 0 mins ago</span>
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p class="text-xs text-gray-500">Submission ID</p>
+                      <p class="font-medium text-blue-600">6362362003245961...</p>
+                    </div>
+                    <div>
+                      <p class="text-xs text-gray-500">Uploaded</p>
+                      <p class="font-medium">14 Oct 2025, 07:30</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 0.2: User Guides Section</h3>
+            <p class="text-gray-700 mb-4">Below the main interface, you'll find comprehensive user guides for each feature:</p>
+            
+            <!-- Embedded Screenshot: User Guides Section -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg bg-white">
+              <div class="p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <span class="text-2xl">📚</span>
+                  User Guides
+                </h2>
+                <p class="text-gray-600 text-sm mb-6">Comprehensive documentation for all system features</p>
+                
+                <div class="grid gap-4">
+                  <!-- Quick Start Guide Card -->
+                  <div class="border-2 border-blue-400 bg-blue-50 rounded-lg p-4 relative">
+                    <div class="absolute top-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full font-semibold">NEW</div>
+                    <div class="flex items-start gap-4">
+                      <div class="text-3xl">🚀</div>
+                      <div>
+                        <h3 class="font-bold text-lg text-blue-800 mb-1">Quick Start Guide</h3>
+                        <p class="text-sm text-gray-700 mb-2">Get up and running in minutes! Simple, step-by-step instructions for new users to start using the system right away.</p>
+                        <ul class="text-xs text-gray-600 space-y-1 ml-4">
+                          <li>✓ OneDrive setup & sync</li>
+                          <li>✓ Upload PDFs with correct naming</li>
+                          <li>✓ Use the checking system</li>
+                          <li>✓ Build cache for performance</li>
+                          <li>✓ Filter and find data</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Other guides -->
+                  <div class="border border-gray-300 rounded-lg p-4 bg-white">
+                    <div class="flex items-start gap-4">
+                      <div class="text-2xl">📊</div>
+                      <div>
+                        <h3 class="font-semibold text-gray-800">Checking System</h3>
+                        <p class="text-sm text-gray-600">Learn how to monitor and validate assessment data</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="border border-gray-300 rounded-lg p-4 bg-white">
+                    <div class="flex items-start gap-4">
+                      <div class="text-2xl">📤</div>
+                      <div>
+                        <h3 class="font-semibold text-gray-800">Assessment Uploader</h3>
+                        <p class="text-sm text-gray-600">Step-by-step guide to uploading assessment PDFs</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="success-box">
+              <p class="text-sm"><strong>✅ What to do:</strong> Click on <strong>"Quick Start Guide"</strong> (this guide) to learn the essential workflows, or choose a specific guide for detailed information.</p>
             </div>
           </section>
 
@@ -1461,92 +1617,56 @@ flowchart LR
               </div>
             </div>
 
-            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 6.2: Understanding Filter Types & Hierarchy</h3>
-            <p class="text-gray-700 mb-2">The system supports 5 filter types organized in a hierarchy:</p>
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 6.2: Apply Your Filters</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Select your filter type and value from the dropdowns</li>
+              <li>Click <strong>Add filter</strong> to add more filters if needed</li>
+              <li>Click <strong>Start Checking</strong> when ready to view results</li>
+              <li>The system will show only the data matching your filters</li>
+            </ol>
+
+            <div class="success-box">
+              <p class="text-sm"><strong>✅ Quick Tip:</strong> Start with broader filters (like School) then drill down to more specific ones (like Class or Student) to narrow your search.</p>
+            </div>
+          </section>
+
+          <!-- Section 7: Export Data -->
+          <section id="export-data" class="mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">
+              <span class="step-number">7</span>
+              Exporting Data
+            </h2>
             
-            <div class="bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200 rounded-lg p-4 mb-4">
-              <h4 class="font-semibold text-gray-800 mb-3">Filter Hierarchy (from broad to specific):</h4>
-              <div class="space-y-2 text-sm">
-                <div class="flex items-center gap-3">
-                  <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-semibold text-xs">Level 1</span>
-                  <div>
-                    <strong>District</strong> <span class="text-gray-600">or</span> <strong>Group</strong>
-                    <p class="text-xs text-gray-600">Independent filters - can use both together</p>
-                  </div>
-                </div>
-                <div class="ml-8 text-gray-400">↓</div>
-                <div class="flex items-center gap-3">
-                  <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full font-semibold text-xs">Level 2</span>
-                  <div>
-                    <strong>School</strong>
-                    <p class="text-xs text-gray-600">Selecting this makes District & Group unavailable</p>
-                  </div>
-                </div>
-                <div class="ml-8 text-gray-400">↓</div>
-                <div class="flex items-center gap-3">
-                  <span class="bg-pink-100 text-pink-800 px-3 py-1 rounded-full font-semibold text-xs">Level 3</span>
-                  <div>
-                    <strong>Class</strong>
-                    <p class="text-xs text-gray-600">Requires School filter first</p>
-                  </div>
-                </div>
-                <div class="ml-8 text-gray-400">↓</div>
-                <div class="flex items-center gap-3">
-                  <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full font-semibold text-xs">Level 4</span>
-                  <div>
-                    <strong>Student</strong>
-                    <p class="text-xs text-gray-600">Most specific - requires Class filter first</p>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <p class="text-gray-700 mb-4">
+              Export validation reports as markdown files for offline review and analysis.
+            </p>
 
-            <div class="warning-box">
-              <p class="text-sm"><strong>⚠️ Why Some Options Become Unselectable:</strong></p>
-              <ul class="list-disc ml-6 mt-2 space-y-1 text-sm">
-                <li><strong>Higher-level filters disabled:</strong> Once you select School, Class, or Student, higher-level filters (District, Group) become grayed out and unavailable. This prevents conflicting filters.</li>
-                <li><strong>Example:</strong> If you select "School = S023", you can't then add a District filter because the school already has a specific district.</li>
-                <li><strong>Lower-level filters enabled:</strong> Selecting a higher-level filter (e.g., School) enables the next level down (Class dropdown will populate with classes from that school).</li>
-                <li><strong>Exception:</strong> District and Group are at the same level and <em>can</em> be used together - they show the intersection (schools that match both).</li>
-              </ul>
-            </div>
-
-            <div class="info-box">
-              <p class="text-sm"><strong>💡 Hierarchy Rules in Practice:</strong></p>
-              <ul class="list-disc ml-6 mt-2 space-y-1 text-sm">
-                <li>✅ <strong>Allowed:</strong> District + Group (independent dimensions)</li>
-                <li>✅ <strong>Allowed:</strong> School → Class → Student (drilling down)</li>
-                <li>❌ <strong>Not Allowed:</strong> School + District (conflicting levels)</li>
-                <li>❌ <strong>Not Allowed:</strong> Student without Class first (need hierarchy)</li>
-              </ul>
-            </div>
-
-            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 6.3: Combining Multiple Filters</h3>
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 7.1: Navigate to What You Want to Export</h3>
             <ol class="list-decimal ml-6 space-y-2 text-gray-700">
-              <li>You can add multiple filters by clicking <strong>Add filter</strong> again</li>
-              <li>District and Group filters can be used together (they show intersection)</li>
-              <li>Once you select School/Class/Student, higher-level filters become unavailable</li>
-              <li>Filters work hierarchically: District → Group → School → Class → Student</li>
-            </ol>
-
-            <div class="info-box">
-              <p class="text-sm"><strong>💡 Example:</strong> To check all students in K2A at School S023, add two filters: 1) School = S023, then 2) Class = K2A.</p>
-            </div>
-
-            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 6.4: Export Filtered Data</h3>
-            <p class="text-gray-700 mb-2">After applying filters and viewing your data, you can export it for analysis:</p>
-            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
-              <li>Apply your desired filters on the home page</li>
-              <li>Click <strong>Start Checking</strong> to view the filtered results</li>
-              <li>Navigate to the level you want to export (Student, Class, School, Group, or District)</li>
-              <li>On the individual page, click the <strong>Export</strong> button in the top-right corner</li>
-              <li>The system automatically downloads a markdown (.md) file with the validation report</li>
-              <li>Open the markdown file in any text editor or markdown viewer to review the data</li>
+              <li>Go to the Checking System and navigate to a specific student, class, school, group, or district page</li>
+              <li>Make sure you're on the detailed view (not the home/filter page)</li>
             </ol>
 
             <div class="warning-box">
-              <p class="text-sm"><strong>⚠️ Note:</strong> The Export button only appears on individual checking pages (Student, Class, School, Group, District), not on the filter/home page. You must first navigate to a specific view after applying filters.</p>
+              <p class="text-sm"><strong>⚠️ Important:</strong> The Export button only appears on individual checking pages, not on the filter/home page.</p>
             </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 7.2: Click Export and Download</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>On the individual page, look for the <strong>Export</strong> button in the top-right corner</li>
+              <li>Click the button to download the markdown (.md) file</li>
+              <li>The file will be saved to your Downloads folder</li>
+              <li>Open it in any text editor or markdown viewer</li>
+            </ol>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 7.3: Understanding the Export File</h3>
+            <p class="text-gray-700 mb-2">Different export types contain different information:</p>
+            
+            <ul class="list-disc ml-6 space-y-2 text-gray-700">
+              <li><strong>Student export:</strong> Full validation report with task details, status indicators, and profile info</li>
+              <li><strong>Class export:</strong> All students in the class with completion status for each set</li>
+              <li><strong>School/Group/District export:</strong> Summary statistics and aggregated data</li>
+            </ul>
 
             <!-- Embedded Screenshot: Export Button Location (from class view) -->
             <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg bg-white">
@@ -1649,13 +1769,6 @@ flowchart LR
                 </div>
               </div>
             </div>
-
-            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 6.5: Clear Filters</h3>
-            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
-              <li>To reset and see all data, click <strong>Clear All</strong> button at the bottom of the filter card</li>
-              <li>All filter rows will be removed</li>
-              <li>Click <strong>Add filter</strong> again to start fresh</li>
-            </ol>
           </section>
 
           <!-- Learn More Section -->
@@ -1716,9 +1829,12 @@ flowchart LR
           <div class="mt-12 pt-6 border-t border-gray-200 text-center text-sm text-gray-600">
             <p><strong>4Set System</strong> - KeySteps@JC Assessment Data Processing</p>
             <p class="mt-1">The Education University of Hong Kong | Version 2025/26</p>
-            <p class="mt-2 text-xs text-gray-500">
+            <p class="mt-2 text-xs text-gray-700">
               System developed and maintained by Herman Chan | 
-              <a href="https://github.com/herman925/4Set-Server" target="_blank" class="text-blue-600 hover:underline">View on GitHub</a>
+              <a href="https://github.com/herman925/4Set-Server" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">View on GitHub</a>
+            </p>
+            <p class="mt-2 text-xs text-gray-500">
+              © 2025 All rights reserved - Herman Chan
             </p>
             <p class="mt-3">
               <a href="index.html" class="text-primary hover:underline">← Back to Home</a>
