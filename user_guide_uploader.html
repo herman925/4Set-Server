@@ -13,12 +13,38 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   <style>
     body {
       font-family: 'Inter', sans-serif;
       background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     }
+    .mermaid {
+      display: flex;
+      justify-content: center;
+      margin: 2rem 0;
+    }
   </style>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ 
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+          primaryColor: '#4A90E2',
+          primaryTextColor: '#1F2937',
+          primaryBorderColor: '#2E5C8A',
+          lineColor: '#6B7280',
+          secondaryColor: '#E8F5E9',
+          tertiaryColor: '#FFF3E0',
+          edgeLabelBackground: '#ffffff',
+          textColor: '#1F2937',
+          mainBkg: '#ffffff',
+          nodeBorder: '#6B7280'
+        }
+      });
+    });
+  </script>
 </head>
 <body class="min-h-screen">
   <!-- Header -->
@@ -381,155 +407,41 @@
             <div class="bg-gradient-to-br from-indigo-50 to-purple-50 p-6 rounded-lg border-2 border-indigo-200 mb-8">
               <h3 class="font-semibold mb-6 text-center text-lg">Complete Processing Workflow</h3>
               
-              <div class="flex flex-col items-center space-y-4">
-                <!-- Step 1: File Detection -->
-                <div class="bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold shadow-lg w-64 text-center">
-                  📂 File Detected
-                </div>
-                
-                <div class="text-2xl text-gray-400">↓</div>
-                
-                <!-- Step 2: Validation Check -->
-                <div class="relative">
-                  <div class="bg-yellow-100 border-4 border-yellow-400 px-8 py-6 transform rotate-45 w-48 h-48 flex items-center justify-center shadow-lg">
-                    <div class="transform -rotate-45 text-center font-semibold text-sm">
-                      Is filename<br/>valid?<br/>(Phase 1)
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="flex gap-12 w-full justify-center">
-                  <!-- No - Rejected -->
-                  <div class="flex flex-col items-center space-y-3">
-                    <div class="text-sm font-semibold text-red-600">NO</div>
-                    <div class="text-2xl text-gray-400">↓</div>
-                    <div class="bg-red-100 border-2 border-red-400 px-6 py-3 rounded-lg text-center shadow w-48">
-                      <div class="font-semibold text-sm text-red-700">❌ REJECTED</div>
-                      <div class="text-xs mt-1">→ Unsorted/</div>
-                    </div>
-                  </div>
-                  
-                  <!-- Yes - Continue to Phase 2 -->
-                  <div class="flex flex-col items-center space-y-3">
-                    <div class="text-sm font-semibold text-green-600">YES</div>
-                    <div class="text-2xl text-gray-400">↓</div>
-                    
-                    <!-- Phase 2 Validation -->
-                    <div class="relative">
-                      <div class="bg-orange-100 border-4 border-orange-400 px-6 py-6 transform rotate-45 w-44 h-44 flex items-center justify-center shadow-lg">
-                        <div class="transform -rotate-45 text-center font-semibold text-xs">
-                          PDF fields<br/>valid?<br/>(Phase 2)
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div class="flex gap-8">
-                      <!-- Phase 2 No -->
-                      <div class="flex flex-col items-center space-y-3">
-                        <div class="text-sm font-semibold text-red-600">NO</div>
-                        <div class="text-2xl text-gray-400">↓</div>
-                        <div class="bg-red-100 border-2 border-red-400 px-4 py-3 rounded-lg text-center shadow w-44">
-                          <div class="font-semibold text-sm text-red-700">❌ REJECTED</div>
-                          <div class="text-xs mt-1">→ Unsorted/</div>
-                        </div>
-                      </div>
-                      
-                      <!-- Phase 2 Yes - Processing -->
-                      <div class="flex flex-col items-center space-y-3">
-                        <div class="text-sm font-semibold text-green-600">YES</div>
-                        <div class="text-2xl text-gray-400">↓</div>
-                        
-                        <!-- Processing Steps -->
-                        <div class="bg-purple-100 border-2 border-purple-400 px-4 py-3 rounded-lg shadow w-52">
-                          <div class="font-semibold text-sm">🔄 Processing</div>
-                          <div class="text-xs mt-2 space-y-1">
-                            <div>1. Parse PDF fields</div>
-                            <div>2. Calculate termination</div>
-                            <div>3. Enrich metadata</div>
-                            <div>4. Prepare JSON</div>
-                          </div>
-                        </div>
-                        
-                        <div class="text-2xl text-gray-400">↓</div>
-                        
-                        <!-- Data Overwrite Check -->
-                        <div class="relative">
-                          <div class="bg-pink-100 border-4 border-pink-400 px-6 py-5 transform rotate-45 w-40 h-40 flex items-center justify-center shadow-lg">
-                            <div class="transform -rotate-45 text-center font-semibold text-xs">
-                              Data<br/>conflict?
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div class="flex gap-8">
-                          <!-- Conflict Yes -->
-                          <div class="flex flex-col items-center space-y-3">
-                            <div class="text-sm font-semibold text-orange-600">CONFLICT</div>
-                            <div class="text-2xl text-gray-400">↓</div>
-                            <div class="bg-orange-100 border-2 border-orange-400 px-4 py-3 rounded-lg text-center shadow w-44">
-                              <div class="font-semibold text-sm text-orange-700">⚠️ BLOCKED</div>
-                              <div class="text-xs mt-1">→ Unsorted/</div>
-                            </div>
-                          </div>
-                          
-                          <!-- No Conflict - Upload -->
-                          <div class="flex flex-col items-center space-y-3">
-                            <div class="text-sm font-semibold text-green-600">SAFE</div>
-                            <div class="text-2xl text-gray-400">↓</div>
-                            
-                            <!-- Upload with Retry -->
-                            <div class="bg-blue-100 border-2 border-blue-400 px-4 py-3 rounded-lg shadow w-48">
-                              <div class="font-semibold text-sm">📤 Upload to Jotform</div>
-                              <div class="text-xs mt-1">Max 3 retries + backoff</div>
-                            </div>
-                            
-                            <div class="text-2xl text-gray-400">↓</div>
-                            
-                            <!-- Upload Result -->
-                            <div class="relative">
-                              <div class="bg-teal-100 border-4 border-teal-400 px-5 py-5 transform rotate-45 w-36 h-36 flex items-center justify-center shadow-lg">
-                                <div class="transform -rotate-45 text-center font-semibold text-xs">
-                                  Upload<br/>success?
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div class="flex gap-8">
-                              <!-- Upload Failed -->
-                              <div class="flex flex-col items-center space-y-3">
-                                <div class="text-sm font-semibold text-red-600">FAILED</div>
-                                <div class="text-2xl text-gray-400">↓</div>
-                                <div class="bg-red-100 border-2 border-red-400 px-4 py-3 rounded-lg text-center shadow w-40">
-                                  <div class="font-semibold text-sm text-red-700">❌ ERROR</div>
-                                  <div class="text-xs mt-1">→ Unsorted/</div>
-                                </div>
-                              </div>
-                              
-                              <!-- Upload Success - Filing -->
-                              <div class="flex flex-col items-center space-y-3">
-                                <div class="text-sm font-semibold text-green-600">SUCCESS</div>
-                                <div class="text-2xl text-gray-400">↓</div>
-                                
-                                <!-- Filing -->
-                                <div class="bg-green-100 border-2 border-green-500 px-4 py-3 rounded-lg shadow w-48">
-                                  <div class="font-semibold text-sm text-green-700">📁 File to School</div>
-                                  <div class="text-xs mt-1">→ 97\PDF\{school}\</div>
-                                </div>
-                                
-                                <div class="text-2xl text-gray-400">↓</div>
-                                
-                                <!-- Complete -->
-                                <div class="bg-green-500 text-white px-6 py-3 rounded-full font-semibold shadow-lg">
-                                  ✅ COMPLETE
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <div class="mermaid">
+flowchart TD
+    Start([📂 File Detected]) --> Phase1{Is filename<br/>valid?<br/>Phase 1}
+    
+    Phase1 -->|NO| Reject1[❌ REJECTED<br/>→ Unsorted/]
+    Phase1 -->|YES| Phase2{PDF fields<br/>valid?<br/>Phase 2}
+    
+    Phase2 -->|NO| Reject2[❌ REJECTED<br/>→ Unsorted/]
+    Phase2 -->|YES| Process[🔄 Processing<br/>1. Parse PDF<br/>2. Calculate termination<br/>3. Enrich metadata<br/>4. Prepare JSON]
+    
+    Process --> Conflict{Data<br/>conflict?}
+    
+    Conflict -->|CONFLICT| Blocked[⚠️ BLOCKED<br/>→ Unsorted/]
+    Conflict -->|SAFE| Upload[📤 Upload to Jotform<br/>Max 3 retries + backoff]
+    
+    Upload --> UploadResult{Upload<br/>success?}
+    
+    UploadResult -->|FAILED| Error[❌ ERROR<br/>→ Unsorted/]
+    UploadResult -->|SUCCESS| File[📁 File to School<br/>→ 97\PDF\{school}\]
+    
+    File --> Complete([✅ COMPLETE])
+    
+    style Start fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    style Complete fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style Process fill:#E1BEE7,stroke:#9C27B0,color:#4A148C
+    style Upload fill:#BBDEFB,stroke:#2196F3,color:#0D47A1
+    style File fill:#C8E6C9,stroke:#4CAF50,color:#1B5E20
+    style Reject1 fill:#FFE0E0,stroke:#E57373,color:#C62828
+    style Reject2 fill:#FFE0E0,stroke:#E57373,color:#C62828
+    style Blocked fill:#FFE0B2,stroke:#FF9800,color:#E65100
+    style Error fill:#FFE0E0,stroke:#E57373,color:#C62828
+    style Phase1 fill:#FFF9E0,stroke:#FFD54F,color:#F57C00
+    style Phase2 fill:#FFE0B2,stroke:#FF9800,color:#E65100
+    style Conflict fill:#F8BBD0,stroke:#F06292,color:#880E4F
+    style UploadResult fill:#B2DFDB,stroke:#26A69A,color:#004D40
               </div>
               
               <div class="mt-6 pt-4 border-t border-indigo-200 text-center text-sm text-gray-700">
@@ -801,6 +713,72 @@
             <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">FAQs</h2>
 
             <div class="space-y-4">
+              <div class="collapsible-section">
+                <div class="collapsible-header">
+                  <h3 class="text-lg font-semibold">How secure is the Assessment Uploader? What about data privacy?</h3>
+                  <span class="text-xl">▼</span>
+                </div>
+                <div class="collapsible-content">
+                  <p class="text-gray-700 mb-3">The Assessment Uploader is designed with multiple layers of security and privacy protection:</p>
+                  
+                  <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4 rounded">
+                    <h4 class="font-semibold mb-2 text-gray-800">🔒 Data Transmission & Storage</h4>
+                    <ul class="list-disc ml-6 space-y-1 text-sm text-gray-700">
+                      <li><strong>Local-only file writing:</strong> Files written directly to your computer's local folders, never uploaded to cloud servers via browser</li>
+                      <li><strong>OneDrive encryption:</strong> Files synced through OneDrive's secure, encrypted channels</li>
+                      <li><strong>No external tracking:</strong> No analytics, no cookies, no third-party scripts monitoring your uploads</li>
+                      <li><strong>Browser-based permissions:</strong> You explicitly grant folder access permissions via native browser dialog</li>
+                    </ul>
+                  </div>
+
+                  <div class="bg-green-50 border-l-4 border-green-500 p-4 mb-4 rounded">
+                    <h4 class="font-semibold mb-2 text-gray-800">🔐 Access Control</h4>
+                    <ul class="list-disc ml-6 space-y-1 text-sm text-gray-700">
+                      <li><strong>Folder permission required:</strong> Browser requires explicit user permission to write to folders</li>
+                      <li><strong>Limited to authorized users:</strong> Only personnel with OneDrive folder access can upload</li>
+                      <li><strong>PC number tracking:</strong> Each upload tagged with PC number for audit trail</li>
+                      <li><strong>No backend authentication:</strong> System runs entirely client-side in browser (privacy-first design)</li>
+                    </ul>
+                  </div>
+
+                  <div class="bg-purple-50 border-l-4 border-purple-500 p-4 mb-4 rounded">
+                    <h4 class="font-semibold mb-2 text-gray-800">💾 File Handling</h4>
+                    <ul class="list-disc ml-6 space-y-1 text-sm text-gray-700">
+                      <li><strong>Read-only browser access:</strong> Browser only reads PDFs to write them elsewhere, never modifies originals</li>
+                      <li><strong>Metadata minimization:</strong> Only PC number stored in metadata files, no personally identifiable info</li>
+                      <li><strong>Temporary metadata:</strong> .meta.json files automatically deleted after processing</li>
+                      <li><strong>Secure filing:</strong> Processor agent moves files to organized school folders after validation</li>
+                    </ul>
+                  </div>
+
+                  <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-4 rounded">
+                    <h4 class="font-semibold mb-2 text-gray-800">🛡️ Student Data Protection</h4>
+                    <ul class="list-disc ml-6 space-y-1 text-sm text-gray-700">
+                      <li><strong>PDF validation:</strong> Processor agent validates student IDs against encrypted mapping files</li>
+                      <li><strong>Data conflict prevention:</strong> System blocks overwriting existing assessment data</li>
+                      <li><strong>No data exposure:</strong> Failed uploads moved to Unsorted/ folder, not exposed publicly</li>
+                      <li><strong>Audit trail:</strong> Each file tracked with upload source (PC number) and timestamp</li>
+                    </ul>
+                  </div>
+
+                  <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                    <h4 class="font-semibold mb-2 text-gray-800">⚠️ Security Best Practices</h4>
+                    <ul class="list-disc ml-6 space-y-1 text-sm text-gray-700">
+                      <li><strong>Use trusted devices:</strong> Don't use the uploader on public or shared computers</li>
+                      <li><strong>Verify PC number:</strong> Ensure PC number matches your assigned computer</li>
+                      <li><strong>Check OneDrive sync:</strong> Ensure files sync to authorized OneDrive account only</li>
+                      <li><strong>Keep browser updated:</strong> Use latest Chrome/Edge version for security patches</li>
+                      <li><strong>Lock your screen:</strong> Always lock computer when stepping away during uploads</li>
+                      <li><strong>Report issues immediately:</strong> Contact administrators if you notice unexpected behavior</li>
+                    </ul>
+                  </div>
+
+                  <p class="text-sm text-gray-600 mt-4 italic">
+                    <strong>Note:</strong> While the system implements strong security measures, ultimate data security also depends on user practices. Always follow institutional data protection policies and guidelines when handling student assessment data.
+                  </p>
+                </div>
+              </div>
+
               <div class="collapsible-section">
                 <div class="collapsible-header">
                   <h3 class="text-lg font-semibold">Do I need internet access to upload?</h3>

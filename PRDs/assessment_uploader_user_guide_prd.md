@@ -320,6 +320,88 @@ Failure:
 | Filing | Instant | Check filed/ folder |
 | **Total** | **~30-60 seconds** | **End-to-end** |
 
+### Processor Agent Workflow
+
+The **Processor Agent** is an autonomous PowerShell service that continuously monitors the upload folder, validates PDFs, enriches data, and submits to Jotform. Here's how it processes your uploaded files:
+
+```mermaid
+flowchart TD
+    Start([📂 File Detected]) --> Phase1{Is filename<br/>valid?<br/>Phase 1}
+    
+    Phase1 -->|NO| Reject1[❌ REJECTED<br/>→ Unsorted/]
+    Phase1 -->|YES| Phase2{PDF fields<br/>valid?<br/>Phase 2}
+    
+    Phase2 -->|NO| Reject2[❌ REJECTED<br/>→ Unsorted/]
+    Phase2 -->|YES| Process[🔄 Processing<br/>1. Parse PDF<br/>2. Calculate termination<br/>3. Enrich metadata<br/>4. Prepare JSON]
+    
+    Process --> Conflict{Data<br/>conflict?}
+    
+    Conflict -->|CONFLICT| Blocked[⚠️ BLOCKED<br/>→ Unsorted/]
+    Conflict -->|SAFE| Upload[📤 Upload to Jotform<br/>Max 3 retries + backoff]
+    
+    Upload --> UploadResult{Upload<br/>success?}
+    
+    UploadResult -->|FAILED| Error[❌ ERROR<br/>→ Unsorted/]
+    UploadResult -->|SUCCESS| File[📁 File to School<br/>→ 97\PDF\{school}\]
+    
+    File --> Complete([✅ COMPLETE])
+    
+    style Start fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    style Complete fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style Process fill:#E1BEE7,stroke:#9C27B0,color:#4A148C
+    style Upload fill:#BBDEFB,stroke:#2196F3,color:#0D47A1
+    style File fill:#C8E6C9,stroke:#4CAF50,color:#1B5E20
+    style Reject1 fill:#FFE0E0,stroke:#E57373,color:#C62828
+    style Reject2 fill:#FFE0E0,stroke:#E57373,color:#C62828
+    style Blocked fill:#FFE0B2,stroke:#FF9800,color:#E65100
+    style Error fill:#FFE0E0,stroke:#E57373,color:#C62828
+    style Phase1 fill:#FFF9E0,stroke:#FFD54F,color:#F57C00
+    style Phase2 fill:#FFE0B2,stroke:#FF9800,color:#E65100
+    style Conflict fill:#F8BBD0,stroke:#F06292,color:#880E4F
+    style UploadResult fill:#B2DFDB,stroke:#26A69A,color:#004D40
+```
+
+**Total Processing Time:** 5-30 seconds per PDF (typical)
+
+#### Validation Phases Explained
+
+**Phase 1: Filename Validation**
+- **Expected Format:** `xxxxx_YYYYMMDD_HH_MM.pdf`
+- **Checks:**
+  - ✓ 5-digit student ID
+  - ✓ Valid date format
+  - ✓ Valid time format
+  - ✓ Underscores in correct positions
+- **Example:** C1020_20251016_14_30.pdf ✅
+
+**Phase 2: PDF Content Validation**
+- **Checks:**
+  - ✓ Student ID in mapping file
+  - ✓ School ID exists
+  - ✓ Required fields present
+  - ✓ Data types correct
+  - ✓ Value ranges valid
+- **Sources:** assets/*.enc mapping files
+
+#### Data Overwrite Protection
+
+**✅ ALLOWED Updates:**
+- Filling blank/null fields
+- Updating metadata fields:
+  - student-id
+  - child-name
+  - school-id
+  - district
+  - class-id
+  - computerno
+- Same value (no change)
+
+**❌ BLOCKED Updates:**
+- Changing assessment data
+- Overwriting existing answers
+- Modifying calculated fields
+- Prevents accidental data loss
+
 ---
 
 ## Configuration and Setup
@@ -643,6 +725,43 @@ A: No. Files are written directly to your local OneDrive folder. They sync via M
 A: Yes! Open the folder in File Explorer - you'll see the PDFs and metadata files.
 
 ### Security & Privacy
+
+**Q: How secure is the Assessment Uploader? What about data privacy?**  
+A: The Assessment Uploader is designed with multiple layers of security and privacy protection:
+
+**🔒 Data Transmission & Storage**
+- **Local-only file writing:** Files written directly to your computer's local folders, never uploaded to cloud servers via browser
+- **OneDrive encryption:** Files synced through OneDrive's secure, encrypted channels
+- **No external tracking:** No analytics, no cookies, no third-party scripts monitoring your uploads
+- **Browser-based permissions:** You explicitly grant folder access permissions via native browser dialog
+
+**🔐 Access Control**
+- **Folder permission required:** Browser requires explicit user permission to write to folders
+- **Limited to authorized users:** Only personnel with OneDrive folder access can upload
+- **PC number tracking:** Each upload tagged with PC number for audit trail
+- **No backend authentication:** System runs entirely client-side in browser (privacy-first design)
+
+**💾 File Handling**
+- **Read-only browser access:** Browser only reads PDFs to write them elsewhere, never modifies originals
+- **Metadata minimization:** Only PC number stored in metadata files, no personally identifiable info
+- **Temporary metadata:** .meta.json files automatically deleted after processing
+- **Secure filing:** Processor agent moves files to organized school folders after validation
+
+**🛡️ Student Data Protection**
+- **PDF validation:** Processor agent validates student IDs against encrypted mapping files
+- **Data conflict prevention:** System blocks overwriting existing assessment data
+- **No data exposure:** Failed uploads moved to Unsorted/ folder, not exposed publicly
+- **Audit trail:** Each file tracked with upload source (PC number) and timestamp
+
+**⚠️ Security Best Practices**
+- **Use trusted devices:** Don't use the uploader on public or shared computers
+- **Verify PC number:** Ensure PC number matches your assigned computer
+- **Check OneDrive sync:** Ensure files sync to authorized OneDrive account only
+- **Keep browser updated:** Use latest Chrome/Edge version for security patches
+- **Lock your screen:** Always lock computer when stepping away during uploads
+- **Report issues immediately:** Contact administrators if you notice unexpected behavior
+
+*Note: While the system implements strong security measures, ultimate data security also depends on user practices. Always follow institutional data protection policies and guidelines when handling student assessment data.*
 
 **Q: Is it safe to grant folder permissions?**  
 A: Yes. The permission is:
