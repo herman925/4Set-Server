@@ -483,9 +483,93 @@ flowchart TD
 
             <!-- Data Overwrite Protection -->
             <h3 class="text-2xl font-semibold mb-4">Data Overwrite Protection</h3>
+
+            <!-- Why This Matters -->
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border-2 border-blue-300 mb-6">
+              <h4 class="font-semibold mb-3 text-blue-900">🔒 Why Data Overwrite Protection is Critical</h4>
+              <div class="text-sm text-gray-700 space-y-2">
+                <p><strong>Assessment data integrity is paramount.</strong> Once test administrators record student responses and upload PDFs, that data becomes the official record of the child's performance. Any accidental overwrite could:</p>
+                <ul class="list-disc ml-6 space-y-1 mt-2">
+                  <li><strong>Loss of irreplaceable data:</strong> Student responses cannot be re-administered - once lost, they're gone forever</li>
+                  <li><strong>Research validity compromise:</strong> Changing recorded answers invalidates study results and scientific conclusions</li>
+                  <li><strong>Regulatory compliance issues:</strong> Educational research requires audit trails showing data hasn't been tampered with</li>
+                  <li><strong>Accidental errors:</strong> Re-uploading the same student by mistake (e.g., wrong filename) could silently overwrite correct data</li>
+                </ul>
+                <p class="mt-3 font-semibold text-blue-800">The system prevents these scenarios by blocking any attempt to change existing assessment answers while still allowing corrections to administrative metadata (student names, school IDs, etc.).</p>
+              </div>
+            </div>
+
+            <!-- Conflict Detection Workflow -->
+            <div class="bg-gradient-to-br from-pink-50 to-red-50 p-6 rounded-lg border-2 border-pink-300 mb-6">
+              <h4 class="font-semibold mb-6 text-center text-lg">Data Overwrite Protection Workflow</h4>
+              
+              <div class="mermaid">
+flowchart TD
+    Start([New PDF Upload<br/>Attempt]) --> Parse[Parse PDF<br/>Extract Data]
+    
+    Parse --> Search{Does student<br/>submission<br/>exist?}
+    
+    Search -->|NO - New Student| AllowNew[✅ ALLOW<br/>Create New<br/>Submission]
+    Search -->|YES - Existing| CheckFields{Check Each<br/>Field}
+    
+    CheckFields --> FieldType{Field<br/>Type?}
+    
+    FieldType -->|Metadata Field| MetaCheck{Current<br/>Value?}
+    MetaCheck -->|Empty/Null| AllowMeta[✅ ALLOW<br/>Fill Empty<br/>Metadata]
+    MetaCheck -->|Has Value| AllowUpdate[✅ ALLOW<br/>Update Metadata<br/>student-id, school-id, etc.]
+    
+    FieldType -->|Assessment Data| DataCheck{Current<br/>Value?}
+    DataCheck -->|Empty/Null| AllowData[✅ ALLOW<br/>Fill Empty<br/>Assessment]
+    DataCheck -->|Has Value| BlockData[❌ BLOCK<br/>Protect Existing<br/>Assessment Data]
+    
+    AllowNew --> LogSuccess[📝 Log: Success<br/>New submission created]
+    AllowMeta --> LogSuccess
+    AllowUpdate --> LogSuccess
+    AllowData --> LogSuccess
+    
+    BlockData --> LogConflict["📝 Log: CONFLICT<br/>Field: {fieldName}<br/>Existing: {oldValue}<br/>Attempted: {newValue}"]
+    
+    LogConflict --> MoveUnsorted["⚠️ Move PDF to<br/>Unsorted/<br/>+ Create Error Log"]
+    
+    MoveUnsorted --> NotifyAdmin[🔔 Admin Can Review<br/>processor_agent.log<br/>+ PDF in Unsorted/]
+    
+    LogSuccess --> FileSchool["📁 Move PDF to<br/>97/PDF/{school}/<br/>+ Create JSON"]
+    
+    FileSchool --> Complete([✅ Upload Complete])
+    NotifyAdmin --> End([❌ Upload Blocked])
+    
+    style Start fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    style Complete fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style End fill:#E57373,stroke:#C62828,color:#fff
+    style AllowNew fill:#C8E6C9,stroke:#4CAF50,color:#1B5E20
+    style AllowMeta fill:#C8E6C9,stroke:#4CAF50,color:#1B5E20
+    style AllowUpdate fill:#C8E6C9,stroke:#4CAF50,color:#1B5E20
+    style AllowData fill:#C8E6C9,stroke:#4CAF50,color:#1B5E20
+    style BlockData fill:#FFCDD2,stroke:#E57373,color:#C62828
+    style MoveUnsorted fill:#FFE0B2,stroke:#FF9800,color:#E65100
+    style LogConflict fill:#FFF9C4,stroke:#FDD835,color:#F57F17
+    style LogSuccess fill:#E8F5E9,stroke:#66BB6A,color:#2E7D32
+    style Search fill:#E1F5FE,stroke:#03A9F4,color:#01579B
+    style CheckFields fill:#F3E5F5,stroke:#AB47BC,color:#4A148C
+    style FieldType fill:#FFF3E0,stroke:#FFA726,color:#E65100
+    style MetaCheck fill:#E0F2F1,stroke:#26A69A,color:#004D40
+    style DataCheck fill:#FCE4EC,stroke:#EC407A,color:#880E4F
+              </div>
+              
+              <div class="mt-6 p-4 bg-white rounded border border-pink-200">
+                <p class="text-sm font-semibold mb-2">Key Decision Points:</p>
+                <ol class="text-xs text-gray-700 space-y-1 ml-4">
+                  <li>1. <strong>New vs Existing:</strong> New students always allowed; existing students trigger protection checks</li>
+                  <li>2. <strong>Field Type:</strong> Metadata fields (admin data) have different rules than assessment data (student answers)</li>
+                  <li>3. <strong>Metadata Fields:</strong> Can be updated to correct administrative errors (typos in names, wrong school assignment, etc.)</li>
+                  <li>4. <strong>Assessment Data:</strong> Once recorded, cannot be changed - protects scientific integrity</li>
+                  <li>5. <strong>Empty Fields:</strong> Can always be filled, whether metadata or assessment data</li>
+                </ol>
+              </div>
+            </div>
             
             <div class="bg-gradient-to-r from-pink-50 to-red-50 p-6 rounded-lg border-2 border-pink-300 mb-6">
-              <h4 class="font-semibold mb-4 text-center">Conflict Detection Logic</h4>
+              <h4 class="font-semibold mb-4 text-center">Conflict Detection Rules</h4>
               
               <div class="grid md:grid-cols-2 gap-4">
                 <div class="bg-white rounded p-4 shadow-sm border-l-4 border-green-500">
@@ -527,6 +611,123 @@ flowchart TD
                 <p class="text-sm text-gray-800">
                   <strong>🛡️ Protection Goal:</strong> Prevent accidental data corruption while allowing metadata corrections
                 </p>
+              </div>
+            </div>
+
+            <!-- Where Blocked Updates Go -->
+            <div class="bg-gradient-to-r from-orange-50 to-yellow-50 p-6 rounded-lg border-2 border-orange-300 mb-6">
+              <h4 class="font-semibold mb-3 text-orange-900">📂 Where Do Blocked Updates Go?</h4>
+              <div class="text-sm text-gray-700 space-y-3">
+                <p>When the processor agent detects a data conflict and blocks an upload, the files are moved to a special quarantine location for review:</p>
+                
+                <div class="bg-white p-4 rounded border-l-4 border-orange-500 mt-3">
+                  <p class="font-semibold mb-2">📁 File Destination:</p>
+                  <pre class="text-xs bg-gray-100 p-2 rounded">97/PDF/Unsorted/
+├── C10207_20251016_14_30.pdf          ← Blocked PDF file
+└── C10207_20251016_14_30_ERROR.log    ← Detailed error log</pre>
+                </div>
+
+                <p><strong>What Happens:</strong></p>
+                <ol class="list-decimal ml-6 space-y-2">
+                  <li><strong>PDF moved to Unsorted/:</strong> The file is not deleted, just quarantined for manual review</li>
+                  <li><strong>Error log created:</strong> A companion .log file is created with detailed conflict information</li>
+                  <li><strong>JSON data deleted:</strong> The processed JSON is not saved to prevent corruption</li>
+                  <li><strong>Jotform not updated:</strong> No API call is made to Jotform, protecting existing data</li>
+                  <li><strong>Email notification (optional):</strong> Administrators can be notified of blocked uploads</li>
+                </ol>
+
+                <p class="mt-3"><strong>⚠️ Important:</strong> Files in Unsorted/ require manual review by administrators to determine if:</p>
+                <ul class="list-disc ml-6 space-y-1">
+                  <li>It's a legitimate re-upload attempt that should be manually processed</li>
+                  <li>It's an accidental duplicate that should be deleted</li>
+                  <li>It's a different student with a similar/wrong filename</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- How Logs Help -->
+            <div class="bg-gradient-to-r from-purple-50 to-indigo-50 p-6 rounded-lg border-2 border-purple-300 mb-6">
+              <h4 class="font-semibold mb-3 text-purple-900">📝 How Logs Help Check What Went Wrong</h4>
+              <div class="text-sm text-gray-700 space-y-3">
+                <p>The processor agent maintains detailed logs that help administrators diagnose and resolve conflicts. There are two types of logs:</p>
+
+                <div class="grid md:grid-cols-2 gap-4 mt-4">
+                  <div class="bg-white p-4 rounded border-l-4 border-purple-500">
+                    <h5 class="font-semibold mb-2">1. Processor Agent Log</h5>
+                    <p class="text-xs mb-2"><code>logs/processor_agent.log</code></p>
+                    <p class="text-xs mb-2">Main log file tracking all processing activity:</p>
+                    <ul class="text-xs space-y-1">
+                      <li>• Timestamp of each upload attempt</li>
+                      <li>• Student ID and filename</li>
+                      <li>• Conflict detection results</li>
+                      <li>• Which fields caused the conflict</li>
+                      <li>• Final disposition (Unsorted vs Filed)</li>
+                    </ul>
+                  </div>
+
+                  <div class="bg-white p-4 rounded border-l-4 border-indigo-500">
+                    <h5 class="font-semibold mb-2">2. Individual Error Logs</h5>
+                    <p class="text-xs mb-2"><code>Unsorted/{filename}_ERROR.log</code></p>
+                    <p class="text-xs mb-2">Specific log for each blocked file:</p>
+                    <ul class="text-xs space-y-1">
+                      <li>• Field-by-field comparison</li>
+                      <li>• Old value vs new value</li>
+                      <li>• Exact reason for block</li>
+                      <li>• Recommended action</li>
+                      <li>• Troubleshooting steps</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div class="bg-white p-4 rounded border border-purple-200 mt-4">
+                  <p class="font-semibold mb-2">Example Error Log Content:</p>
+                  <pre class="text-xs bg-gray-100 p-3 rounded overflow-x-auto">
+[2025-10-25 14:30:15] CONFLICT DETECTED
+Student: C10207 (陳小明)
+School: S023
+File: C10207_20251016_14_30.pdf
+
+BLOCKED FIELDS:
+├─ Field: q37_englishReceptive[0]
+│  Current: "1"  (Correct)
+│  Attempted: "0"  (Incorrect)
+│  Reason: Assessment data cannot be changed
+│
+├─ Field: q37_englishReceptive[5]  
+│  Current: "0"  (Incorrect)
+│  Attempted: "1"  (Correct)
+│  Reason: Assessment data cannot be changed
+│
+└─ Field: cm_termination_stage1
+   Current: "0"  (Passed)
+   Attempted: "1"  (Failed)
+   Reason: Termination values are protected
+
+RECOMMENDATION: 
+If the new data is correct and the existing data is wrong,
+contact the data manager to manually delete the incorrect
+submission from Jotform before re-uploading.
+
+DO NOT simply rename the file - this will create a duplicate
+student record with a different ID.</pre>
+                </div>
+
+                <div class="mt-4 p-3 bg-purple-100 border border-purple-300 rounded">
+                  <p class="font-semibold mb-2">Using Logs for Troubleshooting:</p>
+                  <ol class="text-xs space-y-1 ml-4">
+                    <li>1. <strong>Check processor_agent.log</strong> first to see when the conflict occurred and which file was involved</li>
+                    <li>2. <strong>Locate the PDF in Unsorted/</strong> folder to see the actual file that was blocked</li>
+                    <li>3. <strong>Read the {filename}_ERROR.log</strong> to understand exactly which fields conflicted and why</li>
+                    <li>4. <strong>Compare values:</strong> The log shows both the existing (protected) value and the attempted (blocked) value</li>
+                    <li>5. <strong>Determine action:</strong> Based on which value is correct, decide whether to:
+                      <ul class="list-disc ml-6 mt-1">
+                        <li>Delete the Unsorted file (if duplicate/wrong)</li>
+                        <li>Manually fix Jotform data (if existing data is wrong)</li>
+                        <li>Contact test administrator (if assessment needs re-administration)</li>
+                      </ul>
+                    </li>
+                  </ol>
+                </div>
               </div>
             </div>
 

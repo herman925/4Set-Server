@@ -385,6 +385,81 @@ flowchart TD
 
 #### Data Overwrite Protection
 
+##### 🔒 Why Data Overwrite Protection is Critical
+
+**Assessment data integrity is paramount.** Once test administrators record student responses and upload PDFs, that data becomes the official record of the child's performance. Any accidental overwrite could:
+
+- **Loss of irreplaceable data:** Student responses cannot be re-administered - once lost, they're gone forever
+- **Research validity compromise:** Changing recorded answers invalidates study results and scientific conclusions
+- **Regulatory compliance issues:** Educational research requires audit trails showing data hasn't been tampered with
+- **Accidental errors:** Re-uploading the same student by mistake (e.g., wrong filename) could silently overwrite correct data
+
+**The system prevents these scenarios by blocking any attempt to change existing assessment answers while still allowing corrections to administrative metadata (student names, school IDs, etc.).**
+
+##### Data Overwrite Protection Workflow
+
+```mermaid
+flowchart TD
+    Start([New PDF Upload<br/>Attempt]) --> Parse[Parse PDF<br/>Extract Data]
+    
+    Parse --> Search{Does student<br/>submission<br/>exist?}
+    
+    Search -->|NO - New Student| AllowNew[✅ ALLOW<br/>Create New<br/>Submission]
+    Search -->|YES - Existing| CheckFields{Check Each<br/>Field}
+    
+    CheckFields --> FieldType{Field<br/>Type?}
+    
+    FieldType -->|Metadata Field| MetaCheck{Current<br/>Value?}
+    MetaCheck -->|Empty/Null| AllowMeta[✅ ALLOW<br/>Fill Empty<br/>Metadata]
+    MetaCheck -->|Has Value| AllowUpdate[✅ ALLOW<br/>Update Metadata<br/>student-id, school-id, etc.]
+    
+    FieldType -->|Assessment Data| DataCheck{Current<br/>Value?}
+    DataCheck -->|Empty/Null| AllowData[✅ ALLOW<br/>Fill Empty<br/>Assessment]
+    DataCheck -->|Has Value| BlockData[❌ BLOCK<br/>Protect Existing<br/>Assessment Data]
+    
+    AllowNew --> LogSuccess[📝 Log: Success<br/>New submission created]
+    AllowMeta --> LogSuccess
+    AllowUpdate --> LogSuccess
+    AllowData --> LogSuccess
+    
+    BlockData --> LogConflict["📝 Log: CONFLICT<br/>Field: {fieldName}<br/>Existing: {oldValue}<br/>Attempted: {newValue}"]
+    
+    LogConflict --> MoveUnsorted["⚠️ Move PDF to<br/>Unsorted/<br/>+ Create Error Log"]
+    
+    MoveUnsorted --> NotifyAdmin[🔔 Admin Can Review<br/>processor_agent.log<br/>+ PDF in Unsorted/]
+    
+    LogSuccess --> FileSchool["📁 Move PDF to<br/>97/PDF/{school}/<br/>+ Create JSON"]
+    
+    FileSchool --> Complete([✅ Upload Complete])
+    NotifyAdmin --> End([❌ Upload Blocked])
+    
+    style Start fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    style Complete fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style End fill:#E57373,stroke:#C62828,color:#fff
+    style AllowNew fill:#C8E6C9,stroke:#4CAF50,color:#1B5E20
+    style AllowMeta fill:#C8E6C9,stroke:#4CAF50,color:#1B5E20
+    style AllowUpdate fill:#C8E6C9,stroke:#4CAF50,color:#1B5E20
+    style AllowData fill:#C8E6C9,stroke:#4CAF50,color:#1B5E20
+    style BlockData fill:#FFCDD2,stroke:#E57373,color:#C62828
+    style MoveUnsorted fill:#FFE0B2,stroke:#FF9800,color:#E65100
+    style LogConflict fill:#FFF9C4,stroke:#FDD835,color:#F57F17
+    style LogSuccess fill:#E8F5E9,stroke:#66BB6A,color:#2E7D32
+    style Search fill:#E1F5FE,stroke:#03A9F4,color:#01579B
+    style CheckFields fill:#F3E5F5,stroke:#AB47BC,color:#4A148C
+    style FieldType fill:#FFF3E0,stroke:#FFA726,color:#E65100
+    style MetaCheck fill:#E0F2F1,stroke:#26A69A,color:#004D40
+    style DataCheck fill:#FCE4EC,stroke:#EC407A,color:#880E4F
+```
+
+**Key Decision Points:**
+1. **New vs Existing:** New students always allowed; existing students trigger protection checks
+2. **Field Type:** Metadata fields (admin data) have different rules than assessment data (student answers)
+3. **Metadata Fields:** Can be updated to correct administrative errors (typos in names, wrong school assignment, etc.)
+4. **Assessment Data:** Once recorded, cannot be changed - protects scientific integrity
+5. **Empty Fields:** Can always be filled, whether metadata or assessment data
+
+##### Conflict Detection Rules
+
 **✅ ALLOWED Updates:**
 - Filling blank/null fields
 - Updating metadata fields:
@@ -397,10 +472,98 @@ flowchart TD
 - Same value (no change)
 
 **❌ BLOCKED Updates:**
-- Changing assessment data
-- Overwriting existing answers
-- Modifying calculated fields
-- Prevents accidental data loss
+- Changing assessment data:
+  - ERV answers
+  - CM answers
+  - CWR answers
+  - Termination values
+  - Background data
+- Overwriting non-empty assessment fields
+
+**🛡️ Protection Goal:** Prevent accidental data corruption while allowing metadata corrections
+
+##### 📂 Where Do Blocked Updates Go?
+
+When the processor agent detects a data conflict and blocks an upload, the files are moved to a special quarantine location for review:
+
+**File Destination:**
+```
+97/PDF/Unsorted/
+├── C10207_20251016_14_30.pdf          ← Blocked PDF file
+└── C10207_20251016_14_30_ERROR.log    ← Detailed error log
+```
+
+**What Happens:**
+1. **PDF moved to Unsorted/:** The file is not deleted, just quarantined for manual review
+2. **Error log created:** A companion .log file is created with detailed conflict information
+3. **JSON data deleted:** The processed JSON is not saved to prevent corruption
+4. **Jotform not updated:** No API call is made to Jotform, protecting existing data
+5. **Email notification (optional):** Administrators can be notified of blocked uploads
+
+**⚠️ Important:** Files in Unsorted/ require manual review by administrators to determine if:
+- It's a legitimate re-upload attempt that should be manually processed
+- It's an accidental duplicate that should be deleted
+- It's a different student with a similar/wrong filename
+
+##### 📝 How Logs Help Check What Went Wrong
+
+The processor agent maintains detailed logs that help administrators diagnose and resolve conflicts:
+
+**1. Processor Agent Log** (`logs/processor_agent.log`)
+- Timestamp of each upload attempt
+- Student ID and filename
+- Conflict detection results
+- Which fields caused the conflict
+- Final disposition (Unsorted vs Filed)
+
+**2. Individual Error Logs** (`Unsorted/{filename}_ERROR.log`)
+- Field-by-field comparison
+- Old value vs new value
+- Exact reason for block
+- Recommended action
+- Troubleshooting steps
+
+**Example Error Log Content:**
+```
+[2025-10-25 14:30:15] CONFLICT DETECTED
+Student: C10207 (陳小明)
+School: S023
+File: C10207_20251016_14_30.pdf
+
+BLOCKED FIELDS:
+├─ Field: q37_englishReceptive[0]
+│  Current: "1"  (Correct)
+│  Attempted: "0"  (Incorrect)
+│  Reason: Assessment data cannot be changed
+│
+├─ Field: q37_englishReceptive[5]  
+│  Current: "0"  (Incorrect)
+│  Attempted: "1"  (Correct)
+│  Reason: Assessment data cannot be changed
+│
+└─ Field: cm_termination_stage1
+   Current: "0"  (Passed)
+   Attempted: "1"  (Failed)
+   Reason: Termination values are protected
+
+RECOMMENDATION: 
+If the new data is correct and the existing data is wrong,
+contact the data manager to manually delete the incorrect
+submission from Jotform before re-uploading.
+
+DO NOT simply rename the file - this will create a duplicate
+student record with a different ID.
+```
+
+**Using Logs for Troubleshooting:**
+1. **Check processor_agent.log** first to see when the conflict occurred and which file was involved
+2. **Locate the PDF in Unsorted/** folder to see the actual file that was blocked
+3. **Read the {filename}_ERROR.log** to understand exactly which fields conflicted and why
+4. **Compare values:** The log shows both the existing (protected) value and the attempted (blocked) value
+5. **Determine action:** Based on which value is correct, decide whether to:
+   - Delete the Unsorted file (if duplicate/wrong)
+   - Manually fix Jotform data (if existing data is wrong)
+   - Contact test administrator (if assessment needs re-administration)
 
 ---
 
