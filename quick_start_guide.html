@@ -1067,7 +1067,20 @@ flowchart LR
             </ol>
 
             <!-- Embedded Screenshot: Student Detail View - Built from actual checking_system_4_student.html -->
-            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg bg-white">
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg bg-white student-view-preview-container" style="position: relative;">
+              <!-- "See More" button - shown on hover -->
+              <button 
+                class="student-view-enlarge-btn" 
+                onclick="openStudentViewModal()"
+                style="position: absolute; top: 12px; right: 12px; z-index: 50; background-color: rgba(43, 57, 144, 0.95); color: white; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.2s ease; cursor: pointer; border: none;"
+                title="See More"
+              >
+                <span style="display: flex; align-items: center; gap: 6px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+                  See More
+                </span>
+              </button>
+              
               <div class="p-4">
                 <!-- Header Navigation Bar (from actual system) -->
                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
@@ -1190,6 +1203,17 @@ flowchart LR
                 </div>
               </div>
             </div>
+            
+            <style>
+              .student-view-preview-container:hover .student-view-enlarge-btn {
+                opacity: 1 !important;
+              }
+              .student-view-enlarge-btn:hover {
+                background-color: rgba(43, 57, 144, 1) !important;
+                transform: translateY(-2px);
+                box-shadow: 0 6px 16px rgba(0,0,0,0.3) !important;
+              }
+            </style>
 
             <div class="info-box">
               <p class="text-sm font-semibold mb-2">💡 Status Indicators</p>
@@ -1212,7 +1236,20 @@ flowchart LR
             </ol>
 
             <!-- Embedded Screenshot: Class View - Built from actual checking_system_3_class.html -->
-            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg bg-white">
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg bg-white class-view-preview-container" style="position: relative;">
+              <!-- "See More" button - shown on hover -->
+              <button 
+                class="class-view-enlarge-btn" 
+                onclick="openClassViewModal()"
+                style="position: absolute; top: 12px; right: 12px; z-index: 50; background-color: rgba(43, 57, 144, 0.95); color: white; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.2s ease; cursor: pointer; border: none;"
+                title="See More"
+              >
+                <span style="display: flex; align-items: center; gap: 6px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+                  See More
+                </span>
+              </button>
+              
               <div class="p-4">
                 <!-- Header Navigation Bar (breadcrumb from actual system) -->
                 <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
@@ -1378,6 +1415,17 @@ flowchart LR
                 </div>
               </div>
             </div>
+            
+            <style>
+              .class-view-preview-container:hover .class-view-enlarge-btn {
+                opacity: 1 !important;
+              }
+              .class-view-enlarge-btn:hover {
+                background-color: rgba(43, 57, 144, 1) !important;
+                transform: translateY(-2px);
+                box-shadow: 0 6px 16px rgba(0,0,0,0.3) !important;
+              }
+            </style>
 
             <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 4.4: Check a Whole School</h3>
             <ol class="list-decimal ml-6 space-y-2 text-gray-700">
@@ -1389,7 +1437,20 @@ flowchart LR
             </ol>
 
             <!-- Embedded Screenshot: School View -->
-            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg school-view-preview-container" style="position: relative;">
+              <!-- "See More" button - shown on hover -->
+              <button 
+                class="school-view-enlarge-btn" 
+                onclick="openSchoolViewModal()"
+                style="position: absolute; top: 12px; right: 12px; z-index: 50; background-color: rgba(43, 57, 144, 0.95); color: white; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.2s ease; cursor: pointer; border: none;"
+                title="See More"
+              >
+                <span style="display: flex; align-items: center; gap: 6px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+                  See More
+                </span>
+              </button>
+              
               <div class="bg-white p-6">
                 <div class="mb-4 pb-4 border-b">
                   <h2 class="text-2xl font-bold text-gray-800 mb-1">School S023</h2>
@@ -1477,6 +1538,17 @@ flowchart LR
                 </div>
               </div>
             </div>
+            
+            <style>
+              .school-view-preview-container:hover .school-view-enlarge-btn {
+                opacity: 1 !important;
+              }
+              .school-view-enlarge-btn:hover {
+                background-color: rgba(43, 57, 144, 1) !important;
+                transform: translateY(-2px);
+                box-shadow: 0 6px 16px rgba(0,0,0,0.3) !important;
+              }
+            </style>
 
             <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 4.5: Check a Whole Group</h3>
             <ol class="list-decimal ml-6 space-y-2 text-gray-700">
@@ -2322,6 +2394,9 @@ flowchart LR
         closeHomepageModal();
         closeUploadInterfaceModal();
         closeCheckingHomeModal();
+        closeStudentViewModal();
+        closeClassViewModal();
+        closeSchoolViewModal();
       }
     });
 
@@ -2362,12 +2437,69 @@ flowchart LR
       document.body.style.overflow = '';
     }
     
+    // Student View Modal Functions
+    function openStudentViewModal() {
+      const modal = document.getElementById('studentViewModal');
+      if (!modal) return;
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+    
+    function closeStudentViewModal() {
+      const modal = document.getElementById('studentViewModal');
+      if (!modal) return;
+      modal.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+    
+    // Class View Modal Functions
+    function openClassViewModal() {
+      const modal = document.getElementById('classViewModal');
+      if (!modal) return;
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+    
+    function closeClassViewModal() {
+      const modal = document.getElementById('classViewModal');
+      if (!modal) return;
+      modal.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+    
+    // School View Modal Functions
+    function openSchoolViewModal() {
+      const modal = document.getElementById('schoolViewModal');
+      if (!modal) return;
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+    
+    function closeSchoolViewModal() {
+      const modal = document.getElementById('schoolViewModal');
+      if (!modal) return;
+      modal.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+    
     document.getElementById('uploadInterfaceModal')?.addEventListener('click', function(e) {
       if (e.target === this) closeUploadInterfaceModal();
     });
     
     document.getElementById('checkingHomeModal')?.addEventListener('click', function(e) {
       if (e.target === this) closeCheckingHomeModal();
+    });
+    
+    document.getElementById('studentViewModal')?.addEventListener('click', function(e) {
+      if (e.target === this) closeStudentViewModal();
+    });
+    
+    document.getElementById('classViewModal')?.addEventListener('click', function(e) {
+      if (e.target === this) closeClassViewModal();
+    });
+    
+    document.getElementById('schoolViewModal')?.addEventListener('click', function(e) {
+      if (e.target === this) closeSchoolViewModal();
     });
   </script>
   
@@ -2465,6 +2597,179 @@ flowchart LR
             <button class="bg-gray-200 text-gray-700 px-5 py-2 rounded-full text-sm font-semibold">Clear All</button>
             <button class="bg-blue-600 text-white px-6 py-2 rounded-full text-sm font-semibold">Start Checking</button>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Student View Modal for Step 4.2 (Brief summary) -->
+  <div id="studentViewModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-[9999]" style="display: none;">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-5xl w-full mx-4 relative overflow-hidden" style="max-height: 90vh; overflow-y: auto;">
+      <div class="sticky top-0 bg-gradient-to-r from-primary to-indigo-600 text-white px-8 py-6 rounded-t-2xl z-10">
+        <div class="flex items-center justify-between">
+          <h2 class="text-2xl font-bold">Student View Interface</h2>
+          <button onclick="closeStudentViewModal()" class="text-white hover:bg-white/20 rounded-full p-2 transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <p class="text-sm opacity-90 mt-2">Check individual student assessment completion and data quality</p>
+      </div>
+      <div class="p-8">
+        <div class="bg-gray-50 border-2 border-gray-300 rounded-lg p-6 mb-6">
+          <h3 class="font-semibold text-gray-800 mb-4">Key Elements:</h3>
+          <div class="space-y-4">
+            <div class="flex items-start gap-3">
+              <div class="w-3 h-3 rounded-full bg-blue-500 mt-1"></div>
+              <div>
+                <strong>Breadcrumb Navigation:</strong> Shows path to student (District → Group → School → Class → Student)
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <div class="w-3 h-3 rounded-full bg-blue-500 mt-1"></div>
+              <div>
+                <strong>Student Profile Panel:</strong> Displays student ID, school, class, and personal details
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <div class="w-3 h-3 rounded-full bg-green-500 mt-1"></div>
+              <div>
+                <strong>Task Status Overview:</strong> Shows completion status (Complete, Post-term, Incomplete, Not started) for all assessments
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <div class="w-3 h-3 rounded-full bg-purple-500 mt-1"></div>
+              <div>
+                <strong>Task Progress Section:</strong> Lists all tasks (ERV, CM, CWR, TGMD) with completion scores
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded">
+          <h4 class="font-semibold text-blue-900 mb-3">💡 Status Indicators</h4>
+          <ul class="space-y-2 text-sm text-gray-700">
+            <li>• <strong>🟢 Green circle:</strong> Task complete</li>
+            <li>• <strong>🟡 Yellow circle:</strong> Post-termination data</li>
+            <li>• <strong>🔴 Red circle:</strong> Incomplete assessment</li>
+            <li>• <strong>⚪ Grey circle:</strong> Not started</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Class View Modal for Step 4.3 (Brief summary) -->
+  <div id="classViewModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-[9999]" style="display: none;">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-5xl w-full mx-4 relative overflow-hidden" style="max-height: 90vh; overflow-y: auto;">
+      <div class="sticky top-0 bg-gradient-to-r from-primary to-indigo-600 text-white px-8 py-6 rounded-t-2xl z-10">
+        <div class="flex items-center justify-between">
+          <h2 class="text-2xl font-bold">Class View Interface</h2>
+          <button onclick="closeClassViewModal()" class="text-white hover:bg-white/20 rounded-full p-2 transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <p class="text-sm opacity-90 mt-2">View all students in a class with completion heatmap</p>
+      </div>
+      <div class="p-8">
+        <div class="bg-gray-50 border-2 border-gray-300 rounded-lg p-6 mb-6">
+          <h3 class="font-semibold text-gray-800 mb-4">Key Elements:</h3>
+          <div class="space-y-4">
+            <div class="flex items-start gap-3">
+              <div class="w-3 h-3 rounded-full bg-blue-500 mt-1"></div>
+              <div>
+                <strong>Class Profile Panel:</strong> Shows class details (grade, student count, teacher, district, group)
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <div class="w-3 h-3 rounded-full bg-green-500 mt-1"></div>
+              <div>
+                <strong>Class-level Task Status:</strong> Set completion percentages (Set 1: 88%, Set 2: 92%, Set 3: 76%, Set 4: 84%)
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <div class="w-3 h-3 rounded-full bg-purple-500 mt-1"></div>
+              <div>
+                <strong>Student List Table:</strong> Grid showing each student's completion status for each Set with color-coded circles
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <div class="w-3 h-3 rounded-full bg-amber-500 mt-1"></div>
+              <div>
+                <strong>View Mode Selector:</strong> Switch between "By Set" and "By Task" views
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded">
+          <h4 class="font-semibold text-blue-900 mb-3">💡 Usage Tips</h4>
+          <ul class="space-y-2 text-sm text-gray-700">
+            <li>• Click student name to drill down to individual student view</li>
+            <li>• Filter dropdown lets you show "All Students", "With Data Only", or "Incomplete Only"</li>
+            <li>• Export button saves class data for offline analysis</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- School View Modal for Step 4.4 (Brief summary) -->
+  <div id="schoolViewModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-[9999]" style="display: none;">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-5xl w-full mx-4 relative overflow-hidden" style="max-height: 90vh; overflow-y: auto;">
+      <div class="sticky top-0 bg-gradient-to-r from-primary to-indigo-600 text-white px-8 py-6 rounded-t-2xl z-10">
+        <div class="flex items-center justify-between">
+          <h2 class="text-2xl font-bold">School View Interface</h2>
+          <button onclick="closeSchoolViewModal()" class="text-white hover:bg-white/20 rounded-full p-2 transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <p class="text-sm opacity-90 mt-2">Aggregated statistics for all classes in a school</p>
+      </div>
+      <div class="p-8">
+        <div class="bg-gray-50 border-2 border-gray-300 rounded-lg p-6 mb-6">
+          <h3 class="font-semibold text-gray-800 mb-4">Key Elements:</h3>
+          <div class="space-y-4">
+            <div class="flex items-start gap-3">
+              <div class="w-3 h-3 rounded-full bg-blue-500 mt-1"></div>
+              <div>
+                <strong>School Header:</strong> School ID, full name in Chinese/English, and district
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <div class="w-3 h-3 rounded-full bg-green-500 mt-1"></div>
+              <div>
+                <strong>Class Summary Table:</strong> Lists all classes with student counts and task completion percentages
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <div class="w-3 h-3 rounded-full bg-amber-500 mt-1"></div>
+              <div>
+                <strong>Progress Bars:</strong> Visual bars for ERV, CM, CWR completion rates per class
+              </div>
+            </div>
+            <div class="flex items-start gap-3">
+              <div class="w-3 h-3 rounded-full bg-purple-500 mt-1"></div>
+              <div>
+                <strong>Overall Badge:</strong> Color-coded badge showing overall class completion percentage
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded">
+          <h4 class="font-semibold text-blue-900 mb-3">💡 Usage Tips</h4>
+          <ul class="space-y-2 text-sm text-gray-700">
+            <li>• Click class row to drill down to class-level details</li>
+            <li>• Green bars (>80%) indicate good progress</li>
+            <li>• Yellow bars (60-80%) need attention</li>
+            <li>• Red bars (<60%) require immediate follow-up</li>
+          </ul>
         </div>
       </div>
     </div>
