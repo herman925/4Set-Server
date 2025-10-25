@@ -32,11 +32,15 @@
         theme: 'base',
         themeVariables: {
           primaryColor: '#4A90E2',
-          primaryTextColor: '#fff',
+          primaryTextColor: '#1F2937',
           primaryBorderColor: '#2E5C8A',
           lineColor: '#6B7280',
           secondaryColor: '#E8F5E9',
-          tertiaryColor: '#FFF3E0'
+          tertiaryColor: '#FFF3E0',
+          edgeLabelBackground: '#ffffff',
+          textColor: '#1F2937',
+          mainBkg: '#ffffff',
+          nodeBorder: '#6B7280'
         }
       });
     });
@@ -956,9 +960,9 @@ flowchart TD
     style Red fill:#FFE0E0,stroke:#E57373,color:#C62828
     style Yellow fill:#FFF9E0,stroke:#FFD54F,color:#F57C00
     style Green fill:#E0F7E0,stroke:#81C784,color:#2E7D32
-    style Q1 fill:#F3E5F5,stroke:#9C27B0
-    style Q2 fill:#FFF3E0,stroke:#FF9800
-    style Q3 fill:#E8F5E9,stroke:#4CAF50
+    style Q1 fill:#F3E5F5,stroke:#9C27B0,color:#4A148C
+    style Q2 fill:#FFF3E0,stroke:#FF9800,color:#E65100
+    style Q3 fill:#E8F5E9,stroke:#4CAF50,color:#1B5E20
               </div>
               
               <div class="mt-6 p-4 bg-white rounded border">
@@ -1362,10 +1366,10 @@ flowchart TD
     
     style Start fill:#4A90E2,stroke:#2E5C8A,color:#fff
     style End fill:#4CAF50,stroke:#2E7D32,color:#fff
-    style CheckCache fill:#F3E5F5,stroke:#9C27B0
-    style SyncDone fill:#FFF3E0,stroke:#FF9800
-    style NeedRefresh fill:#E8F5E9,stroke:#4CAF50
-    style ChooseOption fill:#E1F5FE,stroke:#0288D1
+    style CheckCache fill:#F3E5F5,stroke:#9C27B0,color:#4A148C
+    style SyncDone fill:#FFF3E0,stroke:#FF9800,color:#E65100
+    style NeedRefresh fill:#E8F5E9,stroke:#4CAF50,color:#1B5E20
+    style ChooseOption fill:#E1F5FE,stroke:#0288D1,color:#01579B
     style ClickRed fill:#FFE0E0,stroke:#E57373,color:#C62828
     style Syncing fill:#FFE0B2,stroke:#FF9800,color:#E65100
     style GreenPill fill:#E0F7E0,stroke:#81C784,color:#2E7D32
