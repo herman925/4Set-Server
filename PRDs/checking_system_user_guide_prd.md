@@ -155,13 +155,15 @@ District (地區)
 
 ### Homepage Layout
 
+The Checking System homepage provides **four primary navigation options** to access data from different starting points:
+
 ```
 ┌────────────────────────────────────────┐
 │  4Set Checking System                  │
 │  [System Status] [Cache Status]        │
 ├────────────────────────────────────────┤
 │                                        │
-│  HIERARCHY LEVELS:                     │
+│  NAVIGATION OPTIONS:                   │
 │                                        │
 │  📊 District View                      │
 │      View by district (Shatin, etc.)   │
@@ -177,6 +179,11 @@ District (地區)
 │                                        │
 └────────────────────────────────────────┘
 ```
+
+In addition to these navigation options, the homepage includes:
+- **System status pills** showing decryption and cache status
+- **Filter configuration panel** for advanced data filtering
+- **Recent checks** history for quick access to previously viewed data
 
 ### Navigation Breadcrumbs
 
@@ -240,6 +247,14 @@ Click any student to see detailed assessment view.
 ---
 
 ## Understanding Data Views
+
+The Checking System provides **five hierarchical data views** that allow you to drill down from the broadest overview to individual student details:
+
+1. **District View** - High-level overview by geographic region
+2. **Group View** - Overview by project group assignment
+3. **School View** - Detailed view of individual school performance
+4. **Class View** - All students within a specific classroom
+5. **Student View** - Complete assessment details for one student
 
 ### District View
 
@@ -450,26 +465,41 @@ Both By Class and By Student views support filtering:
 ├─────────────────────────────────────────┤
 │  TASK PROGRESS                          │
 │                                         │
-│  Set 1: Background Information          │
-│  ✅ Background Survey      12/12 Q's    │
+│  Set 1 (第一組)                         │
+│  ✅ ERV (English Receptive Vocabulary)  │
+│  ✅ SYM (Symbolic Reasoning)            │
+│  ✅ Theory of Mind                      │
+│  ⚠️  Chinese Word Reading               │
 │                                         │
-│  Set 2: Language Tasks                  │
-│  ✅ ERV (English)          36/36 Q's    │
-│  ⚠️  Chinese Word Reading  58/60 Q's    │
-│  ✅ CM (Chinese)           22/22 Q's    │
+│  Set 2 (第二組)                         │
+│  ✅ TEC (Male/Female - gender-specific) │
+│  ✅ Math Pattern                        │
+│  ✅ CCM (Cross-Cultural Mathematic)     │
 │                                         │
-│  Set 3: Cognitive Tasks                 │
-│  ✅ SYM                    20/20 Q's    │
-│  ✅ NONSYM                 20/20 Q's    │
-│  🔴 Math Pattern           0/20  Q's    │
+│  Set 3 (第三組)                         │
+│  ✅ HTKS (Head-Toe-Knee-Shoulder)       │
+│  ✅ EPN (Early Problem Numeracy)        │
+│  🔴 CM (Chinese Morphology)             │
 │                                         │
-│  Set 4: Social-Emotional                │
-│  ✅ TEC (Male)             15/15 Q's    │
-│  ✅ Theory of Mind         4/4   Q's    │
+│  Set 4 (第四組)                         │
+│  ✅ Fine Motor                          │
+│  ✅ TGMD (Test of Gross Motor Dev.)     │
+│  ✅ MF (Movement & Fitness)             │
 │                                         │
 │  [Expand each task for details]         │
 └─────────────────────────────────────────┘
 ```
+
+**The 4 Sets Organization:**
+
+The assessment tasks are organized into 4 sets based on the testing protocol:
+
+- **Set 1 (第一組):** ERV, SYM, Theory of Mind, Chinese Word Reading
+- **Set 2 (第二組):** TEC (gender-conditional: TEC_Male or TEC_Female), Math Pattern, CCM  
+- **Set 3 (第三組):** HTKS, EPN, CM
+- **Set 4 (第四組):** Fine Motor, TGMD, MF
+
+**Note:** TEC has two versions (TEC_Male and TEC_Female) - only one appears per student based on their gender.
 
 #### Task Details (Expanded)
 
@@ -754,6 +784,40 @@ Click any task to see question-level details:
 
 ## Status Indicators and Meanings
 
+### Status Determination Flowchart
+
+The following flowchart shows how the system determines the status indicator for each task:
+
+```mermaid
+flowchart TD
+    Start([Task Submitted]) --> Q1{Any questions<br/>answered?}
+    
+    Q1 -->|NO| Grey[⭕ GREY<br/>Not Started]
+    Q1 -->|YES| Q2{All required<br/>questions<br/>answered?}
+    
+    Q2 -->|NO| Red[🔴 RED<br/>Incomplete]
+    Q2 -->|YES| Q3{Post-termination<br/>answers<br/>detected?}
+    
+    Q3 -->|YES| Yellow[⚠️ YELLOW<br/>Post-termination<br/>Activity]
+    Q3 -->|NO| Green[✅ GREEN<br/>Complete]
+    
+    style Start fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    style Grey fill:#E0E0E0,stroke:#9E9E9E,color:#333
+    style Red fill:#FFE0E0,stroke:#E57373,color:#C62828
+    style Yellow fill:#FFF9E0,stroke:#FFD54F,color:#F57C00
+    style Green fill:#E0F7E0,stroke:#81C784,color:#2E7D32
+    style Q1 fill:#F3E5F5,stroke:#9C27B0
+    style Q2 fill:#FFF3E0,stroke:#FF9800
+    style Q3 fill:#E8F5E9,stroke:#4CAF50
+```
+
+**Decision Logic:**
+
+1. **Grey (⭕):** Zero questions answered → Task not started
+2. **Red (🔴):** Some but not all required questions answered → Incomplete
+3. **Yellow (⚠️):** All required questions answered BUT answers exist after termination point → Post-termination activity (data quality issue)
+4. **Green (✅):** All required questions answered AND no post-termination answers → Complete and verified
+
 ### Task Status Colors
 
 The Checking System uses a color-coded status system:
@@ -768,26 +832,30 @@ The Checking System uses a color-coded status system:
 
 **What to do:** Nothing - task is complete and accurate
 
-#### ⚠️ Yellow - Complete but Needs Review
+#### ⚠️ Yellow - Complete but Needs Review (Post-Termination Activity)
 
 **Meaning:**
-- All questions answered BUT
-- Termination rule mismatch detected
-- Recorded decision ≠ calculated result
-- Possible recording error
+- All required questions answered BUT
+- Answers were recorded AFTER termination point
+- Post-termination data detected (data quality issue)
+- Administrator continued testing beyond where termination should have occurred
 
 **What to do:**
 1. Expand task details
-2. Review termination rule comparison
-3. Manually verify correctness
-4. Document if error found
+2. Review termination point and post-termination answers
+3. Verify if termination rules were correctly applied
+4. Document the issue - post-termination data indicates:
+   - Administrator may not have recognized termination trigger
+   - Testing protocol not followed correctly
+   - Possible need for administrator retraining
 
 **Example:**
 ```
-Task: CM Stage 1
-Recorded:   "0" (Passed)
-Calculated: "1" (Should Terminate)
-Action: Verify which is correct
+Task: CWR (Chinese Word Reading)
+Termination: Triggered at Q24 (10 consecutive incorrect)
+But student has answers for Q25-Q30 (post-termination)
+Status: Yellow ⚠️ - Review needed
+Action: Verify termination was correct, document protocol deviation
 ```
 
 #### 🔴 Red - Incomplete
@@ -862,127 +930,172 @@ Visual bars show completion percentage:
 
 ## Filters and Search
 
-### Filter Options
+The Checking System homepage features a powerful **Filter Configuration Panel** that allows you to narrow down data before viewing it. This advanced filtering system works independently from the navigation hierarchy.
 
-#### By Status
+### Homepage Filter Panel
 
-```
-┌────────────────┐
-│ Status Filter  │
-├────────────────┤
-│ ☑ Complete     │
-│ ☑ In Progress  │
-│ ☑ Incomplete   │
-│ ☐ Not Started  │
-└────────────────┘
-```
+The filter panel appears on the Checking System homepage (`checking_system_home.html`) and includes:
 
-**Use cases:**
-- Hide completed students (focus on issues)
-- Show only incomplete (action items)
-- View all for comprehensive review
+1. **Filter chips display** - Shows currently active filters
+2. **Configure Filters section** - Add and configure multiple filter criteria
+3. **Filter count indicator** - Shows how many filters are applied
+4. **Recent checks** - Quick access to previously used filter combinations
 
-#### By Date Range
+### How to Use Filters
 
-```
-From: [2025-09-01]  To: [2025-09-30]
-```
+#### Adding Filters
 
-**Use cases:**
-- View submissions from specific period
-- Compare this month vs last month
-- Generate period-specific reports
+1. Click **"Add filter"** button in the Configure Filters section
+2. A new filter row appears with dropdown selectors
+3. Choose filter type from available options:
+   - **District** - Filter by geographic district (e.g., Shatin, Tuen Mun)
+   - **Group** - Filter by project group (1-5)
+   - **School** - Filter by specific school ID or name
+   - **Class** - Filter by classroom ID
+   - **Student** - Filter by student Core ID
+   - **Grade** - Filter by grade level (K1, K2, K3)
 
-#### By School/Class
+4. Select specific value for your chosen filter type
+5. Click **"Start Checking"** to apply filters and view results
 
-```
-School: [S023 - ABC Primary]
-Class:  [C-023-03]
-```
+#### Filter Rules and Hierarchy
 
-**Use cases:**
-- Focus on specific school/class
-- Compare classes within school
-- Track specific cohort
+**Important filtering behavior:**
 
-#### By Task
+- **District and Group are independent** - You can use both simultaneously to narrow results (e.g., "Group 1 schools in Shatin district")
+- **School/Class/Student are hierarchical** - Once you select a lower level (e.g., School), higher incompatible levels become unavailable to prevent conflicts
+- **Multiple filters of same type** - You can add multiple filters of the same type to create "OR" conditions (e.g., "School A OR School B")
+
+**Example filter combinations:**
 
 ```
-Task: [ERV] [CM] [CWR] [All]
+Valid:
+✓ District: Shatin + Group: 1
+  → Shows all Group 1 schools in Shatin
+
+✓ District: Shatin + School: S023
+  → Shows School S023 (must be in Shatin)
+
+✓ School: S023 + Class: C-023-01
+  → Shows Class C-023-01 in School S023
+
+Invalid:
+✗ School: S023 + District: Tuen Mun
+  → Conflicting if S023 is not in Tuen Mun
 ```
 
-**Use cases:**
-- Check completion of specific task
-- Identify systematic issues with one task
-- Focus data quality review
+#### Removing Filters
+
+- Click the **X** button on any filter chip to remove individual filters
+- Click **"Clear All"** button to remove all filters at once
+- Filters persist until manually cleared or page is refreshed
+
+### School and Class Page Filters
+
+In addition to homepage filters, **School View** and **Class View** pages have their own built-in filtering:
+
+#### School View Filters
+
+Located within the School page itself (not the homepage):
+
+1. **Data Filter** (Dropdown)
+   - **All:** Show all classes/students
+   - **With Data Only:** Show only those with submission data
+   - **Incomplete Only:** Show only those with incomplete tasks
+
+2. **Grade Filter** (Button → Modal)
+   - **All Grades:** Show all classes/students
+   - **K1:** Show only K1 (23/24 academic year) classes/students
+   - **K2:** Show only K2 (24/25 academic year) classes/students  
+   - **K3:** Show only K3 (25/26 academic year) classes/students
+   - **Others:** Show classes/students with grade 0 or unspecified
+
+3. **View Mode Toggle**
+   - **By Class:** Show classes with Set 1-4 completion
+   - **By Student:** Show individual students
+     - **By Set:** Student view with Set 1-4 status
+     - **By Task:** Student view with individual task completion
+
+**How to use School filters:**
+
+```
+1. Navigate to a School page
+2. Look for filter dropdowns above the data table
+3. Select "Incomplete Only" from Data Filter
+4. Click "Grade Filter" button and select "K1"
+5. Table now shows only K1 students/classes with incomplete tasks
+```
+
+#### Class View Filters
+
+Class pages support:
+- **Sort by column** - Click any column header to sort
+- **Filter by status** - Use status dropdown to show only specific completion states
+- No grade filter (all students in a class are same grade)
 
 ### Search Functionality
 
-#### Search by Student ID
+#### Direct Student Search
 
-```
-Search: [C10207]  [Search]
-```
+From the homepage, you can use "Student Search" to:
+1. Enter a student Core ID (e.g., C10207)
+2. System jumps directly to that student's detail page
+3. Bypasses all hierarchy navigation
 
-**Features:**
-- Instant search as you type
-- Fuzzy matching (partial IDs)
-- Auto-suggest from database
+**Note:** Current implementation uses filter-based approach. A dedicated search box may be added in future updates.
 
-**Example:**
-```
-Type: "102"
-Results:
-  C10207 - 陳小明
-  C10208 - 李小華
-  C10209 - 王小美
-```
+### Filter Use Cases
 
-#### Search by Student Name
-
+#### Use Case 1: Review all incomplete K1 students in Shatin
 ```
-Search: [陳小明]  [Search]
+Homepage Filters:
+- District: Shatin
+- Grade: K1
+
+Then navigate to School → toggle "By Student" → apply "Incomplete Only" filter
 ```
 
-**Features:**
-- Chinese and English names
-- Partial name matching
-- Case-insensitive
-
-#### Search by School
-
+#### Use Case 2: Check specific school's progress
 ```
-Search: [ABC Primary]  [Search]
+Homepage Filter:
+- School: S023
+
+Click "Start Checking" → View school summary → Review by class or student
 ```
 
-**Features:**
-- School ID or name
-- Chinese or English
-- Shows all students in school
-
-### Advanced Filters
-
-#### Combined Filters
-
+#### Use Case 3: Monitor Group 1 completion rates
 ```
-Status: Incomplete
-Task: ERV
-Date: Last 30 days
-School: S023
+Homepage Filter:
+- Group: 1
+
+View all Group 1 schools → Identify lagging schools → Drill down
 ```
 
-**Result:** All incomplete ERV tasks for School S023 in last 30 days
-
-#### Saved Filter Sets
-
+#### Use Case 4: Find all students with specific task incomplete
 ```
-My Filters:
-- Weekly Review (Incomplete + Last 7 days)
-- Quality Check (Yellow status + All tasks)
-- Not Started (Grey status + All schools)
+1. Navigate to School page
+2. Toggle "By Student" → "By Task" view
+3. Scroll horizontally to find the task column
+4. Visually identify red/yellow statuses
+(Note: Task-specific filtering planned for future update)
 ```
 
-**Save frequently used filter combinations for quick access**
+### Advanced Filtering Tips
+
+**Combine homepage and page-level filters:**
+- Use homepage filters to get to the right School/Class
+- Use page-level filters to narrow within that view
+- Example: Homepage → "District: Shatin" → School S023 → "Incomplete Only" → "Grade: K1"
+
+**Save time with Recent Checks:**
+- After applying filters and viewing data, your filter combination is saved
+- Access it again from "Recent Checks" section on homepage
+- No need to reconfigure the same filters repeatedly
+
+**Filter performance:**
+- Fewer filters = faster loading
+- Highly specific filters (School/Class/Student) load fastest
+- District/Group filters process more data
 
 ---
 
@@ -1262,6 +1375,219 @@ Average Completion: 83%
 3. Re-upload PDF if needed
 4. Document if intentionally skipped
 
+### How to Check Console Errors and Report to Admin
+
+When you encounter unexpected behavior or errors in the Checking System, checking the browser console can help identify the root cause. Follow these detailed steps to access, interpret, and report console errors to administrators.
+
+#### Step 1: Open Browser Developer Tools
+
+**For Chrome/Edge:**
+1. Press `F12` on your keyboard, OR
+2. Right-click anywhere on the page → Select **"Inspect"**, OR
+3. Click the three-dot menu (⋮) → **More tools** → **Developer tools**
+
+**For Firefox:**
+1. Press `F12` on your keyboard, OR
+2. Right-click anywhere on the page → Select **"Inspect Element"**, OR
+3. Click the hamburger menu (≡) → **More tools** → **Web Developer Tools**
+
+**For Safari (Mac):**
+1. First enable Developer menu: Safari → Preferences → Advanced → Check "Show Develop menu in menu bar"
+2. Press `Option + Command + C`, OR
+3. Develop menu → **Show Web Inspector**
+
+#### Step 2: Navigate to the Console Tab
+
+1. In the Developer Tools panel (usually at bottom or right side of browser)
+2. Look for tabs at the top: Elements, Console, Sources, Network, etc.
+3. Click the **"Console"** tab
+4. You should now see a log of messages, warnings, and errors
+
+**What you'll see:**
+- **Blue/Info messages** (ℹ️): General information, usually safe to ignore
+- **Yellow/Warning messages** (⚠️): Non-critical warnings, worth noting
+- **Red/Error messages** (❌): Critical errors that break functionality - **THESE are what to report**
+
+#### Step 3: Reproduce the Issue
+
+1. **Clear the console first:**
+   - Click the "Clear console" button (🚫 icon) or press `Ctrl+L` to remove old messages
+   
+2. **Perform the action that causes the error:**
+   - Click the button that doesn't work
+   - Navigate to the page that fails to load
+   - Apply the filter that causes issues
+   - Whatever triggered the problem originally
+
+3. **Watch for new red error messages** to appear in the console
+
+#### Step 4: Identify Relevant Errors
+
+Look for error messages that contain:
+- **"Uncaught"** - JavaScript errors
+- **"Failed to fetch"** - Network/API errors
+- **"TypeError"** - Data structure errors
+- **"ReferenceError"** - Missing variables/functions
+- **Stack traces** - Lines of code showing where error occurred
+
+**Example errors you might see:**
+
+```
+❌ Uncaught TypeError: Cannot read property 'length' of undefined
+    at validateAllTasks (task-validator.js:245)
+    at renderStudentView (checking-system-student-page.js:89)
+
+❌ Failed to fetch submissions from JotForm API
+    Error: 401 Unauthorized
+
+❌ IndexedDB error: QuotaExceededError
+    Database storage limit reached
+```
+
+#### Step 5: Take Screenshots
+
+1. **Expand the error message** (if collapsed) by clicking the triangle (▶) next to it
+2. **Take a screenshot** of:
+   - The error message itself
+   - The stack trace (code file names and line numbers below the error)
+   - Any relevant context (e.g., what you were doing when error occurred)
+
+**How to take screenshots:**
+- **Windows:** Press `Windows + Shift + S` → select area → paste in email
+- **Mac:** Press `Command + Shift + 4` → drag to select area → file saves to desktop
+- **Chrome/Edge:** Right-click in console → "Save as..." → save console log
+
+#### Step 6: Copy Error Details
+
+1. **Right-click on the error message**
+2. Select **"Copy message"** or **"Copy stack trace"**
+3. Paste into a text file or email
+
+**OR**
+
+1. Manually select the error text with your mouse
+2. Press `Ctrl+C` (Windows) or `Command+C` (Mac) to copy
+3. Paste into your report
+
+#### Step 7: Gather Additional Context
+
+Before reporting, collect:
+
+1. **What you were doing:**
+   - "I clicked 'Start Checking' after filtering by School S023"
+   - "I tried to export a class report as PDF"
+   - "I opened the student detail page for student C10207"
+
+2. **Browser information:**
+   - Browser name and version (Chrome 118, Firefox 119, etc.)
+   - Operating system (Windows 11, macOS 14, etc.)
+   - Find browser version: Click three-dot menu → Help → "About Chrome/Firefox/Edge"
+
+3. **When it happened:**
+   - Date and time
+   - First time or recurring issue?
+   - Does it happen every time or randomly?
+
+4. **System state:**
+   - Was cache recently synced? When?
+   - Any other errors showing on the page?
+   - Internet connection stable?
+
+#### Step 8: Report to Administrator
+
+**Email template:**
+
+```
+Subject: [Checking System Error] Brief description of problem
+
+Hi [Admin Name],
+
+I encountered an error in the Checking System. Details below:
+
+WHAT HAPPENED:
+[Describe the issue - what you were trying to do, what went wrong]
+
+WHEN:
+Date: [YYYY-MM-DD]
+Time: [HH:MM]
+
+SYSTEM INFO:
+Browser: [Chrome 118 / Firefox 119 / Edge 118 / Safari 17]
+Operating System: [Windows 11 / macOS 14 / etc.]
+Checking System Page: [Homepage / School View / Student View / etc.]
+
+CONSOLE ERRORS:
+[Paste the copied error message here]
+
+SCREENSHOTS:
+[Attach screenshot of console]
+[Attach screenshot of the page when error occurred]
+
+REPRODUCIBILITY:
+[  ] Happens every time
+[  ] Happens sometimes
+[  ] Happened only once
+
+ADDITIONAL NOTES:
+[Any other relevant information]
+
+Thanks,
+[Your Name]
+```
+
+#### Step 9: Quick Troubleshooting (Before Reporting)
+
+Sometimes simple fixes resolve the issue. Try these first:
+
+1. **Hard refresh the page:**
+   - Press `Ctrl + Shift + R` (Windows) or `Command + Shift + R` (Mac)
+   
+2. **Clear cache and re-sync:**
+   - Click green "System Ready" pill → "Delete Cache"
+   - Wait for re-sync to complete
+   - Try the action again
+
+3. **Try a different browser:**
+   - If error persists in Chrome, try Edge or Firefox
+   - Helps determine if it's browser-specific
+
+4. **Check internet connection:**
+   - Run a speed test
+   - Try accessing other websites
+
+5. **Restart browser:**
+   - Close all browser windows
+   - Reopen and try again
+
+**If none of these work, proceed with the error report.**
+
+#### Common Error Messages and Meanings
+
+| Error Message | Likely Cause | Quick Fix |
+|---------------|--------------|-----------|
+| "Failed to fetch" | Network issue or API down | Check internet, try again in 5 min |
+| "QuotaExceededError" | Browser storage full | Clear cache, close other tabs |
+| "401 Unauthorized" | Invalid credentials | Re-enter system password |
+| "Cannot read property of undefined" | Data missing or malformed | Refresh page, report if persists |
+| "Script error" | Script loading failed | Hard refresh (Ctrl+Shift+R) |
+| "CORS error" | Security policy blocking request | Not user-fixable, report to admin |
+
+#### Privacy Note
+
+**What to share:**
+- Error messages and stack traces (they help debug)
+- Screenshots of console (blurs sensitive data if needed)
+- System information (browser, OS versions)
+- Description of what you were doing
+
+**What NOT to share:**
+- System passwords
+- Student personal information visible on screen
+- API keys or credentials from console logs
+- Unrelated browser history
+
+When taking screenshots, make sure no sensitive student data is visible. If needed, crop or blur portions of the screenshot before sending.
+
 ---
 
 ## FAQs
@@ -1484,6 +1810,61 @@ The home page displays a **system health pill** showing cache status:
 
 ### How to Manage the Cache
 
+#### Cache Management Workflow
+
+The following flowchart illustrates the cache management process:
+
+```mermaid
+flowchart TD
+    Start([Open Checking System]) --> CheckCache{Is cache<br/>built?}
+    
+    CheckCache -->|NO - 🔴 Red Pill| ClickRed[Click Red Pill<br/>'System Not Ready']
+    CheckCache -->|YES - 🟢 Green Pill| Ready[System Ready<br/>Browse Data]
+    
+    ClickRed --> OpenModal[Modal Opens]
+    OpenModal --> SyncNow[Click 'Sync Now']
+    SyncNow --> Syncing[🟠 Syncing...<br/>Shows Progress %]
+    Syncing --> SyncDone{Sync<br/>Complete?}
+    
+    SyncDone -->|YES| GreenPill[✅ Pill turns GREEN<br/>System Ready]
+    SyncDone -->|ERROR| ErrorState[❌ Check Console<br/>for Errors]
+    
+    ErrorState --> TryAgain[Refresh page<br/>Try again]
+    TryAgain --> Start
+    
+    Ready --> NeedRefresh{Need fresh<br/>data?}
+    NeedRefresh -->|NO| Continue[Continue browsing]
+    NeedRefresh -->|YES| ClickGreen[Click Green Pill]
+    
+    ClickGreen --> ChooseOption{Choose<br/>Option}
+    ChooseOption -->|Delete Cache| DeleteAll[Removes ALL:<br/>1. JotForm cache<br/>2. Validation cache<br/>3. Qualtrics cache]
+    ChooseOption -->|Refresh Qualtrics| RefreshTGMD[Re-sync only<br/>TGMD data<br/>Keep JotForm cache]
+    
+    DeleteAll --> Syncing
+    RefreshTGMD --> QuickSync[Quick refresh<br/>~20-30 seconds]
+    
+    QuickSync --> GreenPill
+    GreenPill --> End([Ready to Use])
+    Continue --> End
+    
+    style Start fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    style End fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style CheckCache fill:#F3E5F5,stroke:#9C27B0
+    style SyncDone fill:#FFF3E0,stroke:#FF9800
+    style NeedRefresh fill:#E8F5E9,stroke:#4CAF50
+    style ChooseOption fill:#E1F5FE,stroke:#0288D1
+    style ClickRed fill:#FFE0E0,stroke:#E57373,color:#C62828
+    style Syncing fill:#FFE0B2,stroke:#FF9800,color:#E65100
+    style GreenPill fill:#E0F7E0,stroke:#81C784,color:#2E7D32
+    style ErrorState fill:#FFE0E0,stroke:#E57373,color:#C62828
+```
+
+**Key Paths:**
+
+- **First-time setup:** Red Pill → Sync Now → Wait for green
+- **Refresh data:** Green Pill → Delete Cache → Re-sync
+- **Quick TGMD update:** Green Pill → Refresh with Qualtrics
+
 #### Building the Cache (First Time)
 
 1. Click the **red "System Not Ready"** pill on the home page
@@ -1553,7 +1934,7 @@ For technical users, you can inspect the cache in browser DevTools:
 
 ```
 ✅ Green    = Complete & Verified
-⚠️ Yellow   = Needs Review (Mismatch)
+⚠️ Yellow   = Post-Termination Activity (Needs Review)
 🔴 Red      = Incomplete (Missing Data)
 ⭕ Grey     = Not Started
 ```

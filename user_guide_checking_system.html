@@ -445,12 +445,27 @@
 
             <h3 class="text-2xl font-semibold mb-4 mt-8">Homepage Layout</h3>
 
+            <p class="text-gray-700 mb-4">The Checking System homepage provides <strong>four primary navigation options</strong> to access data from different starting points, plus additional features for system management and filtering:</p>
+
             <div class="diagram-box">
               <div class="border border-gray-300 rounded p-4">
                 <div class="bg-primary text-white p-3 rounded mb-4 text-center font-bold">
                   4Set Checking System
                 </div>
+                <div class="mb-4 p-3 bg-gray-50 rounded border border-gray-200">
+                  <div class="text-xs font-semibold text-gray-600 mb-2">System Status & Cache Management</div>
+                  <div class="flex gap-2 flex-wrap">
+                    <span class="text-xs px-2 py-1 bg-red-100 text-red-700 rounded">🔴 System Not Ready</span>
+                    <span class="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded">🟠 Syncing...</span>
+                    <span class="text-xs px-2 py-1 bg-green-100 text-green-700 rounded">🟢 System Ready</span>
+                  </div>
+                </div>
+                <div class="mb-4 p-3 bg-blue-50 rounded border border-blue-200">
+                  <div class="text-xs font-semibold text-gray-600 mb-2">Filter Configuration Panel</div>
+                  <div class="text-xs text-gray-500">Add filters by District, Group, School, Class, Student, or Grade</div>
+                </div>
                 <div class="space-y-3">
+                  <div class="font-semibold text-gray-700 mb-2">Navigation Options:</div>
                   <div class="border border-gray-200 rounded p-3 hover:bg-gray-50 cursor-pointer">
                     📊 <strong>District View</strong> - View by district (Shatin, etc.)
                   </div>
@@ -464,6 +479,15 @@
                     👨‍🎓 <strong>Student Search</strong> - Direct student lookup
                   </div>
                 </div>
+                <div class="mt-4 p-3 bg-gray-50 rounded border border-gray-200">
+                  <div class="text-xs font-semibold text-gray-600 mb-1">Recent Checks</div>
+                  <div class="text-xs text-gray-500">Quick access to previously viewed data</div>
+                </div>
+              </div>
+              <div class="mt-4 p-3 bg-blue-50 border-l-4 border-blue-500 rounded">
+                <p class="text-sm text-gray-700">
+                  <strong>💡 Note:</strong> The homepage serves as a powerful filtering interface. Configure filters before clicking navigation options to narrow down your data view.
+                </p>
               </div>
             </div>
 
@@ -493,6 +517,33 @@
           <!-- Data Views Section -->
           <section id="data-views" class="content-section mb-12">
             <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Understanding Data Views</h2>
+
+            <p class="text-gray-700 mb-6">The Checking System provides <strong>five hierarchical data views</strong> that allow you to drill down from the broadest overview to individual student details:</p>
+
+            <div class="bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-lg border-2 border-purple-200 mb-6">
+              <ol class="space-y-2 text-gray-800">
+                <li class="flex items-center gap-3">
+                  <span class="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm">1</span>
+                  <div><strong>District View</strong> - High-level overview by geographic region</div>
+                </li>
+                <li class="flex items-center gap-3">
+                  <span class="bg-purple-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm">2</span>
+                  <div><strong>Group View</strong> - Overview by project group assignment</div>
+                </li>
+                <li class="flex items-center gap-3">
+                  <span class="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm">3</span>
+                  <div><strong>School View</strong> - Detailed view of individual school performance</div>
+                </li>
+                <li class="flex items-center gap-3">
+                  <span class="bg-blue-400 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm">4</span>
+                  <div><strong>Class View</strong> - All students within a specific classroom</div>
+                </li>
+                <li class="flex items-center gap-3">
+                  <span class="bg-green-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm">5</span>
+                  <div><strong>Student View</strong> - Complete assessment details for one student</div>
+                </li>
+              </ol>
+            </div>
 
             <div class="collapsible-section">
               <div class="collapsible-header">
@@ -603,45 +654,105 @@
               <div class="collapsible-content">
                 <p class="mb-4"><strong>Purpose:</strong> Complete assessment details for one student</p>
 
-                <div class="space-y-4">
-                  <div class="border rounded p-4">
-                    <div class="font-semibold mb-2 text-lg">Set 1: Background Information</div>
-                    <div class="flex items-center gap-2">
-                      <span class="status-badge status-complete">✅ Complete</span>
-                      <span class="text-sm text-gray-600">Background Survey - 12/12 Q's</span>
-                    </div>
-                  </div>
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4 rounded">
+                  <p class="text-sm text-gray-800">
+                    <strong>The 4 Sets Organization:</strong> Assessment tasks are grouped into 4 sets based on the testing protocol. Each set contains specific tasks listed below.
+                  </p>
+                </div>
 
-                  <div class="border rounded p-4">
-                    <div class="font-semibold mb-2 text-lg">Set 2: Language Tasks</div>
-                    <div class="space-y-2">
+                <div class="space-y-4">
+                  <div class="border rounded p-4 bg-gradient-to-r from-blue-50 to-white">
+                    <div class="font-semibold mb-2 text-lg flex items-center gap-2">
+                      <span class="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">1</span>
+                      Set 1 (第一組)
+                    </div>
+                    <div class="space-y-2 ml-8">
                       <div class="flex items-center gap-2">
                         <span class="status-badge status-complete">✅</span>
-                        <span class="text-sm">ERV (English) - 36/36 Q's</span>
+                        <span class="text-sm">ERV (English Receptive Vocabulary)</span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="status-badge status-complete">✅</span>
+                        <span class="text-sm">SYM (Symbolic Reasoning)</span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="status-badge status-complete">✅</span>
+                        <span class="text-sm">Theory of Mind</span>
                       </div>
                       <div class="flex items-center gap-2">
                         <span class="status-badge status-warning">⚠️</span>
-                        <span class="text-sm">Chinese Word Reading - 58/60 Q's</span>
-                      </div>
-                      <div class="flex items-center gap-2">
-                        <span class="status-badge status-complete">✅</span>
-                        <span class="text-sm">CM (Chinese) - 22/22 Q's</span>
+                        <span class="text-sm">Chinese Word Reading</span>
                       </div>
                     </div>
                   </div>
 
-                  <div class="border rounded p-4">
-                    <div class="font-semibold mb-2 text-lg">Set 3: Cognitive Tasks</div>
-                    <div class="space-y-2">
+                  <div class="border rounded p-4 bg-gradient-to-r from-green-50 to-white">
+                    <div class="font-semibold mb-2 text-lg flex items-center gap-2">
+                      <span class="bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">2</span>
+                      Set 2 (第二組)
+                    </div>
+                    <div class="space-y-2 ml-8">
                       <div class="flex items-center gap-2">
                         <span class="status-badge status-complete">✅</span>
-                        <span class="text-sm">SYM - 20/20 Q's</span>
+                        <span class="text-sm">TEC (Male/Female - gender-conditional)</span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="status-badge status-complete">✅</span>
+                        <span class="text-sm">Math Pattern</span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="status-badge status-complete">✅</span>
+                        <span class="text-sm">CCM (Cross-Cultural Mathematics)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="border rounded p-4 bg-gradient-to-r from-purple-50 to-white">
+                    <div class="font-semibold mb-2 text-lg flex items-center gap-2">
+                      <span class="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">3</span>
+                      Set 3 (第三組)
+                    </div>
+                    <div class="space-y-2 ml-8">
+                      <div class="flex items-center gap-2">
+                        <span class="status-badge status-complete">✅</span>
+                        <span class="text-sm">HTKS (Head-Toe-Knee-Shoulder)</span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="status-badge status-complete">✅</span>
+                        <span class="text-sm">EPN (Early Problem Numeracy)</span>
                       </div>
                       <div class="flex items-center gap-2">
                         <span class="status-badge status-error">🔴</span>
-                        <span class="text-sm">Math Pattern - 0/20 Q's</span>
+                        <span class="text-sm">CM (Chinese Morphology)</span>
                       </div>
                     </div>
+                  </div>
+
+                  <div class="border rounded p-4 bg-gradient-to-r from-amber-50 to-white">
+                    <div class="font-semibold mb-2 text-lg flex items-center gap-2">
+                      <span class="bg-amber-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">4</span>
+                      Set 4 (第四組)
+                    </div>
+                    <div class="space-y-2 ml-8">
+                      <div class="flex items-center gap-2">
+                        <span class="status-badge status-complete">✅</span>
+                        <span class="text-sm">Fine Motor</span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="status-badge status-complete">✅</span>
+                        <span class="text-sm">TGMD (Test of Gross Motor Development)</span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="status-badge status-complete">✅</span>
+                        <span class="text-sm">MF (Movement & Fitness)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded mt-4">
+                    <p class="text-sm text-gray-700">
+                      <strong>Note:</strong> TEC has two versions (TEC_Male and TEC_Female) - only one appears per student based on their gender. Click "Expand each task for details" to see question-level information.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -720,26 +831,26 @@
                         <div class="relative">
                           <div class="bg-green-100 border-4 border-green-400 px-6 py-5 transform rotate-45 w-36 h-36 flex items-center justify-center shadow-lg">
                             <div class="transform -rotate-45 text-center font-semibold text-xs">
-                              Termination<br/>matches?
+                              Post-term<br/>answers<br/>detected?
                             </div>
                           </div>
                         </div>
                         
                         <div class="flex gap-8">
-                          <!-- No - Yellow -->
+                          <!-- Yes - Yellow -->
                           <div class="flex flex-col items-center space-y-3">
-                            <div class="text-sm font-semibold">NO</div>
+                            <div class="text-sm font-semibold">YES</div>
                             <div class="text-2xl text-gray-400">↓</div>
                             <div class="bg-yellow-100 border-4 border-yellow-400 px-6 py-4 rounded-lg text-center shadow-lg">
                               <div class="text-2xl mb-2">⚠️</div>
                               <div class="font-bold text-yellow-700">YELLOW</div>
-                              <div class="text-xs mt-1">Needs Review</div>
+                              <div class="text-xs mt-1">Post-Termination</div>
                             </div>
                           </div>
                           
-                          <!-- Yes - Green -->
+                          <!-- No - Green -->
                           <div class="flex flex-col items-center space-y-3">
-                            <div class="text-sm font-semibold">YES / N/A</div>
+                            <div class="text-sm font-semibold">NO</div>
                             <div class="text-2xl text-gray-400">↓</div>
                             <div class="bg-green-100 border-4 border-green-500 px-6 py-4 rounded-lg text-center shadow-lg">
                               <div class="text-2xl mb-2">✅</div>
@@ -774,22 +885,33 @@
               <div class="diagram-box bg-yellow-50 border-yellow-300">
                 <div class="flex items-center gap-4 mb-3">
                   <span class="status-badge status-warning text-xl">⚠️</span>
-                  <h3 class="text-xl font-semibold">Yellow - Complete but Needs Review</h3>
+                  <h3 class="text-xl font-semibold">Yellow - Post-Termination Activity (Needs Review)</h3>
                 </div>
                 <p class="text-gray-700 mb-2"><strong>Meaning:</strong></p>
                 <ul class="list-disc ml-6 space-y-1 text-gray-700">
-                  <li>All questions answered BUT</li>
-                  <li>Termination rule mismatch detected</li>
-                  <li>Recorded decision ≠ calculated result</li>
-                  <li>Possible recording error</li>
+                  <li>All required questions answered BUT</li>
+                  <li>Answers were recorded AFTER termination point</li>
+                  <li>Post-termination data detected (data quality issue)</li>
+                  <li>Administrator continued testing beyond where termination should have occurred</li>
                 </ul>
                 <p class="mt-3 text-gray-700"><strong>What to do:</strong></p>
                 <ol class="list-decimal ml-6 space-y-1 text-gray-700 mt-2">
                   <li>Expand task details</li>
-                  <li>Review termination rule comparison</li>
-                  <li>Manually verify correctness</li>
-                  <li>Document if error found</li>
+                  <li>Review termination point and post-termination answers</li>
+                  <li>Verify if termination rules were correctly applied</li>
+                  <li>Document the issue - post-termination data indicates:
+                    <ul class="list-disc ml-6 text-sm mt-1">
+                      <li>Administrator may not have recognized termination trigger</li>
+                      <li>Testing protocol not followed correctly</li>
+                      <li>Possible need for administrator retraining</li>
+                    </ul>
+                  </li>
                 </ol>
+                <div class="mt-3 p-3 bg-yellow-100 rounded border border-yellow-300">
+                  <p class="text-xs text-gray-700">
+                    <strong>Example:</strong> CWR termination triggered at Q24 (10 consecutive incorrect), but student has answers for Q25-Q30 → Yellow ⚠️ status
+                  </p>
+                </div>
               </div>
 
               <div class="diagram-box bg-red-50 border-red-300">
