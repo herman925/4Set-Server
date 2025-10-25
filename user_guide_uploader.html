@@ -13,12 +13,38 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   <style>
     body {
       font-family: 'Inter', sans-serif;
       background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     }
+    .mermaid {
+      display: flex;
+      justify-content: center;
+      margin: 2rem 0;
+    }
   </style>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ 
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+          primaryColor: '#4A90E2',
+          primaryTextColor: '#1F2937',
+          primaryBorderColor: '#2E5C8A',
+          lineColor: '#6B7280',
+          secondaryColor: '#E8F5E9',
+          tertiaryColor: '#FFF3E0',
+          edgeLabelBackground: '#ffffff',
+          textColor: '#1F2937',
+          mainBkg: '#ffffff',
+          nodeBorder: '#6B7280'
+        }
+      });
+    });
+  </script>
 </head>
 <body class="min-h-screen">
   <!-- Header -->
@@ -381,159 +407,51 @@
             <div class="bg-gradient-to-br from-indigo-50 to-purple-50 p-6 rounded-lg border-2 border-indigo-200 mb-8">
               <h3 class="font-semibold mb-6 text-center text-lg">Complete Processing Workflow</h3>
               
-              <div class="flex flex-col items-center space-y-4">
-                <!-- Step 1: File Detection -->
-                <div class="bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold shadow-lg w-64 text-center">
-                  📂 File Detected
-                </div>
-                
-                <div class="text-2xl text-gray-400">↓</div>
-                
-                <!-- Step 2: Validation Check -->
-                <div class="relative">
-                  <div class="bg-yellow-100 border-4 border-yellow-400 px-8 py-6 transform rotate-45 w-48 h-48 flex items-center justify-center shadow-lg">
-                    <div class="transform -rotate-45 text-center font-semibold text-sm">
-                      Is filename<br/>valid?<br/>(Phase 1)
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="flex gap-12 w-full justify-center">
-                  <!-- No - Rejected -->
-                  <div class="flex flex-col items-center space-y-3">
-                    <div class="text-sm font-semibold text-red-600">NO</div>
-                    <div class="text-2xl text-gray-400">↓</div>
-                    <div class="bg-red-100 border-2 border-red-400 px-6 py-3 rounded-lg text-center shadow w-48">
-                      <div class="font-semibold text-sm text-red-700">❌ REJECTED</div>
-                      <div class="text-xs mt-1">→ Unsorted/</div>
-                    </div>
-                  </div>
-                  
-                  <!-- Yes - Continue to Phase 2 -->
-                  <div class="flex flex-col items-center space-y-3">
-                    <div class="text-sm font-semibold text-green-600">YES</div>
-                    <div class="text-2xl text-gray-400">↓</div>
-                    
-                    <!-- Phase 2 Validation -->
-                    <div class="relative">
-                      <div class="bg-orange-100 border-4 border-orange-400 px-6 py-6 transform rotate-45 w-44 h-44 flex items-center justify-center shadow-lg">
-                        <div class="transform -rotate-45 text-center font-semibold text-xs">
-                          PDF fields<br/>valid?<br/>(Phase 2)
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div class="flex gap-8">
-                      <!-- Phase 2 No -->
-                      <div class="flex flex-col items-center space-y-3">
-                        <div class="text-sm font-semibold text-red-600">NO</div>
-                        <div class="text-2xl text-gray-400">↓</div>
-                        <div class="bg-red-100 border-2 border-red-400 px-4 py-3 rounded-lg text-center shadow w-44">
-                          <div class="font-semibold text-sm text-red-700">❌ REJECTED</div>
-                          <div class="text-xs mt-1">→ Unsorted/</div>
-                        </div>
-                      </div>
-                      
-                      <!-- Phase 2 Yes - Processing -->
-                      <div class="flex flex-col items-center space-y-3">
-                        <div class="text-sm font-semibold text-green-600">YES</div>
-                        <div class="text-2xl text-gray-400">↓</div>
-                        
-                        <!-- Processing Steps -->
-                        <div class="bg-purple-100 border-2 border-purple-400 px-4 py-3 rounded-lg shadow w-52">
-                          <div class="font-semibold text-sm">🔄 Processing</div>
-                          <div class="text-xs mt-2 space-y-1">
-                            <div>1. Parse PDF fields</div>
-                            <div>2. Calculate termination</div>
-                            <div>3. Enrich metadata</div>
-                            <div>4. Prepare JSON</div>
-                          </div>
-                        </div>
-                        
-                        <div class="text-2xl text-gray-400">↓</div>
-                        
-                        <!-- Data Overwrite Check -->
-                        <div class="relative">
-                          <div class="bg-pink-100 border-4 border-pink-400 px-6 py-5 transform rotate-45 w-40 h-40 flex items-center justify-center shadow-lg">
-                            <div class="transform -rotate-45 text-center font-semibold text-xs">
-                              Data<br/>conflict?
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div class="flex gap-8">
-                          <!-- Conflict Yes -->
-                          <div class="flex flex-col items-center space-y-3">
-                            <div class="text-sm font-semibold text-orange-600">CONFLICT</div>
-                            <div class="text-2xl text-gray-400">↓</div>
-                            <div class="bg-orange-100 border-2 border-orange-400 px-4 py-3 rounded-lg text-center shadow w-44">
-                              <div class="font-semibold text-sm text-orange-700">⚠️ BLOCKED</div>
-                              <div class="text-xs mt-1">→ Unsorted/</div>
-                            </div>
-                          </div>
-                          
-                          <!-- No Conflict - Upload -->
-                          <div class="flex flex-col items-center space-y-3">
-                            <div class="text-sm font-semibold text-green-600">SAFE</div>
-                            <div class="text-2xl text-gray-400">↓</div>
-                            
-                            <!-- Upload with Retry -->
-                            <div class="bg-blue-100 border-2 border-blue-400 px-4 py-3 rounded-lg shadow w-48">
-                              <div class="font-semibold text-sm">📤 Upload to Jotform</div>
-                              <div class="text-xs mt-1">Max 3 retries + backoff</div>
-                            </div>
-                            
-                            <div class="text-2xl text-gray-400">↓</div>
-                            
-                            <!-- Upload Result -->
-                            <div class="relative">
-                              <div class="bg-teal-100 border-4 border-teal-400 px-5 py-5 transform rotate-45 w-36 h-36 flex items-center justify-center shadow-lg">
-                                <div class="transform -rotate-45 text-center font-semibold text-xs">
-                                  Upload<br/>success?
-                                </div>
-                              </div>
-                            </div>
-                            
-                            <div class="flex gap-8">
-                              <!-- Upload Failed -->
-                              <div class="flex flex-col items-center space-y-3">
-                                <div class="text-sm font-semibold text-red-600">FAILED</div>
-                                <div class="text-2xl text-gray-400">↓</div>
-                                <div class="bg-red-100 border-2 border-red-400 px-4 py-3 rounded-lg text-center shadow w-40">
-                                  <div class="font-semibold text-sm text-red-700">❌ ERROR</div>
-                                  <div class="text-xs mt-1">→ Unsorted/</div>
-                                </div>
-                              </div>
-                              
-                              <!-- Upload Success - Filing -->
-                              <div class="flex flex-col items-center space-y-3">
-                                <div class="text-sm font-semibold text-green-600">SUCCESS</div>
-                                <div class="text-2xl text-gray-400">↓</div>
-                                
-                                <!-- Filing -->
-                                <div class="bg-green-100 border-2 border-green-500 px-4 py-3 rounded-lg shadow w-48">
-                                  <div class="font-semibold text-sm text-green-700">📁 File to School</div>
-                                  <div class="text-xs mt-1">→ 97\PDF\{school}\</div>
-                                </div>
-                                
-                                <div class="text-2xl text-gray-400">↓</div>
-                                
-                                <!-- Complete -->
-                                <div class="bg-green-500 text-white px-6 py-3 rounded-full font-semibold shadow-lg">
-                                  ✅ COMPLETE
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <div class="mermaid">
+flowchart TD
+    Start([📂 File Detected]) --> NameCheck{Filename<br/>approximately<br/>correct?}
+    
+    NameCheck -->|NO - Invalid format| Reject1[❌ REJECTED<br/>→ Quarantine folder]
+    NameCheck -->|YES - Lenient match| Phase1{Is filename<br/>valid?<br/>Phase 1}
+    
+    Phase1 -->|NO| Reject2[❌ REJECTED<br/>→ Quarantine folder]
+    Phase1 -->|YES| Phase2{PDF fields<br/>valid?<br/>Phase 2}
+    
+    Phase2 -->|NO| Reject3[❌ REJECTED<br/>→ Quarantine folder]
+    Phase2 -->|YES| Process[🔄 Processing<br/>1. Parse PDF<br/>2. Calculate termination<br/>3. Enrich metadata<br/>4. Prepare JSON]
+    
+    Process --> Conflict{Data<br/>conflict?}
+    
+    Conflict -->|CONFLICT| Blocked[⚠️ BLOCKED<br/>→ Quarantine folder]
+    Conflict -->|SAFE| Upload[📤 Upload to Jotform<br/>Max 3 retries + backoff]
+    
+    Upload --> UploadResult{Upload<br/>success?}
+    
+    UploadResult -->|FAILED| Error[❌ ERROR<br/>→ Quarantine folder]
+    UploadResult -->|SUCCESS| File["📁 File to School Folder<br/>→ School-specific folder"]
+    
+    File --> Complete([✅ COMPLETE])
+    
+    style Start fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    style Complete fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style Process fill:#E1BEE7,stroke:#9C27B0,color:#4A148C
+    style Upload fill:#BBDEFB,stroke:#2196F3,color:#0D47A1
+    style File fill:#C8E6C9,stroke:#4CAF50,color:#1B5E20
+    style Reject1 fill:#FFE0E0,stroke:#E57373,color:#C62828
+    style Reject2 fill:#FFE0E0,stroke:#E57373,color:#C62828
+    style Reject3 fill:#FFE0E0,stroke:#E57373,color:#C62828
+    style Blocked fill:#FFE0B2,stroke:#FF9800,color:#E65100
+    style Error fill:#FFE0E0,stroke:#E57373,color:#C62828
+    style NameCheck fill:#E1F5FE,stroke:#03A9F4,color:#01579B
+    style Phase1 fill:#FFF9E0,stroke:#FFD54F,color:#F57C00
+    style Phase2 fill:#FFE0B2,stroke:#FF9800,color:#E65100
+    style Conflict fill:#F8BBD0,stroke:#F06292,color:#880E4F
+    style UploadResult fill:#B2DFDB,stroke:#26A69A,color:#004D40
               </div>
               
               <div class="mt-6 pt-4 border-t border-indigo-200 text-center text-sm text-gray-700">
-                <strong>Total Processing Time:</strong> 5-30 seconds per PDF (typical)
+                <strong>Total Processing Time:</strong> 5-30 seconds per PDF (typical)<br/>
+                <span class="text-xs text-gray-600 mt-1">Note: Filename validation uses lenient matching - slight variations in format are accepted</span>
               </div>
             </div>
 
@@ -544,15 +462,16 @@
               <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded shadow">
                 <h4 class="font-semibold mb-3 text-yellow-800">Phase 1: Filename Validation</h4>
                 <p class="text-sm text-gray-700 mb-2"><strong>Expected Format:</strong></p>
-                <code class="text-xs bg-white px-2 py-1 rounded">xxxxx_YYYYMMDD_HH_MM.pdf</code>
+                <code class="text-xs bg-white px-2 py-1 rounded">coreID_YYYYMMDD_HH_MM.pdf</code>
+                <p class="text-xs mt-2 text-gray-600 italic">Core ID: 5-digit numeric identifier from AITable</p>
                 <p class="text-sm text-gray-700 mt-3"><strong>Checks:</strong></p>
                 <ul class="text-xs space-y-1 mt-2">
-                  <li>✓ 5-digit student ID</li>
-                  <li>✓ Valid date format</li>
-                  <li>✓ Valid time format</li>
+                  <li>✓ 5-digit Core ID (numeric only, starts with 1)</li>
+                  <li>✓ Valid date format (YYYYMMDD)</li>
+                  <li>✓ Valid time format (HH_MM)</li>
                   <li>✓ Underscores in correct positions</li>
                 </ul>
-                <p class="text-xs mt-3 text-gray-600"><strong>Example:</strong> C1020_20251016_14_30.pdf ✅</p>
+                <p class="text-xs mt-3 text-gray-600"><strong>Example:</strong> 10001_20251016_14_30.pdf ✅</p>
               </div>
               
               <div class="bg-orange-50 border-l-4 border-orange-500 p-4 rounded shadow">
@@ -571,9 +490,94 @@
 
             <!-- Data Overwrite Protection -->
             <h3 class="text-2xl font-semibold mb-4">Data Overwrite Protection</h3>
+
+            <!-- Why This Matters -->
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border-2 border-blue-300 mb-6">
+              <h4 class="font-semibold mb-3 text-blue-900">🔒 Why Data Overwrite Protection is Critical</h4>
+              <div class="text-sm text-gray-700 space-y-2">
+                <p><strong>Assessment data integrity is paramount.</strong> Once test administrators record student responses and upload PDFs, that data becomes the official record of the child's performance. Any accidental overwrite could:</p>
+                <ul class="list-disc ml-6 space-y-1 mt-2">
+                  <li><strong>Loss of irreplaceable data:</strong> Student responses cannot be re-administered - once lost, they're gone forever</li>
+                  <li><strong>Research validity compromise:</strong> Changing recorded answers invalidates study results and scientific conclusions</li>
+                  <li><strong>Regulatory compliance issues:</strong> Educational research requires audit trails showing data hasn't been tampered with</li>
+                  <li><strong>Accidental errors:</strong> Re-uploading the same student by mistake (e.g., wrong filename) could silently overwrite correct data</li>
+                </ul>
+                <p class="mt-3 font-semibold text-blue-800">The system prevents these scenarios by blocking any attempt to change existing assessment answers while still allowing corrections to administrative metadata (student names, school IDs, etc.).</p>
+              </div>
+            </div>
+
+            <!-- Conflict Detection Workflow -->
+            <div class="bg-gradient-to-br from-pink-50 to-red-50 p-6 rounded-lg border-2 border-pink-300 mb-6">
+              <h4 class="font-semibold mb-6 text-center text-lg">Data Overwrite Protection Workflow</h4>
+              
+              <div class="mermaid">
+flowchart TD
+    Start([New PDF Upload<br/>Attempt]) --> Parse[Parse PDF<br/>Extract Data]
+    
+    Parse --> Search{Does student<br/>submission<br/>exist?}
+    
+    Search -->|NO - New Student| AllowNew[✅ ALLOW<br/>Create New<br/>Submission]
+    Search -->|YES - Existing| CheckFields{Check Each<br/>Field}
+    
+    CheckFields --> FieldType{Field<br/>Type?}
+    
+    FieldType -->|Admin Info<br/>student-id, name,<br/>school-id, class| MetaCheck{Current<br/>Value?}
+    MetaCheck -->|Empty/Null| AllowMeta[✅ ALLOW<br/>Fill Empty<br/>Admin Info]
+    MetaCheck -->|Has Value| AllowUpdate[✅ ALLOW<br/>Update Admin Info]
+    
+    FieldType -->|Test Answers<br/>ERV, CM, CWR,<br/>termination| DataCheck{Current<br/>Value?}
+    DataCheck -->|Empty/Null| AllowData[✅ ALLOW<br/>Fill Empty<br/>Test Data]
+    DataCheck -->|Has Value| BlockData[❌ BLOCK<br/>Protect Existing<br/>Test Answers]
+    
+    AllowNew --> LogSuccess[📝 Log to CSV:<br/>Success entry]
+    AllowMeta --> LogSuccess
+    AllowUpdate --> LogSuccess
+    AllowData --> LogSuccess
+    
+    BlockData --> LogConflict["📝 Log to CSV:<br/>CONFLICT entry<br/>with field details"]
+    
+    LogConflict --> MoveQuarantine["⚠️ Move PDF to<br/>Quarantine Folder"]
+    
+    MoveQuarantine --> NotifyAdmin["🔔 Admin Reviews<br/>CSV Log Entry<br/>+ Quarantined PDF"]
+    
+    LogSuccess --> FileSchool["📁 Move PDF to<br/>School's Folder<br/>+ Create JSON"]
+    
+    FileSchool --> Complete([✅ Upload Complete])
+    NotifyAdmin --> End([❌ Upload Blocked])
+    
+    style Start fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    style Complete fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style End fill:#E57373,stroke:#C62828,color:#fff
+    style AllowNew fill:#C8E6C9,stroke:#4CAF50,color:#1B5E20
+    style AllowMeta fill:#C8E6C9,stroke:#4CAF50,color:#1B5E20
+    style AllowUpdate fill:#C8E6C9,stroke:#4CAF50,color:#1B5E20
+    style AllowData fill:#C8E6C9,stroke:#4CAF50,color:#1B5E20
+    style BlockData fill:#FFCDD2,stroke:#E57373,color:#C62828
+    style MoveQuarantine fill:#FFE0B2,stroke:#FF9800,color:#E65100
+    style LogConflict fill:#FFF9C4,stroke:#FDD835,color:#F57F17
+    style LogSuccess fill:#E8F5E9,stroke:#66BB6A,color:#2E7D32
+    style Search fill:#E1F5FE,stroke:#03A9F4,color:#01579B
+    style CheckFields fill:#F3E5F5,stroke:#AB47BC,color:#4A148C
+    style FieldType fill:#FFF3E0,stroke:#FFA726,color:#E65100
+    style MetaCheck fill:#E0F2F1,stroke:#26A69A,color:#004D40
+    style DataCheck fill:#FCE4EC,stroke:#EC407A,color:#880E4F
+              </div>
+              
+              <div class="mt-6 p-4 bg-white rounded border border-pink-200">
+                <p class="text-sm font-semibold mb-2">Key Decision Points:</p>
+                <ol class="text-xs text-gray-700 space-y-1 ml-4">
+                  <li>1. <strong>New vs Existing:</strong> New students always allowed; existing students trigger protection checks</li>
+                  <li>2. <strong>Field Type:</strong> Administrative info (student details, school assignment) vs Test Answers (actual assessment responses)</li>
+                  <li>3. <strong>Admin Info:</strong> Can be updated to correct administrative errors (typos in names, wrong school assignment, PC number, etc.)</li>
+                  <li>4. <strong>Test Answers:</strong> Once recorded, cannot be changed - protects scientific integrity of the assessment data</li>
+                  <li>5. <strong>Empty Fields:</strong> Can always be filled, whether admin info or test data</li>
+                  <li>6. <strong>Logging:</strong> All decisions logged to daily CSV file (YYYYMMDD_processing_agent.csv) for audit trail</li>
+                </ol>
+              </div>
+            </div>
             
             <div class="bg-gradient-to-r from-pink-50 to-red-50 p-6 rounded-lg border-2 border-pink-300 mb-6">
-              <h4 class="font-semibold mb-4 text-center">Conflict Detection Logic</h4>
+              <h4 class="font-semibold mb-4 text-center">Conflict Detection Rules</h4>
               
               <div class="grid md:grid-cols-2 gap-4">
                 <div class="bg-white rounded p-4 shadow-sm border-l-4 border-green-500">
@@ -618,6 +622,135 @@
               </div>
             </div>
 
+            <!-- Where Blocked Updates Go -->
+            <div class="bg-gradient-to-r from-orange-50 to-yellow-50 p-6 rounded-lg border-2 border-orange-300 mb-6">
+              <h4 class="font-semibold mb-3 text-orange-900">📂 Where Do Blocked Updates Go?</h4>
+              <div class="text-sm text-gray-700 space-y-3">
+                <p>When the processor agent detects a data conflict and blocks an upload, the files are moved to a special quarantine location for review:</p>
+                
+                <div class="bg-white p-4 rounded border-l-4 border-orange-500 mt-3">
+                  <p class="font-semibold mb-2">📁 File Destination:</p>
+                  <div class="bg-gray-800 text-gray-100 p-3 rounded font-mono text-xs">
+                    <div>quarantine_folder/</div>
+                    <div>├── 10523_20251016_14_30.pdf</div>
+                    <div>└── (Logged in CSV: YYYYMMDD_processing_agent.csv)</div>
+                  </div>
+                  <p class="text-xs text-gray-600 mt-2 italic">Note: Quarantine folder path is configurable (default: "unsorted")</p>
+                </div>
+
+                <p><strong>What Happens:</strong></p>
+                <ol class="list-decimal ml-6 space-y-2">
+                  <li><strong>PDF moved to quarantine folder:</strong> The file is not deleted, just quarantined for manual review</li>
+                  <li><strong>Conflict logged to CSV:</strong> Details written to the daily CSV log file (not individual .log files)</li>
+                  <li><strong>JSON data deleted:</strong> The processed JSON is not saved to prevent corruption</li>
+                  <li><strong>Jotform not updated:</strong> No API call is made to Jotform, protecting existing data</li>
+                  <li><strong>PC number recorded:</strong> The uploader's PC number (from upload.html manual setting) is logged for tracking</li>
+                </ol>
+
+                <p class="mt-3"><strong>⚠️ Important:</strong> Files in quarantine folder require manual review by administrators to determine if:</p>
+                <ul class="list-disc ml-6 space-y-1">
+                  <li>It's a legitimate re-upload attempt that should be manually processed</li>
+                  <li>It's an accidental duplicate that should be deleted</li>
+                  <li>It's a different student with a similar/wrong filename</li>
+                </ul>
+              </div>
+            </div>
+
+            <!-- How Logs Help -->
+            <div class="bg-gradient-to-r from-purple-50 to-indigo-50 p-6 rounded-lg border-2 border-purple-300 mb-6">
+              <h4 class="font-semibold mb-3 text-purple-900">📝 How Logs Help Check What Went Wrong</h4>
+              <div class="text-sm text-gray-700 space-y-3">
+                <p>The processor agent maintains a detailed CSV log that helps administrators diagnose and resolve conflicts:</p>
+
+                <div class="bg-white p-4 rounded border-l-4 border-purple-500 mt-4">
+                  <h5 class="font-semibold mb-2">Daily Processing Log (CSV Format)</h5>
+                  <p class="text-xs mb-2"><code class="bg-gray-200 px-2 py-1 rounded">logs/YYYYMMDD_processing_agent.csv</code></p>
+                  <p class="text-xs mb-2">Single CSV file per day tracking all processing activity</p>
+                  
+                  <div class="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
+                    <p class="font-semibold mb-1">📌 Configurable Log Levels:</p>
+                    <p class="mb-2">Edit <code class="bg-white px-1 rounded">config/jotform_config.json</code> → "logging" section to enable/disable each level:</p>
+                    <ul class="space-y-0.5 ml-4">
+                      <li>• <strong>REJECT:</strong> Validation failures (sessionkey mismatch, Core ID errors, filename format)</li>
+                      <li>• <strong>DATA_OVERWRITE_DIFF:</strong> Data overwrite conflicts (field-level details)</li>
+                      <li>• <strong>UPLOAD:</strong> Jotform operations (created/updated submissions)</li>
+                      <li>• <strong>FILED:</strong> Successfully archived files with destination folder</li>
+                      <li>• <strong>CLEANUP:</strong> Maintenance operations (orphaned JSON cleanup)</li>
+                      <li>• <strong>RENAME:</strong> Filename normalization (original → canonical)</li>
+                      <li>• <strong>WARN:</strong> Non-critical issues (missing mappings, upload failures)</li>
+                      <li>• <strong>ERROR:</strong> Critical failures (parser errors, exceptions)</li>
+                      <li>• <strong>INFO:</strong> Verbose details (queued, parsing, validating, enriching)</li>
+                    </ul>
+                    <p class="mt-2 text-gray-600 italic">Set each level to <code>true</code> (log) or <code>false</code> (skip) in config</p>
+                  </div>
+                </div>
+
+                <div class="bg-white p-4 rounded border border-purple-200 mt-4">
+                  <p class="font-semibold mb-3">Example CSV Log Entries (as viewed in Excel/CSV reader):</p>
+                  
+                  <!-- Excel-like table view -->
+                  <div class="overflow-x-auto">
+                    <table class="w-full text-xs border-collapse">
+                      <thead>
+                        <tr class="bg-gray-100 border-b-2 border-gray-300">
+                          <th class="border border-gray-300 px-3 py-2 text-left font-semibold">Timestamp</th>
+                          <th class="border border-gray-300 px-3 py-2 text-left font-semibold">Level</th>
+                          <th class="border border-gray-300 px-3 py-2 text-left font-semibold">File</th>
+                          <th class="border border-gray-300 px-3 py-2 text-left font-semibold">Message</th>
+                        </tr>
+                      </thead>
+                      <tbody class="font-mono">
+                        <tr class="bg-white hover:bg-gray-50">
+                          <td class="border border-gray-300 px-3 py-2">2025-10-25 14:30:15</td>
+                          <td class="border border-gray-300 px-3 py-2 text-red-600 font-semibold">REJECT</td>
+                          <td class="border border-gray-300 px-3 py-2">10523_20251016_14_30.pdf</td>
+                          <td class="border border-gray-300 px-3 py-2">Phase2 validation failed: Core ID 10523 not in mapping</td>
+                        </tr>
+                        <tr class="bg-gray-50 hover:bg-gray-100">
+                          <td class="border border-gray-300 px-3 py-2">2025-10-25 14:31:22</td>
+                          <td class="border border-gray-300 px-3 py-2 text-orange-600 font-semibold">DATA_OVERWRITE_DIFF</td>
+                          <td class="border border-gray-300 px-3 py-2">10524_20251016_14_35.pdf</td>
+                          <td class="border border-gray-300 px-3 py-2">Field q37_englishReceptive[0]: Current '1' vs Attempted '0'</td>
+                        </tr>
+                        <tr class="bg-white hover:bg-gray-50">
+                          <td class="border border-gray-300 px-3 py-2">2025-10-25 14:32:10</td>
+                          <td class="border border-gray-300 px-3 py-2 text-blue-600 font-semibold">UPLOAD</td>
+                          <td class="border border-gray-300 px-3 py-2">10525_20251016_14_40.pdf</td>
+                          <td class="border border-gray-300 px-3 py-2">Created submission 234567890123456789 (87 fields, 1 chunk)</td>
+                        </tr>
+                        <tr class="bg-gray-50 hover:bg-gray-100">
+                          <td class="border border-gray-300 px-3 py-2">2025-10-25 14:33:05</td>
+                          <td class="border border-gray-300 px-3 py-2 text-green-600 font-semibold">FILED</td>
+                          <td class="border border-gray-300 px-3 py-2">10525_20251016_14_40.pdf</td>
+                          <td class="border border-gray-300 px-3 py-2">10525_20251016_14_40.pdf → S023/</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  
+                  <p class="text-xs text-gray-600 mt-3 italic">💡 Tip: Open CSV files in Excel, Google Sheets, or VS Code with Rainbow CSV extension for easier filtering and analysis</p>
+                </div>
+
+                <div class="mt-4 p-3 bg-purple-100 border border-purple-300 rounded">
+                  <p class="font-semibold mb-2">Using CSV Logs for Troubleshooting:</p>
+                  <ol class="text-xs space-y-1 ml-4">
+                    <li>1. <strong>Open today's CSV log:</strong> Find YYYYMMDD_processing_agent.csv in the logs directory</li>
+                    <li>2. <strong>Search for filename:</strong> Look for rows with the problematic PDF filename</li>
+                    <li>3. <strong>Check log level:</strong> REJECT/ERROR/CONFLICT indicate problems; SUCCESS/FILED indicate completion</li>
+                    <li>4. <strong>Read the message:</strong> Detailed reason explains exactly what went wrong</li>
+                    <li>5. <strong>Locate quarantined PDF:</strong> Check the quarantine folder for the actual file</li>
+                    <li>6. <strong>Determine action:</strong> Based on the CSV message, decide whether to:
+                      <ul class="list-disc ml-6 mt-1">
+                        <li>Delete the quarantined file (if duplicate/wrong)</li>
+                        <li>Manually fix Jotform data (if existing data is wrong)</li>
+                        <li>Contact test administrator (if assessment needs re-administration)</li>
+                      </ul>
+                    </li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+
             <!-- Retry Logic -->
             <h3 class="text-2xl font-semibold mb-4">Upload Retry Strategy</h3>
             
@@ -659,34 +792,110 @@
               </div>
             </div>
 
-            <!-- Processing Statistics -->
-            <h3 class="text-2xl font-semibold mb-4 mt-8">Performance Statistics</h3>
-            
-            <div class="grid md:grid-cols-3 gap-4">
-              <div class="bg-gradient-to-br from-green-100 to-green-50 p-4 rounded-lg border border-green-300 shadow text-center">
-                <div class="text-3xl font-bold text-green-700">20+</div>
-                <div class="text-sm text-gray-700 mt-1">PDFs per minute</div>
-                <div class="text-xs text-gray-600 mt-1">(quad-core system)</div>
-              </div>
-              
-              <div class="bg-gradient-to-br from-blue-100 to-blue-50 p-4 rounded-lg border border-blue-300 shadow text-center">
-                <div class="text-3xl font-bold text-blue-700">99.9%</div>
-                <div class="text-sm text-gray-700 mt-1">Validation accuracy</div>
-                <div class="text-xs text-gray-600 mt-1">(when source data correct)</div>
-              </div>
-              
-              <div class="bg-gradient-to-br from-purple-100 to-purple-50 p-4 rounded-lg border border-purple-300 shadow text-center">
-                <div class="text-3xl font-bold text-purple-700">98%+</div>
-                <div class="text-sm text-gray-700 mt-1">Upload success rate</div>
-                <div class="text-xs text-gray-600 mt-1">(with retry logic)</div>
-              </div>
-            </div>
           </section>
 
           <!-- Configuration Section -->
           <section id="configuration" class="content-section mb-12">
             <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Configuration and Setup</h2>
 
+            <!-- Config File Overview -->
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border-2 border-blue-300 mb-6">
+              <h3 class="text-2xl font-semibold mb-4 text-blue-900">📋 Configuration Files</h3>
+              <p class="text-sm text-gray-700 mb-4">The processor agent uses JSON configuration files to control its behavior. All files are located in the <code class="bg-white px-2 py-1 rounded">config/</code> directory.</p>
+              
+              <div class="space-y-4">
+                <div class="bg-white p-4 rounded border-l-4 border-blue-500">
+                  <h4 class="font-semibold text-blue-800 mb-2">config/agent.json</h4>
+                  <p class="text-sm text-gray-700 mb-2"><strong>Purpose:</strong> Main agent configuration - folder paths, OneDrive sync, polling behavior</p>
+                  <details class="text-sm">
+                    <summary class="cursor-pointer font-semibold text-blue-700 hover:text-blue-900">View Key Settings</summary>
+                    <ul class="ml-6 mt-2 space-y-1 text-xs">
+                      <li><strong>oneDrive.relativePath:</strong> Path to project folder within OneDrive</li>
+                      <li><strong>watchPath:</strong> Folder where uploader writes PDFs (default: ./incoming)</li>
+                      <li><strong>stagingPath:</strong> Temporary processing folder (default: ./processing)</li>
+                      <li><strong>filingRoot:</strong> Base folder for organized PDFs (default: ./filed)</li>
+                      <li><strong>unsortedRoot:</strong> Quarantine folder for rejected PDFs (default: ./filed/Unsorted)</li>
+                      <li><strong>worker.maxConcurrent:</strong> Max PDFs processed simultaneously (default: 2)</li>
+                      <li><strong>worker.pollIntervalSeconds:</strong> How often to check for new files (default: 5s)</li>
+                    </ul>
+                  </details>
+                </div>
+
+                <div class="bg-white p-4 rounded border-l-4 border-green-500">
+                  <h4 class="font-semibold text-green-800 mb-2">config/jotform_config.json</h4>
+                  <p class="text-sm text-gray-700 mb-2"><strong>Purpose:</strong> Jotform API settings, retry logic, and log level configuration</p>
+                  <details class="text-sm">
+                    <summary class="cursor-pointer font-semibold text-green-700 hover:text-green-900">View Key Settings</summary>
+                    <ul class="ml-6 mt-2 space-y-1 text-xs">
+                      <li><strong>powershell.maxConcurrentPdfs:</strong> PDFs processed in parallel (default: 2)</li>
+                      <li><strong>powershell.maxRetries:</strong> Upload retry attempts (default: 4)</li>
+                      <li><strong>powershell.rateLimitMs:</strong> Delay between API calls (default: 200ms)</li>
+                      <li><strong>logging.*:</strong> Enable/disable each log level (true/false)</li>
+                    </ul>
+                    <div class="mt-2 p-2 bg-green-50 rounded">
+                      <p class="font-semibold text-xs">💡 See "How Logs Help" section for all 9 configurable log levels</p>
+                    </div>
+                  </details>
+                </div>
+
+                <div class="bg-white p-4 rounded border-l-4 border-purple-500">
+                  <h4 class="font-semibold text-purple-800 mb-2">config/host_identity.json</h4>
+                  <p class="text-sm text-gray-700 mb-2"><strong>Purpose:</strong> Override PC identity (optional - usually auto-detected)</p>
+                  <details class="text-sm">
+                    <summary class="cursor-pointer font-semibold text-purple-700 hover:text-purple-900">View Example</summary>
+                    <pre class="mt-2 p-2 bg-gray-800 text-gray-100 rounded text-xs overflow-x-auto">{
+  "computerName": "KS095",
+  "pcNumber": "095"
+}</pre>
+                  </details>
+                </div>
+              </div>
+            </div>
+
+            <!-- Config GUI -->
+            <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-lg border-2 border-purple-300 mb-6">
+              <h3 class="text-2xl font-semibold mb-4 text-purple-900">🖥️ Configuration GUI Tool</h3>
+              <p class="text-sm text-gray-700 mb-4">A graphical interface for editing agent configuration without manually editing JSON files.</p>
+              
+              <div class="bg-white p-4 rounded border-l-4 border-purple-500 mb-4">
+                <h4 class="font-semibold mb-2">How to Launch</h4>
+                <ol class="list-decimal ml-6 space-y-1 text-sm text-gray-700">
+                  <li>Navigate to <code class="bg-gray-200 px-2 py-1 rounded">tools/</code> directory</li>
+                  <li>Run: <code class="bg-gray-800 text-gray-100 px-2 py-1 rounded">python agent_config_gui.py</code></li>
+                  <li>GUI window opens with editable configuration fields</li>
+                </ol>
+              </div>
+
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="bg-white p-4 rounded shadow">
+                  <h5 class="font-semibold text-purple-800 mb-2">✅ What You Can Edit</h5>
+                  <ul class="text-sm space-y-1">
+                    <li>• OneDrive Relative Path</li>
+                    <li>• Watch Path (incoming folder)</li>
+                    <li>• Staging Path (processing folder)</li>
+                    <li>• Filing Root (organized PDFs)</li>
+                    <li>• Unsorted Root (quarantine folder)</li>
+                  </ul>
+                </div>
+
+                <div class="bg-white p-4 rounded shadow">
+                  <h5 class="font-semibold text-purple-800 mb-2">🛠️ Features</h5>
+                  <ul class="text-sm space-y-1">
+                    <li>• Browse button (...) to select folders</li>
+                    <li>• Save button to persist changes</li>
+                    <li>• Reset to Defaults button</li>
+                    <li>• Reload from File button</li>
+                    <li>• Status bar shows operation results</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="mt-4 p-3 bg-yellow-100 border border-yellow-300 rounded">
+                <p class="text-sm"><strong>⚠️ Important:</strong> After saving changes in the GUI, restart the processor agent for changes to take effect.</p>
+              </div>
+            </div>
+
+            <!-- PC Number Config -->
             <div class="collapsible-section">
               <div class="collapsible-header">
                 <h3 class="text-xl font-semibold">PC Number Configuration</h3>
@@ -803,6 +1012,72 @@
             <div class="space-y-4">
               <div class="collapsible-section">
                 <div class="collapsible-header">
+                  <h3 class="text-lg font-semibold">How secure is the Assessment Uploader? What about data privacy?</h3>
+                  <span class="text-xl">▼</span>
+                </div>
+                <div class="collapsible-content">
+                  <p class="text-gray-700 mb-3">The Assessment Uploader is designed with multiple layers of security and privacy protection:</p>
+                  
+                  <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4 rounded">
+                    <h4 class="font-semibold mb-2 text-gray-800">🔒 Data Transmission & Storage</h4>
+                    <ul class="list-disc ml-6 space-y-1 text-sm text-gray-700">
+                      <li><strong>Local-only file writing:</strong> Files written directly to your computer's local folders, never uploaded to cloud servers via browser</li>
+                      <li><strong>OneDrive encryption:</strong> Files synced through OneDrive's secure, encrypted channels</li>
+                      <li><strong>No external tracking:</strong> No analytics, no cookies, no third-party scripts monitoring your uploads</li>
+                      <li><strong>Browser-based permissions:</strong> You explicitly grant folder access permissions via native browser dialog</li>
+                    </ul>
+                  </div>
+
+                  <div class="bg-green-50 border-l-4 border-green-500 p-4 mb-4 rounded">
+                    <h4 class="font-semibold mb-2 text-gray-800">🔐 Access Control</h4>
+                    <ul class="list-disc ml-6 space-y-1 text-sm text-gray-700">
+                      <li><strong>Folder permission required:</strong> Browser requires explicit user permission to write to folders</li>
+                      <li><strong>Limited to authorized users:</strong> Only personnel with OneDrive folder access can upload</li>
+                      <li><strong>PC number tracking:</strong> Each upload tagged with PC number for audit trail</li>
+                      <li><strong>No backend authentication:</strong> System runs entirely client-side in browser (privacy-first design)</li>
+                    </ul>
+                  </div>
+
+                  <div class="bg-purple-50 border-l-4 border-purple-500 p-4 mb-4 rounded">
+                    <h4 class="font-semibold mb-2 text-gray-800">💾 File Handling</h4>
+                    <ul class="list-disc ml-6 space-y-1 text-sm text-gray-700">
+                      <li><strong>Read-only browser access:</strong> Browser only reads PDFs to write them elsewhere, never modifies originals</li>
+                      <li><strong>Metadata minimization:</strong> Only PC number stored in metadata files, no personally identifiable info</li>
+                      <li><strong>Temporary metadata:</strong> .meta.json files automatically deleted after processing</li>
+                      <li><strong>Secure filing:</strong> Processor agent moves files to organized school folders after validation</li>
+                    </ul>
+                  </div>
+
+                  <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-4 rounded">
+                    <h4 class="font-semibold mb-2 text-gray-800">🛡️ Student Data Protection</h4>
+                    <ul class="list-disc ml-6 space-y-1 text-sm text-gray-700">
+                      <li><strong>PDF validation:</strong> Processor agent validates student IDs against encrypted mapping files</li>
+                      <li><strong>Data conflict prevention:</strong> System blocks overwriting existing assessment data</li>
+                      <li><strong>No data exposure:</strong> Failed uploads moved to Unsorted/ folder, not exposed publicly</li>
+                      <li><strong>Audit trail:</strong> Each file tracked with upload source (PC number) and timestamp</li>
+                    </ul>
+                  </div>
+
+                  <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                    <h4 class="font-semibold mb-2 text-gray-800">⚠️ Security Best Practices</h4>
+                    <ul class="list-disc ml-6 space-y-1 text-sm text-gray-700">
+                      <li><strong>Use trusted devices:</strong> Don't use the uploader on public or shared computers</li>
+                      <li><strong>Verify PC number:</strong> Ensure PC number matches your assigned computer</li>
+                      <li><strong>Check OneDrive sync:</strong> Ensure files sync to authorized OneDrive account only</li>
+                      <li><strong>Keep browser updated:</strong> Use latest Chrome/Edge version for security patches</li>
+                      <li><strong>Lock your screen:</strong> Always lock computer when stepping away during uploads</li>
+                      <li><strong>Report issues immediately:</strong> Contact administrators if you notice unexpected behavior</li>
+                    </ul>
+                  </div>
+
+                  <p class="text-sm text-gray-600 mt-4 italic">
+                    <strong>Note:</strong> While the system implements strong security measures, ultimate data security also depends on user practices. Always follow institutional data protection policies and guidelines when handling student assessment data.
+                  </p>
+                </div>
+              </div>
+
+              <div class="collapsible-section">
+                <div class="collapsible-header">
                   <h3 class="text-lg font-semibold">Do I need internet access to upload?</h3>
                   <span class="text-xl">▼</span>
                 </div>
@@ -881,7 +1156,7 @@
               <div class="diagram-box bg-purple-50 border-purple-300">
                 <h3 class="text-lg font-semibold mb-3">📋 File Naming</h3>
                 <ul class="space-y-2 text-sm text-gray-700">
-                  <li>✓ Format: <code>xxxxx_YYYYMMDD_HH_MM.pdf</code></li>
+                  <li>✓ Format: <code>coreID_YYYYMMDD_HH_MM.pdf</code> (Core ID from AITable)</li>
                   <li>✓ Correct format = faster processing</li>
                   <li>✓ Wrong format = rejected by agent</li>
                 </ul>

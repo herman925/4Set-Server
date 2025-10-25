@@ -271,10 +271,10 @@ The browser writes TWO files:
 
 ```
 Phase 1: Filename validation
-  ✓ Format: xxxxx_YYYYMMDD_HH_MM.pdf
+  ✓ Format: coreID_YYYYMMDD_HH_MM.pdf (Core ID from AITable)
 
 Phase 2: Content validation
-  ✓ Student ID exists in database
+  ✓ Core ID exists in database
   ✓ School ID matches student record
   ✓ All required fields present
 
@@ -320,9 +320,315 @@ Failure:
 | Filing | Instant | Check filed/ folder |
 | **Total** | **~30-60 seconds** | **End-to-end** |
 
+### Processor Agent Workflow
+
+The **Processor Agent** is an autonomous PowerShell service that continuously monitors the upload folder, validates PDFs, enriches data, and submits to Jotform. Here's how it processes your uploaded files:
+
+```mermaid
+flowchart TD
+    Start([📂 File Detected]) --> NameCheck{Filename<br/>approximately<br/>correct?}
+    
+    NameCheck -->|NO - Invalid format| Reject1[❌ REJECTED<br/>→ Quarantine folder]
+    NameCheck -->|YES - Lenient match| Phase1{Is filename<br/>valid?<br/>Phase 1}
+    
+    Phase1 -->|NO| Reject2[❌ REJECTED<br/>→ Quarantine folder]
+    Phase1 -->|YES| Phase2{PDF fields<br/>valid?<br/>Phase 2}
+    
+    Phase2 -->|NO| Reject3[❌ REJECTED<br/>→ Quarantine folder]
+    Phase2 -->|YES| Process[🔄 Processing<br/>1. Parse PDF<br/>2. Calculate termination<br/>3. Enrich metadata<br/>4. Prepare JSON]
+    
+    Process --> Conflict{Data<br/>conflict?}
+    
+    Conflict -->|CONFLICT| Blocked[⚠️ BLOCKED<br/>→ Quarantine folder]
+    Conflict -->|SAFE| Upload[📤 Upload to Jotform<br/>Max 3 retries + backoff]
+    
+    Upload --> UploadResult{Upload<br/>success?}
+    
+    UploadResult -->|FAILED| Error[❌ ERROR<br/>→ Quarantine folder]
+    UploadResult -->|SUCCESS| File["📁 File to School Folder<br/>→ School-specific folder"]
+    
+    File --> Complete([✅ COMPLETE])
+    
+    style Start fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    style Complete fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style Process fill:#E1BEE7,stroke:#9C27B0,color:#4A148C
+    style Upload fill:#BBDEFB,stroke:#2196F3,color:#0D47A1
+    style File fill:#C8E6C9,stroke:#4CAF50,color:#1B5E20
+    style Reject1 fill:#FFE0E0,stroke:#E57373,color:#C62828
+    style Reject2 fill:#FFE0E0,stroke:#E57373,color:#C62828
+    style Reject3 fill:#FFE0E0,stroke:#E57373,color:#C62828
+    style Blocked fill:#FFE0B2,stroke:#FF9800,color:#E65100
+    style Error fill:#FFE0E0,stroke:#E57373,color:#C62828
+    style NameCheck fill:#E1F5FE,stroke:#03A9F4,color:#01579B
+    style Phase1 fill:#FFF9E0,stroke:#FFD54F,color:#F57C00
+    style Phase2 fill:#FFE0B2,stroke:#FF9800,color:#E65100
+    style Conflict fill:#F8BBD0,stroke:#F06292,color:#880E4F
+    style UploadResult fill:#B2DFDB,stroke:#26A69A,color:#004D40
+```
+
+**Total Processing Time:** 5-30 seconds per PDF (typical)  
+**Note:** Filename validation uses lenient matching - slight variations in format are accepted
+
+#### Validation Phases Explained
+
+**Phase 1: Filename Validation**
+- **Expected Format:** `coreID_YYYYMMDD_HH_MM.pdf`
+- **Core ID:** 5-digit numeric identifier from AITable (e.g., 10001, 10523)
+- **Checks:**
+  - ✓ 5-digit Core ID (numeric only, starts with 1)
+  - ✓ Valid date format (YYYYMMDD)
+  - ✓ Valid time format (HH_MM)
+  - ✓ Underscores in correct positions
+- **Example:** 10001_20251016_14_30.pdf ✅
+
+**Phase 2: PDF Content Validation**
+- **Checks:**
+  - ✓ Student ID in mapping file
+  - ✓ School ID exists
+  - ✓ Required fields present
+  - ✓ Data types correct
+  - ✓ Value ranges valid
+- **Sources:** assets/*.enc mapping files
+
+#### Data Overwrite Protection
+
+##### 🔒 Why Data Overwrite Protection is Critical
+
+**Assessment data integrity is paramount.** Once test administrators record student responses and upload PDFs, that data becomes the official record of the child's performance. Any accidental overwrite could:
+
+- **Loss of irreplaceable data:** Student responses cannot be re-administered - once lost, they're gone forever
+- **Research validity compromise:** Changing recorded answers invalidates study results and scientific conclusions
+- **Regulatory compliance issues:** Educational research requires audit trails showing data hasn't been tampered with
+- **Accidental errors:** Re-uploading the same student by mistake (e.g., wrong filename) could silently overwrite correct data
+
+**The system prevents these scenarios by blocking any attempt to change existing assessment answers while still allowing corrections to administrative metadata (student names, school IDs, etc.).**
+
+##### Data Overwrite Protection Workflow
+
+```mermaid
+flowchart TD
+    Start([New PDF Upload<br/>Attempt]) --> Parse[Parse PDF<br/>Extract Data]
+    
+    Parse --> Search{Does student<br/>submission<br/>exist?}
+    
+    Search -->|NO - New Student| AllowNew[✅ ALLOW<br/>Create New<br/>Submission]
+    Search -->|YES - Existing| CheckFields{Check Each<br/>Field}
+    
+    CheckFields --> FieldType{Field<br/>Type?}
+    
+    FieldType -->|Admin Info<br/>student-id, name,<br/>school-id, class| MetaCheck{Current<br/>Value?}
+    MetaCheck -->|Empty/Null| AllowMeta[✅ ALLOW<br/>Fill Empty<br/>Admin Info]
+    MetaCheck -->|Has Value| AllowUpdate[✅ ALLOW<br/>Update Admin Info]
+    
+    FieldType -->|Test Answers<br/>ERV, CM, CWR,<br/>termination| DataCheck{Current<br/>Value?}
+    DataCheck -->|Empty/Null| AllowData[✅ ALLOW<br/>Fill Empty<br/>Test Data]
+    DataCheck -->|Has Value| BlockData[❌ BLOCK<br/>Protect Existing<br/>Test Answers]
+    
+    AllowNew --> LogSuccess[📝 Log to CSV:<br/>Success entry]
+    AllowMeta --> LogSuccess
+    AllowUpdate --> LogSuccess
+    AllowData --> LogSuccess
+    
+    BlockData --> LogConflict["📝 Log to CSV:<br/>CONFLICT entry<br/>with field details"]
+    
+    LogConflict --> MoveQuarantine["⚠️ Move PDF to<br/>Quarantine Folder"]
+    
+    MoveQuarantine --> NotifyAdmin["🔔 Admin Reviews<br/>CSV Log Entry<br/>+ Quarantined PDF"]
+    
+    LogSuccess --> FileSchool["📁 Move PDF to<br/>School's Folder<br/>+ Create JSON"]
+    
+    FileSchool --> Complete([✅ Upload Complete])
+    NotifyAdmin --> End([❌ Upload Blocked])
+    
+    style Start fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    style Complete fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style End fill:#E57373,stroke:#C62828,color:#fff
+    style AllowNew fill:#C8E6C9,stroke:#4CAF50,color:#1B5E20
+    style AllowMeta fill:#C8E6C9,stroke:#4CAF50,color:#1B5E20
+    style AllowUpdate fill:#C8E6C9,stroke:#4CAF50,color:#1B5E20
+    style AllowData fill:#C8E6C9,stroke:#4CAF50,color:#1B5E20
+    style BlockData fill:#FFCDD2,stroke:#E57373,color:#C62828
+    style MoveQuarantine fill:#FFE0B2,stroke:#FF9800,color:#E65100
+    style LogConflict fill:#FFF9C4,stroke:#FDD835,color:#F57F17
+    style LogSuccess fill:#E8F5E9,stroke:#66BB6A,color:#2E7D32
+    style Search fill:#E1F5FE,stroke:#03A9F4,color:#01579B
+    style CheckFields fill:#F3E5F5,stroke:#AB47BC,color:#4A148C
+    style FieldType fill:#FFF3E0,stroke:#FFA726,color:#E65100
+    style MetaCheck fill:#E0F2F1,stroke:#26A69A,color:#004D40
+    style DataCheck fill:#FCE4EC,stroke:#EC407A,color:#880E4F
+```
+
+**Key Decision Points:**
+1. **New vs Existing:** New students always allowed; existing students trigger protection checks
+2. **Field Type:** Administrative info (student details, school assignment) vs Test Answers (actual assessment responses)
+3. **Admin Info:** Can be updated to correct administrative errors (typos in names, wrong school assignment, PC number, etc.)
+4. **Test Answers:** Once recorded, cannot be changed - protects scientific integrity of the assessment data
+5. **Empty Fields:** Can always be filled, whether admin info or test data
+6. **Logging:** All decisions logged to daily CSV file (YYYYMMDD_processing_agent.csv) for audit trail
+
+##### Conflict Detection Rules
+
+**✅ ALLOWED Updates:**
+- Filling blank/null fields
+- Updating metadata fields:
+  - student-id
+  - child-name
+  - school-id
+  - district
+  - class-id
+  - computerno
+- Same value (no change)
+
+**❌ BLOCKED Updates:**
+- Changing assessment data:
+  - ERV answers
+  - CM answers
+  - CWR answers
+  - Termination values
+  - Background data
+- Overwriting non-empty assessment fields
+
+**🛡️ Protection Goal:** Prevent accidental data corruption while allowing metadata corrections
+
+##### 📂 Where Do Blocked Updates Go?
+
+When the processor agent detects a data conflict and blocks an upload, the files are moved to a special quarantine location for review:
+
+**File Destination:**
+```
+quarantine_folder/
+├── 10523_20251016_14_30.pdf
+└── (Logged in CSV: YYYYMMDD_processing_agent.csv)
+```
+*Note: Quarantine folder path is configurable (default: "unsorted")*
+
+**What Happens:**
+1. **PDF moved to quarantine folder:** The file is not deleted, just quarantined for manual review
+2. **Conflict logged to CSV:** Details written to the daily CSV log file (not individual .log files)
+3. **JSON data deleted:** The processed JSON is not saved to prevent corruption
+4. **Jotform not updated:** No API call is made to Jotform, protecting existing data
+5. **PC number recorded:** The uploader's PC number (from upload.html manual setting) is logged for tracking
+
+**⚠️ Important:** Files in quarantine folder require manual review by administrators to determine if:
+- It's a legitimate re-upload attempt that should be manually processed
+- It's an accidental duplicate that should be deleted
+- It's a different student with a similar/wrong filename
+
+##### 📝 How Logs Help Check What Went Wrong
+
+The processor agent maintains a detailed CSV log that helps administrators diagnose and resolve conflicts:
+
+**Daily Processing Log (CSV Format)**
+- **File:** `logs/YYYYMMDD_processing_agent.csv`
+- **Format:** Timestamp,Level,File,Message
+
+**📌 Configurable Log Levels**
+
+Edit `config/jotform_config.json` → "logging" section to enable/disable each level (set to `true` or `false`):
+
+- **REJECT:** Validation failures (sessionkey mismatch, Core ID errors, filename format)
+- **DATA_OVERWRITE_DIFF:** Data overwrite conflicts (field-level details)
+- **UPLOAD:** Jotform operations (created/updated submissions)
+- **FILED:** Successfully archived files with destination folder
+- **CLEANUP:** Maintenance operations (orphaned JSON cleanup)
+- **RENAME:** Filename normalization (original → canonical)
+- **WARN:** Non-critical issues (missing mappings, upload failures)
+- **ERROR:** Critical failures (parser errors, exceptions)
+- **INFO:** Verbose details (queued, parsing, validating, enriching)
+
+**Example CSV Log Entries (Excel/Spreadsheet View):**
+
+| Timestamp | Level | File | Message |
+|-----------|-------|------|---------|
+| 2025-10-25 14:30:15 | REJECT | 10523_20251016_14_30.pdf | Phase2 validation failed: Core ID 10523 not in mapping |
+| 2025-10-25 14:31:22 | DATA_OVERWRITE_DIFF | 10524_20251016_14_35.pdf | Field q37_englishReceptive[0]: Current '1' vs Attempted '0' |
+| 2025-10-25 14:32:10 | UPLOAD | 10525_20251016_14_40.pdf | Created submission 234567890123456789 (87 fields, 1 chunk) |
+| 2025-10-25 14:33:05 | FILED | 10525_20251016_14_40.pdf | 10525_20251016_14_40.pdf → S023/ |
+
+💡 **Tip:** Open CSV files in Excel, Google Sheets, or VS Code with Rainbow CSV extension for easier filtering and analysis
+
+**Using CSV Logs for Troubleshooting:**
+1. **Open today's CSV log:** Find YYYYMMDD_processing_agent.csv in the logs directory
+2. **Search for filename:** Look for rows with the problematic PDF filename
+3. **Check log level:** REJECT/ERROR/CONFLICT indicate problems; SUCCESS/FILED indicate completion
+4. **Read the message:** Detailed reason explains exactly what went wrong
+5. **Locate quarantined PDF:** Check the quarantine folder for the actual file
+6. **Determine action:** Based on the CSV message, decide whether to:
+   - Delete the Unsorted file (if duplicate/wrong)
+   - Manually fix Jotform data (if existing data is wrong)
+   - Contact test administrator (if assessment needs re-administration)
+
 ---
 
 ## Configuration and Setup
+
+### 📋 Configuration Files
+
+The processor agent uses JSON configuration files to control its behavior. All files are located in the `config/` directory.
+
+#### config/agent.json
+
+**Purpose:** Main agent configuration - folder paths, OneDrive sync, polling behavior
+
+**Key Settings:**
+- `oneDrive.relativePath`: Path to project folder within OneDrive
+- `watchPath`: Folder where uploader writes PDFs (default: ./incoming)
+- `stagingPath`: Temporary processing folder (default: ./processing)
+- `filingRoot`: Base folder for organized PDFs (default: ./filed)
+- `unsortedRoot`: Quarantine folder for rejected PDFs (default: ./filed/Unsorted)
+- `worker.maxConcurrent`: Max PDFs processed simultaneously (default: 2)
+- `worker.pollIntervalSeconds`: How often to check for new files (default: 5s)
+
+#### config/jotform_config.json
+
+**Purpose:** Jotform API settings, retry logic, and log level configuration
+
+**Key Settings:**
+- `powershell.maxConcurrentPdfs`: PDFs processed in parallel (default: 2)
+- `powershell.maxRetries`: Upload retry attempts (default: 4)
+- `powershell.rateLimitMs`: Delay between API calls (default: 200ms)
+- `logging.*`: Enable/disable each log level (true/false)
+
+💡 See "How Logs Help" section for all 9 configurable log levels
+
+#### config/host_identity.json
+
+**Purpose:** Override PC identity (optional - usually auto-detected)
+
+**Example:**
+```json
+{
+  "computerName": "KS095",
+  "pcNumber": "095"
+}
+```
+
+### 🖥️ Configuration GUI Tool
+
+A graphical interface for editing agent configuration without manually editing JSON files.
+
+**File Location:** `tools/agent_config_gui.py`
+
+**How to Launch:**
+1. Navigate to `tools/` directory
+2. Run: `python agent_config_gui.py`
+3. GUI window opens with editable configuration fields
+
+**What You Can Edit:**
+- OneDrive Relative Path
+- Watch Path (incoming folder)
+- Staging Path (processing folder)
+- Filing Root (organized PDFs)
+- Unsorted Root (quarantine folder)
+
+**Features:**
+- Browse button (...) to select folders
+- Save button to persist changes to `config/agent.json`
+- Reset to Defaults button (restores current file values)
+- Reload from File button (discards unsaved changes)
+- Status bar shows operation results
+
+**⚠️ Important:** After saving changes in the GUI, restart the processor agent for changes to take effect.
 
 ### PC Number Configuration
 
@@ -644,6 +950,43 @@ A: Yes! Open the folder in File Explorer - you'll see the PDFs and metadata file
 
 ### Security & Privacy
 
+**Q: How secure is the Assessment Uploader? What about data privacy?**  
+A: The Assessment Uploader is designed with multiple layers of security and privacy protection:
+
+**🔒 Data Transmission & Storage**
+- **Local-only file writing:** Files written directly to your computer's local folders, never uploaded to cloud servers via browser
+- **OneDrive encryption:** Files synced through OneDrive's secure, encrypted channels
+- **No external tracking:** No analytics, no cookies, no third-party scripts monitoring your uploads
+- **Browser-based permissions:** You explicitly grant folder access permissions via native browser dialog
+
+**🔐 Access Control**
+- **Folder permission required:** Browser requires explicit user permission to write to folders
+- **Limited to authorized users:** Only personnel with OneDrive folder access can upload
+- **PC number tracking:** Each upload tagged with PC number for audit trail
+- **No backend authentication:** System runs entirely client-side in browser (privacy-first design)
+
+**💾 File Handling**
+- **Read-only browser access:** Browser only reads PDFs to write them elsewhere, never modifies originals
+- **Metadata minimization:** Only PC number stored in metadata files, no personally identifiable info
+- **Temporary metadata:** .meta.json files automatically deleted after processing
+- **Secure filing:** Processor agent moves files to organized school folders after validation
+
+**🛡️ Student Data Protection**
+- **PDF validation:** Processor agent validates student IDs against encrypted mapping files
+- **Data conflict prevention:** System blocks overwriting existing assessment data
+- **No data exposure:** Failed uploads moved to Unsorted/ folder, not exposed publicly
+- **Audit trail:** Each file tracked with upload source (PC number) and timestamp
+
+**⚠️ Security Best Practices**
+- **Use trusted devices:** Don't use the uploader on public or shared computers
+- **Verify PC number:** Ensure PC number matches your assigned computer
+- **Check OneDrive sync:** Ensure files sync to authorized OneDrive account only
+- **Keep browser updated:** Use latest Chrome/Edge version for security patches
+- **Lock your screen:** Always lock computer when stepping away during uploads
+- **Report issues immediately:** Contact administrators if you notice unexpected behavior
+
+*Note: While the system implements strong security measures, ultimate data security also depends on user practices. Always follow institutional data protection policies and guidelines when handling student assessment data.*
+
 **Q: Is it safe to grant folder permissions?**  
 A: Yes. The permission is:
 - Limited to one specific folder
@@ -689,7 +1032,7 @@ A: Yes, but:
    - Prevents browser overload
 
 2. **File Naming**
-   - Use the standard format: `xxxxx_YYYYMMDD_HH_MM.pdf`
+   - Use the standard format: `coreID_YYYYMMDD_HH_MM.pdf` (Core ID from AITable)
    - Correct format = faster processing
    - Wrong format = rejected by agent
 
