@@ -19,128 +19,190 @@
     }
 
     /**
-     * Merge JotForm and Qualtrics datasets by coreId
+     * Merge JotForm and Qualtrics datasets by coreId WITH GRADE-BASED GROUPING
+     * 
+     * CRITICAL FIX: Never merge data from different grades (K1/K2/K3)
+     * Per issue #XX: "We should NEVER merge anything that is NOT from the same grade.
+     * You don't merge jotform K3 data with qualtrics K2 data."
+     * 
      * Strategy:
-     * 1. Sort Qualtrics records by date (earliest first)
-     * 2. Group all records by coreId (multiple submissions possible)
-     * 3. For each coreId, merge Qualtrics records using earliest non-empty value wins
-     * 4. Merge grouped Qualtrics data with JotForm submissions using earliest non-empty value wins
+     * 1. Determine grade for each JotForm and Qualtrics record BEFORE merging
+     * 2. Group records by (coreId, grade) pair
+     * 3. For each coreId, create SEPARATE merged records for each grade
+     * 4. Merge data using earliest non-empty value wins WITHIN the same grade
+     * 5. Flag cross-grade data as validation warnings (should not be merged)
      * 
      * This matches JotForm's merge principle (line 795 in jotform-cache.js):
      * "Sort by created_at (earliest first), earliest non-empty value wins"
      * 
-     * The same principle now applies to cross-source merging (Qualtrics + JotForm):
-     * - JotForm timestamp: created_at
-     * - Qualtrics timestamp: _meta.startDate or recordedDate
-     * - Earliest non-empty value wins across both sources
+     * But now applied PER GRADE LEVEL:
+     * - JotForm K3 + Qualtrics K3 → Merge ✓
+     * - JotForm K2 + Qualtrics K2 → Merge ✓
+     * - JotForm K3 + Qualtrics K2 → DO NOT MERGE ✗ (validation error)
      * 
      * @param {Array} jotformData - JotForm submissions
      * @param {Array} qualtricsData - Transformed Qualtrics responses
-     * @returns {Array} Merged records
+     * @returns {Array} Merged records (one per coreId per grade)
      */
     mergeDataSources(jotformData, qualtricsData) {
-      console.log('[DataMerger] ========== MERGING DATA SOURCES ==========');
+      console.log('[DataMerger] ========== MERGING DATA SOURCES (GRADE-AWARE) ==========');
       console.log('[DataMerger] JotForm records:', jotformData.length);
       console.log('[DataMerger] Qualtrics records:', qualtricsData.length);
 
-      // Step 1: Sort Qualtrics records by date (earliest first) to match JotForm merge logic
-      const sortedQualtricsData = qualtricsData.sort((a, b) => {
-        const dateA = a._meta?.startDate ? new Date(a._meta.startDate) : new Date(0);
-        const dateB = b._meta?.startDate ? new Date(b._meta.startDate) : new Date(0);
-        return dateA - dateB;
-      });
-
-      // Step 2: Group Qualtrics records by coreId and merge multiple responses
-      const qualtricsByCoreId = new Map(); // coreId → merged Qualtrics data (ALL fields)
+      // Step 1: Determine grade for ALL records BEFORE merging
+      // Group by (coreId, grade) to ensure we never mix different grade levels
+      const recordsByStudent = new Map(); // coreId → { grades: Map<grade, {jotform: [], qualtrics: []}> }
       
-      for (const record of sortedQualtricsData) {
+      // Process Qualtrics records - determine grade and group
+      console.log('[DataMerger] Step 1: Determining grades for Qualtrics records...');
+      for (const record of qualtricsData) {
         const coreId = record.coreId;
         if (!coreId) {
           console.warn('[DataMerger] Qualtrics record missing coreId, skipping:', record._meta?.qualtricsResponseId);
           continue;
         }
-
-        if (qualtricsByCoreId.has(coreId)) {
-          // Multiple Qualtrics responses for same student - merge TGMD fields
-          const existing = qualtricsByCoreId.get(coreId);
-          const merged = this.mergeMultipleQualtricsRecords(existing, record);
-          qualtricsByCoreId.set(coreId, merged);
-          console.log(`[DataMerger] Merged multiple Qualtrics responses for ${coreId}`);
-        } else {
-          qualtricsByCoreId.set(coreId, record);
+        
+        // Determine grade from recordedDate
+        let grade = 'Unknown';
+        if (window.GradeDetector) {
+          const recordedDate = record._meta?.startDate || record.recordedDate;
+          if (recordedDate) {
+            grade = window.GradeDetector.determineGradeFromRecordedDate(recordedDate);
+          }
         }
+        
+        // Initialize student entry if needed
+        if (!recordsByStudent.has(coreId)) {
+          recordsByStudent.set(coreId, { grades: new Map() });
+        }
+        
+        const student = recordsByStudent.get(coreId);
+        if (!student.grades.has(grade)) {
+          student.grades.set(grade, { jotform: [], qualtrics: [] });
+        }
+        
+        student.grades.get(grade).qualtrics.push(record);
       }
-
-      console.log(`[DataMerger] Grouped Qualtrics data into ${qualtricsByCoreId.size} unique students`);
-
-      // Step 3: Process JotForm records and merge with Qualtrics
-      const mergedRecords = [];
-      let jotformOnlyCount = 0;
-      let mergedWithQualtricsCount = 0;
-
-      for (const jotformRecord of jotformData) {
-        const coreId = jotformRecord.coreId;
+      
+      // Process JotForm records - determine grade and group
+      console.log('[DataMerger] Step 2: Determining grades for JotForm records...');
+      for (const record of jotformData) {
+        const coreId = record.coreId;
         if (!coreId) {
           console.warn('[DataMerger] JotForm record missing coreId, skipping');
           continue;
         }
-
-        if (qualtricsByCoreId.has(coreId)) {
-          // Merge Qualtrics TGMD data into this JotForm record
-          const qualtricsData = qualtricsByCoreId.get(coreId);
-          const merged = this.mergeTGMDFields(jotformRecord, qualtricsData);
-          mergedRecords.push(merged);
-          mergedWithQualtricsCount++;
-          
-          console.log(`[DataMerger] ✓ Matched and merged TGMD for student ${coreId}`);
-        } else {
-          // JotForm-only record
-          const jotformOnly = {
-            ...jotformRecord,
-            _sources: ['jotform']
-          };
-          
-          // Add grade detection for JotForm-only records
-          if (window.GradeDetector) {
-            jotformOnly.grade = window.GradeDetector.determineGrade({
-              sessionkey: jotformRecord.sessionkey
-            });
-          }
-          
-          mergedRecords.push(jotformOnly);
-          jotformOnlyCount++;
+        
+        // Determine grade from sessionkey
+        let grade = 'Unknown';
+        if (window.GradeDetector && record.sessionkey) {
+          grade = window.GradeDetector.determineGradeFromSessionKey(record.sessionkey);
         }
+        
+        // Initialize student entry if needed
+        if (!recordsByStudent.has(coreId)) {
+          recordsByStudent.set(coreId, { grades: new Map() });
+        }
+        
+        const student = recordsByStudent.get(coreId);
+        if (!student.grades.has(grade)) {
+          student.grades.set(grade, { jotform: [], qualtrics: [] });
+        }
+        
+        student.grades.get(grade).jotform.push(record);
       }
-
-      // Step 4: Add Qualtrics-only records (students not in JotForm)
-      const jotformCoreIds = new Set(jotformData.map(r => r.coreId).filter(Boolean));
+      
+      console.log(`[DataMerger] Grouped data: ${recordsByStudent.size} students across multiple grades`);
+      
+      // Step 2: Merge data WITHIN each grade for each student
+      console.log('[DataMerger] Step 3: Merging data within each grade...');
+      const mergedRecords = [];
+      let crossGradeWarnings = 0;
+      let sameGradeMerges = 0;
+      let jotformOnlyCount = 0;
       let qualtricsOnlyCount = 0;
-
-      for (const [coreId, qualtricsRecord] of qualtricsByCoreId.entries()) {
-        if (!jotformCoreIds.has(coreId)) {
-          const qualtricsOnly = {
-            ...qualtricsRecord,
-            _sources: ['qualtrics'],
-            _orphaned: true // Flag as Qualtrics-only
-          };
+      
+      for (const [coreId, student] of recordsByStudent.entries()) {
+        // Check for cross-grade data (validation warning)
+        if (student.grades.size > 1) {
+          const grades = Array.from(student.grades.keys()).join(', ');
+          console.warn(`[DataMerger] ⚠️  Student ${coreId} has data from multiple grades: ${grades} - NOT merging across grades`);
+          crossGradeWarnings++;
+        }
+        
+        // Process each grade separately
+        for (const [grade, gradeData] of student.grades.entries()) {
+          const { jotform, qualtrics } = gradeData;
           
-          // Add grade detection for Qualtrics-only records
-          if (window.GradeDetector) {
-            qualtricsOnly.grade = window.GradeDetector.determineGrade({
-              recordedDate: qualtricsRecord._meta?.startDate || qualtricsRecord.recordedDate
+          // Merge multiple Qualtrics responses for this grade (earliest wins)
+          let mergedQualtrics = null;
+          if (qualtrics.length > 0) {
+            // Sort by date
+            qualtrics.sort((a, b) => {
+              const dateA = a._meta?.startDate ? new Date(a._meta.startDate) : new Date(0);
+              const dateB = b._meta?.startDate ? new Date(b._meta.startDate) : new Date(0);
+              return dateA - dateB;
             });
+            
+            mergedQualtrics = qualtrics[0]; // Start with earliest
+            for (let i = 1; i < qualtrics.length; i++) {
+              mergedQualtrics = this.mergeMultipleQualtricsRecords(mergedQualtrics, qualtrics[i]);
+            }
           }
           
-          mergedRecords.push(qualtricsOnly);
-          qualtricsOnlyCount++;
-          console.log(`[DataMerger] ℹ️  Qualtrics-only record for student ${coreId} - no JotForm match`);
+          // Merge multiple JotForm submissions for this grade (earliest wins)
+          let mergedJotform = null;
+          if (jotform.length > 0) {
+            // Sort by created_at
+            jotform.sort((a, b) => {
+              const dateA = a.created_at ? new Date(a.created_at) : new Date(0);
+              const dateB = b.created_at ? new Date(b.created_at) : new Date(0);
+              return dateA - dateB;
+            });
+            
+            mergedJotform = jotform[0]; // Already merged in jotform-cache.js, but sort for consistency
+          }
+          
+          // Now merge JotForm + Qualtrics FOR THIS GRADE ONLY
+          if (mergedJotform && mergedQualtrics) {
+            // Both sources available for this grade - merge them
+            const merged = this.mergeTGMDFields(mergedJotform, mergedQualtrics);
+            merged.grade = grade; // Explicitly set grade
+            mergedRecords.push(merged);
+            sameGradeMerges++;
+            console.log(`[DataMerger] ✓ Merged ${coreId} (${grade}): JotForm + Qualtrics`);
+          } else if (mergedJotform) {
+            // JotForm only for this grade
+            const jotformOnly = {
+              ...mergedJotform,
+              _sources: ['jotform'],
+              grade: grade
+            };
+            mergedRecords.push(jotformOnly);
+            jotformOnlyCount++;
+          } else if (mergedQualtrics) {
+            // Qualtrics only for this grade
+            const qualtricsOnly = {
+              ...mergedQualtrics,
+              _sources: ['qualtrics'],
+              _orphaned: true,
+              grade: grade
+            };
+            mergedRecords.push(qualtricsOnly);
+            qualtricsOnlyCount++;
+            console.log(`[DataMerger] ℹ️  Qualtrics-only record for ${coreId} (${grade})`);
+          }
         }
       }
-
-      console.log(`[DataMerger] Merge complete: ${mergedRecords.length} total records`);
-      console.log(`[DataMerger] - ${mergedWithQualtricsCount} merged (JotForm + Qualtrics)`);
-      console.log(`[DataMerger] - ${jotformOnlyCount} JotForm-only records`);
-      console.log(`[DataMerger] - ${qualtricsOnlyCount} Qualtrics-only records`);
+      
+      console.log(`[DataMerger] ========== MERGE COMPLETE ==========`);
+      console.log(`[DataMerger] Total records: ${mergedRecords.length}`);
+      console.log(`[DataMerger] - ${sameGradeMerges} merged (JotForm + Qualtrics, same grade)`);
+      console.log(`[DataMerger] - ${jotformOnlyCount} JotForm-only`);
+      console.log(`[DataMerger] - ${qualtricsOnlyCount} Qualtrics-only`);
+      if (crossGradeWarnings > 0) {
+        console.warn(`[DataMerger] ⚠️  ${crossGradeWarnings} students with cross-grade data (kept separate)`);
+      }
 
       return mergedRecords;
     }
@@ -264,14 +326,8 @@
         };
       }
 
-      // Add grade detection (K1/K2/K3) based on assessment date
-      if (window.GradeDetector) {
-        const gradeData = {
-          recordedDate: qualtricsRecord._meta?.startDate || qualtricsRecord.recordedDate,
-          sessionkey: jotformRecord.sessionkey
-        };
-        merged.grade = window.GradeDetector.determineGrade(gradeData);
-      }
+      // NOTE: Grade is now determined BEFORE merging in mergeDataSources()
+      // Do NOT re-determine grade here to avoid overriding the correct grade grouping
 
       return merged;
     }
