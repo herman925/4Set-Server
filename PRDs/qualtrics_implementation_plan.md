@@ -1,56 +1,84 @@
 ---
 title: Qualtrics Data Integration - Implementation Plan
 owner: Project Maintainers
-last-updated: 2025-10-22
-status: Implementation Ready
+last-updated: 2025-10-25
+status: ✅ IMPLEMENTED (PRs #90-#97)
 ---
 
 # Qualtrics Data Integration - Implementation Plan
 
-> **Document Purpose:** This plan outlines how to implement Qualtrics TGMD data fetching, dual-source merging with JotForm, and integration with the existing checking system validation architecture.
+> **Document Purpose:** This plan outlines how to implement Qualtrics data fetching for all tasks (not just TGMD), dual-source merging with JotForm, and integration with the existing checking system validation architecture.
 
-**Status Update (2025-10-22):** Ready for implementation. All prerequisites documented, credentials structure defined, field mappings complete.
+**Status Update (2025-10-25):** ✅ **FULLY IMPLEMENTED** across PRs #90-#97. All phases complete.
+
+**Implementation Summary:**
+- ✅ Phase 1: Grade Detection System (PR #92)
+- ✅ Phase 2: Complete Qualtrics Data Extraction - All 632 fields (PR #92)
+- ✅ Phase 3: TGMD Matrix-Radio Scoring (PR #94)
+- ✅ Phase 4: Unique Core ID Filtering (PR #90)
+- ✅ Phase 5: "Earliest Non-Empty Wins" Merge Strategy (PRs #96-#97)
 
 **Reference Documents:**
-- `PRDs/jotform_qualtrics_integration_prd.md` - Complete API specification
-- `PRDs/checking_system_prd.md` - Validation architecture (esp. Student Page - 100% accurate)
+- `PRDs/jotform_qualtrics_integration_prd.md` - Complete API specification (updated)
+- `PRDs/checking_system_prd.md` - Validation architecture
 - `PRDs/data-pipeline.md` - Data processing conventions
-- `PRDs/task_completion_calculation_logic_prd.md` - Calculation rules
+- `TEMP/ISSUES_90_97_COMPREHENSIVE_ANALYSIS.md` - Implementation review
 
 ---
 
 ## Executive Summary
 
-### Problem Statement
-The 4Set system currently processes assessment data exclusively from JotForm (PDF upload pipeline). However, TGMD (Test of Gross Motor Development) assessments are administered via **Qualtrics** web surveys, creating a dual-source data scenario that requires intelligent merging.
+### Problem Statement (Historical)
+The 4Set system processed assessment data exclusively from JotForm (PDF upload pipeline). TGMD and other assessments administered via **Qualtrics** web surveys created a dual-source data scenario that required intelligent merging.
 
-### Solution Overview
-1. **Fetch** Qualtrics TGMD data using existing Qualtrics API (documented in integration PRD)
-2. **Transform** Qualtrics responses to standardized field format compatible with JotForm
-3. **Merge** JotForm and Qualtrics datasets with conflict resolution
-4. **Cache** merged dataset in IndexedDB for offline access and performance
-5. **Validate** using existing TaskValidator.js (single source of truth)
-6. **Display** in checking system drilldown pages with proper attribution
+### Solution Overview (✅ IMPLEMENTED)
+1. ✅ **Fetch** - Qualtrics data extraction for ALL tasks (632 fields) using Qualtrics API
+2. ✅ **Transform** - Qualtrics responses transformed to standardized field format compatible with JotForm
+3. ✅ **Merge** - "Earliest non-empty wins" timestamp-based conflict resolution (JotForm vs Qualtrics)
+4. ✅ **Grade Detection** - Automatic K1/K2/K3 classification based on assessment dates (Aug-Jul school year)
+5. ✅ **Cache** - Merged dataset stored in IndexedDB for offline access and performance
+6. ✅ **Validate** - Using TaskValidator.js with special TGMD matrix-radio scoring
+7. ✅ **Display** - Checking system drilldown pages with proper attribution and grade grouping
 
-### Key Design Decisions
+### Key Design Decisions (As Implemented)
 
-#### 1. TaskValidator as Single Source of Truth
-**Decision:** All validation logic remains in `assets/js/task-validator.js`
-- **Rationale:** Proven 100% accurate on Student page, centralizes business logic
-- **Impact:** Qualtrics integration must NOT duplicate validation rules
-- **Pattern:** Fetch → Transform → Merge → Cache → TaskValidator.validateAllTasks()
+#### 1. TaskValidator as Single Source of Truth ✅
+**Implementation:** All validation logic in `assets/js/task-validator.js`
+- ✅ Special `processTGMDScoring()` function for trial aggregation
+- ✅ Row-level scoring (t1 + t2 per criterion, max 2)
+- ✅ Task grouping (hop, long_jump, slide, dribble, catch, underhand_throw)
+- ✅ "Success/Fail" labels for TGMD instead of "Correct/Incorrect"
 
-#### 2. Dual-Source Merge Strategy
-**Decision:** Qualtrics data takes precedence for TGMD fields, JotForm for all others
-- **Rationale:** Qualtrics is native TGMD platform (web survey), JotForm is manual fallback
-- **Conflict Detection:** Flag mismatches, store both values in metadata
-- **Transparency:** UI shows data source (`_tgmdSource: "qualtrics"` or `"jotform"`)
+#### 2. Complete Data Extraction (All Tasks) ✅
+**Implementation:** Changed from "TGMD only" to task-agnostic extraction
+- ✅ All 632 Qualtrics fields extracted (ERV, SYM, TOM, CM, CWR, HTKS, TEC, TGMD, etc.)
+- ✅ Implemented in `assets/js/data-merger.js` (PR #92)
+- ✅ No longer limited to TGMD_* prefix fields
 
-#### 3. IndexedDB Hierarchical Cache (Existing Pattern)
-**Decision:** Use existing cache architecture from `jotform-cache.js`
-- **Rationale:** Already handles 30 MB JotForm cache in IndexedDB
-- **Extension:** Add Qualtrics responses to same database (separate store)
-- **Merge Layer:** Pre-compute merged dataset in `cache` store for instant retrieval
+#### 3. "Earliest Non-Empty Wins" Merge Strategy ✅
+**Implementation:** Timestamp-based conflict resolution at all levels
+- ✅ **Level 1 (Within-Source)**: Sort by timestamp, first non-empty value wins
+  - JotForm: sorted by `created_at` 
+  - Qualtrics: sorted by `recordedDate`
+- ✅ **Level 2 (Cross-Source)**: Compare timestamps between sources
+  - JotForm `created_at` vs Qualtrics `recordedDate`
+  - Earliest non-empty value wins regardless of source
+- ✅ Conflict logging with full timestamp audit trail
+
+#### 4. Grade Detection System ✅
+**Implementation:** `assets/js/grade-detector.js` (PR #90)
+- ✅ School year boundaries: August to July
+  - K1: Aug 2023 - Jul 2024
+  - K2: Aug 2024 - Jul 2025
+  - K3: Aug 2025 - Jul 2026
+- ✅ Hybrid detection: `recordedDate` (Qualtrics) → `sessionkey` (JotForm)
+- ✅ Integrated into all merged records in `data-merger.js`
+
+#### 5. Unique Core ID Filtering ✅
+**Implementation:** `assets/js/checking-system-filters.js` (PR #90)
+- ✅ Deduplicate Core IDs in student filter dropdowns
+- ✅ Students with multiple grade records (K1, K2, K3) appear once
+- ✅ Uses Set to track unique Core IDs
 
 ---
 
@@ -3101,11 +3129,11 @@ Trial 2    [2_1]       [2_2]       [2_3]       [2_4]
 
 ---
 
-## D. Implementation Status (2025-10-23)
+## D. Implementation Status (2025-10-25)
 
 ### Implementation Complete ✅
 
-**Status**: Core implementation completed and ready for testing with production credentials.
+**Status**: All phases implemented and operational in production (PRs #90-#97).
 
 **Completed Components**:
 1. ✅ Qualtrics API module (`assets/js/qualtrics-api.js`)
@@ -3113,28 +3141,42 @@ Trial 2    [2_1]       [2_2]       [2_3]       [2_4]
    - Error handling for 401, 404, 429 status codes
    - Progress callback integration
 2. ✅ Qualtrics transformer module (`assets/js/qualtrics-transformer.js`)
-   - Field mapping loader from qualtrics-mapping.json
+   - Field mapping loader from qualtrics-mapping.json (632 fields)
    - QID-to-field transformation including matrix sub-questions
+   - *Updated*: Extracts all tasks (ERV, SYM, TOM, CM, CWR, HTKS, TEC, TGMD, etc.), not just TGMD
    - Validation and statistics generation
 3. ✅ Data merger module (`assets/js/data-merger.js`)
-   - Merge by sessionkey with conflict detection
-   - Qualtrics data prioritization for TGMD fields
-   - Conflict export to CSV functionality
-4. ✅ JotFormCache extension (`assets/js/jotform-cache.js`)
+   - **Updated**: "Earliest non-empty wins" timestamp-based merge strategy
+   - Merge by coreId with conflict detection and timestamp audit trail
+   - Complete task extraction (all 632 Qualtrics fields)
+   - Grade detection integration (K1/K2/K3)
+   - Conflict export with timestamps and resolution tracking
+4. ✅ Grade detection utility (`assets/js/grade-detector.js`) - **NEW in PR #90**
+   - Automatic K1/K2/K3 classification based on assessment dates
+   - School year boundaries: August to July (K1: 2023/24, K2: 2024/25, K3: 2025/26)
+   - Hybrid detection: recordedDate (Qualtrics) → sessionkey (JotForm)
+   - UMD test version in TEMP folder for Node.js compatibility
+5. ✅ TGMD matrix-radio scoring (`assets/js/task-validator.js`) - **NEW in PR #94**
+   - `processTGMDScoring()` function for trial aggregation
+   - Row-level scoring (t1 + t2 per criterion, max 2)
+   - Task grouping by motor skill (hop, long_jump, slide, dribble, catch, underhand_throw)
+   - Student page rendering with `renderTGMDResults()` in `checking-system-student-page.js`
+   - "Success/Fail" labels instead of "Correct/Incorrect"
+6. ✅ Unique Core ID filtering (`assets/js/checking-system-filters.js`) - **NEW in PR #90**
+   - Deduplicate Core IDs in student filter dropdowns
+   - Students with multiple grade records appear once
+7. ✅ JotFormCache extension (`assets/js/jotform-cache.js`)
    - refreshWithQualtrics() method integration
    - Qualtrics cache store in IndexedDB
    - Progress tracking and error handling
-5. ✅ UI integration (`checking_system_home.html`, `assets/js/cache-manager-ui.js`)
+8. ✅ UI integration (`checking_system_home.html`, `checking_system_4_student.html`, `assets/js/cache-manager-ui.js`)
    - "Refresh with Qualtrics" button in cache ready modal
    - Progress modal during sync
    - Completion modal with merge statistics
    - Error modal with detailed messages
+   - **Fixed**: Student page now includes all required scripts (qualtrics-api, qualtrics-transformer, data-merger, grade-detector)
 
-**Next Steps**:
-- Test with production Qualtrics credentials
-- Validate field mapping accuracy
-- Monitor merge conflicts in production data
-- Document user workflow in USER_GUIDE
+**Production Deployment**: ✅ All phases complete and operational
 
 ### Prerequisites ✅ Complete
 
@@ -3167,31 +3209,36 @@ Trial 2    [2_1]       [2_2]       [2_3]       [2_4]
 - [x] Create `assets/js/qualtrics-api.js`
 - [x] Implement `fetchQualtricsResponses()` using API pattern from `qualtrics_api.py`
 - [x] Qualtrics credentials integrated into existing encryption/decryption workflow
-- [x] Ready for testing with production dataset
+- [x] ✅ Tested and operational with production dataset
 
 #### Phase 2: Data Transformation ✅ COMPLETE
 - [x] Implement `transformQualtricsResponse()` in `assets/js/qualtrics-transformer.js`
 - [x] Map Qualtrics matrix responses to flat field structure
-- [x] Extract sessionkey from Qualtrics responses
-- [x] Transformation verified with qualtrics-mapping.json structure
+- [x] Extract sessionkey/coreId from Qualtrics responses
+- [x] ✅ ALL 632 fields extracted (ERV, SYM, TOM, CM, CWR, HTKS, TEC, TGMD, etc.) - **PR #92**
 
 #### Phase 3: Merge Strategy ✅ COMPLETE
 - [x] Extend `jotform-cache.js` with merge logic
-- [x] Implement conflict detection for overlapping TGMD data in `assets/js/data-merger.js`
-- [x] Add `_tgmdSource` metadata field to track origin
-- [x] Ready for testing with dual-source samples
+- [x] Implement conflict detection in `assets/js/data-merger.js`
+- [x] ✅ "Earliest non-empty wins" timestamp-based resolution - **PR #96-97**
+- [x] ✅ Grade detection integration (K1/K2/K3) - **PR #90, #92**
+- [x] Add metadata fields to track origin, conflicts, and timestamps
+- [x] ✅ Operational with production dual-source data
 
-#### Phase 4: UI Integration ✅ COMPLETE
+#### Phase 4: UI Integration ✅ COMPLETE  
 - [x] Add "Refresh with Qualtrics" button to cache ready modal
 - [x] Display merge statistics in completion modal
 - [x] Show Qualtrics sync status in home page
 - [x] Progress tracking during sync operations
+- [x] ✅ TGMD rendering with trial breakdown - **PR #94**
+- [x] ✅ Unique Core ID filtering in dropdowns - **PR #90**
 
-#### Phase 5: Production Deployment (PENDING)
-- [ ] Test with production Qualtrics credentials
-- [ ] Validate full pipeline with real data
-- [ ] Monitor merge conflicts and resolution
-- [ ] Document operational procedures in USER_GUIDE
+#### Phase 5: Production Deployment ✅ COMPLETE
+- [x] ✅ Tested with production Qualtrics credentials
+- [x] ✅ Validated full pipeline with real data
+- [x] ✅ Merge conflicts tracked with timestamp audit trail
+- [x] ✅ Documentation updated (USER_GUIDE_QUALTRICS_TGMD.md, README.md)
+- [x] ✅ PRD documentation updated - **This update**
 
 ### Key Implementation Notes
 
@@ -3211,10 +3258,33 @@ const exportEndpoint = `/API/v3/surveys/${credentials.qualtricsSurveyId}/export-
 - Export operation is async (start → poll → download)
 - Typical export time: 30-60 seconds for ~200 responses
 
-**Data Source Priority:**
-- TGMD fields: Qualtrics takes precedence
-- All other fields: JotForm takes precedence
-- Conflicts logged but not blocking
+**Data Merge Strategy (Updated PR #96-97):**
+- ✅ **"Earliest Non-Empty Wins"** - Timestamp-based conflict resolution
+- **Level 1 (Within-Source)**: Sort by timestamp, first non-empty value wins
+  - JotForm: sorted by `created_at`
+  - Qualtrics: sorted by `recordedDate`
+- **Level 2 (Cross-Source)**: Compare JotForm `created_at` vs Qualtrics `recordedDate`
+  - Earliest non-empty value wins regardless of source
+- Conflicts logged with full timestamp audit trail
+- Replaces previous "Qualtrics priority" approach
+
+**Grade Detection (New Feature PR #90, #92):**
+- Automatic K1/K2/K3 classification for all merged records
+- School year boundaries: August to July
+  - K1: Aug 2023 - Jul 2024 (school year 2023)
+  - K2: Aug 2024 - Jul 2025 (school year 2024)
+  - K3: Aug 2025 - Jul 2026 (school year 2025)
+- Hybrid detection: `recordedDate` (Qualtrics ISO 8601) → `sessionkey` (JotForm)
+- Grade field added to all merged, JotForm-only, and Qualtrics-only records
+
+**TGMD Scoring (New Feature PR #94):**
+- Matrix-radio questions require special trial-based scoring
+- Each criterion has 2 trials (t1, t2)
+- Row score = t1 + t2 (max 2 per criterion)
+- Results grouped by motor task (hop, long_jump, slide, dribble, catch, underhand_throw)
+- Display uses "Success/Fail" labels instead of "Correct/Incorrect"
+- Implemented in `processTGMDScoring()` in task-validator.js
+- Rendering in student page via `renderTGMDResults()` in checking-system-student-page.js
 
 ### Quick Start Guide for Developer
 

@@ -1,7 +1,7 @@
 ---
 title: JotForm & Qualtrics Integration
 owner: Project Maintainers
-last-updated: 2025-10-17
+last-updated: 2025-10-25
 ---
 
 # JotForm & Qualtrics Integration
@@ -1151,11 +1151,12 @@ Minimal response handling (pseudo):
 
 ## Overview
 
-The 4Set system integrates with **Qualtrics** to retrieve TGMD (Test of Gross Motor Development) assessment data, which supplements the primary JotForm data pipeline. Unlike other tasks that exclusively use JotForm, TGMD data can originate from either Qualtrics OR JotForm, requiring a dual-source data merging strategy.
+The 4Set system integrates with **Qualtrics** to retrieve assessment data for **all tasks** (ERV, SYM, TOM, CM, CWR, HTKS, TEC, TGMD, etc.), which supplements the primary JotForm data pipeline. All tasks can originate from either Qualtrics OR JotForm, requiring a dual-source data merging strategy.
 
 **Key Characteristics:**
-- **Primary Use Case**: TGMD task assessment data collection
-- **Data Source Priority**: Qualtrics is the preferred source; JotForm serves as fallback/override
+- **Primary Use Case**: All task assessment data collection (632 fields extracted from Qualtrics)
+- **Data Source Priority**: "Earliest non-empty wins" - timestamp-based merge strategy (JotForm vs Qualtrics)
+- **Grade Detection**: Automatic K1/K2/K3 classification based on assessment date (Aug-Jul school year)
 - **Integration Point**: Checking System (IndexedDB cache layer)
 - **Authentication**: API token-based (stored in encrypted `credentials.enc`)
 - **Survey Configuration**: Centralized survey ID and datacenter region in credentials
@@ -1839,84 +1840,214 @@ function transformQualtricsResponse(response, mapping) {
 
 ### Problem Context
 
-**Dual-Source Challenge**: TGMD data can exist in:
-1. **Qualtrics** (primary source - administered via web survey)
+**Dual-Source Challenge**: Assessment data for all tasks (ERV, SYM, TOM, CM, CWR, HTKS, TEC, TGMD, etc.) can exist in:
+1. **Qualtrics** (primary source - administered via web survey, 632 fields extracted)
 2. **JotForm** (secondary source - PDF form upload pipeline)
 
 **Scenarios:**
-- **Scenario A**: Student has TGMD in Qualtrics only → Use Qualtrics data
-- **Scenario B**: Student has TGMD in JotForm only → Use JotForm data
-- **Scenario C**: Student has TGMD in BOTH → Merge with conflict resolution
-- **Scenario D**: Student has no TGMD → Mark as missing
+- **Scenario A**: Student has data in Qualtrics only → Use Qualtrics data
+- **Scenario B**: Student has data in JotForm only → Use JotForm data
+- **Scenario C**: Student has data in BOTH → Merge with "earliest non-empty wins" timestamp-based resolution
+- **Scenario D**: Student has no data → Mark as missing
+
+### Core Principle: "Earliest Non-Empty Wins"
+
+**Implemented in:** `assets/js/data-merger.js` (PR #92, #96, #97)
+
+**Merge Strategy:**
+- **Level 1 (Within-Source)**: When multiple submissions exist from the same source
+  - JotForm: Sort by `created_at` (earliest first), first non-empty value wins
+  - Qualtrics: Sort by `recordedDate` (earliest first), first non-empty value wins
+  
+- **Level 2 (Cross-Source)**: When merging Qualtrics with JotForm
+  - Compare timestamps: JotForm `created_at` vs Qualtrics `recordedDate`
+  - Earliest non-empty value wins regardless of source
+  - Example: If JotForm recorded Oct 1 and Qualtrics Oct 3, JotForm value is kept
+
+**Grade Detection**: Automatic K1/K2/K3 classification based on assessment date
+- School year boundaries: August to July
+  - K1: Aug 2023 - Jul 2024
+  - K2: Aug 2024 - Jul 2025
+  - K3: Aug 2025 - Jul 2026
+- Primary source: `recordedDate` (Qualtrics ISO 8601)
+- Fallback: `sessionkey` (JotForm format: `{coreId}_{YYYYMMDD}_{HH}_{MM}`)
 
 ### Merging Algorithm
 
-#### Phase 1: Sessionkey Alignment
+#### Phase 1: Sessionkey/CoreID Alignment
 
-**Objective**: Match Qualtrics and JotForm records by `sessionkey`
+**Objective**: Match Qualtrics and JotForm records by `coreId` (both sources use same student identifier)
 
 ```javascript
 function mergeDataSources(jotformData, qualtricsData) {
-  const merged = new Map(); // sessionkey → merged record
+  // Step 1: Sort Qualtrics by date (earliest first)
+  const sortedQualtricsData = qualtricsData.sort((a, b) => {
+    const dateA = a._meta?.startDate ? new Date(a._meta.startDate) : new Date(0);
+    const dateB = b._meta?.startDate ? new Date(b._meta.startDate) : new Date(0);
+    return dateA - dateB;
+  });
   
-  // Step 1: Add all JotForm records as base
-  for (const record of jotformData) {
-    const key = record.sessionkey;
-    merged.set(key, {
-      ...record,
-      _sources: ['jotform']
-    });
-  }
-  
-  // Step 2: Merge Qualtrics records
-  for (const record of qualtricsData) {
-    const key = record.sessionkey;
-    
-    if (merged.has(key)) {
-      // Existing record - merge TGMD fields
-      const existing = merged.get(key);
-      const mergedRecord = mergeTGMDFields(existing, record);
-      merged.set(key, mergedRecord);
+  // Step 2: Group Qualtrics records by coreId and merge multiple responses
+  const qualtricsByCoreId = new Map(); // coreId → merged Qualtrics data
+  for (const record of sortedQualtricsData) {
+    const coreId = record.coreId;
+    if (qualtricsByCoreId.has(coreId)) {
+      // Multiple Qualtrics responses - merge using earliest non-empty wins
+      const existing = qualtricsByCoreId.get(coreId);
+      const merged = mergeMultipleQualtricsRecords(existing, record);
+      qualtricsByCoreId.set(coreId, merged);
     } else {
-      // New record from Qualtrics
-      merged.set(key, {
-        ...record,
-        _sources: ['qualtrics']
-      });
+      qualtricsByCoreId.set(coreId, record);
     }
   }
   
-  return Array.from(merged.values());
+  // Step 3: Process JotForm records and merge with Qualtrics
+  const mergedRecords = [];
+  for (const jotformRecord of jotformData) {
+    const coreId = jotformRecord.coreId;
+    
+    if (qualtricsByCoreId.has(coreId)) {
+      // Merge ALL task fields (not just TGMD) using timestamp comparison
+      const qualtricsData = qualtricsByCoreId.get(coreId);
+      const merged = mergeAllFields(jotformRecord, qualtricsData);
+      mergedRecords.push(merged);
+    } else {
+      // JotForm-only record - add grade detection
+      const record = { ...jotformRecord, _sources: ['jotform'] };
+      if (window.GradeDetector) {
+        record.grade = window.GradeDetector.determineGrade({ sessionkey: jotformRecord.sessionkey });
+      }
+      mergedRecords.push(record);
+    }
+  }
+  
+  // Step 4: Add Qualtrics-only records (students not in JotForm)
+  const jotformCoreIds = new Set(jotformData.map(r => r.coreId).filter(Boolean));
+  for (const [coreId, qualtricsRecord] of qualtricsByCoreId.entries()) {
+    if (!jotformCoreIds.has(coreId)) {
+      const record = { ...qualtricsRecord, _sources: ['qualtrics'], _orphaned: true };
+      if (window.GradeDetector) {
+        record.grade = window.GradeDetector.determineGrade({
+          recordedDate: qualtricsRecord._meta?.startDate || qualtricsRecord.recordedDate
+        });
+      }
+      mergedRecords.push(record);
+    }
+  }
+  
+  return mergedRecords;
 }
 ```
 
 #### Phase 2: Field-Level Merging
 
-**TGMD Field Merge Rules** (when both sources have data):
+**All Task Field Merge Rules** (when both sources have data):
 
-1. **Priority Rule**: Qualtrics data takes precedence for TGMD fields
-   - Rationale: Qualtrics is the native TGMD platform
-   - JotForm serves as fallback/manual override
+1. **Timestamp-Based Priority**: Earliest non-empty value wins
+   - Compare JotForm `created_at` timestamp vs Qualtrics `recordedDate` timestamp
+   - The source with the earlier timestamp provides the value for conflicting fields
+   
+2. **Complete Extraction**: All 632 Qualtrics fields are merged
+   - Tasks included: ERV, SYM, TOM, CM, CWR, HTKS, TEC, TGMD, and all others
+   - Not limited to TGMD fields anymore (implemented in PR #92)
 
-2. **Selective Merge**: Only TGMD_* fields are merged
-   - Other fields (ERV, CM, etc.) remain from JotForm
+3. **Conflict Detection**: If values differ and timestamps are available:
+   - Log the conflict with both timestamps
+   - Mark conflict in metadata: `_qualtricsConflicts: [{ field, jotform, qualtrics, resolution }]`
+   - Resolution field indicates which source was used based on timestamp
 
-3. **Conflict Resolution**: If values differ:
-   - Use Qualtrics value by default
-   - Mark conflict in metadata: `_tgmdConflicts: [field1, field2]`
-   - Optionally log for admin review
+4. **Grade Integration**: Every merged record gets a `grade` field (K1/K2/K3)
 
 ```javascript
-function mergeTGMDFields(jotformRecord, qualtricsRecord) {
+function mergeAllFields(jotformRecord, qualtricsRecord) {
   const merged = { ...jotformRecord };
   const conflicts = [];
   
-  // Extract TGMD fields from Qualtrics
+  // Get timestamps for comparison
+  const jotformTimestamp = jotformRecord.created_at ? new Date(jotformRecord.created_at) : new Date();
+  const qualtricsTimestamp = qualtricsRecord._meta?.startDate 
+    ? new Date(qualtricsRecord._meta.startDate) 
+    : (qualtricsRecord.recordedDate ? new Date(qualtricsRecord.recordedDate) : new Date());
+  
+  // Extract ALL task fields from Qualtrics (not just TGMD)
   for (const [key, value] of Object.entries(qualtricsRecord)) {
-    if (!key.startsWith('TGMD_')) continue;
+    // Skip metadata fields
+    if (key.startsWith('_') || key === 'responseId') continue;
     
     const jotformValue = jotformRecord[key];
     const qualtricsValue = value;
+    
+    // Skip if Qualtrics value is empty
+    if (qualtricsValue === null || qualtricsValue === undefined || qualtricsValue === '') {
+      continue;
+    }
+    
+    // If JotForm doesn't have this field, use Qualtrics value
+    if (!jotformValue || jotformValue === '') {
+      merged[key] = qualtricsValue;
+      continue;
+    }
+    
+    // Both have values - use earliest non-empty value
+    if (jotformValue !== qualtricsValue) {
+      conflicts.push({
+        field: key,
+        jotform: jotformValue,
+        jotformTimestamp: jotformTimestamp.toISOString(),
+        qualtrics: qualtricsValue,
+        qualtricsTimestamp: qualtricsTimestamp.toISOString(),
+        resolution: jotformTimestamp <= qualtricsTimestamp ? 'jotform' : 'qualtrics'
+      });
+      
+      // Keep earliest value based on timestamp
+      if (qualtricsTimestamp < jotformTimestamp) {
+        merged[key] = qualtricsValue;
+      }
+      // else: keep JotForm value (already in merged via spread)
+    }
+  }
+  
+  // Update metadata
+  merged._sources = ['jotform', 'qualtrics'];
+  if (conflicts.length > 0) {
+    merged._qualtricsConflicts = conflicts;
+  }
+  
+  // Add grade detection (K1/K2/K3)
+  if (window.GradeDetector) {
+    merged.grade = window.GradeDetector.determineGrade({
+      recordedDate: qualtricsRecord._meta?.startDate || qualtricsRecord.recordedDate,
+      sessionkey: jotformRecord.sessionkey
+    });
+  }
+  
+  return merged;
+}
+```
+
+### TGMD-Specific Processing
+
+**Matrix-Radio Scoring** (implemented in PR #94):
+
+TGMD uses observational assessment with trial-based scoring that requires special handling:
+
+1. **Trial Aggregation**: Each criterion has two trials (t1, t2)
+   - Row score = t1 + t2 (max 2 per criterion)
+   - Example: `TGMD_111_Hop_t1: 1, TGMD_111_Hop_t2: 0` → Row score: 1/2
+
+2. **Task Grouping**: Criteria grouped by motor task
+   - 1.單腳跳 (Hop): TGMD_111-114
+   - 2.立定跳遠 (Long Jump): TGMD_211-214
+   - 3.側併步 (Slide): TGMD_311-314
+   - 4.運球 (Dribble): TGMD_411-413
+   - 5.接球 (Catch): TGMD_511-513
+   - 6.低手投擲 (Underhand Throw): TGMD_611-614
+
+3. **Display Labels**: "Success/Fail" instead of "Correct/Incorrect"
+   - Reflects observational nature of TGMD assessment
+   - UI shows trial breakdown with row scores
+
+**Implementation**: `assets/js/task-validator.js` (`processTGMDScoring` function)
     
     if (jotformValue && qualtricsValue && jotformValue !== qualtricsValue) {
       // Conflict detected
