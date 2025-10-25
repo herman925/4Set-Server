@@ -404,10 +404,10 @@
             </div>
           </section>
 
-          <!-- Section 1: OneDrive Setup -->
+          <!-- Section I.2: OneDrive Setup -->
           <section id="onedrive-setup" class="mb-12">
             <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">
-              <span class="step-number">1</span>
+              <span class="step-number">1.2</span>
               OneDrive Setup & Sync
             </h2>
             
@@ -583,11 +583,29 @@
             </div>
           </section>
 
-          <!-- Section 2: Upload PDFs -->
+          <!-- Section II: Operation -->
+          <section id="operation" class="mb-12 mt-16">
+            <h2 class="text-4xl font-bold mb-6 pb-4 border-b-4 border-primary" style="color: var(--primary)">
+              Section II: Operation
+            </h2>
+            <p class="text-gray-700 text-lg mb-6">
+              Now that you're set up, learn how to perform the key tasks in the 4Set System. This section is organized by workflow: Data Upload and Checking System.
+            </p>
+          </section>
+
+          <!-- Data Upload Workflow Header -->
+          <div id="data-upload" class="mb-8">
+            <h3 class="text-2xl font-bold mb-3 text-gray-800 flex items-center gap-2">
+              <span class="text-blue-600">📤</span> Data Upload Workflow
+            </h3>
+            <p class="text-gray-600">Upload assessment PDFs and prepare data from JotForm & Qualtrics.</p>
+          </div>
+
+          <!-- Section II.1 (2.1): Upload PDFs -->
           <section id="upload-pdf" class="mb-12">
             <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">
-              <span class="step-number">2</span>
-              Uploading PDFs
+              <span class="step-number">2.1</span>
+              Upload PDFs
             </h2>
             
             <p class="text-gray-700 mb-4">
@@ -1473,33 +1491,38 @@ flowchart LR
             </div>
           </section>
 
-          <!-- Section 5: Build Cache -->
-          <section id="build-cache" class="mb-12">
+          <!-- Section 2.2: Data Preparation -->
+          <section id="data-prep" class="mb-12">
             <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">
-              <span class="step-number">5</span>
-              Building the Cache
+              <span class="step-number">2.2</span>
+              Data Preparation from JotForm & Qualtrics
             </h2>
             
             <p class="text-gray-700 mb-4">
-              Build the cache to improve performance when loading large datasets in the Checking System.
+              The system merges data from two sources (JotForm submissions and Qualtrics surveys) to create a complete picture of each student's assessment. You need to sync this data for accurate checking.
             </p>
 
-            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 5.1: When to Build Cache</h3>
-            <p class="text-gray-700 mb-2">Build the cache:</p>
+            <div class="info-box">
+              <p class="text-sm font-semibold mb-2">💡 How Data Merge Works (Simple Explanation)</p>
+              <p class="text-sm">Think of it like putting together a puzzle: JotForm has the uploaded PDF data, while Qualtrics has the survey responses. The system combines both pieces to show you the complete assessment for each student. When you "build the cache," you're telling the system to fetch the latest pieces and assemble them together.</p>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">When to Prepare Data</h3>
+            <p class="text-gray-700 mb-2">Sync the data:</p>
             <ul class="list-disc ml-6 space-y-1 text-gray-700">
-              <li>After uploading a large batch of new assessments</li>
+              <li>After uploading a batch of new assessments</li>
               <li>When the Checking System feels slow to load</li>
-              <li>At the start of each day if you're doing heavy checking work</li>
-              <li>After any major data updates</li>
+              <li>At the start of each day if you're doing checking work</li>
+              <li>After any major data updates from JotForm or Qualtrics</li>
             </ul>
 
-            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 5.2: Build the Cache</h3>
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">How to Prepare Data</h3>
             <ol class="list-decimal ml-6 space-y-2 text-gray-700">
               <li>Open the Checking System home page</li>
               <li>Look at the <strong>System Status Pills</strong> at the top (below the header)</li>
               <li>You'll see two pills: "Decryption Status" and "JotForm Cache Status"</li>
               <li>If the cache status pill shows <strong class="text-red-600">"System Not Ready"</strong> (red), click on it</li>
-              <li>If it shows <strong class="text-green-600">"System Ready"</strong> (green), you can still click it to refresh the cache</li>
+              <li>If it shows <strong class="text-green-600">"System Ready"</strong> (green), you can still click it to refresh the data</li>
               <li>A sync/refresh process will start automatically, showing progress in the pill itself</li>
               <li>The pill will show <strong class="text-orange-600">"Syncing"</strong> (orange) with a percentage and progress bar</li>
               <li>Wait for it to complete - the pill will turn <strong class="text-green-600">green</strong> when ready</li>
