@@ -1566,15 +1566,21 @@ type(scope): description
 - **Agent.md**: Development roadmap and priorities
 - **Security Architecture**: `PRDs/data_security_prd.md`
 - **Termination Rules**: `PRDs/termination-rules.md`
-- **JotForm API Integration**: `PRDs/jotform-integration.md`
+- **JotForm API Integration**: `PRDs/jotform_qualtrics_integration_prd.md`
   - **NEW**: Complete API call process documentation (see "Complete API Call Process Documentation" section)
   - Includes upload workflow, create submission process, troubleshooting, and best practices
+- **User Guides**: All user guides consolidated in `/PRDs/` folder
+  - `PRDs/checking_system_user_guide_prd.md` - Checking system usage guide
+  - `PRDs/assessment_uploader_user_guide_prd.md` - Upload interface guide
+  - `PRDs/qualtrics_tgmd_user_guide_prd.md` - Qualtrics integration guide
+  - `PRDs/data_conflicts_user_guide_prd.md` - Data conflict resolution guide
 
 **Note**: All documentation has been consolidated into the `/PRDs/` directory. Legacy references to `TEMP/` subdirectories should use the following paths:
 - `TEMP/tasks/termination-rules.md` → `PRDs/termination-rules.md`
-- `TEMP/integrations/jotform-integration.md` → `PRDs/jotform-integration.md`
+- `TEMP/integrations/jotform-integration.md` → `PRDs/jotform_qualtrics_integration_prd.md`
 - `TEMP/architecture/security-architecture.md` → `PRDs/data_security_prd.md`
 - `TEMP/data-tool/*` → `PRDs/data-pipeline.md`
+- `USER_GUIDE_*.md` → `PRDs/*_user_guide_prd.md` (consolidated October 2025)
 
 ### External APIs
 - **JotForm API**: https://api.jotform.com/docs/

@@ -597,9 +597,9 @@ Documented in `PRDs/processor_agent_runbook_prd.md`:
 ## Support & Resources
 
 ### Documentation
-- **PRDs/** - Detailed product requirement documents
+- **PRDs/** - Detailed product requirement documents (consolidated location)
 - **README.md** - Quick start guide and technical overview
-- **Agent.md** - This file (roadmap and strategic planning)
+- **AGENTS.md** - This file (roadmap and strategic planning)
 
 ### Key PRD Files
 - `overview_prd.md` - System architecture and user journeys
@@ -608,6 +608,15 @@ Documented in `PRDs/processor_agent_runbook_prd.md`:
 - `data_security_prd.md` - Encryption and credential management
 - `termination-rules.md` - Assessment termination logic
 - `upload_monitoring_prd.md` - Upload failure detection and retry
+- `jotform_qualtrics_integration_prd.md` - JotForm and Qualtrics integration (updated Oct 2025)
+- `qualtrics_implementation_plan.md` - Qualtrics features implementation status
+
+### User Guides (Consolidated October 2025)
+All user guides moved to PRDs folder for centralized documentation:
+- `checking_system_user_guide_prd.md` - Checking system operational guide
+- `assessment_uploader_user_guide_prd.md` - Upload interface usage
+- `qualtrics_tgmd_user_guide_prd.md` - Qualtrics integration guide
+- `data_conflicts_user_guide_prd.md` - Data conflict resolution
 
 ### External References
 - JotForm API Documentation: https://api.jotform.com/docs/
@@ -666,6 +675,22 @@ Documented in `PRDs/processor_agent_runbook_prd.md`:
   - `TEMP/test_radio_text_validation.py` - 6/6 tests passing
   - `TEMP/test_text_field_display.py` - 6/6 tests passing
   - Visual mockup: `TEMP/text_field_display_example.html`
+
+**Documentation Consolidation (October 25, 2025):**
+- ✅ **User Guide Migration to PRDs**: Consolidated all root-level USER_GUIDE_*.md files into PRDs folder
+  - Moved 4 user guide files: checking_system, uploader, qualtrics_tgmd, conflicts
+  - Renamed following PRD naming convention: `*_user_guide_prd.md`
+  - Updated all cross-references in PRD files
+  - Root level now contains only README.md and AGENTS.md (as intended)
+- ✅ **Merge Strategy Documentation**: Corrected outdated "Qualtrics priority" references
+  - Updated to reflect actual implementation: "earliest non-empty wins" based on timestamps
+  - Aligned with changes from PRs #90-#97
+  - Consistent across all documentation files
+- ✅ **PRD Verification**: Confirmed all PRD files reflect changes from issues #90-#97
+  - Grade detection (K1/K2/K3) ✅
+  - TGMD matrix-radio scoring ✅
+  - Complete Qualtrics data extraction (632 fields) ✅
+  - Unique Core ID filtering ✅
 
 ### Future Updates
 This section will track major system updates, feature additions, and architectural changes as they occur.
