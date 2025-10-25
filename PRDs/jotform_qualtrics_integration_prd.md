@@ -2785,10 +2785,15 @@ JotFormCacheDB (IndexedDB database)
 4. Save all three stores to IndexedDB
 5. Duration: 60-90 seconds typical
 
-**Status Indicators:**
-- **System Not Ready** (red badge with `badge-error` class): No cache exists - click to build
-- **Syncing X%** (orange badge with `badge-warning` class): Cache building in progress with animated progress bar
-- **System Ready** (green badge with `badge-success` class): Cache valid and loaded
+**Cache Status Pill** (on `checking_system_home.html` only):
+
+The home page displays a status pill showing the current cache state. The pill uses CSS badge classes with specific colors:
+
+- **System Not Ready** - Red badge (`badge-error` class, `rgb(240, 78, 105)`): No cache exists - click to build
+- **Syncing X%** - Orange badge (`badge-warning` class, `rgb(249, 157, 51)`): Cache building in progress with animated progress bar overlay
+- **System Ready** - Green badge (`badge-success` class, `rgb(34, 197, 94)`): Cache valid and loaded - click to show cache management options
+
+**Note**: These status indicators are specific to the cache management system on the home page. Other checking system pages (district, school, class, student) use different visual indicators such as status circles (`status-green`, `status-red`, `status-yellow`, `status-grey`) to show completion status for tasks and assessments.
 
 #### Cache Deletion
 
