@@ -1381,6 +1381,8 @@ When you encounter unexpected behavior or errors in the Checking System, checkin
 
 #### Step 1: Open Browser Developer Tools
 
+*Note: If you use assistive technologies or cannot use keyboard shortcuts, look for "Developer Tools" or "Inspect" options in your browser's menu.*
+
 **For Chrome/Edge:**
 1. Press `F12` on your keyboard, OR
 2. Right-click anywhere on the page → Select **"Inspect"**, OR
@@ -1453,7 +1455,8 @@ Look for error messages that contain:
    - Any relevant context (e.g., what you were doing when error occurred)
 
 **How to take screenshots:**
-- **Windows:** Press `Windows + Shift + S` → select area → paste in email
+- **Windows:** Press `Windows + Shift + S` (Windows 10 v1703+ or Windows 11) → select area → paste in email
+  - *Older Windows:* Use Snipping Tool from Start menu
 - **Mac:** Press `Command + Shift + 4` → drag to select area → file saves to desktop
 - **Chrome/Edge:** Right-click in console → "Save as..." → save console log
 
@@ -1582,11 +1585,12 @@ Sometimes simple fixes resolve the issue. Try these first:
 
 **What NOT to share:**
 - System passwords
-- Student personal information visible on screen
+- Student personal information visible on screen (names, IDs, personal data)
 - API keys or credentials from console logs
+- Session tokens or authentication credentials
 - Unrelated browser history
 
-When taking screenshots, make sure no sensitive student data is visible. If needed, crop or blur portions of the screenshot before sending.
+**Important:** When taking screenshots, make sure no sensitive student data is visible. If error logs contain student IDs, session tokens, or personal data, redact them before sharing. If needed, crop or blur portions of the screenshot before sending. When in doubt, ask before sharing any information that might be sensitive.
 
 ---
 
