@@ -949,6 +949,211 @@
             </div>
           </section>
 
+          <!-- Filters and Search Section -->
+          <section id="filters" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Filters and Search</h2>
+
+            <p class="text-gray-700 mb-6">
+              The Checking System homepage features a powerful <strong>Filter Configuration Panel</strong> that allows you to narrow down data before viewing it. This advanced filtering system works independently from the navigation hierarchy.
+            </p>
+
+            <h3 class="text-2xl font-semibold mb-4">Homepage Filter Panel</h3>
+
+            <div class="diagram-box bg-blue-50 border-blue-300">
+              <p class="text-gray-700 mb-4">The filter panel on the homepage includes:</p>
+              <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+                <li><strong>Filter chips display</strong> - Shows currently active filters</li>
+                <li><strong>Configure Filters section</strong> - Add and configure multiple filter criteria</li>
+                <li><strong>Filter count indicator</strong> - Shows how many filters are applied</li>
+                <li><strong>Recent checks</strong> - Quick access to previously used filter combinations</li>
+              </ol>
+            </div>
+
+            <div class="collapsible-section mt-6">
+              <div class="collapsible-header">
+                <h3 class="text-xl font-semibold">How to Use Filters</h3>
+                <span class="text-2xl">▼</span>
+              </div>
+              <div class="collapsible-content">
+                <h4 class="text-lg font-semibold mb-3">Adding Filters</h4>
+                <ol class="list-decimal ml-6 space-y-2 text-gray-700 mb-6">
+                  <li>Click <strong>"Add filter"</strong> button in the Configure Filters section</li>
+                  <li>A new filter row appears with dropdown selectors</li>
+                  <li>Choose filter type from available options:
+                    <ul class="list-disc ml-6 mt-2 space-y-1">
+                      <li><strong>District</strong> - Filter by geographic district (e.g., Shatin, Tuen Mun)</li>
+                      <li><strong>Group</strong> - Filter by project group (1-5)</li>
+                      <li><strong>School</strong> - Filter by specific school ID or name</li>
+                      <li><strong>Class</strong> - Filter by classroom ID</li>
+                      <li><strong>Student</strong> - Filter by student Core ID</li>
+                      <li><strong>Grade</strong> - Filter by grade level (K1, K2, K3)</li>
+                    </ul>
+                  </li>
+                  <li>Select specific value for your chosen filter type</li>
+                  <li>Click <strong>"Start Checking"</strong> to apply filters and view results</li>
+                </ol>
+
+                <h4 class="text-lg font-semibold mb-3">Filter Rules and Hierarchy</h4>
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4 rounded">
+                  <p class="text-sm text-gray-700 mb-2"><strong>Important filtering behavior:</strong></p>
+                  <ul class="list-disc ml-6 text-sm text-gray-700 space-y-1">
+                    <li><strong>District and Group are independent</strong> - You can use both simultaneously (e.g., "Group 1 schools in Shatin district")</li>
+                    <li><strong>School/Class/Student are hierarchical</strong> - Once you select a lower level (e.g., School), higher incompatible levels become unavailable</li>
+                    <li><strong>Multiple filters of same type</strong> - You can add multiple filters of the same type to create "OR" conditions</li>
+                  </ul>
+                </div>
+
+                <h4 class="text-lg font-semibold mb-3">Removing Filters</h4>
+                <ul class="list-disc ml-6 space-y-1 text-gray-700">
+                  <li>Click the <strong>X</strong> button on any filter chip to remove individual filters</li>
+                  <li>Click <strong>"Clear All"</strong> button to remove all filters at once</li>
+                  <li>Filters persist until manually cleared or page is refreshed</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="collapsible-section">
+              <div class="collapsible-header">
+                <h3 class="text-xl font-semibold">School and Class Page Filters</h3>
+                <span class="text-2xl">▼</span>
+              </div>
+              <div class="collapsible-content">
+                <p class="text-gray-700 mb-4">In addition to homepage filters, <strong>School View</strong> and <strong>Class View</strong> pages have their own built-in filtering:</p>
+
+                <h4 class="text-lg font-semibold mb-3">School View Filters</h4>
+                <div class="space-y-3">
+                  <div class="border-l-4 border-blue-500 pl-4">
+                    <div class="font-semibold text-sm mb-1">1. Data Filter (Dropdown)</div>
+                    <ul class="text-sm text-gray-700 space-y-1">
+                      <li>• <strong>All:</strong> Show all classes/students</li>
+                      <li>• <strong>With Data Only:</strong> Show only those with submission data</li>
+                      <li>• <strong>Incomplete Only:</strong> Show only those with incomplete tasks</li>
+                    </ul>
+                  </div>
+
+                  <div class="border-l-4 border-green-500 pl-4">
+                    <div class="font-semibold text-sm mb-1">2. Grade Filter (Button → Modal)</div>
+                    <ul class="text-sm text-gray-700 space-y-1">
+                      <li>• <strong>All Grades:</strong> Show all classes/students</li>
+                      <li>• <strong>K1:</strong> Show only K1 (23/24 academic year)</li>
+                      <li>• <strong>K2:</strong> Show only K2 (24/25 academic year)</li>
+                      <li>• <strong>K3:</strong> Show only K3 (25/26 academic year)</li>
+                      <li>• <strong>Others:</strong> Show grade 0 or unspecified</li>
+                    </ul>
+                  </div>
+
+                  <div class="border-l-4 border-purple-500 pl-4">
+                    <div class="font-semibold text-sm mb-1">3. View Mode Toggle</div>
+                    <ul class="text-sm text-gray-700 space-y-1">
+                      <li>• <strong>By Class:</strong> Show classes with Set 1-4 completion</li>
+                      <li>• <strong>By Student → By Set:</strong> Student view with Set 1-4 status</li>
+                      <li>• <strong>By Student → By Task:</strong> Student view with individual task completion</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="collapsible-section">
+              <div class="collapsible-header">
+                <h3 class="text-xl font-semibold">Filter Use Cases</h3>
+                <span class="text-2xl">▼</span>
+              </div>
+              <div class="collapsible-content">
+                <div class="grid md:grid-cols-2 gap-4">
+                  <div class="diagram-box bg-blue-50 border-blue-300">
+                    <h4 class="font-semibold mb-2">Review incomplete K1 students in Shatin</h4>
+                    <div class="text-sm text-gray-700">
+                      <div class="mb-2"><strong>Homepage Filters:</strong></div>
+                      <ul class="list-disc ml-6 space-y-1">
+                        <li>District: Shatin</li>
+                        <li>Grade: K1</li>
+                      </ul>
+                      <div class="mt-2 text-xs text-gray-600">Then navigate to School → toggle "By Student" → apply "Incomplete Only" filter</div>
+                    </div>
+                  </div>
+
+                  <div class="diagram-box bg-green-50 border-green-300">
+                    <h4 class="font-semibold mb-2">Check specific school's progress</h4>
+                    <div class="text-sm text-gray-700">
+                      <div class="mb-2"><strong>Homepage Filter:</strong></div>
+                      <ul class="list-disc ml-6 space-y-1">
+                        <li>School: S023</li>
+                      </ul>
+                      <div class="mt-2 text-xs text-gray-600">Click "Start Checking" → View school summary → Review by class or student</div>
+                    </div>
+                  </div>
+
+                  <div class="diagram-box bg-purple-50 border-purple-300">
+                    <h4 class="font-semibold mb-2">Monitor Group 1 completion rates</h4>
+                    <div class="text-sm text-gray-700">
+                      <div class="mb-2"><strong>Homepage Filter:</strong></div>
+                      <ul class="list-disc ml-6 space-y-1">
+                        <li>Group: 1</li>
+                      </ul>
+                      <div class="mt-2 text-xs text-gray-600">View all Group 1 schools → Identify lagging schools → Drill down</div>
+                    </div>
+                  </div>
+
+                  <div class="diagram-box bg-amber-50 border-amber-300">
+                    <h4 class="font-semibold mb-2">Combine filters for precision</h4>
+                    <div class="text-sm text-gray-700">
+                      <div class="mb-2"><strong>Example:</strong></div>
+                      <div class="text-xs text-gray-600">Homepage → "District: Shatin" → School S023 → "Incomplete Only" → "Grade: K1"</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Data Export Section -->
+          <section id="export" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Data Export</h2>
+
+            <p class="text-gray-700 mb-6">
+              Export functionality is available at multiple levels (District, Group, School, Class, Student) to generate reports for analysis and sharing.
+            </p>
+
+            <div class="grid md:grid-cols-3 gap-4">
+              <div class="diagram-box bg-blue-50 border-blue-300">
+                <h3 class="font-semibold mb-2">CSV Export</h3>
+                <ul class="text-sm text-gray-700 space-y-1">
+                  <li>✓ Excel-compatible format</li>
+                  <li>✓ All visible columns</li>
+                  <li>✓ UTF-8 encoding (Chinese support)</li>
+                  <li>✓ Best for data analysis</li>
+                </ul>
+              </div>
+
+              <div class="diagram-box bg-green-50 border-green-300">
+                <h3 class="font-semibold mb-2">PDF Export</h3>
+                <ul class="text-sm text-gray-700 space-y-1">
+                  <li>✓ Formatted tables</li>
+                  <li>✓ Charts and graphs</li>
+                  <li>✓ Summary statistics</li>
+                  <li>✓ Best for printing/presentations</li>
+                </ul>
+              </div>
+
+              <div class="diagram-box bg-purple-50 border-purple-300">
+                <h3 class="font-semibold mb-2">JSON Export</h3>
+                <ul class="text-sm text-gray-700 space-y-1">
+                  <li>✓ Raw data structure</li>
+                  <li>✓ All metadata included</li>
+                  <li>✓ API-compatible format</li>
+                  <li>✓ Best for technical use</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded mt-6">
+              <p class="text-sm text-gray-700">
+                <strong>💡 Tip:</strong> To export data, navigate to the desired level (e.g., School page), apply any filters, then click the "Export" button. Choose your preferred format and save the file.
+              </p>
+            </div>
+          </section>
+
           <!-- Cache Management Section -->
           <section id="cache" class="content-section mb-12">
             <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Cache Management</h2>
@@ -1207,6 +1412,145 @@
                     <li>Follow data correction procedure</li>
                     <li>Report if system bug</li>
                   </ol>
+                </div>
+              </div>
+            </div>
+
+            <div class="collapsible-section">
+              <div class="collapsible-header">
+                <h3 class="text-xl font-semibold">How to Check Console Errors and Report to Admin</h3>
+                <span class="text-2xl">▼</span>
+              </div>
+              <div class="collapsible-content">
+                <p class="text-gray-700 mb-4">When you encounter unexpected behavior or errors, checking the browser console can help identify the root cause. Follow these steps:</p>
+
+                <h4 class="text-lg font-semibold mb-3 mt-4">Step 1: Open Browser Developer Tools</h4>
+                <div class="space-y-2 mb-4">
+                  <div class="border-l-4 border-blue-500 pl-4">
+                    <div class="font-semibold text-sm">For Chrome/Edge:</div>
+                    <ul class="text-sm text-gray-700 space-y-1">
+                      <li>• Press <code class="bg-gray-100 px-1 rounded">F12</code> on your keyboard, OR</li>
+                      <li>• Right-click anywhere → Select "Inspect", OR</li>
+                      <li>• Click three-dot menu (⋮) → More tools → Developer tools</li>
+                    </ul>
+                  </div>
+                  <div class="border-l-4 border-orange-500 pl-4">
+                    <div class="font-semibold text-sm">For Firefox:</div>
+                    <ul class="text-sm text-gray-700 space-y-1">
+                      <li>• Press <code class="bg-gray-100 px-1 rounded">F12</code> on your keyboard, OR</li>
+                      <li>• Right-click anywhere → Select "Inspect Element", OR</li>
+                      <li>• Click hamburger menu (≡) → More tools → Web Developer Tools</li>
+                    </ul>
+                  </div>
+                  <div class="border-l-4 border-purple-500 pl-4">
+                    <div class="font-semibold text-sm">For Safari (Mac):</div>
+                    <ul class="text-sm text-gray-700 space-y-1">
+                      <li>• Enable Developer menu: Safari → Preferences → Advanced → Check "Show Develop menu"</li>
+                      <li>• Press <code class="bg-gray-100 px-1 rounded">Option + Command + C</code>, OR</li>
+                      <li>• Develop menu → Show Web Inspector</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <h4 class="text-lg font-semibold mb-3">Step 2: Navigate to the Console Tab</h4>
+                <ol class="list-decimal ml-6 space-y-2 text-gray-700 mb-4">
+                  <li>In the Developer Tools panel (usually at bottom or right side of browser)</li>
+                  <li>Look for tabs at the top: Elements, Console, Sources, Network, etc.</li>
+                  <li>Click the <strong>"Console"</strong> tab</li>
+                  <li>You should now see a log of messages, warnings, and errors</li>
+                </ol>
+
+                <div class="bg-gray-50 border rounded p-4 mb-4">
+                  <p class="text-sm font-semibold mb-2">What you'll see:</p>
+                  <ul class="text-xs text-gray-700 space-y-1">
+                    <li>• <span class="text-blue-600">ℹ️ Blue/Info messages:</span> General information, usually safe to ignore</li>
+                    <li>• <span class="text-yellow-600">⚠️ Yellow/Warning messages:</span> Non-critical warnings, worth noting</li>
+                    <li>• <span class="text-red-600">❌ Red/Error messages:</span> Critical errors that break functionality - <strong>THESE are what to report</strong></li>
+                  </ul>
+                </div>
+
+                <h4 class="text-lg font-semibold mb-3">Step 3: Reproduce the Issue</h4>
+                <ol class="list-decimal ml-6 space-y-2 text-gray-700 mb-4">
+                  <li><strong>Clear the console first:</strong> Click the "Clear console" button (🚫 icon) or press <code class="bg-gray-100 px-1 rounded">Ctrl+L</code></li>
+                  <li><strong>Perform the action that causes the error:</strong> Click the button, navigate to the page, apply the filter, etc.</li>
+                  <li><strong>Watch for new red error messages</strong> to appear in the console</li>
+                </ol>
+
+                <h4 class="text-lg font-semibold mb-3">Step 4: Identify Relevant Errors</h4>
+                <p class="text-sm text-gray-700 mb-2">Look for error messages that contain:</p>
+                <ul class="list-disc ml-6 text-sm text-gray-700 space-y-1 mb-4">
+                  <li><strong>"Uncaught"</strong> - JavaScript errors</li>
+                  <li><strong>"Failed to fetch"</strong> - Network/API errors</li>
+                  <li><strong>"TypeError"</strong> - Data structure errors</li>
+                  <li><strong>"ReferenceError"</strong> - Missing variables/functions</li>
+                  <li><strong>Stack traces</strong> - Lines of code showing where error occurred</li>
+                </ul>
+
+                <h4 class="text-lg font-semibold mb-3">Step 5: Take Screenshots and Copy Error Details</h4>
+                <ol class="list-decimal ml-6 space-y-2 text-gray-700 mb-4">
+                  <li>Expand the error message (if collapsed) by clicking the triangle (▶)</li>
+                  <li>Take a screenshot of the error message and stack trace</li>
+                  <li>Right-click on the error message → "Copy message" or "Copy stack trace"</li>
+                  <li>Paste into a text file or email</li>
+                </ol>
+
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded mb-4">
+                  <p class="text-sm font-semibold mb-2">Screenshot shortcuts:</p>
+                  <ul class="text-xs text-gray-700 space-y-1">
+                    <li>• <strong>Windows:</strong> Press <code class="bg-gray-100 px-1 rounded">Windows + Shift + S</code> → select area → paste in email</li>
+                    <li>• <strong>Mac:</strong> Press <code class="bg-gray-100 px-1 rounded">Command + Shift + 4</code> → drag to select → file saves to desktop</li>
+                  </ul>
+                </div>
+
+                <h4 class="text-lg font-semibold mb-3">Step 6: Report to Administrator</h4>
+                <div class="bg-blue-50 border rounded p-4">
+                  <p class="text-sm font-semibold mb-2">Include in your report:</p>
+                  <ol class="text-xs text-gray-700 space-y-1 ml-4">
+                    <li>1. <strong>What you were doing:</strong> Specific action that triggered the error</li>
+                    <li>2. <strong>When it happened:</strong> Date and time</li>
+                    <li>3. <strong>Browser information:</strong> Browser name and version (find in Help → About Chrome/Firefox/Edge)</li>
+                    <li>4. <strong>Console errors:</strong> Copied error messages and screenshots</li>
+                    <li>5. <strong>System state:</strong> Was cache recently synced? Any other errors on page?</li>
+                    <li>6. <strong>Reproducibility:</strong> Does it happen every time or randomly?</li>
+                  </ol>
+                </div>
+
+                <h4 class="text-lg font-semibold mb-3 mt-4">Common Error Messages</h4>
+                <table class="w-full text-sm border-collapse">
+                  <thead>
+                    <tr class="bg-gray-100">
+                      <th class="border border-gray-300 px-3 py-2 text-left">Error Message</th>
+                      <th class="border border-gray-300 px-3 py-2 text-left">Likely Cause</th>
+                      <th class="border border-gray-300 px-3 py-2 text-left">Quick Fix</th>
+                    </tr>
+                  </thead>
+                  <tbody class="text-xs">
+                    <tr>
+                      <td class="border border-gray-300 px-3 py-2">"Failed to fetch"</td>
+                      <td class="border border-gray-300 px-3 py-2">Network issue or API down</td>
+                      <td class="border border-gray-300 px-3 py-2">Check internet, try again in 5 min</td>
+                    </tr>
+                    <tr>
+                      <td class="border border-gray-300 px-3 py-2">"QuotaExceededError"</td>
+                      <td class="border border-gray-300 px-3 py-2">Browser storage full</td>
+                      <td class="border border-gray-300 px-3 py-2">Clear cache, close other tabs</td>
+                    </tr>
+                    <tr>
+                      <td class="border border-gray-300 px-3 py-2">"401 Unauthorized"</td>
+                      <td class="border border-gray-300 px-3 py-2">Invalid credentials</td>
+                      <td class="border border-gray-300 px-3 py-2">Re-enter system password</td>
+                    </tr>
+                    <tr>
+                      <td class="border border-gray-300 px-3 py-2">"Cannot read property..."</td>
+                      <td class="border border-gray-300 px-3 py-2">Data missing or malformed</td>
+                      <td class="border border-gray-300 px-3 py-2">Refresh page, report if persists</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded mt-4">
+                  <p class="text-sm font-semibold mb-2">Privacy Note:</p>
+                  <p class="text-xs text-gray-700">When taking screenshots, make sure no sensitive student data is visible. If needed, crop or blur portions before sending. Never share system passwords or API keys from console logs.</p>
                 </div>
               </div>
             </div>
