@@ -2022,14 +2022,18 @@ flowchart LR
 
   <!-- Homepage Preview Modal -->
   <div id="homepageModal" style="display: none; position: fixed; inset: 0; z-index: 9999; padding: 2rem; overflow-y: auto;">
-    <div style="max-width: 1400px; margin: 0 auto; position: relative;">
+    
+    <div style="max-width: 1400px; margin: 0 auto; position: relative; z-index: 2;">
+      <!-- Dimming overlay - INSIDE content container so it appears above background -->
+      <div id="modalOverlay" style="position: fixed; inset: 0; pointer-events: none; z-index: 50;"></div>
+      
       <!-- Close Button -->
-      <button onclick="closeHomepageModal()" style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; z-index: 10000; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
+      <button data-spotlight="close" onclick="closeHomepageModal()" style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
       </button>
       
       <!-- Enlarged Homepage Content -->
-      <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); overflow: hidden; position: relative;">
+      <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); overflow: hidden; position: relative; z-index: 3;">
         <div class="relative overflow-hidden">
           
           <main class="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 py-16 lg:flex-row lg:items-center lg:justify-between lg:gap-16">
@@ -2040,8 +2044,8 @@ flowchart LR
                 <img src="assets/logos/EdUHK.png" alt="EdUHK" style="height: 70px; object-fit: contain; width: auto;">
               </div>
               
-              <!-- Badge (NOT interactive - will be dimmed) -->
-              <span class="inline-flex items-center gap-2 px-4 py-2 text-xs uppercase tracking-wide" style="background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border-radius: 9999px; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);">
+              <!-- Badge (NOT interactive) -->
+              <span class="inline-flex items-center gap-2 px-4 py-2 text-xs uppercase tracking-wide non-interactive" style="background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border-radius: 9999px; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);">
                 <span class="inline-block h-2 w-2 rounded-full" style="background-color: #2b3990;"></span>
                 <span style="color: #333333;">KeySteps@JC (Phase Two)</span>
               </span>
@@ -2057,7 +2061,7 @@ flowchart LR
               <!-- Action Buttons - Interactive with Tooltips -->
               <div class="flex flex-col items-center gap-4 sm:flex-row sm:justify-center lg:items-stretch lg:justify-start">
                 <div class="interactive-btn-wrapper" style="position: relative;">
-                  <div class="flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold" style="background-color: #2b3990; color: #ffffff; box-shadow: 0 6px 16px -6px rgba(43, 57, 144, 0.55); border-radius: 1rem; transition: transform 0.25s ease, box-shadow 0.25s ease; cursor: pointer;" onclick="toggleTooltip('tooltip-uploader')">
+                  <div data-spotlight="button" class="flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold" style="background-color: #2b3990; color: #ffffff; box-shadow: 0 6px 16px -6px rgba(43, 57, 144, 0.55); border-radius: 1rem; transition: transform 0.25s ease, box-shadow 0.25s ease; cursor: pointer;" onclick="toggleTooltip('tooltip-uploader')">
                     <span>Assessment Uploader</span>
                     <span class="text-sm font-medium" style="color: rgba(255, 255, 255, 0.8);">Upload PDFs</span>
                   </div>
@@ -2070,7 +2074,7 @@ flowchart LR
                 </div>
                 <div class="flex items-center gap-2">
                   <div class="interactive-btn-wrapper" style="position: relative;">
-                    <div class="flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold" style="background-color: #f99d33; color: #3b2a12; box-shadow: 0 6px 16px -6px rgba(249, 157, 51, 0.55); border-radius: 1rem; transition: transform 0.25s ease, box-shadow 0.25s ease; cursor: pointer;" onclick="toggleTooltip('tooltip-checking')">
+                    <div data-spotlight="button" class="flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold" style="background-color: #f99d33; color: #3b2a12; box-shadow: 0 6px 16px -6px rgba(249, 157, 51, 0.55); border-radius: 1rem; transition: transform 0.25s ease, box-shadow 0.25s ease; cursor: pointer;" onclick="toggleTooltip('tooltip-checking')">
                       <span>Checking System</span>
                       <span class="text-sm font-medium" style="color: rgba(59, 42, 18, 0.8);">See What's Missing</span>
                     </div>
@@ -2082,7 +2086,7 @@ flowchart LR
                     </div>
                   </div>
                   <div class="interactive-btn-wrapper" style="position: relative;">
-                    <div class="inline-flex items-center justify-center rounded-full" style="width: 48px; height: 48px; background-color: #f3f4f6; color: #374151; cursor: pointer;" onclick="toggleTooltip('tooltip-help')">
+                    <div data-spotlight="help" class="inline-flex items-center justify-center rounded-full" style="width: 48px; height: 48px; background-color: #f3f4f6; color: #374151; cursor: pointer;" onclick="toggleTooltip('tooltip-help')">
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
                     </div>
                     <!-- Tooltip -->
@@ -2131,7 +2135,7 @@ flowchart LR
                   <!-- Interactive buttons container - ONLY these should be spotlighted -->
                   <div class="mt-6 flex flex-col gap-2 sm:flex-row jotform-actions">
                     <div class="interactive-btn-wrapper" style="position: relative;">
-                      <button class="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold" style="background-color: #2b3990; color: #ffffff; box-shadow: 0 6px 16px -6px rgba(43, 57, 144, 0.55); border-radius: 1rem; transition: transform 0.25s ease, box-shadow 0.25s ease; border: none; cursor: pointer;" type="button" onclick="event.stopPropagation(); toggleTooltip('tooltip-resync')">
+                      <button data-spotlight="button" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold" style="background-color: #2b3990; color: #ffffff; box-shadow: 0 6px 16px -6px rgba(43, 57, 144, 0.55); border-radius: 1rem; transition: transform 0.25s ease, box-shadow 0.25s ease; border: none; cursor: pointer;" type="button" onclick="event.stopPropagation(); toggleTooltip('tooltip-resync')">
                         <span>Resync</span>
                       </button>
                       <!-- Tooltip -->
@@ -2142,7 +2146,7 @@ flowchart LR
                       </div>
                     </div>
                     <div class="interactive-btn-wrapper" style="position: relative;">
-                      <button class="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold" style="background-color: #2b3990; color: #ffffff; box-shadow: 0 6px 16px -6px rgba(43, 57, 144, 0.55); border-radius: 1rem; transition: transform 0.25s ease, box-shadow 0.25s ease; border: none; cursor: pointer;" type="button" onclick="event.stopPropagation(); toggleTooltip('tooltip-viewtable')">
+                      <button data-spotlight="button" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold" style="background-color: #2b3990; color: #ffffff; box-shadow: 0 6px 16px -6px rgba(43, 57, 144, 0.55); border-radius: 1rem; transition: transform 0.25s ease, box-shadow 0.25s ease; border: none; cursor: pointer;" type="button" onclick="event.stopPropagation(); toggleTooltip('tooltip-viewtable')">
                         <span>View Table</span>
                       </button>
                       <!-- Tooltip -->
@@ -2167,16 +2171,6 @@ flowchart LR
       from { opacity: 0; transform: translateX(-50%) translateY(4px); }
       to { opacity: 1; transform: translateX(-50%) translateY(0); }
     }
-    @keyframes spotlightPulse {
-      0%, 100% { 
-        box-shadow: 0 0 0 4px rgba(74, 144, 226, 0.8), 0 0 40px 15px rgba(74, 144, 226, 0.6);
-        transform: scale(1);
-      }
-      50% { 
-        box-shadow: 0 0 0 6px rgba(74, 144, 226, 0.9), 0 0 50px 20px rgba(74, 144, 226, 0.7);
-        transform: scale(1.02);
-      }
-    }
     .interactive-btn-wrapper:hover > div:first-child,
     .interactive-btn-wrapper:hover > button {
       transform: translateY(-2px);
@@ -2186,44 +2180,63 @@ flowchart LR
       pointer-events: none;
     }
     
-    /* Overlay dimming layer for spotlight effect - inside the content card */
-    #homepageModal .relative.overflow-hidden::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background-color: rgba(0, 0, 0, 0);
-      backdrop-filter: blur(0px);
-      pointer-events: none;
-      transition: background-color 0.4s ease, backdrop-filter 0.4s ease;
-      z-index: 50;
+    /* Overlay dimming layer for spotlight effect */
+    #modalOverlay {
+      background-color: transparent;
+      transition: background 0.4s ease;
+      background-repeat: no-repeat;
     }
     
-    #homepageModal.spotlight-active .relative.overflow-hidden::before {
-      background-color: rgba(0, 0, 0, 0.7);
-      backdrop-filter: blur(4px);
-    }
-    
-    /* Main content should be below overlay */
-    #homepageModal main {
+    /* Ensure modal content container creates proper stacking context */
+    #homepageModal > div {
       position: relative;
-      z-index: 1;
+      z-index: 0;
     }
     
-    /* Bring ONLY interactive button wrappers above the overlay */
-    #homepageModal .interactive-btn-wrapper {
-      position: relative;
-      z-index: 100;
+    @keyframes spotlightPulse {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 0 0 4px rgba(74, 144, 226, 0.75), 0 0 40px 15px rgba(74, 144, 226, 0.55);
+      }
+      50% {
+        transform: scale(1.045);
+        box-shadow: 0 0 0 6px rgba(74, 144, 226, 0.85), 0 0 48px 18px rgba(74, 144, 226, 0.65);
+      }
     }
     
-    /* Highlighted elements get a persistent glow with pulse animation */
+    /* Highlighted elements get a persistent glow */
     .spotlight-highlight {
       position: relative;
       box-shadow: 0 0 0 4px rgba(74, 144, 226, 0.8), 0 0 40px 15px rgba(74, 144, 226, 0.6) !important;
       border-radius: 1rem !important;
       transition: all 0.3s ease;
-      z-index: 100;
+      z-index: 100 !important; /* Way above everything else */
       background-color: inherit;
+      overflow: visible;
+    }
+    
+    /* Static spotlight for close button - NO pulsing, NO ::after */
+    .spotlight-static {
+      position: relative;
+      z-index: 100 !important;
+    }
+
+    .spotlight-highlight::after {
+      content: '';
+      position: absolute;
+      inset: -6px;
+      border-radius: inherit;
+      background: radial-gradient(circle, rgba(74, 144, 226, 0.28) 0%, rgba(74, 144, 226, 0) 70%);
+      box-shadow: 0 0 0 4px rgba(74, 144, 226, 0.65), 0 0 40px 18px rgba(74, 144, 226, 0.65);
       animation: spotlightPulse 3s ease-in-out infinite;
+      pointer-events: none;
+      z-index: -1;
+    }
+    
+    /* DISABLE pulsing for close button - must come AFTER the general rule */
+    button[data-spotlight="close"].spotlight-highlight::after {
+      animation: none !important;
+      display: none !important; /* Just hide the ::after completely for close button */
     }
     
     /* Special handling for help icon circle */
@@ -2231,32 +2244,137 @@ flowchart LR
       border-radius: 50% !important;
       box-shadow: 0 0 0 4px rgba(74, 144, 226, 0.8), 0 0 40px 15px rgba(74, 144, 226, 0.6) !important;
     }
+
+    .spotlight-highlight.help-icon-highlight::after {
+      inset: -10px;
+    }
+
+    .spotlight-hole {
+      position: fixed;
+      pointer-events: none;
+      background: transparent;
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.75);
+      transition: all 0.25s ease;
+    }
   </style>
 
   <script>
+    const SPOTLIGHT_PADDING = 28;
+    let cleanupSpotlight = null;
+    let activeSpotlightHoles = [];
+
+    function updateHolePosition(hole, target) {
+      if (!hole || !target) {
+        return;
+      }
+      const rect = target.getBoundingClientRect();
+      const paddingX = SPOTLIGHT_PADDING;
+      const paddingY = SPOTLIGHT_PADDING;
+      const left = rect.left - paddingX;
+      const top = rect.top - paddingY;
+      const width = rect.width + paddingX * 2;
+      const height = rect.height + paddingY * 2;
+
+      hole.style.left = `${left}px`;
+      hole.style.top = `${top}px`;
+      hole.style.width = `${width}px`;
+      hole.style.height = `${height}px`;
+
+      const spotlightType = target.getAttribute('data-spotlight');
+      const isCircular = spotlightType === 'help' || spotlightType === 'close';
+      hole.style.borderRadius = isCircular ? '999px' : '24px';
+    }
+
+    function createSpotlightHoles(overlay, targets) {
+      if (!overlay) {
+        return;
+      }
+      activeSpotlightHoles.forEach(entry => entry.hole.remove());
+      activeSpotlightHoles = [];
+
+      targets.forEach(target => {
+        const hole = document.createElement('div');
+        hole.className = 'spotlight-hole';
+        overlay.appendChild(hole);
+        updateHolePosition(hole, target);
+        activeSpotlightHoles.push({ hole, target });
+      });
+    }
+
     function openHomepageModal() {
       const modal = document.getElementById('homepageModal');
       modal.style.display = 'block';
       document.body.style.overflow = 'hidden';
+      const overlay = document.getElementById('modalOverlay');
       
       // Add spotlight effect by dimming everything except buttons
       setTimeout(() => {
         modal.classList.add('spotlight-active');
         
         // Highlight ONLY specific interactive buttons (not the badge, not the JotForm card content)
-        const buttons = modal.querySelectorAll('.interactive-btn-wrapper > div:first-child, .interactive-btn-wrapper > button');
-        buttons.forEach((btn) => {
-          // Skip if parent has 'non-interactive' class
-          let parent = btn.closest('.non-interactive');
-          if (parent) return;
+        // Only highlight the two JotForm action buttons
+        const targets = modal.querySelectorAll('[data-spotlight]');
+        
+        // DIAGNOSTIC LOGGING
+        console.log('=== SPOTLIGHT DEBUG ===');
+        console.log('Modal overlay z-index: 1');
+        console.log('Found spotlight targets:', targets.length);
+        
+        targets.forEach((target, index) => {
+          const spotlightType = target.getAttribute('data-spotlight');
           
-          // Check if it's the help icon
-          if (btn.classList.contains('inline-flex') && btn.classList.contains('rounded-full') && btn.querySelector('svg')) {
-            btn.classList.add('spotlight-highlight', 'help-icon-highlight');
+          // Apply appropriate spotlight class
+          if (spotlightType === 'close') {
+            target.classList.add('spotlight-static');
+          } else if (spotlightType === 'help') {
+            // Help icon: spotlighted WITH pulsing
+            target.classList.add('spotlight-highlight', 'help-icon-highlight');
           } else {
-            btn.classList.add('spotlight-highlight');
+            // Regular buttons: spotlighted WITH pulsing
+            target.classList.add('spotlight-highlight');
           }
+          
+          // Log z-index for each spotlighted element
+          const computedStyle = window.getComputedStyle(target);
+          const zIndex = computedStyle.zIndex;
+          const position = computedStyle.position;
+          console.log(`Target ${index + 1} [${spotlightType}]:`, {
+            element: target.tagName,
+            text: target.textContent.trim().substring(0, 30),
+            zIndex: zIndex,
+            position: position,
+            hasClass: target.classList.contains('spotlight-highlight')
+          });
         });
+        const overlayTargets = Array.from(targets);
+        createSpotlightHoles(overlay, overlayTargets);
+        const refreshOverlay = () => {
+          activeSpotlightHoles.forEach(entry => updateHolePosition(entry.hole, entry.target));
+        };
+        refreshOverlay();
+
+        const scrollHandler = () => refreshOverlay();
+        const resizeHandler = () => refreshOverlay();
+
+        modal.addEventListener('scroll', scrollHandler);
+        window.addEventListener('resize', resizeHandler);
+
+        cleanupSpotlight = () => {
+          activeSpotlightHoles.forEach(entry => entry.hole.remove());
+          activeSpotlightHoles = [];
+          modal.removeEventListener('scroll', scrollHandler);
+          window.removeEventListener('resize', resizeHandler);
+        };
+
+        // Log overlay element (reuse variable from above)
+        const overlayStyle = window.getComputedStyle(overlay);
+        console.log('Overlay:', {
+          zIndex: overlayStyle.zIndex,
+          backgroundColor: overlayStyle.backgroundColor,
+          pointerEvents: overlayStyle.pointerEvents
+        });
+        
+        console.log('======================');
       }, 300);
     }
 
@@ -2269,9 +2387,21 @@ flowchart LR
       highlights.forEach(el => {
         el.classList.remove('spotlight-highlight', 'help-icon-highlight');
       });
+      const statics = modal.querySelectorAll('.spotlight-static');
+      statics.forEach(el => {
+        el.classList.remove('spotlight-static');
+      });
       
       modal.style.display = 'none';
       document.body.style.overflow = 'auto';
+      const overlay = document.getElementById('modalOverlay');
+      if (cleanupSpotlight) {
+        cleanupSpotlight();
+        cleanupSpotlight = null;
+      }
+      if (overlay) {
+        overlay.style.backgroundImage = '';
+      }
       // Hide all tooltips when closing
       document.querySelectorAll('.feature-tooltip').forEach(tooltip => {
         tooltip.style.display = 'none';

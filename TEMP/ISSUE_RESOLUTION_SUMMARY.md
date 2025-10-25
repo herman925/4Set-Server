@@ -165,6 +165,12 @@ All test files in TEMP now use the UMD pattern for universal compatibility.
 - **Issue #94**: Mentioned "earliest non-empty wins" strategy and grade-detector test version need
 - **This Issue**: Implements test version and verifies production merge strategy
 
+## 2025-10-26 Modal Spotlight Fix Decisions
+
+1. Replaced the flat dim overlay with fixed-position "hole" elements (giant box-shadows) that cut out transparent windows around each interactive target while leaving the rest of the modal uniformly dark.
+2. Kept the close button static (no pulse) but still carved out a clear hole in the overlay so it stays fully visible for quick exits.
+3. Limited the pulsing animation to the five action/help buttons, ensuring they stay bright inside their respective spotlights and naturally guide the user.
+
 ## Notes
 
 1. The production system already had the "earliest non-empty value wins" strategy properly implemented - no changes were needed
