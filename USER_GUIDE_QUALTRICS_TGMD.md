@@ -12,7 +12,7 @@ The 4Set system now supports fetching **all assessment task data** from Qualtric
 
 - **Complete Data Integration**: Qualtrics responses for **all tasks** are automatically merged with JotForm data by sessionkey
 - **Comprehensive Task Coverage**: Merges data for TGMD, ERV, SYM, TOM, CM, CWR, HTKS, TEC, and all other assessment tasks
-- **Conflict Resolution**: When both sources have data for the same field, "earliest non-empty wins" based on timestamps
+- **Conflict Resolution**: When both sources have data for the same field, Qualtrics values take precedence
 - **Offline Caching**: Merged data is cached locally for instant access
 - **Progress Tracking**: Real-time progress display during Qualtrics sync
 - **Conflict Reporting**: Detailed statistics on data conflicts and resolution
@@ -203,12 +203,10 @@ Conflicts occur when the same TGMD field has different values in JotForm and Qua
 
 ### How are conflicts resolved?
 
-The system uses an **"earliest non-empty wins"** strategy based on timestamps:
-1. Compares the timestamp of when each value was recorded
-2. JotForm timestamp: `created_at` field
-3. Qualtrics timestamp: `recordedDate` field
-4. The value with the **earlier timestamp** is kept
-5. This ensures the first recorded assessment data takes priority, regardless of source
+The system always uses the **Qualtrics value** for TGMD fields because:
+1. Qualtrics is the primary TGMD assessment platform
+2. Data is entered directly during assessment
+3. Less prone to transcription errors
 
 ### Viewing conflicts
 

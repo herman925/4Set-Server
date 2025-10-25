@@ -600,6 +600,7 @@ Documented in `PRDs/processor_agent_runbook_prd.md`:
 - **PRDs/** - Detailed product requirement documents (consolidated location)
 - **README.md** - Quick start guide and technical overview
 - **AGENTS.md** - This file (roadmap and strategic planning)
+- **User Guides** - Root-level operational guides for end users
 
 ### Key PRD Files
 - `overview_prd.md` - System architecture and user journeys
@@ -611,12 +612,12 @@ Documented in `PRDs/processor_agent_runbook_prd.md`:
 - `jotform_qualtrics_integration_prd.md` - JotForm and Qualtrics integration (updated Oct 2025)
 - `qualtrics_implementation_plan.md` - Qualtrics features implementation status
 
-### User Guides (Consolidated October 2025)
-All user guides moved to PRDs folder for centralized documentation:
-- `checking_system_user_guide_prd.md` - Checking system operational guide
-- `assessment_uploader_user_guide_prd.md` - Upload interface usage
-- `qualtrics_tgmd_user_guide_prd.md` - Qualtrics integration guide
-- `data_conflicts_user_guide_prd.md` - Data conflict resolution
+### User Guides (Root Level)
+Operational guides for end users:
+- `USER_GUIDE_CHECKING_SYSTEM.md` - Checking system operational guide
+- `USER_GUIDE_UPLOADER.md` - Upload interface usage
+- `USER_GUIDE_QUALTRICS_TGMD.md` - Qualtrics integration guide
+- `USER_GUIDE_CONFLICTS.md` - Data conflict resolution
 
 ### External References
 - JotForm API Documentation: https://api.jotform.com/docs/
@@ -676,12 +677,7 @@ All user guides moved to PRDs folder for centralized documentation:
   - `TEMP/test_text_field_display.py` - 6/6 tests passing
   - Visual mockup: `TEMP/text_field_display_example.html`
 
-**Documentation Consolidation (October 25, 2025):**
-- ✅ **User Guide Migration to PRDs**: Consolidated all root-level USER_GUIDE_*.md files into PRDs folder
-  - Moved 4 user guide files: checking_system, uploader, qualtrics_tgmd, conflicts
-  - Renamed following PRD naming convention: `*_user_guide_prd.md`
-  - Updated all cross-references in PRD files
-  - Root level now contains only README.md and AGENTS.md (as intended)
+**Documentation Updates (October 25, 2025):**
 - ✅ **Merge Strategy Documentation**: Corrected outdated "Qualtrics priority" references
   - Updated to reflect actual implementation: "earliest non-empty wins" based on timestamps
   - Aligned with changes from PRs #90-#97
