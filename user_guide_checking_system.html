@@ -13,12 +13,34 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   <style>
     body {
       font-family: 'Inter', sans-serif;
       background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     }
+    .mermaid {
+      display: flex;
+      justify-content: center;
+      margin: 2rem 0;
+    }
   </style>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ 
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+          primaryColor: '#4A90E2',
+          primaryTextColor: '#fff',
+          primaryBorderColor: '#2E5C8A',
+          lineColor: '#6B7280',
+          secondaryColor: '#E8F5E9',
+          tertiaryColor: '#FFF3E0'
+        }
+      });
+    });
+  </script>
 </head>
 <body class="min-h-screen">
   <!-- Header -->
@@ -119,7 +141,7 @@
 
             <h3 class="text-2xl font-semibold mb-4 mt-8">Key Questions Answered</h3>
 
-            <div class="space-y-4">
+            <div class="grid md:grid-cols-2 gap-6 my-6">
               <div class="diagram-box">
                 <h4 class="text-lg font-semibold mb-3">📊 DATA COMPLETENESS</h4>
                 <ul class="space-y-1 text-gray-700 ml-4">
@@ -145,25 +167,22 @@
               The Checking System recognizes that <strong>termination values are RECORDS, not calculations</strong>:
             </p>
 
-            <div class="diagram-box bg-blue-50 border-blue-300">
-              <div class="text-center text-gray-800">
-                <div class="mb-4">
-                  <div class="font-semibold mb-2">Test Administrator → Records → <span class="status-badge status-info">Termination Decision</span></div>
-                  <div class="font-semibold mb-2">System → Calculates → <span class="status-badge status-info">Expected Termination</span></div>
-                </div>
-                <div class="text-3xl mb-2">⬇️</div>
-                <div class="font-semibold mb-4">Compare for Validation</div>
-                <div class="flex justify-center gap-8">
-                  <div>
-                    <span class="status-badge status-complete">✅ Match</span>
-                    <div class="text-sm mt-2">Verified</div>
-                  </div>
-                  <div>
-                    <span class="status-badge status-warning">⚠️ Mismatch</span>
-                    <div class="text-sm mt-2">Needs Review</div>
-                  </div>
-                </div>
-              </div>
+            <div class="mermaid">
+graph LR
+    A[Test Administrator] -->|Records| B[Termination Decision]
+    C[System] -->|Calculates| D[Expected Termination]
+    B -->|Compare| E[Validation]
+    D -->|Compare| E
+    E -->|✅ Match| F[Verified]
+    E -->|⚠️ Mismatch| G[Needs Review]
+    
+    style A fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    style C fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    style B fill:#E8F5E9,stroke:#4CAF50
+    style D fill:#E8F5E9,stroke:#4CAF50
+    style E fill:#FFF3E0,stroke:#FF9800
+    style F fill:#E0F7E0,stroke:#2E7D32,color:#2E7D32
+    style G fill:#FFE0E0,stroke:#C62828,color:#C62828
             </div>
 
             <p class="text-gray-700 mt-6">This dual approach provides:</p>
@@ -767,102 +786,37 @@
             <div class="bg-gradient-to-br from-gray-50 to-blue-50 p-6 rounded-lg border-2 border-gray-300 mb-8">
               <h3 class="font-semibold mb-6 text-center text-lg">Status Indicator Logic Flowchart</h3>
               
-              <div class="flex flex-col items-center space-y-4">
-                <!-- Start -->
-                <div class="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold shadow-lg">
-                  Task Submitted
-                </div>
-                
-                <div class="text-2xl text-gray-400">↓</div>
-                
-                <!-- Question 1 -->
-                <div class="relative">
-                  <div class="bg-purple-100 border-4 border-purple-400 px-8 py-6 transform rotate-45 w-44 h-44 flex items-center justify-center shadow-lg">
-                    <div class="transform -rotate-45 text-center font-semibold text-sm">
-                      Any<br/>questions<br/>answered?
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="flex gap-8 w-full justify-center">
-                  <!-- No Path - Grey -->
-                  <div class="flex flex-col items-center space-y-3">
-                    <div class="text-sm font-semibold">NO</div>
-                    <div class="text-2xl text-gray-400">↓</div>
-                    <div class="bg-gray-200 border-4 border-gray-400 px-6 py-4 rounded-lg text-center shadow-lg">
-                      <div class="text-2xl mb-2">⭕</div>
-                      <div class="font-bold text-gray-700">GREY</div>
-                      <div class="text-xs mt-1">Not Started</div>
-                    </div>
-                  </div>
-                  
-                  <!-- Yes Path - Continue -->
-                  <div class="flex flex-col items-center space-y-3">
-                    <div class="text-sm font-semibold">YES</div>
-                    <div class="text-2xl text-gray-400">↓</div>
-                    
-                    <!-- Question 2 -->
-                    <div class="relative">
-                      <div class="bg-yellow-100 border-4 border-yellow-400 px-6 py-6 transform rotate-45 w-40 h-40 flex items-center justify-center shadow-lg">
-                        <div class="transform -rotate-45 text-center font-semibold text-xs">
-                          All required<br/>questions<br/>answered?
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div class="flex gap-8">
-                      <!-- No - Red -->
-                      <div class="flex flex-col items-center space-y-3">
-                        <div class="text-sm font-semibold">NO</div>
-                        <div class="text-2xl text-gray-400">↓</div>
-                        <div class="bg-red-100 border-4 border-red-400 px-6 py-4 rounded-lg text-center shadow-lg">
-                          <div class="text-2xl mb-2">🔴</div>
-                          <div class="font-bold text-red-700">RED</div>
-                          <div class="text-xs mt-1">Incomplete</div>
-                        </div>
-                      </div>
-                      
-                      <!-- Yes - Check Termination -->
-                      <div class="flex flex-col items-center space-y-3">
-                        <div class="text-sm font-semibold">YES</div>
-                        <div class="text-2xl text-gray-400">↓</div>
-                        
-                        <!-- Question 3 -->
-                        <div class="relative">
-                          <div class="bg-green-100 border-4 border-green-400 px-6 py-5 transform rotate-45 w-36 h-36 flex items-center justify-center shadow-lg">
-                            <div class="transform -rotate-45 text-center font-semibold text-xs">
-                              Post-term<br/>answers<br/>detected?
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div class="flex gap-8">
-                          <!-- Yes - Yellow -->
-                          <div class="flex flex-col items-center space-y-3">
-                            <div class="text-sm font-semibold">YES</div>
-                            <div class="text-2xl text-gray-400">↓</div>
-                            <div class="bg-yellow-100 border-4 border-yellow-400 px-6 py-4 rounded-lg text-center shadow-lg">
-                              <div class="text-2xl mb-2">⚠️</div>
-                              <div class="font-bold text-yellow-700">YELLOW</div>
-                              <div class="text-xs mt-1">Post-Termination</div>
-                            </div>
-                          </div>
-                          
-                          <!-- No - Green -->
-                          <div class="flex flex-col items-center space-y-3">
-                            <div class="text-sm font-semibold">NO</div>
-                            <div class="text-2xl text-gray-400">↓</div>
-                            <div class="bg-green-100 border-4 border-green-500 px-6 py-4 rounded-lg text-center shadow-lg">
-                              <div class="text-2xl mb-2">✅</div>
-                              <div class="font-bold text-green-700">GREEN</div>
-                              <div class="text-xs mt-1">Complete</div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <div class="mermaid">
+flowchart TD
+    Start([Task Submitted]) --> Q1{Any questions<br/>answered?}
+    
+    Q1 -->|NO| Grey[⭕ GREY<br/>Not Started]
+    Q1 -->|YES| Q2{All required<br/>questions<br/>answered?}
+    
+    Q2 -->|NO| Red[🔴 RED<br/>Incomplete]
+    Q2 -->|YES| Q3{Post-termination<br/>answers<br/>detected?}
+    
+    Q3 -->|YES| Yellow[⚠️ YELLOW<br/>Post-termination<br/>Activity]
+    Q3 -->|NO| Green[✅ GREEN<br/>Complete]
+    
+    style Start fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    style Grey fill:#E0E0E0,stroke:#9E9E9E,color:#333
+    style Red fill:#FFE0E0,stroke:#E57373,color:#C62828
+    style Yellow fill:#FFF9E0,stroke:#FFD54F,color:#F57C00
+    style Green fill:#E0F7E0,stroke:#81C784,color:#2E7D32
+    style Q1 fill:#F3E5F5,stroke:#9C27B0
+    style Q2 fill:#FFF3E0,stroke:#FF9800
+    style Q3 fill:#E8F5E9,stroke:#4CAF50
+              </div>
+              
+              <div class="mt-6 p-4 bg-white rounded border">
+                <p class="text-sm font-semibold mb-2">Decision Logic:</p>
+                <ol class="text-xs text-gray-700 space-y-1 ml-4">
+                  <li>1. <strong>Grey (⭕):</strong> Zero questions answered → Task not started</li>
+                  <li>2. <strong>Red (🔴):</strong> Some but not all required questions answered → Incomplete</li>
+                  <li>3. <strong>Yellow (⚠️):</strong> All required questions answered BUT answers exist after termination point → Post-termination activity</li>
+                  <li>4. <strong>Green (✅):</strong> All required questions answered AND no post-termination answers → Complete and verified</li>
+                </ol>
               </div>
             </div>
 
@@ -1221,71 +1175,58 @@
             <div class="bg-gradient-to-br from-blue-50 to-purple-50 p-6 rounded-lg border-2 border-blue-200 mb-8">
               <h4 class="font-semibold mb-6 text-center text-lg">Cache Management Workflow</h4>
               
-              <div class="flex flex-col items-center space-y-4">
-                <!-- Start -->
-                <div class="bg-blue-500 text-white px-6 py-3 rounded-full font-semibold shadow-lg">
-                  Open Checking System
-                </div>
-                
-                <div class="text-2xl text-gray-400">↓</div>
-                
-                <!-- Decision Diamond -->
-                <div class="relative">
-                  <div class="bg-yellow-100 border-4 border-yellow-400 px-8 py-6 transform rotate-45 w-48 h-48 flex items-center justify-center shadow-lg">
-                    <div class="transform -rotate-45 text-center font-semibold text-sm">
-                      Is cache<br/>built?
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="flex gap-12 w-full justify-center">
-                  <!-- No Path -->
-                  <div class="flex flex-col items-center space-y-3">
-                    <div class="text-sm font-semibold text-red-600">NO (🔴 Red Pill)</div>
-                    <div class="text-2xl text-gray-400">↓</div>
-                    <div class="bg-red-100 border-2 border-red-400 px-4 py-3 rounded-lg text-center max-w-xs shadow">
-                      <div class="font-semibold text-sm">Click Red Pill</div>
-                      <div class="text-xs mt-1">Opens modal</div>
-                    </div>
-                    <div class="text-2xl text-gray-400">↓</div>
-                    <div class="bg-red-100 border-2 border-red-400 px-4 py-3 rounded-lg text-center max-w-xs shadow">
-                      <div class="font-semibold text-sm">Click "Sync Now"</div>
-                      <div class="text-xs mt-1">Wait 60-90 seconds</div>
-                    </div>
-                    <div class="text-2xl text-gray-400">↓</div>
-                    <div class="bg-orange-100 border-2 border-orange-400 px-4 py-3 rounded-lg text-center max-w-xs shadow">
-                      <div class="font-semibold text-sm">🟠 Syncing...</div>
-                      <div class="text-xs mt-1">Shows progress %</div>
-                    </div>
-                  </div>
-                  
-                  <!-- Yes Path -->
-                  <div class="flex flex-col items-center space-y-3">
-                    <div class="text-sm font-semibold text-green-600">YES (🟢 Green Pill)</div>
-                    <div class="text-2xl text-gray-400">↓</div>
-                    <div class="bg-green-100 border-2 border-green-400 px-4 py-3 rounded-lg text-center max-w-xs shadow">
-                      <div class="font-semibold text-sm">System Ready</div>
-                      <div class="text-xs mt-1">Browse data normally</div>
-                    </div>
-                    <div class="text-2xl text-gray-400">↓</div>
-                    <div class="bg-blue-100 border-2 border-blue-400 px-4 py-3 rounded-lg text-center max-w-xs shadow">
-                      <div class="font-semibold text-sm">Need fresh data?</div>
-                      <div class="text-xs mt-1">Click green pill</div>
-                    </div>
-                    <div class="text-2xl text-gray-400">↓</div>
-                    <div class="bg-purple-100 border-2 border-purple-400 px-4 py-3 rounded-lg text-center max-w-xs shadow">
-                      <div class="font-semibold text-sm">Choose option:</div>
-                      <div class="text-xs mt-1">"Delete Cache" or<br/>"Refresh with Qualtrics"</div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="text-2xl text-gray-400">↓</div>
-                
-                <!-- End -->
-                <div class="bg-green-500 text-white px-6 py-3 rounded-full font-semibold shadow-lg">
-                  ✅ Ready to Use
-                </div>
+              <div class="mermaid">
+flowchart TD
+    Start([Open Checking System]) --> CheckCache{Is cache<br/>built?}
+    
+    CheckCache -->|NO - 🔴 Red Pill| ClickRed[Click Red Pill<br/>'System Not Ready']
+    CheckCache -->|YES - 🟢 Green Pill| Ready[System Ready<br/>Browse Data]
+    
+    ClickRed --> OpenModal[Modal Opens]
+    OpenModal --> SyncNow[Click 'Sync Now']
+    SyncNow --> Syncing[🟠 Syncing...<br/>Shows Progress %]
+    Syncing --> SyncDone{Sync<br/>Complete?}
+    
+    SyncDone -->|YES| GreenPill[✅ Pill turns GREEN<br/>System Ready]
+    SyncDone -->|ERROR| ErrorState[❌ Check Console<br/>for Errors]
+    
+    ErrorState --> TryAgain[Refresh page<br/>Try again]
+    TryAgain --> Start
+    
+    Ready --> NeedRefresh{Need fresh<br/>data?}
+    NeedRefresh -->|NO| Continue[Continue browsing]
+    NeedRefresh -->|YES| ClickGreen[Click Green Pill]
+    
+    ClickGreen --> ChooseOption{Choose<br/>Option}
+    ChooseOption -->|Delete Cache| DeleteAll[Removes ALL:<br/>1. JotForm cache<br/>2. Validation cache<br/>3. Qualtrics cache]
+    ChooseOption -->|Refresh Qualtrics| RefreshTGMD[Re-sync only<br/>TGMD data<br/>Keep JotForm cache]
+    
+    DeleteAll --> Syncing
+    RefreshTGMD --> QuickSync[Quick refresh<br/>~20-30 seconds]
+    
+    QuickSync --> GreenPill
+    GreenPill --> End([Ready to Use])
+    Continue --> End
+    
+    style Start fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    style End fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style CheckCache fill:#F3E5F5,stroke:#9C27B0
+    style SyncDone fill:#FFF3E0,stroke:#FF9800
+    style NeedRefresh fill:#E8F5E9,stroke:#4CAF50
+    style ChooseOption fill:#E1F5FE,stroke:#0288D1
+    style ClickRed fill:#FFE0E0,stroke:#E57373,color:#C62828
+    style Syncing fill:#FFE0B2,stroke:#FF9800,color:#E65100
+    style GreenPill fill:#E0F7E0,stroke:#81C784,color:#2E7D32
+    style ErrorState fill:#FFE0E0,stroke:#E57373,color:#C62828
+              </div>
+              
+              <div class="mt-6 p-4 bg-white rounded border">
+                <p class="text-sm font-semibold mb-2">Key Paths:</p>
+                <ul class="text-xs text-gray-700 space-y-1 ml-4">
+                  <li>• <strong>First-time setup:</strong> Red Pill → Sync Now → Wait for green</li>
+                  <li>• <strong>Refresh data:</strong> Green Pill → Delete Cache → Re-sync</li>
+                  <li>• <strong>Quick TGMD update:</strong> Green Pill → Refresh with Qualtrics</li>
+                </ul>
               </div>
             </div>
 
