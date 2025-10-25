@@ -112,7 +112,12 @@ The following design iterations were prototyped in `.superdesign/design_iteratio
 - **theme_pantone_light_1.css** — Pantone-inspired light theme stylesheet
 - **default_ui_darkmode.css** — Dark mode UI stylesheet
 
-**Note:** These design iterations served as exploratory prototypes. Key patterns and components have been incorporated into the production HTML files (`checking_system_*.html`, `index.html`, `upload.html`). The `.superdesign/` directory can be retired once this documentation is reviewed and approved.
+**Note (October 2025):** Documentation has been consolidated. All implementation notes, bug fix documentation, cache system details, and historical summaries previously scattered across TEMP folder markdown files have been moved into authoritative PRD files:
+- **Cache System**: `PRDs/jotform_qualtrics_integration_prd.md` (comprehensive cache implementation section)
+- **Implementation Notes**: `PRDs/checking_system_prd.md` (all major fixes and enhancements documented)
+- **Test Files**: `TEMP/README.md` (explains remaining test utilities and their purpose)
+
+TEMP folder now contains only active test files (3 MD files vs 19 before), making it easier to find relevant test documentation and understand what's current.
 
 ## Recent Enhancements (October 2025)
 

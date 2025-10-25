@@ -190,10 +190,16 @@ Comprehensive product requirement documents:
 - `overview_prd.md` – System architecture and component overview
 - `processor_agent_prd.md` – Agent specification and requirements
 - `processor_agent_runbook_prd.md` – Operational procedures
-- `checking_system_prd.md` – Quality assurance validation rules
+- `checking_system_prd.md` – Quality assurance validation rules (includes implementation notes)
+- `jotform_qualtrics_integration_prd.md` – API integration and cache system (includes cache documentation)
 - `data_security_prd.md` – Encryption and credential management
 - `termination-rules.md` – Assessment termination logic
 - `upload_monitoring_prd.md` – Upload failure detection
+- User guides (consolidated October 2025):
+  - `checking_system_user_guide_prd.md` – Checking system operational guide
+  - `assessment_uploader_user_guide_prd.md` – Upload interface usage
+  - `qualtrics_tgmd_user_guide_prd.md` – Qualtrics integration guide
+  - `data_conflicts_user_guide_prd.md` – Data conflict resolution
 
 #### `tools/`
 Utility scripts for testing and development:
@@ -203,10 +209,14 @@ Utility scripts for testing and development:
 #### `TEMP/`
 Development test files and utilities:
 - `test-pipeline-core-id.html` – JotForm + Qualtrics merge pipeline test tool
+- `README.md` – Comprehensive guide to test files and their purpose
 - `README_PIPELINE_TEST.md` – Documentation for pipeline test tool
-- `test-jotform-filter.html` – Browser-based JotForm filter testing
-- `test_qualtrics_syd1.html` – Qualtrics API connection tester
-- Other temporary development and verification files
+- Test-specific module versions (UMD pattern for Node.js + browser):
+  - `grade-detector-test.js`, `task-validator-test.js`, `jotform-cache-test.js`, `qualtrics-transformer-test.js`
+- Browser and Node.js test scripts for validation
+- `assets/` – Test-specific assets separate from production
+
+**Note (October 2025)**: TEMP folder was cleaned up from 19 markdown files to 3, with all implementation notes and documentation consolidated into authoritative PRD files. See `TEMP/README.md` for details on remaining test files.
 
 #### `filed/`
 Archived processed files (organized by school ID):
