@@ -68,10 +68,26 @@ After syncing, navigate to student detail pages to see:
 
 ### Merge Logic
 
-The system intelligently merges data from both sources:
+The system intelligently merges data from both sources using a **consistent "earliest non-empty wins" strategy** at all levels:
+
+#### Level 1: Within-Source Merging (Earliest Non-Empty Wins)
+
+When a student has **multiple submissions** from the same data source:
+
+- **JotForm**: Multiple JotForm submissions are sorted by `created_at` (earliest first). For each field, the **earliest non-empty value wins**.
+- **Qualtrics**: Multiple Qualtrics responses are sorted by `recordedDate` (earliest first). For each field, the **earliest non-empty value wins**.
+
+This matches the JotForm API's native behavior and ensures consistency across all data sources.
+
+#### Level 2: Cross-Source Merging (Earliest Non-Empty Wins)
+
+When merging Qualtrics data WITH JotForm data:
 
 1. **By Sessionkey**: Records are matched using the unique `sessionkey` field (format: `coreId_YYYYMMDD_HH_MM`)
-2. **Qualtrics Priority**: When both sources have data for the same field, **Qualtrics data takes precedence**
+2. **Earliest Non-Empty Wins**: For each field where both sources have values:
+   - JotForm timestamp: `created_at`
+   - Qualtrics timestamp: `recordedDate` or `_meta.startDate`
+   - The value from the **earlier timestamp** is kept
 3. **Complete Field Merge**: ALL Qualtrics fields are merged (not just TGMD), including:
    - TGMD: Gross motor development assessments
    - ERV: Expressive vocabulary
@@ -82,8 +98,13 @@ The system intelligently merges data from both sources:
    - HTKS: Head-toes-knees-shoulders
    - TEC: Test of emotional comprehension
    - And all other assessment tasks
-4. **Conflict Detection**: When values differ, both are logged for audit purposes, but Qualtrics is used
+4. **Conflict Detection**: When values differ, both are logged with timestamps for audit purposes, and the earliest value is used
 5. **Grade Assignment**: Automatically determines K1/K2/K3 based on assessment date using August-July school year boundaries
+
+**Example:**
+- Student has 3 JotForm submissions (Oct 1, Oct 5, Oct 10) → Earliest non-empty values merged into one JotForm record (Oct 1 values win)
+- Student has 2 Qualtrics responses (Oct 3, Oct 8) → Earliest non-empty values merged into one Qualtrics record (Oct 3 values win)
+- Final merge: Compare Oct 1 (JotForm) vs Oct 3 (Qualtrics) → JotForm values win for conflicting fields since Oct 1 is earlier
 
 ### Field Mapping
 
