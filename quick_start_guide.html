@@ -129,7 +129,13 @@
               <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
             </svg>
           </a>
-          <a href="index.html" class="text-gray-600 hover:text-primary transition p-2 rounded-lg hover:bg-gray-100" title="Back to Home">
+          <a href="guide_homepage.html" class="text-gray-600 hover:text-primary transition p-2 rounded-lg hover:bg-gray-100" title="Back to Guide Homepage">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+          </a>
+          <a href="index.html" class="text-gray-600 hover:text-primary transition p-2 rounded-lg hover:bg-gray-100" title="Back to System Home">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
               <polyline points="9 22 9 12 15 12 15 22"></polyline>
@@ -146,18 +152,23 @@
       <!-- Sidebar Navigation -->
       <aside class="sidebar w-64 flex-shrink-0">
         <div class="bg-white rounded-lg shadow-lg p-6 sticky top-24">
-          <h2 class="text-lg font-bold mb-4" style="color: var(--primary)">Quick Navigation</h2>
+          <h2 class="text-lg font-bold mb-4" style="color: var(--primary)">Table of Contents</h2>
           <nav class="space-y-2">
             <a href="#welcome" class="toc-link block text-sm text-gray-700 py-1">Welcome</a>
-            <a href="#system-home" class="toc-link block text-sm text-gray-700 py-1">0. System Home Page</a>
-            <a href="#onedrive-setup" class="toc-link block text-sm text-gray-700 py-1">1. OneDrive Setup</a>
-            <a href="#upload-pdf" class="toc-link block text-sm text-gray-700 py-1">2. Upload PDFs</a>
-            <a href="#check-logs" class="toc-link block text-sm text-gray-700 py-1">3. Check Upload Logs</a>
-            <a href="#checking-system" class="toc-link block text-sm text-gray-700 py-1">4. Use Checking System</a>
-            <a href="#build-cache" class="toc-link block text-sm text-gray-700 py-1">5. Build Cache</a>
-            <a href="#filter-data" class="toc-link block text-sm text-gray-700 py-1">6. Filter Data</a>
-            <a href="#export-data" class="toc-link block text-sm text-gray-700 py-1">7. Export Data</a>
-            <a href="#learn-more" class="toc-link block text-sm text-gray-700 py-1">Learn More</a>
+            <a href="#preparation" class="toc-link block text-sm text-gray-700 py-1 font-semibold">I. Preparation</a>
+            <a href="#system-home" class="toc-link block text-sm text-gray-700 py-1 ml-3">1.1 System Home Page</a>
+            <a href="#onedrive-setup" class="toc-link block text-sm text-gray-700 py-1 ml-3">1.2 OneDrive Setup</a>
+            <a href="#operation" class="toc-link block text-sm text-gray-700 py-1 font-semibold mt-2">II. Operation</a>
+            <a href="#data-upload" class="toc-link block text-sm text-gray-700 py-1 ml-3 font-medium">Data Upload</a>
+            <a href="#upload-pdf" class="toc-link block text-sm text-gray-700 py-1 ml-6">2.1 Upload PDFs</a>
+            <a href="#data-prep" class="toc-link block text-sm text-gray-700 py-1 ml-6">2.2 Data Preparation</a>
+            <a href="#checking-system-flow" class="toc-link block text-sm text-gray-700 py-1 ml-3 font-medium mt-2">Checking System</a>
+            <a href="#filter-data" class="toc-link block text-sm text-gray-700 py-1 ml-6">2.3 Applying Filters</a>
+            <a href="#check-student" class="toc-link block text-sm text-gray-700 py-1 ml-6">2.4 Check Student</a>
+            <a href="#check-class" class="toc-link block text-sm text-gray-700 py-1 ml-6">2.5 Check Class</a>
+            <a href="#check-higher" class="toc-link block text-sm text-gray-700 py-1 ml-6">2.6 Check School/Group/District</a>
+            <a href="#export-data" class="toc-link block text-sm text-gray-700 py-1 ml-6">2.7 Export Data</a>
+            <a href="#learn-more" class="toc-link block text-sm text-gray-700 py-1 mt-2">Learn More</a>
           </nav>
         </div>
       </aside>
@@ -183,16 +194,23 @@
             
             <div class="info-box">
               <p class="text-sm font-semibold mb-2">💡 What This Guide Covers</p>
-              <ul class="text-sm space-y-1 ml-4">
-                <li>✓ Understanding the system home page</li>
-                <li>✓ Setting up OneDrive for file sync</li>
-                <li>✓ Uploading assessment PDFs</li>
-                <li>✓ Checking upload status and logs</li>
-                <li>✓ Using the checking system to monitor data</li>
-                <li>✓ Building cache for better performance</li>
-                <li>✓ Filtering and finding specific data</li>
-                <li>✓ Exporting data as markdown files</li>
-              </ul>
+              <p class="text-sm mb-2">This guide is organized into two major sections:</p>
+              <div class="text-sm space-y-2 ml-4">
+                <div>
+                  <strong>I. Preparation</strong> - Set up before using the system
+                  <ul class="ml-4 mt-1 space-y-1">
+                    <li>✓ Understanding the system home page and navigation</li>
+                    <li>✓ Setting up OneDrive for file sync</li>
+                  </ul>
+                </div>
+                <div class="mt-2">
+                  <strong>II. Operation</strong> - How to perform key tasks
+                  <ul class="ml-4 mt-1 space-y-1">
+                    <li><em>Data Upload:</em> Uploading PDFs, data preparation from JotForm & Qualtrics</li>
+                    <li><em>Checking System:</em> Applying filters, checking data at all levels, exporting</li>
+                  </ul>
+                </div>
+              </div>
             </div>
 
             <div class="warning-box">
@@ -200,11 +218,21 @@
             </div>
           </section>
 
-          <!-- Section 0: System Home Page -->
+          <!-- Section I: Preparation -->
+          <section id="preparation" class="mb-12">
+            <h2 class="text-4xl font-bold mb-6 pb-4 border-b-4 border-primary" style="color: var(--primary)">
+              Section I: Preparation
+            </h2>
+            <p class="text-gray-700 text-lg mb-6">
+              Before you start using the 4Set System, complete these setup steps to ensure everything is ready.
+            </p>
+          </section>
+
+          <!-- Section I.1: System Home Page -->
           <section id="system-home" class="mb-12">
             <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">
-              <span class="step-number">0</span>
-              System Home Page
+              <span class="step-number">1.1</span>
+              System Home Page Navigation
             </h2>
             
             <p class="text-gray-700 mb-4">
@@ -215,70 +243,93 @@
               <p class="text-sm"><strong>💡 Quick Access:</strong> Bookmark this page for easy access to the system.</p>
             </div>
 
-            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 0.1: Understanding the Home Page</h3>
-            <p class="text-gray-700 mb-4">The home page provides quick access to the two main features:</p>
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Understanding the Home Page</h3>
+            <p class="text-gray-700 mb-4">The home page provides quick access to the two main features and help documentation:</p>
             
-            <!-- Embedded Screenshot: System Home Page -->
-            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg bg-gradient-to-br from-gray-50 to-gray-100">
-              <div class="p-8">
-                <!-- Logo section -->
-                <div class="flex items-center gap-6 mb-8">
-                  <div class="w-32 h-16 bg-white rounded-lg shadow flex items-center justify-center text-xs text-gray-500 border border-gray-200">KeySteps@JC Logo</div>
-                  <div class="w-32 h-16 bg-white rounded-lg shadow flex items-center justify-center text-xs text-gray-500 border border-gray-200">EdUHK Logo</div>
-                </div>
-                
-                <!-- Badge -->
-                <div class="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full shadow-sm text-xs mb-4">
-                  <span class="w-2 h-2 rounded-full bg-blue-600"></span>
-                  <span class="text-gray-700">KeySteps@JC (Phase Two)</span>
-                </div>
-                
-                <!-- Title -->
-                <h1 class="text-4xl font-bold text-blue-600 mb-4">4Set System (2025/26)</h1>
-                <p class="text-gray-600 mb-6 max-w-2xl">Web-based PDF uploads trigger the processor agent to validate, parse, and submit survey data to Jotform...</p>
-                
-                <!-- Main action buttons -->
-                <div class="flex gap-4 items-center mb-8">
-                  <div class="bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg">
-                    <div class="font-semibold">Assessment Uploader</div>
-                    <div class="text-xs opacity-90">Upload PDFs</div>
-                  </div>
-                  <div class="bg-white border-2 border-blue-600 text-blue-600 px-6 py-3 rounded-lg shadow">
-                    <div class="font-semibold">Checking System</div>
-                    <div class="text-xs">See What's Missing</div>
-                  </div>
-                  <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
-                    <span class="text-2xl">❓</span>
-                  </div>
-                </div>
-                
-                <!-- Recent Submission Card -->
-                <div class="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-                  <div class="flex items-center justify-between mb-4">
-                    <div>
-                      <p class="text-xs text-gray-500 uppercase">JotForm Latest</p>
-                      <h2 class="text-xl font-semibold text-gray-800">Recent Submission</h2>
+            <!-- Embedded Screenshot: System Home Page with Real Layout -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
+              <!-- Full viewport mockup matching actual index.html layout -->
+              <div class="relative overflow-hidden" style="background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); min-height: 600px;">
+                <div class="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8 p-8 max-w-6xl mx-auto">
+                  <!-- Left side: Hero Section -->
+                  <div class="lg:w-1/2 space-y-6">
+                    <!-- Logos -->
+                    <div class="flex items-center gap-4">
+                      <img src="assets/logos/KS.png" alt="KeySteps@JC" class="h-12" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">
+                      <img src="assets/logos/EdUHK.png" alt="EdUHK" class="h-12" style="filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));">
                     </div>
-                    <div class="flex items-center gap-2 bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs">
-                      <span class="w-2 h-2 rounded-full bg-green-500"></span>
-                      <span>Last Sync: 0 mins ago</span>
+                    
+                    <!-- Badge -->
+                    <div class="inline-flex items-center gap-2 px-4 py-2 bg-white/90 backdrop-blur rounded-full shadow-sm text-xs">
+                      <span class="w-2 h-2 rounded-full bg-blue-600"></span>
+                      <span class="text-gray-700">KeySteps@JC (Phase Two)</span>
+                    </div>
+                    
+                    <!-- Title -->
+                    <h1 class="text-4xl lg:text-5xl font-bold text-blue-600">4Set System (2025/26)</h1>
+                    <p class="text-gray-600 text-base lg:text-lg">Web-based PDF uploads trigger the processor agent to validate, parse, and submit survey data to Jotform while the dashboard tracks queue health, rejections, and recent activity for KeySteps@JC maintainers.</p>
+                    
+                    <!-- Action Buttons -->
+                    <div class="flex flex-wrap items-center gap-3">
+                      <div class="bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg hover:bg-blue-700 transition-colors cursor-pointer">
+                        <div class="font-semibold">Assessment Uploader</div>
+                        <div class="text-xs opacity-90">Upload PDFs</div>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <div class="bg-white border-2 border-blue-600 text-blue-600 px-6 py-3 rounded-lg shadow hover:bg-blue-50 transition-colors cursor-pointer">
+                          <div class="font-semibold">Checking System</div>
+                          <div class="text-xs">See What's Missing</div>
+                        </div>
+                        <div class="w-12 h-12 rounded-full bg-white/90 backdrop-blur flex items-center justify-center shadow hover:bg-white transition-colors cursor-pointer" title="View Guides & Documentation">
+                          <span class="text-2xl">❓</span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div class="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <p class="text-xs text-gray-500">Submission ID</p>
-                      <p class="font-medium text-blue-600">6362362003245961...</p>
-                    </div>
-                    <div>
-                      <p class="text-xs text-gray-500">Uploaded</p>
-                      <p class="font-medium">14 Oct 2025, 07:30</p>
+                  
+                  <!-- Right side: JotForm Card -->
+                  <div class="lg:w-1/2">
+                    <div class="bg-white/95 backdrop-blur rounded-xl shadow-xl p-6 lg:p-8 border border-gray-200">
+                      <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
+                        <div class="flex items-center gap-3">
+                          <img src="assets/logos/JotForm.png" alt="JotForm" class="h-8">
+                          <div>
+                            <p class="text-xs text-gray-500 uppercase tracking-wide">JotForm Latest</p>
+                            <h2 class="text-xl lg:text-2xl font-semibold text-gray-800">Recent Submission</h2>
+                          </div>
+                        </div>
+                        <div class="flex items-center gap-2 bg-green-100 text-green-700 px-3 py-1.5 rounded-full text-xs font-medium">
+                          <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                          <span>Last Sync: 0 mins ago</span>
+                        </div>
+                      </div>
+                      <div class="rounded-xl border border-blue-100 bg-blue-50/50 p-5">
+                        <div class="grid sm:grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Submission ID</p>
+                            <p class="font-medium text-blue-600 break-all">6362362003245961...</p>
+                          </div>
+                          <div>
+                            <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Uploaded</p>
+                            <p class="font-medium text-gray-800">14 Oct 2025, 07:30</p>
+                          </div>
+                          <div>
+                            <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">Session Key</p>
+                            <p class="font-medium text-blue-600">99999_20251225_00_00</p>
+                          </div>
+                          <div>
+                            <p class="text-xs text-gray-500 uppercase tracking-wide mb-1">School ID</p>
+                            <p class="font-medium text-gray-800">S999</p>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 0.2: Finding Guides & Documentation</h3>
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Finding Guides & Documentation</h3>
             <p class="text-gray-700 mb-4">Click the question mark icon (❓) next to the buttons to access the Guide Homepage where you'll find:</p>
             
             <!-- Embedded Screenshot: Guide Homepage -->
@@ -359,10 +410,10 @@
             </div>
           </section>
 
-          <!-- Section 1: OneDrive Setup -->
+          <!-- Section I.2: OneDrive Setup -->
           <section id="onedrive-setup" class="mb-12">
             <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">
-              <span class="step-number">1</span>
+              <span class="step-number">1.2</span>
               OneDrive Setup & Sync
             </h2>
             
@@ -538,11 +589,29 @@
             </div>
           </section>
 
-          <!-- Section 2: Upload PDFs -->
+          <!-- Section II: Operation -->
+          <section id="operation" class="mb-12 mt-16">
+            <h2 class="text-4xl font-bold mb-6 pb-4 border-b-4 border-primary" style="color: var(--primary)">
+              Section II: Operation
+            </h2>
+            <p class="text-gray-700 text-lg mb-6">
+              Now that you're set up, learn how to perform the key tasks in the 4Set System. This section is organized by workflow: Data Upload and Checking System.
+            </p>
+          </section>
+
+          <!-- Data Upload Workflow Header -->
+          <div id="data-upload" class="mb-8">
+            <h3 class="text-2xl font-bold mb-3 text-gray-800 flex items-center gap-2">
+              <span class="text-blue-600">📤</span> Data Upload Workflow
+            </h3>
+            <p class="text-gray-600">Upload assessment PDFs and prepare data from JotForm & Qualtrics.</p>
+          </div>
+
+          <!-- Section II.1 (2.1): Upload PDFs -->
           <section id="upload-pdf" class="mb-12">
             <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">
-              <span class="step-number">2</span>
-              Uploading PDFs
+              <span class="step-number">2.1</span>
+              Upload PDFs
             </h2>
             
             <p class="text-gray-700 mb-4">
@@ -1428,33 +1497,38 @@ flowchart LR
             </div>
           </section>
 
-          <!-- Section 5: Build Cache -->
-          <section id="build-cache" class="mb-12">
+          <!-- Section 2.2: Data Preparation -->
+          <section id="data-prep" class="mb-12">
             <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">
-              <span class="step-number">5</span>
-              Building the Cache
+              <span class="step-number">2.2</span>
+              Data Preparation from JotForm & Qualtrics
             </h2>
             
             <p class="text-gray-700 mb-4">
-              Build the cache to improve performance when loading large datasets in the Checking System.
+              The system merges data from two sources (JotForm submissions and Qualtrics surveys) to create a complete picture of each student's assessment. You need to sync this data for accurate checking.
             </p>
 
-            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 5.1: When to Build Cache</h3>
-            <p class="text-gray-700 mb-2">Build the cache:</p>
+            <div class="info-box">
+              <p class="text-sm font-semibold mb-2">💡 How Data Merge Works (Simple Explanation)</p>
+              <p class="text-sm">Think of it like putting together a puzzle: JotForm has the uploaded PDF data, while Qualtrics has the survey responses. The system combines both pieces to show you the complete assessment for each student. When you "build the cache," you're telling the system to fetch the latest pieces and assemble them together.</p>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">When to Prepare Data</h3>
+            <p class="text-gray-700 mb-2">Sync the data:</p>
             <ul class="list-disc ml-6 space-y-1 text-gray-700">
-              <li>After uploading a large batch of new assessments</li>
+              <li>After uploading a batch of new assessments</li>
               <li>When the Checking System feels slow to load</li>
-              <li>At the start of each day if you're doing heavy checking work</li>
-              <li>After any major data updates</li>
+              <li>At the start of each day if you're doing checking work</li>
+              <li>After any major data updates from JotForm or Qualtrics</li>
             </ul>
 
-            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 5.2: Build the Cache</h3>
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">How to Prepare Data</h3>
             <ol class="list-decimal ml-6 space-y-2 text-gray-700">
               <li>Open the Checking System home page</li>
               <li>Look at the <strong>System Status Pills</strong> at the top (below the header)</li>
               <li>You'll see two pills: "Decryption Status" and "JotForm Cache Status"</li>
               <li>If the cache status pill shows <strong class="text-red-600">"System Not Ready"</strong> (red), click on it</li>
-              <li>If it shows <strong class="text-green-600">"System Ready"</strong> (green), you can still click it to refresh the cache</li>
+              <li>If it shows <strong class="text-green-600">"System Ready"</strong> (green), you can still click it to refresh the data</li>
               <li>A sync/refresh process will start automatically, showing progress in the pill itself</li>
               <li>The pill will show <strong class="text-orange-600">"Syncing"</strong> (orange) with a percentage and progress bar</li>
               <li>Wait for it to complete - the pill will turn <strong class="text-green-600">green</strong> when ready</li>
