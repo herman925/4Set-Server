@@ -2818,10 +2818,10 @@ When multiple submissions/responses exist for the same student:
 - **JotForm**: Submissions sorted by `created_at` (earliest first)
 - **Qualtrics**: Responses sorted by `recordedDate` (earliest first)
 - **Strategy**: First non-empty value wins for each field
-- **Implementation**: `jotform-cache.js` lines 795, 810
+- **Implementation**: See `buildStudentValidationCache()` method in `jotform-cache.js`
 
 ```javascript
-// Documented in code:
+// Strategy documented in code:
 // "Merge strategy: Sort by created_at (earliest first), 
 //  only process non-empty values, first wins"
 ```

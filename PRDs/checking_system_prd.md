@@ -2478,12 +2478,12 @@ const filter = { "q3:matches": studentIdNumeric };
 
 **Solution**: Added two transformation methods in `jotform-cache.js`:
 
-1. **`transformSubmissionsToRecords()`** (lines 1032-1090)
+1. **`transformSubmissionsToRecords()` method**
    - Converts JotForm submissions with answers object to flat records
    - Extracts `coreId` from `answers['20']`
    - Creates data-merger compatible structure
 
-2. **`transformRecordsToSubmissions()`** (lines 1092-1173)
+2. **`transformRecordsToSubmissions()` method**
    - Converts merged records back to JotForm submission format
    - Preserves original structure for cache compatibility
    - Updates answer values with merged TGMD data from Qualtrics

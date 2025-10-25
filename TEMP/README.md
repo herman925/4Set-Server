@@ -72,14 +72,14 @@ Startup scripts for local development:
 
 ## Key Differences: Test vs Production
 
-| Aspect | Production Files | Test Files (TEMP) |
-|--------|-----------------|------------------|
-| **Location** | `assets/js/` | `TEMP/` |
-| **Module Pattern** | Browser-only (window global) | UMD (browser + Node.js) |
-| **Purpose** | Production use | Testing & validation |
-| **Dependencies** | Minimal external dependencies | May include test-only libraries |
-| **Error Handling** | User-friendly messages | Detailed debugging output |
-| **Performance** | Optimized for production | Includes performance metrics |
+| Aspect              | Production Files                  | Test Files (TEMP)                |
+|---------------------|-----------------------------------|----------------------------------|
+| **Location**        | `assets/js/`                      | `TEMP/`                          |
+| **Module Pattern**  | Browser-only (window global)      | UMD (browser + Node.js)          |
+| **Purpose**         | Production use                    | Testing & validation             |
+| **Dependencies**    | Minimal external dependencies     | May include test-only libraries  |
+| **Error Handling**  | User-friendly messages            | Detailed debugging output        |
+| **Performance**     | Optimized for production          | Includes performance metrics     |
 
 ## Using Test Files
 
