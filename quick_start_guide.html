@@ -2270,6 +2270,12 @@ flowchart LR
       transform: translateY(-2px);
       box-shadow: 0 8px 24px rgba(0,0,0,0.2) !important;
     }
+    .interactive-btn-wrapper-upload:hover > div:first-child,
+    .interactive-btn-wrapper-upload:hover > button,
+    .interactive-btn-wrapper-upload:hover > p {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2) !important;
+    }
     /* Spotlight system styles moved to assets/css/spotlight-system.css */
   </style>
 
@@ -2408,11 +2414,35 @@ flowchart LR
     });
     
     // Upload Interface Modal Functions
+    let uploadSpotlightSystem = null;
+    let uploadTooltipPositioner = null;
+    
     function openUploadInterfaceModal() {
       const modal = document.getElementById('uploadInterfaceModal');
       if (!modal) return;
-      modal.style.display = 'flex';
+      modal.style.display = 'block';
       document.body.style.overflow = 'hidden';
+      
+      // Initialize spotlight system if not already done
+      if (!uploadSpotlightSystem) {
+        uploadSpotlightSystem = new SpotlightSystem({
+          overlaySelector: '#uploadModalOverlay',
+          targets: '[data-spotlight-upload="button"], [data-spotlight-upload="icon"], [data-spotlight-upload="info"]',
+          closeButton: '[data-spotlight-upload="close"]',
+          modalSelector: '#uploadInterfaceModal',
+          padding: 14,
+          dimOpacity: 0.55
+        });
+        
+        uploadTooltipPositioner = new TooltipPositioner({
+          tooltipSelector: '.feature-tooltip',
+          padding: 10,
+          arrowSize: 6
+        });
+      }
+      
+      // Enable spotlight system
+      uploadSpotlightSystem.enable();
     }
     
     function closeUploadInterfaceModal() {
@@ -2420,6 +2450,70 @@ flowchart LR
       if (!modal) return;
       modal.style.display = 'none';
       document.body.style.overflow = '';
+      
+      // Disable spotlight system
+      if (uploadSpotlightSystem) {
+        uploadSpotlightSystem.disable();
+      }
+      
+      // Hide all tooltips
+      document.querySelectorAll('#uploadInterfaceModal .feature-tooltip').forEach(tooltip => {
+        tooltip.style.display = 'none';
+      });
+    }
+    
+    function toggleUploadTooltip(tooltipId) {
+      const tooltip = document.getElementById(tooltipId);
+      if (!tooltip) return;
+      
+      const isVisible = tooltip.style.display === 'block';
+      
+      // Hide all other tooltips in this modal
+      document.querySelectorAll('#uploadInterfaceModal .feature-tooltip').forEach(t => {
+        if (t.id !== tooltipId) {
+          t.style.display = 'none';
+        }
+      });
+      
+      const newDisplay = isVisible ? 'none' : 'block';
+      tooltip.style.transform = 'none';
+      tooltip.style.animation = 'none';
+      
+      if (!isVisible) {
+        tooltip.style.display = 'none';
+      } else {
+        tooltip.style.display = 'none';
+        tooltip.style.visibility = 'hidden';
+        tooltip.style.opacity = '0';
+        tooltip.style.left = '';
+        tooltip.style.top = '';
+      }
+      
+      if (!isVisible) {
+        const wrapper = tooltip.closest('.interactive-btn-wrapper-upload');
+        if (wrapper) {
+          const trigger = wrapper.querySelector('button') || wrapper.querySelector('[data-spotlight-upload]');
+          if (trigger && uploadTooltipPositioner) {
+            uploadTooltipPositioner.positionTooltip(tooltip, trigger);
+            if (uploadSpotlightSystem) {
+              uploadSpotlightSystem.updateHoles();
+            }
+          }
+        }
+      } else {
+        if (uploadSpotlightSystem) {
+          uploadSpotlightSystem.updateHoles();
+        }
+      }
+      
+      if (!isVisible) {
+        setTimeout(() => {
+          tooltip.style.display = 'none';
+          if (uploadSpotlightSystem) {
+            uploadSpotlightSystem.updateHoles();
+          }
+        }, 5000);
+      }
     }
     
     // Checking Home Modal Functions  
@@ -2503,45 +2597,97 @@ flowchart LR
     });
   </script>
   
-  <!-- Upload Interface Modal for Step 2.2 -->
-  <div id="uploadInterfaceModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-[9999]" style="display: none;">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full mx-4 relative overflow-hidden" style="max-height: 90vh; overflow-y: auto;">
-      <div class="sticky top-0 bg-gradient-to-r from-primary to-indigo-600 text-white px-8 py-6 rounded-t-2xl z-10">
-        <div class="flex items-center justify-between">
-          <h2 class="text-2xl font-bold">Upload Interface: PC Number & Destination Setup</h2>
-          <button onclick="closeUploadInterfaceModal()" class="text-white hover:bg-white/20 rounded-full p-2 transition-all">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        </div>
-        <p class="text-sm opacity-90 mt-2">Configuration badges appear at the top of the upload page</p>
-      </div>
-      <div class="p-8">
-        <div class="border-2 border-gray-300 rounded-lg p-8 bg-gradient-to-br from-blue-50 to-gray-50 mb-6">
-          <div class="text-center space-y-6">
-            <p class="text-sm text-gray-600 mb-4"><strong>Before Configuration:</strong></p>
-            <div class="flex justify-center gap-6 flex-wrap">
-              <div class="px-6 py-3 rounded-full bg-red-100 text-red-700 font-bold text-base border-3 border-red-300 shadow-lg">⚠️ PC Number: Not Set</div>
-              <div class="px-6 py-3 rounded-full bg-red-100 text-red-700 font-bold text-base border-3 border-red-300 shadow-lg">🔴 Destination: Not Set</div>
-            </div>
-            <div class="mt-8 pt-6 border-t border-gray-300">
-              <p class="text-sm text-gray-600 mb-4"><strong>After Configuration:</strong></p>
-              <div class="flex justify-center gap-6 flex-wrap">
-                <div class="px-6 py-3 rounded-full bg-green-100 text-green-700 font-bold text-base border-3 border-green-300 shadow-lg">✅ PC Number: 095</div>
-                <div class="px-6 py-3 rounded-full bg-green-100 text-green-700 font-bold text-base border-3 border-green-300 shadow-lg">✅ Destination: Set</div>
+  <!-- Upload Interface Modal for Step 2.2 - WITH SPOTLIGHT SYSTEM -->
+  <div id="uploadInterfaceModal" style="display: none; position: fixed; inset: 0; z-index: 9999; padding: 2rem; overflow-y: auto;">
+    
+    <div style="max-width: 1200px; margin: 0 auto; position: relative; z-index: 2;">
+      <!-- Dimming overlay -->
+      <div id="uploadModalOverlay" style="position: fixed; inset: 0; pointer-events: none; z-index: 10000;"></div>
+      
+      <!-- Close Button -->
+      <button data-spotlight-upload="close" onclick="closeUploadInterfaceModal()" style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10002;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+      
+      <!-- Modal Content -->
+      <div style="background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); overflow: hidden; position: relative; z-index: 10;">
+        <div class="p-8">
+          <h2 class="text-2xl font-bold text-gray-800 mb-6">Upload Interface: Drag & Drop PDF Files</h2>
+          
+          <!-- Upload Drop Zone -->
+          <div class="bg-white p-8 text-center border-2 border-dashed border-gray-300 rounded-lg">
+            <div class="flex flex-col items-center gap-4">
+              <!-- File Icon - Interactive -->
+              <div class="interactive-btn-wrapper-upload" style="position: relative;">
+                <div data-spotlight-upload="icon" class="p-6 rounded-full bg-blue-100 cursor-pointer" onclick="toggleUploadTooltip('tooltip-upload-icon')">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#4A90E2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                    <polyline points="14 2 14 8 20 8"></polyline>
+                    <line x1="12" y1="18" x2="12" y2="12"></line>
+                    <line x1="9" y1="15" x2="15" y2="15"></line>
+                  </svg>
+                </div>
+                <!-- Tooltip -->
+                <div id="tooltip-upload-icon" class="feature-tooltip" style="display: none;">
+                  <div style="font-weight: 600; margin-bottom: 4px;">📄 PDF File Upload</div>
+                  <div style="font-size: 13px; opacity: 0.9;">Click the icon or drag PDF files into this area to upload assessment forms</div>
+                  <div style="position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 6px solid #1f2937;"></div>
+                </div>
+              </div>
+              
+              <div>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">Drop PDF Files Here</h2>
+                <p class="text-gray-600 mb-4">or click anywhere to browse your computer</p>
+              </div>
+              
+              <!-- Browse Button - Interactive -->
+              <div class="interactive-btn-wrapper-upload" style="position: relative;">
+                <button data-spotlight-upload="button" class="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 flex items-center gap-2 border-none cursor-pointer" onclick="event.stopPropagation(); toggleUploadTooltip('tooltip-browse-btn')">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                  Browse Files
+                </button>
+                <!-- Tooltip -->
+                <div id="tooltip-browse-btn" class="feature-tooltip" style="display: none;">
+                  <div style="font-weight: 600; margin-bottom: 4px;">📁 Browse Files</div>
+                  <div style="font-size: 13px; opacity: 0.9;">Click to open file browser and select PDF files to upload</div>
+                  <div style="position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 6px solid #1f2937;"></div>
+                </div>
+              </div>
+              
+              <!-- Info Text - Interactive -->
+              <div class="mt-4 space-y-1.5 text-gray-500 text-sm">
+                <div class="interactive-btn-wrapper-upload" style="position: relative;">
+                  <p data-spotlight-upload="info" class="flex items-center gap-2 justify-center cursor-pointer" onclick="toggleUploadTooltip('tooltip-file-type')">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="16" x2="12" y2="12"></line>
+                      <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    Only PDF files are supported
+                  </p>
+                  <!-- Tooltip -->
+                  <div id="tooltip-file-type" class="feature-tooltip" style="display: none;">
+                    <div style="font-weight: 600; margin-bottom: 4px;">ℹ️ File Type Restriction</div>
+                    <div style="font-size: 13px; opacity: 0.9;">The system only accepts PDF files. Other file types will be rejected during upload.</div>
+                    <div style="position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 6px solid #1f2937;"></div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-        <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded">
-          <h4 class="font-semibold text-blue-900 mb-3">💡 Setup Steps</h4>
-          <ol class="list-decimal ml-6 space-y-2 text-sm text-gray-700">
-            <li><strong>Click PC Number badge</strong> → Enter 3-digit number → Save</li>
-            <li><strong>Click Destination badge</strong> → Select incoming/ folder → Grant permission</li>
-            <li><strong>Verify both badges turn green</strong> ✅</li>
-          </ol>
+          
+          <!-- Instructions -->
+          <div class="mt-6 bg-blue-50 border-l-4 border-blue-500 p-6 rounded">
+            <h4 class="font-semibold text-blue-900 mb-3">💡 Upload Tips</h4>
+            <ul class="space-y-2 text-sm text-gray-700">
+              <li>• <strong>File Naming:</strong> Files must follow the format: <code>xxxxx_YYYYMMDD_HH_MM.pdf</code></li>
+              <li>• <strong>Drag & Drop:</strong> Drag PDF files from your computer directly into the drop zone</li>
+              <li>• <strong>Browse:</strong> Click the "Browse Files" button to select files using the file picker</li>
+              <li>• <strong>Multiple Files:</strong> You can upload multiple PDF files at once</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
