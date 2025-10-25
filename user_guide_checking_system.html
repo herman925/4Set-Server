@@ -1,0 +1,1043 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Guide: Checking System - 4Set System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="assets/js/tailwind.config.js"></script>
+  <link rel="stylesheet" href="assets/css/theme_pantone_light_1.css">
+  <link rel="stylesheet" href="assets/css/global.css">
+  <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
+    .sidebar {
+      position: sticky;
+      top: 2rem;
+      max-height: calc(100vh - 4rem);
+      overflow-y: auto;
+    }
+    .content-section {
+      scroll-margin-top: 2rem;
+    }
+    .toc-link {
+      transition: all 0.2s;
+    }
+    .toc-link:hover {
+      color: var(--primary);
+      padding-left: 0.75rem;
+    }
+    .toc-link.active {
+      color: var(--primary);
+      font-weight: 600;
+      border-left: 3px solid var(--primary);
+      padding-left: 0.75rem;
+    }
+    pre {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 1.5rem;
+      border-radius: 0.5rem;
+      overflow-x: auto;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.875rem;
+      line-height: 1.6;
+    }
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      background: #f1f5f9;
+      padding: 0.125rem 0.375rem;
+      border-radius: 0.25rem;
+      font-size: 0.875em;
+    }
+    pre code {
+      background: transparent;
+      padding: 0;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1.5rem 0;
+    }
+    th, td {
+      border: 1px solid #e2e8f0;
+      padding: 0.75rem 1rem;
+      text-align: left;
+    }
+    th {
+      background: var(--primary);
+      color: white;
+      font-weight: 600;
+    }
+    tr:nth-child(even) {
+      background: #f8fafc;
+    }
+    .collapsible-section {
+      border: 1px solid #e2e8f0;
+      border-radius: 0.5rem;
+      margin: 1rem 0;
+      overflow: hidden;
+    }
+    .collapsible-header {
+      background: #f8fafc;
+      padding: 1rem 1.5rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.2s;
+    }
+    .collapsible-header:hover {
+      background: #f1f5f9;
+    }
+    .collapsible-content {
+      padding: 1.5rem;
+      display: none;
+    }
+    .collapsible-content.active {
+      display: block;
+    }
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.375rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+    .status-complete { background: #dcfce7; color: #166534; }
+    .status-warning { background: #fef3c7; color: #92400e; }
+    .status-error { background: #fee2e2; color: #991b1b; }
+    .status-info { background: #dbeafe; color: #1e40af; }
+    .diagram-box {
+      border: 2px solid var(--primary);
+      border-radius: 0.5rem;
+      padding: 1.5rem;
+      margin: 1.5rem 0;
+      background: white;
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <!-- Header -->
+  <header class="bg-white shadow-md sticky top-0 z-50">
+    <div class="container mx-auto px-6 py-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <a href="index.html" class="text-2xl font-bold" style="color: var(--primary)">4Set System</a>
+          <span class="text-gray-400">|</span>
+          <h1 class="text-xl font-semibold text-gray-700">User Guide: Checking System</h1>
+        </div>
+        <div class="flex items-center gap-4">
+          <a href="user_guide_uploader.html" class="text-sm text-gray-600 hover:text-primary transition">Uploader Guide</a>
+          <a href="user_guide_qualtrics.html" class="text-sm text-gray-600 hover:text-primary transition">Qualtrics Guide</a>
+          <a href="user_guide_conflicts.html" class="text-sm text-gray-600 hover:text-primary transition">Conflicts Guide</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <div class="container mx-auto px-6 py-8">
+    <div class="flex gap-8">
+      <!-- Sidebar Navigation -->
+      <aside class="sidebar w-64 flex-shrink-0">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+          <h2 class="text-lg font-bold mb-4" style="color: var(--primary)">Table of Contents</h2>
+          <nav class="space-y-2">
+            <a href="#overview" class="toc-link block text-sm text-gray-700 py-1">Overview</a>
+            <a href="#getting-started" class="toc-link block text-sm text-gray-700 py-1">Getting Started</a>
+            <a href="#navigation" class="toc-link block text-sm text-gray-700 py-1">Navigation Guide</a>
+            <a href="#data-views" class="toc-link block text-sm text-gray-700 py-1">Understanding Data Views</a>
+            <a href="#workflows" class="toc-link block text-sm text-gray-700 py-1">Step-by-Step Workflows</a>
+            <a href="#status-indicators" class="toc-link block text-sm text-gray-700 py-1">Status Indicators</a>
+            <a href="#filters" class="toc-link block text-sm text-gray-700 py-1">Filters and Search</a>
+            <a href="#export" class="toc-link block text-sm text-gray-700 py-1">Data Export</a>
+            <a href="#cache" class="toc-link block text-sm text-gray-700 py-1">Cache Management</a>
+            <a href="#troubleshooting" class="toc-link block text-sm text-gray-700 py-1">Troubleshooting</a>
+            <a href="#faqs" class="toc-link block text-sm text-gray-700 py-1">FAQs</a>
+            <a href="#best-practices" class="toc-link block text-sm text-gray-700 py-1">Best Practices</a>
+          </nav>
+        </div>
+      </aside>
+
+      <!-- Main Content Area -->
+      <main class="flex-1 max-w-4xl">
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+          <!-- Document Info -->
+          <div class="mb-8 pb-6 border-b border-gray-200">
+            <div class="flex flex-wrap gap-4 text-sm text-gray-600">
+              <div><strong>Version:</strong> 1.0</div>
+              <div><strong>Last Updated:</strong> October 16, 2025</div>
+              <div><strong>Target Users:</strong> Research assistants, project managers, data quality administrators</div>
+            </div>
+          </div>
+
+          <!-- Overview Section -->
+          <section id="overview" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Overview</h2>
+            
+            <p class="text-gray-700 mb-6 text-lg leading-relaxed">
+              The <strong>4Set Checking System</strong> is a web-based dashboard that monitors and validates assessment data uploaded to Jotform. It provides a comprehensive view of data completeness, quality, and accuracy across all assessment submissions.
+            </p>
+
+            <h3 class="text-2xl font-semibold mb-4 mt-8">What It Does</h3>
+            
+            <p class="text-gray-700 mb-4">The Checking System serves <strong>two critical verification functions:</strong></p>
+
+            <div class="grid md:grid-cols-2 gap-6 my-6">
+              <div class="diagram-box">
+                <h4 class="text-xl font-semibold mb-3" style="color: var(--primary)">A. Display Uploaded Data Accurately</h4>
+                <ul class="space-y-2 text-gray-700">
+                  <li>✓ Shows exactly what test administrators recorded and uploaded</li>
+                  <li>✓ Reflects manual decisions made during assessments</li>
+                  <li>✓ Provides complete visibility into the database</li>
+                  <li>✓ Serves as the "source of truth" for uploaded data</li>
+                </ul>
+              </div>
+
+              <div class="diagram-box">
+                <h4 class="text-xl font-semibold mb-3" style="color: var(--primary)">B. Validate Through Recalculation</h4>
+                <ul class="space-y-2 text-gray-700">
+                  <li>✓ Recalculates termination rules based on actual responses</li>
+                  <li>✓ Compares recorded decisions vs. system calculations</li>
+                  <li>✓ Identifies data quality issues and recording errors</li>
+                  <li>✓ Alerts administrators to inconsistencies</li>
+                </ul>
+              </div>
+            </div>
+
+            <h3 class="text-2xl font-semibold mb-4 mt-8">Key Questions Answered</h3>
+
+            <div class="space-y-4">
+              <div class="diagram-box">
+                <h4 class="text-lg font-semibold mb-3">📊 DATA COMPLETENESS</h4>
+                <ul class="space-y-1 text-gray-700 ml-4">
+                  <li>• How many questions are unanswered?</li>
+                  <li>• Which specific questions are missing?</li>
+                  <li>• Are there gaps in required fields?</li>
+                </ul>
+              </div>
+
+              <div class="diagram-box">
+                <h4 class="text-lg font-semibold mb-3">✅ ADMINISTRATOR ACCURACY</h4>
+                <ul class="space-y-1 text-gray-700 ml-4">
+                  <li>• Did they mark termination correctly?</li>
+                  <li>• Do records match calculations?</li>
+                  <li>• Are there any data entry errors?</li>
+                </ul>
+              </div>
+            </div>
+
+            <h3 class="text-2xl font-semibold mb-4 mt-8">Why This Matters</h3>
+
+            <p class="text-gray-700 mb-4">
+              The Checking System recognizes that <strong>termination values are RECORDS, not calculations</strong>:
+            </p>
+
+            <div class="diagram-box bg-blue-50 border-blue-300">
+              <div class="text-center text-gray-800">
+                <div class="mb-4">
+                  <div class="font-semibold mb-2">Test Administrator → Records → <span class="status-badge status-info">Termination Decision</span></div>
+                  <div class="font-semibold mb-2">System → Calculates → <span class="status-badge status-info">Expected Termination</span></div>
+                </div>
+                <div class="text-3xl mb-2">⬇️</div>
+                <div class="font-semibold mb-4">Compare for Validation</div>
+                <div class="flex justify-center gap-8">
+                  <div>
+                    <span class="status-badge status-complete">✅ Match</span>
+                    <div class="text-sm mt-2">Verified</div>
+                  </div>
+                  <div>
+                    <span class="status-badge status-warning">⚠️ Mismatch</span>
+                    <div class="text-sm mt-2">Needs Review</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <p class="text-gray-700 mt-6">This dual approach provides:</p>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700 mt-4">
+              <li>What was officially recorded (human decision)</li>
+              <li>What the data says (system validation)</li>
+              <li>Ability to catch errors and data quality issues</li>
+              <li>Complete audit trail</li>
+            </ol>
+          </section>
+
+          <!-- Getting Started Section -->
+          <section id="getting-started" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Getting Started</h2>
+
+            <h3 class="text-2xl font-semibold mb-4">Quick Start (5 Steps)</h3>
+
+            <div class="diagram-box bg-green-50 border-green-300">
+              <div class="space-y-3 text-gray-800">
+                <div class="flex items-center gap-3">
+                  <div class="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold">1</div>
+                  <div>Open <code>checking_system_home.html</code></div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold">2</div>
+                  <div>Enter system password</div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold">3</div>
+                  <div>Navigate hierarchy (District → Group → School → Class → Student)</div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold">4</div>
+                  <div>Review status indicators</div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="bg-green-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold">5</div>
+                  <div>Export reports as needed</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="collapsible-section mt-6">
+              <div class="collapsible-header">
+                <h3 class="text-xl font-semibold">System Access</h3>
+                <span class="text-2xl">▼</span>
+              </div>
+              <div class="collapsible-content">
+                <h4 class="text-lg font-semibold mb-3">Opening the Checking System</h4>
+                
+                <p class="mb-4"><strong>Method 1: Direct File Access</strong></p>
+                <ol class="list-decimal ml-6 space-y-2 text-gray-700 mb-6">
+                  <li>Navigate to repository folder</li>
+                  <li>Open <code>checking_system_home.html</code> in Chrome/Edge</li>
+                  <li>Enter system password when prompted</li>
+                </ol>
+
+                <p class="mb-4"><strong>Method 2: GitHub Pages</strong> (if hosted)</p>
+                <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+                  <li>Visit the GitHub Pages URL</li>
+                  <li>Click "Checking System" from navigation</li>
+                  <li>Enter password</li>
+                </ol>
+
+                <h4 class="text-lg font-semibold mb-3 mt-6">System Password</h4>
+                <p class="text-gray-700 mb-3">The system password is required to:</p>
+                <ul class="list-disc ml-6 space-y-1 text-gray-700 mb-4">
+                  <li>Decrypt credential bundles</li>
+                  <li>Access Jotform API</li>
+                  <li>View student data</li>
+                </ul>
+
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4">
+                  <p class="text-sm text-gray-700"><strong>If you don't have the password:</strong></p>
+                  <ul class="list-disc ml-6 text-sm text-gray-700 mt-2 space-y-1">
+                    <li>Contact your project administrator</li>
+                    <li>Password is set during system setup</li>
+                    <li>Different from individual user passwords</li>
+                  </ul>
+                </div>
+
+                <p class="text-sm text-gray-600"><strong>Security Features:</strong></p>
+                <ul class="list-disc ml-6 text-sm text-gray-600 space-y-1 mt-2">
+                  <li>Password stored in encrypted <code>assets/credentials.enc</code></li>
+                  <li>Credentials cached in browser session</li>
+                  <li>Auto-logout after inactivity</li>
+                  <li>No password saved in browser history</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="collapsible-section">
+              <div class="collapsible-header">
+                <h3 class="text-xl font-semibold">First-Time Setup</h3>
+                <span class="text-2xl">▼</span>
+              </div>
+              <div class="collapsible-content">
+                <p class="text-gray-700 mb-4">No setup required! The Checking System works immediately after:</p>
+                <ul class="space-y-2 text-gray-700">
+                  <li>✅ System password is entered</li>
+                  <li>✅ Jotform credentials are valid</li>
+                  <li>✅ Browser has internet connection</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <!-- Navigation Guide Section -->
+          <section id="navigation" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Navigation Guide</h2>
+
+            <h3 class="text-2xl font-semibold mb-4">System Hierarchy</h3>
+
+            <div class="diagram-box bg-purple-50 border-purple-300">
+              <pre class="bg-transparent text-gray-800 text-sm">District (地區)
+  └─ Group (組別)
+      └─ School (學校)
+          └─ Class (班級)
+              └─ Student (學生)</pre>
+            </div>
+
+            <h3 class="text-2xl font-semibold mb-4 mt-8">Homepage Layout</h3>
+
+            <div class="diagram-box">
+              <div class="border border-gray-300 rounded p-4">
+                <div class="bg-primary text-white p-3 rounded mb-4 text-center font-bold">
+                  4Set Checking System
+                </div>
+                <div class="space-y-3">
+                  <div class="border border-gray-200 rounded p-3 hover:bg-gray-50 cursor-pointer">
+                    📊 <strong>District View</strong> - View by district (Shatin, etc.)
+                  </div>
+                  <div class="border border-gray-200 rounded p-3 hover:bg-gray-50 cursor-pointer">
+                    👥 <strong>Group View</strong> - View by project group (1-5)
+                  </div>
+                  <div class="border border-gray-200 rounded p-3 hover:bg-gray-50 cursor-pointer">
+                    🏫 <strong>School View</strong> - View individual schools
+                  </div>
+                  <div class="border border-gray-200 rounded p-3 hover:bg-gray-50 cursor-pointer">
+                    👨‍🎓 <strong>Student Search</strong> - Direct student lookup
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <h3 class="text-2xl font-semibold mb-4 mt-8">Navigation Breadcrumbs</h3>
+
+            <div class="diagram-box bg-blue-50 border-blue-300">
+              <div class="text-sm text-gray-700 mb-2">At any level, breadcrumbs show your location:</div>
+              <div class="bg-white border rounded p-3 font-mono text-sm text-gray-800">
+                <a href="#" class="text-blue-600 hover:underline">Home</a> &gt;
+                <a href="#" class="text-blue-600 hover:underline">Shatin</a> &gt;
+                <a href="#" class="text-blue-600 hover:underline">Group 1</a> &gt;
+                <a href="#" class="text-blue-600 hover:underline">School S023</a> &gt;
+                <a href="#" class="text-blue-600 hover:underline">Class C-023-03</a> &gt;
+                <span>Student C10207</span>
+              </div>
+              <div class="text-sm text-gray-600 mt-3">
+                <strong>Tips:</strong>
+                <ul class="list-disc ml-6 mt-2 space-y-1">
+                  <li>Click any breadcrumb to jump back to that level</li>
+                  <li>Use browser back button to go back one level</li>
+                  <li>Breadcrumbs show full navigation path</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <!-- Data Views Section -->
+          <section id="data-views" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Understanding Data Views</h2>
+
+            <div class="collapsible-section">
+              <div class="collapsible-header">
+                <h3 class="text-xl font-semibold">District View</h3>
+                <span class="text-2xl">▼</span>
+              </div>
+              <div class="collapsible-content">
+                <p class="mb-4"><strong>Purpose:</strong> High-level overview of all districts</p>
+                
+                <table>
+                  <thead>
+                    <tr>
+                      <th>District</th>
+                      <th>Schools</th>
+                      <th>Students</th>
+                      <th>Complete</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Shatin</td>
+                      <td>35</td>
+                      <td>450</td>
+                      <td><span class="status-badge status-complete">85%</span></td>
+                    </tr>
+                    <tr>
+                      <td>Sham Shui Po</td>
+                      <td>28</td>
+                      <td>380</td>
+                      <td><span class="status-badge status-warning">78%</span></td>
+                    </tr>
+                    <tr>
+                      <td>Kowloon City</td>
+                      <td>22</td>
+                      <td>295</td>
+                      <td><span class="status-badge status-complete">92%</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <p class="mt-4"><strong>Key Metrics:</strong></p>
+                <ul class="list-disc ml-6 space-y-1 text-gray-700">
+                  <li><strong>Schools:</strong> Number of schools in district</li>
+                  <li><strong>Students:</strong> Total students across all schools</li>
+                  <li><strong>Complete:</strong> Percentage with all tasks done</li>
+                </ul>
+
+                <p class="mt-4"><strong>Actions:</strong></p>
+                <ul class="list-disc ml-6 space-y-1 text-gray-700">
+                  <li>Click district name to drill down</li>
+                  <li>Sort by clicking column headers</li>
+                  <li>Filter by completion status</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="collapsible-section">
+              <div class="collapsible-header">
+                <h3 class="text-xl font-semibold">School View</h3>
+                <span class="text-2xl">▼</span>
+              </div>
+              <div class="collapsible-content">
+                <p class="mb-4"><strong>Purpose:</strong> Detailed view of individual school</p>
+
+                <div class="bg-gray-50 border rounded p-4 mb-4">
+                  <div class="text-lg font-semibold mb-2">School: S023</div>
+                  <div class="text-sm text-gray-600 mb-1">Name: ABC Primary School</div>
+                  <div class="text-sm text-gray-600 mb-3">Chinese: ABC小學</div>
+                  <div class="grid grid-cols-2 gap-4 mt-4">
+                    <div>
+                      <div class="text-xs text-gray-500">Total Students</div>
+                      <div class="text-2xl font-bold">75</div>
+                    </div>
+                    <div>
+                      <div class="text-xs text-gray-500">Completed</div>
+                      <div class="text-2xl font-bold text-green-600">62 (83%)</div>
+                    </div>
+                  </div>
+                </div>
+
+                <p class="mt-4"><strong>View Modes:</strong></p>
+                <div class="space-y-3 mt-3">
+                  <div class="border-l-4 border-blue-500 pl-4">
+                    <div class="font-semibold">By Class (Default)</div>
+                    <ul class="text-sm text-gray-700 mt-1 space-y-1">
+                      <li>• Shows all classes in the school</li>
+                      <li>• Displays Set 1-4 completion status</li>
+                      <li>• Includes "無班級" for unassigned students</li>
+                    </ul>
+                  </div>
+                  <div class="border-l-4 border-green-500 pl-4">
+                    <div class="font-semibold">By Student</div>
+                    <ul class="text-sm text-gray-700 mt-1 space-y-1">
+                      <li>• Shows unique students across all classes</li>
+                      <li>• Two sub-modes: By Set / By Task</li>
+                      <li>• Horizontally scrollable for many tasks</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="collapsible-section">
+              <div class="collapsible-header">
+                <h3 class="text-xl font-semibold">Student View (Most Detailed)</h3>
+                <span class="text-2xl">▼</span>
+              </div>
+              <div class="collapsible-content">
+                <p class="mb-4"><strong>Purpose:</strong> Complete assessment details for one student</p>
+
+                <div class="space-y-4">
+                  <div class="border rounded p-4">
+                    <div class="font-semibold mb-2 text-lg">Set 1: Background Information</div>
+                    <div class="flex items-center gap-2">
+                      <span class="status-badge status-complete">✅ Complete</span>
+                      <span class="text-sm text-gray-600">Background Survey - 12/12 Q's</span>
+                    </div>
+                  </div>
+
+                  <div class="border rounded p-4">
+                    <div class="font-semibold mb-2 text-lg">Set 2: Language Tasks</div>
+                    <div class="space-y-2">
+                      <div class="flex items-center gap-2">
+                        <span class="status-badge status-complete">✅</span>
+                        <span class="text-sm">ERV (English) - 36/36 Q's</span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="status-badge status-warning">⚠️</span>
+                        <span class="text-sm">Chinese Word Reading - 58/60 Q's</span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="status-badge status-complete">✅</span>
+                        <span class="text-sm">CM (Chinese) - 22/22 Q's</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="border rounded p-4">
+                    <div class="font-semibold mb-2 text-lg">Set 3: Cognitive Tasks</div>
+                    <div class="space-y-2">
+                      <div class="flex items-center gap-2">
+                        <span class="status-badge status-complete">✅</span>
+                        <span class="text-sm">SYM - 20/20 Q's</span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="status-badge status-error">🔴</span>
+                        <span class="text-sm">Math Pattern - 0/20 Q's</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Status Indicators Section -->
+          <section id="status-indicators" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Status Indicators and Meanings</h2>
+
+            <div class="space-y-4">
+              <div class="diagram-box bg-green-50 border-green-300">
+                <div class="flex items-center gap-4 mb-3">
+                  <span class="status-badge status-complete text-xl">✅</span>
+                  <h3 class="text-xl font-semibold">Green - Complete & Verified</h3>
+                </div>
+                <p class="text-gray-700 mb-2"><strong>Meaning:</strong></p>
+                <ul class="list-disc ml-6 space-y-1 text-gray-700">
+                  <li>All questions answered</li>
+                  <li>Termination rules verified (if applicable)</li>
+                  <li>No data quality issues detected</li>
+                  <li>Recorded values match calculations</li>
+                </ul>
+                <p class="mt-3 text-gray-700"><strong>What to do:</strong> Nothing - task is complete and accurate</p>
+              </div>
+
+              <div class="diagram-box bg-yellow-50 border-yellow-300">
+                <div class="flex items-center gap-4 mb-3">
+                  <span class="status-badge status-warning text-xl">⚠️</span>
+                  <h3 class="text-xl font-semibold">Yellow - Complete but Needs Review</h3>
+                </div>
+                <p class="text-gray-700 mb-2"><strong>Meaning:</strong></p>
+                <ul class="list-disc ml-6 space-y-1 text-gray-700">
+                  <li>All questions answered BUT</li>
+                  <li>Termination rule mismatch detected</li>
+                  <li>Recorded decision ≠ calculated result</li>
+                  <li>Possible recording error</li>
+                </ul>
+                <p class="mt-3 text-gray-700"><strong>What to do:</strong></p>
+                <ol class="list-decimal ml-6 space-y-1 text-gray-700 mt-2">
+                  <li>Expand task details</li>
+                  <li>Review termination rule comparison</li>
+                  <li>Manually verify correctness</li>
+                  <li>Document if error found</li>
+                </ol>
+              </div>
+
+              <div class="diagram-box bg-red-50 border-red-300">
+                <div class="flex items-center gap-4 mb-3">
+                  <span class="status-badge status-error text-xl">🔴</span>
+                  <h3 class="text-xl font-semibold">Red - Incomplete</h3>
+                </div>
+                <p class="text-gray-700 mb-2"><strong>Meaning:</strong></p>
+                <ul class="list-disc ml-6 space-y-1 text-gray-700">
+                  <li>Missing questions (unanswered)</li>
+                  <li>Below minimum required</li>
+                  <li>Task not fully completed</li>
+                </ul>
+                <p class="mt-3 text-gray-700"><strong>What to do:</strong></p>
+                <ol class="list-decimal ml-6 space-y-1 text-gray-700 mt-2">
+                  <li>Check how many questions missing</li>
+                  <li>Determine if acceptable (early termination OK)</li>
+                  <li>If not terminated: follow up with administrator</li>
+                  <li>If terminated correctly: may be OK</li>
+                </ol>
+              </div>
+
+              <div class="diagram-box bg-gray-50 border-gray-300">
+                <div class="flex items-center gap-4 mb-3">
+                  <span class="status-badge bg-gray-200 text-gray-700 text-xl">⭕</span>
+                  <h3 class="text-xl font-semibold">Grey - Not Started</h3>
+                </div>
+                <p class="text-gray-700 mb-2"><strong>Meaning:</strong></p>
+                <ul class="list-disc ml-6 space-y-1 text-gray-700">
+                  <li>Task not attempted</li>
+                  <li>Zero questions answered</li>
+                  <li>No data submitted</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <!-- Cache Management Section -->
+          <section id="cache" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Cache Management</h2>
+
+            <p class="text-gray-700 mb-6">
+              The Checking System uses <strong>IndexedDB</strong> (browser-based database) to cache assessment data locally for fast performance.
+            </p>
+
+            <h3 class="text-2xl font-semibold mb-4">Cache Status Indicator</h3>
+
+            <div class="space-y-3">
+              <div class="flex items-center gap-3 p-4 border rounded">
+                <span class="status-badge status-error">🔴</span>
+                <div>
+                  <div class="font-semibold">System Not Ready</div>
+                  <div class="text-sm text-gray-600">No cache exists, click to build</div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-3 p-4 border rounded">
+                <span class="status-badge bg-orange-100 text-orange-700">🟠</span>
+                <div>
+                  <div class="font-semibold">Syncing 45%</div>
+                  <div class="text-sm text-gray-600">Cache is being built (shows progress)</div>
+                </div>
+              </div>
+
+              <div class="flex items-center gap-3 p-4 border rounded">
+                <span class="status-badge status-complete">🟢</span>
+                <div>
+                  <div class="font-semibold">System Ready</div>
+                  <div class="text-sm text-gray-600">Cache is valid and ready to use</div>
+                </div>
+              </div>
+            </div>
+
+            <h3 class="text-2xl font-semibold mb-4 mt-8">How to Manage the Cache</h3>
+
+            <div class="collapsible-section">
+              <div class="collapsible-header">
+                <h4 class="text-lg font-semibold">Building the Cache (First Time)</h4>
+                <span class="text-xl">▼</span>
+              </div>
+              <div class="collapsible-content">
+                <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+                  <li>Click the <strong>red "System Not Ready"</strong> pill on the home page</li>
+                  <li>Click <strong>"Sync Now"</strong> in the modal</li>
+                  <li>Wait for sync to complete (~60-90 seconds)
+                    <ul class="list-disc ml-6 mt-1 space-y-1 text-sm">
+                      <li>Progress: Fetching (0-50%), Merging Qualtrics (50-70%), Validating (70-100%)</li>
+                    </ul>
+                  </li>
+                  <li>Pill turns <strong>green</strong> when ready</li>
+                </ol>
+              </div>
+            </div>
+
+            <div class="collapsible-section">
+              <div class="collapsible-header">
+                <h4 class="text-lg font-semibold">Refreshing the Cache</h4>
+                <span class="text-xl">▼</span>
+              </div>
+              <div class="collapsible-content">
+                <p class="mb-3">To get the latest data from JotForm/Qualtrics:</p>
+                <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+                  <li>Click the <strong>green "System Ready"</strong> pill</li>
+                  <li>Choose one of two options:
+                    <ul class="list-disc ml-6 mt-1 space-y-1">
+                      <li><strong>"Delete Cache":</strong> Removes all cached data, requires full re-sync</li>
+                      <li><strong>"Refresh with Qualtrics":</strong> Re-syncs TGMD data without rebuilding everything</li>
+                    </ul>
+                  </li>
+                </ol>
+              </div>
+            </div>
+
+            <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mt-6">
+              <p class="font-semibold text-gray-800 mb-2">Cache Expiration</p>
+              <ul class="text-sm text-gray-700 space-y-1">
+                <li>• <strong>Submissions:</strong> Expires after <strong>1 hour</strong></li>
+                <li>• <strong>Validation:</strong> Rebuilds when submissions cache is newer</li>
+                <li>• <strong>Qualtrics:</strong> No automatic expiration (manual refresh only)</li>
+              </ul>
+            </div>
+          </section>
+
+          <!-- Troubleshooting Section -->
+          <section id="troubleshooting" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Troubleshooting</h2>
+
+            <div class="space-y-4">
+              <div class="collapsible-section">
+                <div class="collapsible-header">
+                  <h3 class="text-xl font-semibold">Display Issues: "No data loading"</h3>
+                  <span class="text-2xl">▼</span>
+                </div>
+                <div class="collapsible-content">
+                  <p class="mb-3"><strong>Symptoms:</strong></p>
+                  <ul class="list-disc ml-6 space-y-1 text-gray-700 mb-4">
+                    <li>Blank screens</li>
+                    <li>"Loading..." message persists</li>
+                    <li>Tables show no rows</li>
+                  </ul>
+
+                  <p class="mb-3"><strong>Possible Causes:</strong></p>
+                  <ol class="list-decimal ml-6 space-y-1 text-gray-700 mb-4">
+                    <li>Network connection lost</li>
+                    <li>Jotform API error</li>
+                    <li>Invalid credentials</li>
+                    <li>Cache expired</li>
+                  </ol>
+
+                  <p class="mb-3"><strong>Solutions:</strong></p>
+                  <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+                    <li>Check internet connection</li>
+                    <li>Refresh page (Ctrl+R)</li>
+                    <li>Delete cache (click green pill → "Delete Cache") and reload</li>
+                    <li>Re-enter system password</li>
+                    <li>Check browser console (F12) for errors</li>
+                  </ol>
+                </div>
+              </div>
+
+              <div class="collapsible-section">
+                <div class="collapsible-header">
+                  <h3 class="text-xl font-semibold">Data Quality Issues: "Termination rule mismatch"</h3>
+                  <span class="text-2xl">▼</span>
+                </div>
+                <div class="collapsible-content">
+                  <p class="mb-3"><strong>Symptoms:</strong></p>
+                  <ul class="list-disc ml-6 space-y-1 text-gray-700 mb-4">
+                    <li>Yellow ⚠️ status showing</li>
+                    <li>Recorded ≠ Calculated</li>
+                    <li>"Review needed" message</li>
+                  </ul>
+
+                  <p class="mb-3"><strong>Investigation Steps:</strong></p>
+                  <ol class="list-decimal ml-6 space-y-2 text-gray-700 mb-4">
+                    <li>Expand task details</li>
+                    <li>Count correct answers manually</li>
+                    <li>Verify threshold (ERV: ≥5, CM: ≥4)</li>
+                    <li>Check if questions marked correctly</li>
+                    <li>Review PDF if available</li>
+                  </ol>
+
+                  <p class="mb-3"><strong>Possible Causes:</strong></p>
+                  <ol class="list-decimal ml-6 space-y-1 text-gray-700 mb-4">
+                    <li>Administrator counting error</li>
+                    <li>Ambiguous answer (marked wrong but should be correct)</li>
+                    <li>System calculation error</li>
+                    <li>Missing question data</li>
+                  </ol>
+
+                  <p class="mb-3"><strong>Resolution:</strong></p>
+                  <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+                    <li>Document the discrepancy</li>
+                    <li>Review with administrator</li>
+                    <li>Determine correct value</li>
+                    <li>Follow data correction procedure</li>
+                    <li>Report if system bug</li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- FAQs Section -->
+          <section id="faqs" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Frequently Asked Questions</h2>
+
+            <div class="space-y-4">
+              <div class="collapsible-section">
+                <div class="collapsible-header">
+                  <h3 class="text-lg font-semibold">How often does data update?</h3>
+                  <span class="text-xl">▼</span>
+                </div>
+                <div class="collapsible-content">
+                  <p class="text-gray-700">The system uses a cache-based architecture:</p>
+                  <ul class="list-disc ml-6 space-y-1 text-gray-700 mt-2">
+                    <li><strong>Cache duration:</strong> 1 hour by default</li>
+                    <li><strong>Manual refresh:</strong> Click green "System Ready" pill → "Delete Cache" → Re-sync</li>
+                    <li><strong>Qualtrics refresh:</strong> Click green pill → "Refresh with Qualtrics" (faster, keeps JotForm cache)</li>
+                    <li><strong>Auto-expiration:</strong> Cache automatically expires after 1 hour</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="collapsible-section">
+                <div class="collapsible-header">
+                  <h3 class="text-lg font-semibold">Can I edit data in the Checking System?</h3>
+                  <span class="text-xl">▼</span>
+                </div>
+                <div class="collapsible-content">
+                  <p class="text-gray-700">No. The Checking System is <strong>read-only</strong>. Data correction must be done in Jotform or by re-processing PDFs.</p>
+                </div>
+              </div>
+
+              <div class="collapsible-section">
+                <div class="collapsible-header">
+                  <h3 class="text-lg font-semibold">What browsers are supported?</h3>
+                  <span class="text-xl">▼</span>
+                </div>
+                <div class="collapsible-content">
+                  <ul class="list-disc ml-6 space-y-1 text-gray-700">
+                    <li><strong>Fully supported:</strong> Chrome 90+, Edge 90+, Firefox 88+</li>
+                    <li><strong>Limited support:</strong> Safari 14+</li>
+                    <li><strong>Mobile:</strong> iOS Safari 14+, Chrome Android 90+</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="collapsible-section">
+                <div class="collapsible-header">
+                  <h3 class="text-lg font-semibold">Why do termination rules sometimes mismatch?</h3>
+                  <span class="text-xl">▼</span>
+                </div>
+                <div class="collapsible-content">
+                  <p class="text-gray-700 mb-2">Common reasons:</p>
+                  <ol class="list-decimal ml-6 space-y-1 text-gray-700">
+                    <li>Counting errors by administrator</li>
+                    <li>Ambiguous answers (marked wrong but debatable)</li>
+                    <li>Missing data (questions skipped)</li>
+                    <li>System calculation logic difference</li>
+                  </ol>
+                  <p class="text-gray-700 mt-3"><strong>Always manually verify when mismatch detected.</strong></p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Best Practices Section -->
+          <section id="best-practices" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Best Practices</h2>
+
+            <div class="grid md:grid-cols-2 gap-6">
+              <div class="diagram-box bg-blue-50 border-blue-300">
+                <h3 class="text-lg font-semibold mb-3">📅 Daily Monitoring</h3>
+                <ul class="space-y-2 text-gray-700 text-sm">
+                  <li>✓ Start of day routine (15 min)
+                    <ul class="list-disc ml-6 mt-1 space-y-1">
+                      <li>Open Checking System</li>
+                      <li>Refresh cache</li>
+                      <li>Review yesterday's submissions</li>
+                    </ul>
+                  </li>
+                  <li>✓ Random sampling (5 students daily)</li>
+                  <li>✓ Issue tracking and logging</li>
+                </ul>
+              </div>
+
+              <div class="diagram-box bg-green-50 border-green-300">
+                <h3 class="text-lg font-semibold mb-3">📊 Weekly Review</h3>
+                <ul class="space-y-2 text-gray-700 text-sm">
+                  <li>✓ Generate weekly summary report</li>
+                  <li>✓ Quality audit (10-15 students)</li>
+                  <li>✓ Follow up with schools &lt; 50% completion</li>
+                  <li>✓ Compare to previous week</li>
+                </ul>
+              </div>
+
+              <div class="diagram-box bg-purple-50 border-purple-300">
+                <h3 class="text-lg font-semibold mb-3">✅ Data Quality</h3>
+                <ul class="space-y-2 text-gray-700 text-sm">
+                  <li>✓ Always check termination mismatches</li>
+                  <li>✓ Manually verify ambiguous cases</li>
+                  <li>✓ Document all discrepancies</li>
+                  <li>✓ Look for patterns in errors</li>
+                </ul>
+              </div>
+
+              <div class="diagram-box bg-yellow-50 border-yellow-300">
+                <h3 class="text-lg font-semibold mb-3">💬 Communication</h3>
+                <ul class="space-y-2 text-gray-700 text-sm">
+                  <li>✓ Provide clear, specific feedback</li>
+                  <li>✓ Include screenshots when reporting</li>
+                  <li>✓ Use visual reports for management</li>
+                  <li>✓ Document technical issues thoroughly</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+
+          <!-- Quick Reference Section -->
+          <section class="content-section mb-8">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Quick Reference</h2>
+
+            <div class="grid md:grid-cols-2 gap-6">
+              <div class="diagram-box">
+                <h3 class="text-lg font-semibold mb-3">Status Indicators</h3>
+                <div class="space-y-2 text-sm">
+                  <div><span class="status-badge status-complete">✅ Green</span> = Complete & Verified</div>
+                  <div><span class="status-badge status-warning">⚠️ Yellow</span> = Needs Review (Mismatch)</div>
+                  <div><span class="status-badge status-error">🔴 Red</span> = Incomplete (Missing Data)</div>
+                  <div><span class="status-badge bg-gray-200 text-gray-700">⭕ Grey</span> = Not Started</div>
+                </div>
+              </div>
+
+              <div class="diagram-box">
+                <h3 class="text-lg font-semibold mb-3">Keyboard Shortcuts</h3>
+                <div class="space-y-2 text-sm">
+                  <div><code>Ctrl+R</code> - Refresh page</div>
+                  <div><code>Ctrl+Shift+R</code> - Hard refresh (clear cache)</div>
+                  <div><code>Ctrl+F</code> - Search on page</div>
+                  <div><code>F12</code> - Open developer console</div>
+                  <div><code>Esc</code> - Close modals</div>
+                </div>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center text-gray-600 text-sm py-8">
+          <p><strong>4Set System</strong> - KeySteps@JC (Phase Two)</p>
+          <p class="mt-2">The Education University of Hong Kong | Version 1.0 | October 2025</p>
+          <p class="mt-4">For questions, feedback, or support, please contact the project team or refer to the technical documentation in the PRDs folder.</p>
+        </footer>
+      </main>
+    </div>
+  </div>
+
+  <!-- JavaScript for collapsible sections and navigation -->
+  <script>
+    // Collapsible sections
+    document.querySelectorAll('.collapsible-header').forEach(header => {
+      header.addEventListener('click', () => {
+        const content = header.nextElementSibling;
+        const arrow = header.querySelector('span:last-child');
+        
+        content.classList.toggle('active');
+        arrow.textContent = content.classList.contains('active') ? '▲' : '▼';
+      });
+    });
+
+    // Active TOC link on scroll
+    const sections = document.querySelectorAll('.content-section');
+    const tocLinks = document.querySelectorAll('.toc-link');
+
+    window.addEventListener('scroll', () => {
+      let current = '';
+      sections.forEach(section => {
+        const sectionTop = section.offsetTop;
+        const sectionHeight = section.clientHeight;
+        if (window.scrollY >= (sectionTop - 100)) {
+          current = section.getAttribute('id');
+        }
+      });
+
+      tocLinks.forEach(link => {
+        link.classList.remove('active');
+        if (link.getAttribute('href') === `#${current}`) {
+          link.classList.add('active');
+        }
+      });
+    });
+
+    // Smooth scroll for TOC links
+    tocLinks.forEach(link => {
+      link.addEventListener('click', (e) => {
+        e.preventDefault();
+        const targetId = link.getAttribute('href');
+        const targetSection = document.querySelector(targetId);
+        if (targetSection) {
+          targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+
+    // Open first collapsible in each section by default
+    document.querySelectorAll('.collapsible-content').forEach((content, index) => {
+      if (index === 0) {
+        content.classList.add('active');
+        content.previousElementSibling.querySelector('span:last-child').textContent = '▲';
+      }
+    });
+  </script>
+</body>
+</html>
