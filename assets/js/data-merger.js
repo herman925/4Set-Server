@@ -114,8 +114,8 @@
       
       console.log(`[DataMerger] Grouped data: ${recordsByStudent.size} students across multiple grades`);
       
-      // Step 3: Merge data WITHIN each grade for each student
-      console.log('[DataMerger] Step 3: Merging data within each grade...');
+      // Merge data WITHIN each grade for each student
+      console.log('[DataMerger] Merging data within each grade...');
       const mergedRecords = [];
       let crossGradeWarnings = 0;
       let sameGradeMerges = 0;
@@ -151,9 +151,6 @@
           }
           
           // Merge multiple JotForm submissions for this grade (earliest wins)
-          // Note: JotForm data is typically already merged by jotform-cache.js per student,
-          // but we may have multiple submissions if the student took the assessment multiple
-          // times in the same grade. Sort to ensure earliest-first ordering.
           let mergedJotform = null;
           if (jotform.length > 0) {
             // Sort by created_at (earliest first)
