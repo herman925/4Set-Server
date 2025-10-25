@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quick Start Guide - 4Set System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="assets/js/tailwind.config.js"></script>
+  <link rel="stylesheet" href="assets/css/theme_pantone_light_1.css">
+  <link rel="stylesheet" href="assets/css/global.css">
+  <link rel="stylesheet" href="assets/css/user-guides.css">
+  <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
+    .mermaid {
+      display: flex;
+      justify-content: center;
+      margin: 2rem 0;
+    }
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2rem;
+      height: 2rem;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      font-weight: bold;
+      margin-right: 0.75rem;
+    }
+    .screenshot-placeholder {
+      background: linear-gradient(135deg, #e0e7ff 0%, #f3f4f6 100%);
+      border: 2px dashed #9ca3af;
+      border-radius: 8px;
+      padding: 3rem 2rem;
+      text-align: center;
+      color: #6b7280;
+      font-style: italic;
+      margin: 1.5rem 0;
+    }
+    .info-box {
+      background: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      padding: 1rem;
+      margin: 1rem 0;
+      border-radius: 0.25rem;
+    }
+    .warning-box {
+      background: #fffbeb;
+      border-left: 4px solid #f59e0b;
+      padding: 1rem;
+      margin: 1rem 0;
+      border-radius: 0.25rem;
+    }
+    .success-box {
+      background: #f0fdf4;
+      border-left: 4px solid #10b981;
+      padding: 1rem;
+      margin: 1rem 0;
+      border-radius: 0.25rem;
+    }
+  </style>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ 
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+          primaryColor: '#4A90E2',
+          primaryTextColor: '#1F2937',
+          primaryBorderColor: '#2E5C8A',
+          lineColor: '#6B7280',
+          secondaryColor: '#E8F5E9',
+          tertiaryColor: '#FFF3E0',
+          edgeLabelBackground: '#ffffff',
+          textColor: '#1F2937',
+          mainBkg: '#ffffff',
+          nodeBorder: '#6B7280'
+        }
+      });
+    });
+  </script>
+</head>
+<body class="min-h-screen">
+  <!-- Header -->
+  <header class="bg-white shadow-md sticky top-0 z-50">
+    <div class="container mx-auto px-6 py-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <a href="index.html" class="text-2xl font-bold" style="color: var(--primary)">4Set System</a>
+          <span class="text-gray-400">|</span>
+          <h1 class="text-xl font-semibold text-gray-700">Quick Start Guide</h1>
+        </div>
+        <div class="flex items-center gap-4">
+          <a href="user_guide_uploader.html" class="text-sm text-gray-600 hover:text-primary transition">Uploader Guide</a>
+          <a href="user_guide_checking_system.html" class="text-sm text-gray-600 hover:text-primary transition">Checking System</a>
+          <a href="index.html" class="text-sm text-gray-600 hover:text-primary transition">← Back to Home</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <div class="container mx-auto px-6 py-8">
+    <div class="flex gap-8">
+      <!-- Sidebar Navigation -->
+      <aside class="sidebar w-64 flex-shrink-0">
+        <div class="bg-white rounded-lg shadow-lg p-6 sticky top-24">
+          <h2 class="text-lg font-bold mb-4" style="color: var(--primary)">Quick Navigation</h2>
+          <nav class="space-y-2">
+            <a href="#welcome" class="toc-link block text-sm text-gray-700 py-1">Welcome</a>
+            <a href="#onedrive-setup" class="toc-link block text-sm text-gray-700 py-1">1. OneDrive Setup</a>
+            <a href="#upload-pdf" class="toc-link block text-sm text-gray-700 py-1">2. Upload PDFs</a>
+            <a href="#check-logs" class="toc-link block text-sm text-gray-700 py-1">3. Check Upload Logs</a>
+            <a href="#checking-system" class="toc-link block text-sm text-gray-700 py-1">4. Use Checking System</a>
+            <a href="#build-cache" class="toc-link block text-sm text-gray-700 py-1">5. Build Cache</a>
+            <a href="#filter-data" class="toc-link block text-sm text-gray-700 py-1">6. Filter Data</a>
+            <a href="#learn-more" class="toc-link block text-sm text-gray-700 py-1">Learn More</a>
+          </nav>
+        </div>
+      </aside>
+
+      <!-- Main Content Area -->
+      <main class="flex-1 max-w-4xl">
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+          <!-- Document Info -->
+          <div class="mb-8 pb-6 border-b border-gray-200">
+            <div class="flex flex-wrap gap-4 text-sm text-gray-600">
+              <div><strong>Version:</strong> 1.0</div>
+              <div><strong>Last Updated:</strong> October 25, 2025</div>
+              <div><strong>Target Users:</strong> New users, test administrators, operators</div>
+            </div>
+          </div>
+
+          <!-- Welcome Section -->
+          <section id="welcome" class="mb-12">
+            <h2 class="text-3xl font-bold mb-4" style="color: var(--primary)">🚀 Welcome to 4Set System</h2>
+            <p class="text-gray-700 mb-4">
+              This Quick Start Guide helps you get up and running with the 4Set System in minutes. Follow these simple steps to start uploading and managing assessment data.
+            </p>
+            
+            <div class="info-box">
+              <p class="text-sm font-semibold mb-2">💡 What This Guide Covers</p>
+              <ul class="text-sm space-y-1 ml-4">
+                <li>✓ Setting up OneDrive for file sync</li>
+                <li>✓ Uploading assessment PDFs</li>
+                <li>✓ Checking upload status and logs</li>
+                <li>✓ Using the checking system to monitor data</li>
+                <li>✓ Building cache for better performance</li>
+                <li>✓ Filtering and finding specific data</li>
+              </ul>
+            </div>
+
+            <div class="warning-box">
+              <p class="text-sm"><strong>⚠️ Note:</strong> This guide focuses on <em>how to do it</em> rather than explaining concepts. For detailed explanations, see the <a href="#learn-more" class="text-blue-600 underline">Learn More</a> section.</p>
+            </div>
+          </section>
+
+          <!-- Section 1: OneDrive Setup -->
+          <section id="onedrive-setup" class="mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">
+              <span class="step-number">1</span>
+              OneDrive Setup & Sync
+            </h2>
+            
+            <p class="text-gray-700 mb-4">
+              Set up OneDrive for Business to sync your assessment files automatically. This is essential for the upload process.
+            </p>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 1.1: Install OneDrive for Business</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Open your web browser and go to <strong>office.com</strong></li>
+              <li>Sign in with your EdUHK account credentials</li>
+              <li>Click the <strong>App Launcher</strong> (grid icon) in the top-left corner</li>
+              <li>Select <strong>OneDrive</strong></li>
+              <li>Click <strong>Download</strong> at the top to install the OneDrive sync client</li>
+            </ol>
+
+            <div class="screenshot-placeholder">
+              [Screenshot: OneDrive download page showing the Download button]
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 1.2: Sign In to OneDrive</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>After installation, open <strong>OneDrive</strong> from the Start menu</li>
+              <li>Click <strong>Sign in</strong></li>
+              <li>Enter your EdUHK email address</li>
+              <li>Enter your password when prompted</li>
+              <li>Click <strong>Next</strong> and follow the setup wizard</li>
+            </ol>
+
+            <div class="screenshot-placeholder">
+              [Screenshot: OneDrive sign-in screen]
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 1.3: Configure Sync Folder</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>During setup, select which folders to sync</li>
+              <li>Find and check <strong>4Set-Server</strong> folder</li>
+              <li>Click <strong>Next</strong> to start syncing</li>
+              <li>Wait for the initial sync to complete (may take several minutes)</li>
+            </ol>
+
+            <div class="success-box">
+              <p class="text-sm"><strong>✅ Success!</strong> You should now see a <strong>green checkmark</strong> on the OneDrive icon in your system tray, indicating files are synced.</p>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 1.4: Locate Your Sync Folder</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Open <strong>File Explorer</strong> (Windows key + E)</li>
+              <li>Look for <strong>OneDrive - The Education University of Hong Kong</strong> in the left sidebar</li>
+              <li>Navigate to the <strong>4Set-Server</strong> folder</li>
+              <li>Bookmark this location for easy access</li>
+            </ol>
+
+            <div class="screenshot-placeholder">
+              [Screenshot: File Explorer showing OneDrive folder structure with 4Set-Server highlighted]
+            </div>
+
+            <div class="info-box">
+              <p class="text-sm"><strong>💡 Tip:</strong> Right-click the 4Set-Server folder and select <strong>Pin to Quick Access</strong> for faster navigation.</p>
+            </div>
+          </section>
+
+          <!-- Section 2: Upload PDFs -->
+          <section id="upload-pdf" class="mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">
+              <span class="step-number">2</span>
+              Uploading PDFs
+            </h2>
+            
+            <p class="text-gray-700 mb-4">
+              Upload assessment PDF files following the correct naming convention. The system will automatically process them.
+            </p>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 2.1: Prepare Your PDF Files</h3>
+            
+            <div class="warning-box mb-4">
+              <p class="text-sm font-semibold mb-2">⚠️ Important: File Naming Convention</p>
+              <p class="text-sm">Files must be named exactly like this:</p>
+              <p class="text-sm font-mono bg-gray-100 p-2 rounded mt-2"><strong>xxxxx_YYYYMMDD_HH_MM.pdf</strong></p>
+              <ul class="text-sm space-y-1 mt-2 ml-4">
+                <li>• <strong>xxxxx</strong> = 5-digit student ID (e.g., 13268)</li>
+                <li>• <strong>YYYYMMDD</strong> = Date (e.g., 20250904 for Sept 4, 2025)</li>
+                <li>• <strong>HH_MM</strong> = Time in 24-hour format (e.g., 14_07 for 2:07 PM)</li>
+              </ul>
+              <p class="text-sm font-mono bg-gray-100 p-2 rounded mt-2">Example: <strong>13268_20250904_14_07.pdf</strong></p>
+            </div>
+
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Scan or export your assessment forms as PDF files</li>
+              <li>Rename each file using the correct naming convention shown above</li>
+              <li>Double-check the naming before uploading</li>
+            </ol>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 2.2: Upload via Web Interface</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Open the 4Set System in your web browser</li>
+              <li>Click <strong>Assessment Uploader</strong> button on the home page</li>
+              <li>On the upload page, configure <strong>PC Number</strong> (one-time setup)</li>
+              <li>Set your <strong>Upload Destination</strong> to the OneDrive sync folder's <strong>incoming</strong> subfolder</li>
+              <li>Drag and drop PDF files into the upload zone, or click to browse</li>
+              <li>Wait for the upload progress bar to complete</li>
+            </ol>
+
+            <div class="screenshot-placeholder">
+              [Screenshot: Assessment Uploader interface showing drag-and-drop zone]
+            </div>
+
+            <div class="info-box">
+              <p class="text-sm"><strong>💡 Alternative Method:</strong> You can also copy PDF files directly to the <strong>incoming</strong> folder in File Explorer instead of using the web interface.</p>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 2.3: Verify Upload Success</h3>
+            <p class="text-gray-700 mb-4">After uploading, your files go through automatic processing:</p>
+            
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Files are moved from <strong>incoming</strong> to <strong>processing</strong> folder</li>
+              <li>System validates the filename format</li>
+              <li>PDF is parsed to extract data</li>
+              <li>Data is uploaded to JotForm database</li>
+              <li>Successfully processed files are moved to <strong>filed/S###/</strong> (by school ID)</li>
+              <li>Failed files are moved to <strong>filed/Unsorted/</strong> for review</li>
+            </ol>
+
+            <div class="mermaid">
+flowchart LR
+    A[Upload PDF] --> B[incoming folder]
+    B --> C[processing folder]
+    C --> D{Validation}
+    D -->|Pass| E[Extract Data]
+    D -->|Fail| F[filed/Unsorted/]
+    E --> G{Upload to JotForm}
+    G -->|Success| H[filed/S###/]
+    G -->|Fail| F
+    
+    style A fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    style H fill:#10b981,stroke:#059669,color:#fff
+    style F fill:#ef4444,stroke:#dc2626,color:#fff
+            </div>
+
+            <div class="success-box">
+              <p class="text-sm"><strong>✅ How to Check:</strong> Look in the <strong>filed/S###/</strong> folder (where ### is the school ID). If your PDF and JSON files are there, upload was successful!</p>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 2.4: What If Upload Fails?</h3>
+            <p class="text-gray-700 mb-2">Check the <strong>filed/Unsorted/</strong> folder for:</p>
+            <ul class="list-disc ml-6 space-y-1 text-gray-700">
+              <li>Files with incorrect naming format</li>
+              <li>Files with validation errors (student not found, school mismatch)</li>
+              <li>Files that failed to upload to JotForm</li>
+            </ul>
+            
+            <p class="text-gray-700 mt-4">To retry:</p>
+            <ol class="list-decimal ml-6 space-y-1 text-gray-700">
+              <li>Fix the issue (rename file, verify student ID, etc.)</li>
+              <li>Move the PDF file back to the <strong>incoming</strong> folder</li>
+              <li>System will automatically retry processing</li>
+            </ol>
+          </section>
+
+          <!-- Section 3: Check Logs -->
+          <section id="check-logs" class="mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">
+              <span class="step-number">3</span>
+              Checking Upload Logs
+            </h2>
+            
+            <p class="text-gray-700 mb-4">
+              Monitor the system's processing activity and troubleshoot issues using the log files.
+            </p>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 3.1: Locate Log Files</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Open the <strong>4Set-Server</strong> folder in File Explorer</li>
+              <li>Navigate to the <strong>logs</strong> subfolder</li>
+              <li>Log files are named by date: <strong>YYYYMMDD_processing_agent.csv</strong></li>
+              <li>Open the most recent log file with Excel or a text editor</li>
+            </ol>
+
+            <div class="screenshot-placeholder">
+              [Screenshot: Logs folder showing dated log files]
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 3.2: Understanding Log Entries</h3>
+            <p class="text-gray-700 mb-2">Each log entry contains:</p>
+            <ul class="list-disc ml-6 space-y-1 text-gray-700 mb-4">
+              <li><strong>Timestamp</strong> - When the event occurred</li>
+              <li><strong>Level</strong> - INFO, WARN, or ERROR</li>
+              <li><strong>Filename</strong> - The PDF being processed</li>
+              <li><strong>Message</strong> - What happened</li>
+            </ul>
+
+            <div class="info-box">
+              <p class="text-sm font-semibold mb-2">💡 Common Log Messages</p>
+              <ul class="text-sm space-y-1 ml-4">
+                <li>• <strong>"Jotform upload successful"</strong> - File processed successfully ✅</li>
+                <li>• <strong>"rejected"</strong> - Validation failed, check filename or data ⚠️</li>
+                <li>• <strong>"PERMANENTLY FAILED"</strong> - Upload failed after retries ❌</li>
+                <li>• <strong>"Filed to S###"</strong> - Successfully archived by school ID 📁</li>
+              </ul>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 3.3: Search for Specific Files</h3>
+            <p class="text-gray-700 mb-2">To find information about a specific upload:</p>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Open the log file in Excel</li>
+              <li>Press <strong>Ctrl+F</strong> to open Find</li>
+              <li>Search for the student ID or filename</li>
+              <li>Review all matching entries to see the complete processing history</li>
+            </ol>
+
+            <div class="screenshot-placeholder">
+              [Screenshot: Excel showing log file with search/filter applied]
+            </div>
+          </section>
+
+          <!-- Section 4: Checking System -->
+          <section id="checking-system" class="mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">
+              <span class="step-number">4</span>
+              Using the Checking System
+            </h2>
+            
+            <p class="text-gray-700 mb-4">
+              The Checking System helps you monitor assessment completion and validate data quality at different levels.
+            </p>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 4.1: Access the Checking System</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Go to the 4Set System home page</li>
+              <li>Click <strong>Checking System</strong> button</li>
+              <li>Enter the system password when prompted</li>
+              <li>You'll see the Checking System home page with multiple view options</li>
+            </ol>
+
+            <div class="screenshot-placeholder">
+              [Screenshot: Checking System home page showing navigation options]
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 4.2: Check a Single Student</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Click <strong>Student View</strong></li>
+              <li>Use the filter dropdown to select a student by Core ID</li>
+              <li>Click <strong>Load Student Data</strong></li>
+              <li>Review all assessment tasks and completion status</li>
+              <li>Check for missing data (shown in grey or with warning icons)</li>
+              <li>Verify termination flags match calculations</li>
+            </ol>
+
+            <div class="screenshot-placeholder">
+              [Screenshot: Student detail view showing task completion grid]
+            </div>
+
+            <div class="info-box">
+              <p class="text-sm font-semibold mb-2">💡 Status Indicators</p>
+              <ul class="text-sm space-y-1 ml-4">
+                <li>• <strong>✅ Green checkmark</strong> - Data verified, calculation matches</li>
+                <li>• <strong>⚠️ Orange warning</strong> - Mismatch detected, needs review</li>
+                <li>• <strong>🔴 Red highlight</strong> - Assessment terminated</li>
+                <li>• <strong>⚪ Grey circle</strong> - Not started or missing data</li>
+              </ul>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 4.3: Check a Whole Class</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>From the home page, click <strong>Class View</strong></li>
+              <li>Select a school from the dropdown</li>
+              <li>Select a class from the available classes</li>
+              <li>View the class completion heatmap showing all students</li>
+              <li>Identify students with incomplete assessments (highlighted)</li>
+              <li>Click on a student to see individual details</li>
+            </ol>
+
+            <div class="screenshot-placeholder">
+              [Screenshot: Class view showing student grid with completion status]
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 4.4: Check a Whole School</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Click <strong>School View</strong></li>
+              <li>Select a school from the dropdown</li>
+              <li>View aggregated statistics for all classes in the school</li>
+              <li>See completion percentages by task type</li>
+              <li>Click on a class to drill down to class-level details</li>
+            </ol>
+
+            <div class="screenshot-placeholder">
+              [Screenshot: School view showing class-level summary statistics]
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 4.5: Check a Whole Group</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Click <strong>Group View</strong></li>
+              <li>Select a project group (1, 2, 3, 4, or 5)</li>
+              <li>View all schools in that group</li>
+              <li>Compare completion rates across schools</li>
+              <li>Click on a school to see more details</li>
+            </ol>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 4.6: Check Entire District</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Click <strong>District View</strong></li>
+              <li>Select a district (Shatin, Sham Shui Po, etc.)</li>
+              <li>View geographic aggregation of all schools in that district</li>
+              <li>Track overall progress at the highest level</li>
+              <li>Drill down to individual schools for details</li>
+            </ol>
+
+            <div class="screenshot-placeholder">
+              [Screenshot: District view showing regional summary]
+            </div>
+
+            <div class="success-box">
+              <p class="text-sm"><strong>✅ Navigation Tip:</strong> You can drill down from District → Group → School → Class → Student, or jump directly to any level from the home page.</p>
+            </div>
+          </section>
+
+          <!-- Section 5: Build Cache -->
+          <section id="build-cache" class="mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">
+              <span class="step-number">5</span>
+              Building the Cache
+            </h2>
+            
+            <p class="text-gray-700 mb-4">
+              Build the cache to improve performance when loading large datasets in the Checking System.
+            </p>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 5.1: When to Build Cache</h3>
+            <p class="text-gray-700 mb-2">Build the cache:</p>
+            <ul class="list-disc ml-6 space-y-1 text-gray-700">
+              <li>After uploading a large batch of new assessments</li>
+              <li>When the Checking System feels slow to load</li>
+              <li>At the start of each day if you're doing heavy checking work</li>
+              <li>After any major data updates</li>
+            </ul>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 5.2: Build the Cache</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Open the Checking System</li>
+              <li>Look for the <strong>Build Cache</strong> or <strong>Refresh Data</strong> button</li>
+              <li>Click the button to start the cache building process</li>
+              <li>Wait for the progress indicator to complete (may take 30-60 seconds)</li>
+              <li>You'll see a success message when done</li>
+            </ol>
+
+            <div class="info-box">
+              <p class="text-sm"><strong>💡 What is Cache?</strong> The cache stores pre-processed data in your browser for faster loading. It's temporary and rebuilds automatically when needed, but manual refresh ensures you have the latest data.</p>
+            </div>
+
+            <div class="screenshot-placeholder">
+              [Screenshot: Cache building progress indicator]
+            </div>
+
+            <div class="success-box">
+              <p class="text-sm"><strong>✅ Performance Boost:</strong> With cache built, loading student data is 5-10x faster!</p>
+            </div>
+          </section>
+
+          <!-- Section 6: Filter Data -->
+          <section id="filter-data" class="mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">
+              <span class="step-number">6</span>
+              Using Filters
+            </h2>
+            
+            <p class="text-gray-700 mb-4">
+              Use filters to quickly find specific students, schools, or data matching certain criteria.
+            </p>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 6.1: Filter by Student</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Go to any view in the Checking System</li>
+              <li>Find the <strong>Filter by Student</strong> dropdown</li>
+              <li>Start typing the student's Core ID or name</li>
+              <li>Select the student from the filtered list</li>
+              <li>Click <strong>Apply Filter</strong> to show only that student's data</li>
+            </ol>
+
+            <div class="screenshot-placeholder">
+              [Screenshot: Filter dropdown showing student search]
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 6.2: Filter by School</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Use the <strong>Filter by School</strong> dropdown</li>
+              <li>Select a school from the list</li>
+              <li>The view updates to show only students from that school</li>
+              <li>Use additional filters to narrow down further (e.g., by class or grade)</li>
+            </ol>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 6.3: Filter by Completion Status</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Look for the <strong>Show</strong> or <strong>Status</strong> filter</li>
+              <li>Select from options like:
+                <ul class="list-disc ml-6 mt-1">
+                  <li>All students</li>
+                  <li>Missing data only</li>
+                  <li>Complete only</li>
+                  <li>Incomplete only</li>
+                </ul>
+              </li>
+              <li>The table updates to show only matching records</li>
+            </ol>
+
+            <div class="info-box">
+              <p class="text-sm"><strong>💡 Combining Filters:</strong> You can combine multiple filters (e.g., School + Grade + Missing data) to pinpoint exactly what you need to review.</p>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 6.4: Export Filtered Data</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Apply your desired filters</li>
+              <li>Click the <strong>Export</strong> button (usually shows as Excel or CSV icon)</li>
+              <li>Choose the export format (Excel recommended)</li>
+              <li>The exported file includes only the filtered records</li>
+              <li>Open the file to review or share the data</li>
+            </ol>
+
+            <div class="screenshot-placeholder">
+              [Screenshot: Export options dialog]
+            </div>
+
+            <div class="success-box">
+              <p class="text-sm"><strong>✅ Export Includes:</strong> All exports include a calculated Status Light column (🟢 Complete, 🔴 Incomplete, 🟡 Post-Term, ⚪ Not Started) for easy quality checks.</p>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 6.5: Clear Filters</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>To reset and see all data, click <strong>Clear Filters</strong> or <strong>Reset</strong></li>
+              <li>All dropdowns return to their default state</li>
+              <li>The full dataset is displayed again</li>
+            </ol>
+          </section>
+
+          <!-- Learn More Section -->
+          <section id="learn-more" class="mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">📚 Learn More</h2>
+            
+            <p class="text-gray-700 mb-6">
+              This Quick Start Guide covered the essential steps. For deeper understanding and advanced features, explore these detailed guides:
+            </p>
+
+            <div class="grid md:grid-cols-2 gap-4">
+              <a href="user_guide_uploader.html" class="block p-4 border-2 border-gray-200 rounded-lg hover:border-primary hover:shadow-lg transition">
+                <h3 class="font-semibold text-lg mb-2" style="color: var(--primary)">📤 Assessment Uploader Guide</h3>
+                <p class="text-sm text-gray-600">Detailed documentation on the upload interface, processor agent setup, and troubleshooting upload issues.</p>
+              </a>
+
+              <a href="user_guide_checking_system.html" class="block p-4 border-2 border-gray-200 rounded-lg hover:border-primary hover:shadow-lg transition">
+                <h3 class="font-semibold text-lg mb-2" style="color: var(--primary)">📊 Checking System Guide</h3>
+                <p class="text-sm text-gray-600">Complete guide to data validation, status indicators, navigation, and understanding the multi-level dashboard.</p>
+              </a>
+
+              <a href="user_guide_qualtrics.html" class="block p-4 border-2 border-gray-200 rounded-lg hover:border-primary hover:shadow-lg transition">
+                <h3 class="font-semibold text-lg mb-2" style="color: var(--primary)">🔄 Qualtrics Integration</h3>
+                <p class="text-sm text-gray-600">Learn about TGMD assessments, data merging, and how Qualtrics survey data integrates with the system.</p>
+              </a>
+
+              <a href="user_guide_conflicts.html" class="block p-4 border-2 border-gray-200 rounded-lg hover:border-primary hover:shadow-lg transition">
+                <h3 class="font-semibold text-lg mb-2" style="color: var(--primary)">⚠️ Handling Conflicts</h3>
+                <p class="text-sm text-gray-600">Guide for resolving data overwrite conflicts and understanding conflict detection.</p>
+              </a>
+
+              <a href="README.md" class="block p-4 border-2 border-gray-200 rounded-lg hover:border-primary hover:shadow-lg transition">
+                <h3 class="font-semibold text-lg mb-2" style="color: var(--primary)">📖 Full Documentation</h3>
+                <p class="text-sm text-gray-600">Comprehensive system documentation including architecture, security, and advanced configuration.</p>
+              </a>
+
+              <a href="PRDs/" class="block p-4 border-2 border-gray-200 rounded-lg hover:border-primary hover:shadow-lg transition">
+                <h3 class="font-semibold text-lg mb-2" style="color: var(--primary)">🏗️ Technical PRDs</h3>
+                <p class="text-sm text-gray-600">Product requirement documents for developers and system administrators.</p>
+              </a>
+            </div>
+
+            <div class="mt-8 p-6 bg-blue-50 border-l-4 border-blue-500 rounded">
+              <h3 class="font-semibold mb-2" style="color: var(--primary)">💬 Need Help?</h3>
+              <p class="text-sm text-gray-700">
+                If you encounter issues not covered in this guide:
+              </p>
+              <ul class="text-sm text-gray-700 mt-2 ml-4 space-y-1">
+                <li>• Check the <strong>Troubleshooting</strong> sections in the detailed guides</li>
+                <li>• Review log files for error messages</li>
+                <li>• Check the <strong>filed/Unsorted/</strong> folder for failed uploads</li>
+                <li>• Contact the system administrator or IT support team</li>
+              </ul>
+            </div>
+          </section>
+
+          <!-- Footer -->
+          <div class="mt-12 pt-6 border-t border-gray-200 text-center text-sm text-gray-600">
+            <p><strong>4Set System</strong> - KeySteps@JC Assessment Data Processing</p>
+            <p class="mt-1">The Education University of Hong Kong | Version 2025/26</p>
+            <p class="mt-3">
+              <a href="index.html" class="text-primary hover:underline">← Back to Home</a>
+            </p>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // Add smooth scrolling for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      });
+    });
+
+    // Highlight active section in TOC
+    const sections = document.querySelectorAll('section[id]');
+    const navLinks = document.querySelectorAll('.toc-link');
+
+    window.addEventListener('scroll', () => {
+      let current = '';
+      sections.forEach(section => {
+        const sectionTop = section.offsetTop;
+        const sectionHeight = section.clientHeight;
+        if (window.pageYOffset >= sectionTop - 100) {
+          current = section.getAttribute('id');
+        }
+      });
+
+      navLinks.forEach(link => {
+        link.classList.remove('text-primary', 'font-semibold');
+        if (link.getAttribute('href') === `#${current}`) {
+          link.classList.add('text-primary', 'font-semibold');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
