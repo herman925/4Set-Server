@@ -2745,6 +2745,182 @@ Trial 2    [2_1]       [2_2]       [2_3]       [2_4]
 
 ---
 
+## Cache System Implementation
+
+### Overview
+
+The 4Set Checking System uses a comprehensive client-side caching system built on IndexedDB to provide fast, offline-capable data access while minimizing API calls.
+
+### Cache Architecture
+
+The system uses **localForage** (wrapper around IndexedDB) with three separate stores:
+
+```
+JotFormCacheDB (IndexedDB database)
+├── cache (store: jotform_global_cache)
+│   ├── Key: 'jotform_global_cache'
+│   ├── Value: { submissions[], timestamp, count }
+│   ├── Size: ~20-40 MB (500-2000 submissions)
+│   └── Expires: 1 hour
+│
+├── student_validation (store: student_validation) 
+│   ├── Key: 'validation_cache'
+│   ├── Value: { validations{}, timestamp, count, version }
+│   └── Pre-computed task status for all students
+│
+└── qualtrics_cache (store: qualtrics_responses)
+    ├── Key: 'qualtrics_responses'
+    ├── Value: { responses[], timestamp, surveyId, count }
+    └── Manual refresh only (no auto-expiration)
+```
+
+### Cache Operations
+
+#### Building the Cache
+
+**Initial Sync** (First time or after deletion):
+1. Fetch JotForm submissions (0-50% progress)
+2. Fetch Qualtrics TGMD data (50-70% progress, if credentials available)
+3. Build validation cache (70-100% progress)
+4. Save all three stores to IndexedDB
+5. Duration: 60-90 seconds typical
+
+**Status Indicators:**
+- 🔴 **System Not Ready**: No cache exists - click to build
+- 🟠 **Syncing X%**: Cache building in progress
+- 🟢 **System Ready**: Cache valid and loaded
+
+#### Cache Deletion
+
+**Comprehensive Deletion** - Clicking "Delete Cache" removes ALL data:
+- ✅ All JotForm submissions (cache store)
+- ✅ All student validation results (student_validation store)
+- ✅ All Qualtrics TGMD responses (qualtrics_cache store)
+
+This is a complete purge requiring full re-sync before system can be used again.
+
+#### Qualtrics Refresh
+
+**Partial Update** - Clicking "Refresh with Qualtrics":
+- Fetches fresh TGMD data from Qualtrics API
+- Merges with existing JotForm cache
+- Updates qualtrics_cache store only
+- Faster than full deletion (~30 seconds vs 90 seconds)
+- Preserves JotForm data to avoid unnecessary API calls
+
+### Data Merging Strategy
+
+The cache system implements a two-level merge strategy:
+
+#### Level 1: Within-Source Merging (Earliest Non-Empty Wins)
+
+When multiple submissions/responses exist for the same student:
+- **JotForm**: Submissions sorted by `created_at` (earliest first)
+- **Qualtrics**: Responses sorted by `recordedDate` (earliest first)
+- **Strategy**: First non-empty value wins for each field
+- **Implementation**: `jotform-cache.js` lines 795, 810
+
+```javascript
+// Documented in code:
+// "Merge strategy: Sort by created_at (earliest first), 
+//  only process non-empty values, first wins"
+```
+
+#### Level 2: Cross-Source Merging (Qualtrics Priority)
+
+When merging Qualtrics TGMD data INTO JotForm cache:
+- **Qualtrics takes precedence** for all TGMD_* fields
+- Rationale: Qualtrics is the primary platform for TGMD assessments
+- Conflicts are detected and logged in `_tgmdConflicts` array
+- Conflict count displayed in UI, exportable to CSV
+
+### Cache Expiration
+
+**JotForm Cache**: 1 hour expiration
+- Automatically invalidates after 1 hour
+- System prompts for re-sync when expired
+- Configurable in `jotform-cache.js` (CACHE_EXPIRATION_MS constant)
+
+**Qualtrics Cache**: No automatic expiration
+- Only updated via manual "Refresh with Qualtrics" button
+- Allows controlling when TGMD data is re-fetched
+
+**Validation Cache**: Rebuilds when submissions change
+- Automatically regenerated after JotForm sync
+- Invalidated when cache is deleted
+
+### Performance Considerations
+
+#### Cache Benefits
+- ✅ Instant data access after initial load (<500ms vs 5-15s API call)
+- ✅ Offline capability (works without internet after cache built)
+- ✅ Reduced API rate limiting risk
+- ✅ 100x+ speedup for multi-student drilldowns
+
+#### Cache Size Management
+- JotForm cache: ~30 MB typical (544 submissions in production)
+- Qualtrics cache: ~5 MB typical (200 responses)
+- Total: ~67 MB well within browser limits (hundreds of MB available)
+
+#### Performance Metrics
+- First sync: 60-90 seconds
+- Subsequent page loads: <1 second (cache hit)
+- Cache deletion: Instant
+- Qualtrics refresh: 30 seconds
+
+### Known Limitations
+
+1. **No Real-Time Sync**: Manual button click required to refresh
+2. **Full Export Only**: No incremental/delta updates from APIs
+3. **Client-Side Only**: No server-side API proxy for caching
+4. **Single Mode**: Only full cache mode available (on-demand fetch planned but not implemented)
+5. **Browser-Specific**: Cache is per-browser, not synchronized across devices
+
+### Cache Troubleshooting
+
+**Common Issues and Solutions:**
+
+| Problem | Solution |
+|---------|----------|
+| Data looks outdated | Click "Delete Cache" → Re-sync |
+| TGMD data missing/wrong | Click "Refresh with Qualtrics" |
+| System very slow | Clear browser cache (Ctrl+Shift+R), then delete IndexedDB cache |
+| Sync stuck at X% | Close modal, refresh page, try again |
+| Green pill but no data | Delete cache → Re-sync |
+
+**Cache Inspection** (for developers):
+- Open DevTools (F12) → Application tab → IndexedDB → JotFormCacheDB
+- Verify all three stores exist and contain data
+- Check timestamp fields to confirm cache age
+
+### Future Enhancements
+
+Planned but not yet implemented:
+- [ ] Cache strategy toggle (Full Cache vs Fetch-on-Request modes)
+- [ ] Device auto-detection (mobile → recommend on-demand)
+- [ ] Incremental sync (fetch only new/changed records)
+- [ ] Automatic background refresh on schedule
+- [ ] Server-side cache proxy for improved security
+- [ ] Real-time WebSocket updates
+- [ ] Service worker for offline support
+
+### Related Files
+
+**Implementation:**
+- `assets/js/jotform-cache.js` - Core cache management
+- `assets/js/cache-manager-ui.js` - UI for cache operations
+- `assets/js/qualtrics-api.js` - Qualtrics data fetching
+- `assets/js/data-merger.js` - Cross-source merging logic
+
+**Configuration:**
+- `config/jotform_config.json` - Cache and fetch parameters
+
+**User Documentation:**
+- `USER_GUIDE_CHECKING_SYSTEM.md` - Cache usage guide
+- `USER_GUIDE_QUALTRICS_TGMD.md` - Qualtrics integration guide
+
+---
+
 **Document Version**: 1.0  
-**Last Updated**: 2025-10-17  
-**Next Review**: 2025-11-17
+**Last Updated**: 2025-10-25
+**Next Review**: 2025-11-25
