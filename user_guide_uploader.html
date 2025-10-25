@@ -425,7 +425,7 @@ flowchart TD
     Upload --> UploadResult{Upload<br/>success?}
     
     UploadResult -->|FAILED| Error[❌ ERROR<br/>→ Unsorted/]
-    UploadResult -->|SUCCESS| File[📁 File to School<br/>→ 97\PDF\{school}\]
+    UploadResult -->|SUCCESS| File["📁 File to School<br/>→ 97/PDF/{school}/"]
     
     File --> Complete([✅ COMPLETE])
     
