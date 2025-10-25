@@ -1380,6 +1380,174 @@ Total:             ~25 MB (well within IndexedDB's 50+ MB limit per origin)
 - Temporary fallback: Class page uses `TASKNAME_Com` flags if cache not available
 - Final implementation: All pages require hierarchical cache
 
+## Qualtrics Integration & Grade Detection
+
+### Overview
+
+The Checking System integrates data from **two sources**:
+1. **JotForm** - PDF upload pipeline (primary submission system)
+2. **Qualtrics** - Web survey platform (additional assessment data, including TGMD)
+
+This dual-source integration was implemented in PRs #90-#97 (October 2025) to provide complete assessment coverage.
+
+### Qualtrics Data Fetching
+
+**Implementation**: `assets/js/qualtrics-api.js`, `assets/js/qualtrics-transformer.js`
+
+The system fetches Qualtrics survey responses and transforms them to match JotForm field naming conventions:
+
+**Key Features**:
+- Fetches all 632 Qualtrics fields (not limited to TGMD)
+- Tasks covered: ERV, SYM, TOM, CM, CWR, HTKS, TEC, TGMD, and more
+- Transformation via `assets/qualtrics-mapping.json` (QID → standard field names)
+- Cached in IndexedDB (`qualtrics_cache` store) alongside JotForm cache
+
+**API Credentials** (encrypted in `credentials.enc`):
+```javascript
+{
+  qualtricsApiKey: "API token",
+  qualtricsDatacenter: "syd1",  // Sydney datacenter (au1 deprecated Oct 2024)
+  qualtricsSurveyId: "Survey ID"
+}
+```
+
+### Data Merging Strategy
+
+**Implementation**: `assets/js/data-merger.js`
+
+When a student has data in both JotForm and Qualtrics, the system merges them using **"earliest non-empty wins"** strategy:
+
+**Merge Logic**:
+1. **Within-Source Merging** (if student has multiple submissions):
+   - JotForm: Sort by `created_at`, earliest non-empty value wins per field
+   - Qualtrics: Sort by `recordedDate`, earliest non-empty value wins per field
+
+2. **Cross-Source Merging** (JotForm vs Qualtrics):
+   - Compare timestamps: JotForm `created_at` vs Qualtrics `recordedDate`
+   - For each field where both sources have values, use the **earlier timestamp**
+   - Example: If JotForm has data from Oct 1 and Qualtrics from Oct 3, JotForm wins
+
+3. **Conflict Detection**:
+   - All overwrites are logged with timestamps for audit purposes
+   - Conflict statistics tracked in cache metadata
+   - Ensures data integrity and traceability
+
+**Benefits**:
+- Respects chronological order of assessments
+- Source-agnostic (fair to both JotForm and Qualtrics)
+- Prevents newer data from overwriting earlier assessments
+- Consistent with JotForm API's native multi-submission behavior
+
+### Grade Detection
+
+**Implementation**: `assets/js/grade-detector.js`
+
+The system automatically classifies students into grade levels (K1/K2/K3) based on assessment dates:
+
+**School Year Boundaries** (August to July):
+- **K1**: Aug 2023 - Jul 2024 (school year 2023/24)
+- **K2**: Aug 2024 - Jul 2025 (school year 2024/25)
+- **K3**: Aug 2025 - Jul 2026 (school year 2025/26)
+
+**Data Sources** (in order of preference):
+1. `recordedDate` from Qualtrics (ISO 8601 timestamp)
+2. `sessionkey` from JotForm (format: `coreId_YYYYMMDD_HH_MM`)
+
+**Integration**:
+- Grade field automatically added to all merged records in `data-merger.js`
+- Used for filtering in school drilldown pages
+- Enables cohort tracking across academic years
+- Stored in student validation cache for quick access
+
+**Example**:
+```javascript
+// Student assessed on 2024-09-15
+recordedDate: "2024-09-15T10:30:00Z"
+→ grade: "K2"  // Falls in Aug 2024 - Jul 2025
+
+// Student assessed on 2025-08-20
+sessionkey: "C10001_20250820_14_30"
+→ grade: "K3"  // Falls in Aug 2025 - Jul 2026
+```
+
+### TGMD Matrix-Radio Scoring
+
+**Implementation**: `assets/js/task-validator.js` (`processTGMDScoring` function)
+
+TGMD (Test of Gross Motor Development) uses observational assessment with **trial-based scoring** that requires special handling:
+
+**Standard Questions**: Each task has a checkbox/radio answer (0 or 1)
+**TGMD Questions**: Each criterion has 2 trials (t1, t2) with matrix-radio format
+
+**Scoring Logic**:
+1. **Trial Aggregation**: Combine t1 + t2 for each criterion
+   - Example: `TGMD_111_Hop_t1: 1` + `TGMD_111_Hop_t2: 0` = Row score: 1/2
+2. **Task Grouping**: Group criteria by motor task
+   - Hop (單腳跳): TGMD_111-114
+   - Long Jump (立定跳遠): TGMD_211-214
+   - Slide (側併步): TGMD_311-314
+   - Dribble (運球): TGMD_411-413
+   - Catch (接球): TGMD_511-513
+   - Underhand Throw (低手投擲): TGMD_611-614
+3. **Labels**: Use "Success/Fail" instead of "Correct/Incorrect"
+4. **Display**: Render with grouped task headers and trial breakdown
+
+**Rendering** (`assets/js/checking-system-student-page.js`):
+- Task headers show task names (e.g., "1.單腳跳 (Hop)")
+- Each criterion shows: row score, trial 1 pill, trial 2 pill
+- CSS styles: `.trial-success` (green), `.trial-fail` (red)
+- Overall TGMD score calculated from row scores
+
+### Data Structure Additions
+
+The student validation cache now includes these additional fields from Qualtrics integration:
+
+```javascript
+{
+  coreId: "C10001",
+  // ... existing fields ...
+  
+  // NEW: Grade detection
+  grade: "K2",  // K1 | K2 | K3 | null
+  
+  // NEW: Data source tracking
+  dataSources: {
+    jotform: true,
+    qualtrics: true
+  },
+  
+  // NEW: Merge metadata
+  mergeInfo: {
+    jotformDate: "2024-09-15T08:00:00Z",
+    qualtricsDate: "2024-09-15T10:30:00Z",
+    conflicts: 3,  // Number of fields with different values
+    conflictDetails: [
+      {field: "TGMD_Hand", jotform: "2", qualtrics: "1", winner: "jotform"}
+    ]
+  },
+  
+  // TaskValidator output includes TGMD scoring
+  taskValidation: {
+    tgmd: {
+      taskId: "tgmd",
+      title: "Gross Motor Development",
+      groupedResults: {
+        hop: { score: 3, maxScore: 4, trials: [...] },
+        long_jump: { score: 2, maxScore: 4, trials: [...] }
+        // ... other tasks
+      },
+      totals: { total: 24, answered: 24, score: 18 }
+    }
+    // ... other tasks
+  }
+}
+```
+
+**References**:
+- Technical specification: `PRDs/jotform_qualtrics_integration_prd.md`
+- Implementation plan: `PRDs/qualtrics_implementation_plan.md`
+- User guide: `PRDs/qualtrics_tgmd_user_guide_prd.md`
+
 ## Out of Scope
 - Direct modification of Jotform submissions (read-only analysis).
 - Manual data correction UI; remediation handled in existing tools/runbooks.

@@ -3237,7 +3237,7 @@ Trial 2    [2_1]       [2_2]       [2_3]       [2_4]
 - [x] ✅ Tested with production Qualtrics credentials
 - [x] ✅ Validated full pipeline with real data
 - [x] ✅ Merge conflicts tracked with timestamp audit trail
-- [x] ✅ Documentation updated (USER_GUIDE_QUALTRICS_TGMD.md, README.md)
+- [x] ✅ Documentation updated (PRDs/qualtrics_tgmd_user_guide_prd.md, README.md)
 - [x] ✅ PRD documentation updated - **This update**
 
 ### Key Implementation Notes
