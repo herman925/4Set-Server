@@ -657,7 +657,20 @@
             </ol>
 
             <!-- Embedded Screenshot: Upload Interface -->
-            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg upload-interface-preview-container" style="position: relative;">
+              <!-- "See More" button - shown on hover -->
+              <button 
+                class="upload-interface-enlarge-btn" 
+                onclick="openUploadInterfaceModal()"
+                style="position: absolute; top: 12px; right: 12px; z-index: 50; background-color: rgba(43, 57, 144, 0.95); color: white; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.2s ease; cursor: pointer; border: none;"
+                title="See More"
+              >
+                <span style="display: flex; align-items: center; gap: 6px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+                  See More
+                </span>
+              </button>
+              
               <div class="bg-white p-8 text-center">
                 <div class="flex flex-col items-center gap-4">
                   <div class="p-6 rounded-full bg-blue-100">
@@ -691,6 +704,17 @@
                 </div>
               </div>
             </div>
+            
+            <style>
+              .upload-interface-preview-container:hover .upload-interface-enlarge-btn {
+                opacity: 1 !important;
+              }
+              .upload-interface-enlarge-btn:hover {
+                background-color: rgba(43, 57, 144, 1) !important;
+                transform: translateY(-2px);
+                box-shadow: 0 6px 16px rgba(0,0,0,0.3) !important;
+              }
+            </style>
 
             <div class="info-box">
               <p class="text-sm"><strong>💡 Alternative Method:</strong> You can also copy PDF files directly to the <strong>incoming</strong> folder in File Explorer instead of using the web interface.</p>
@@ -919,7 +943,20 @@ flowchart LR
             </ol>
 
             <!-- Embedded Screenshot: Checking System Home - Built from actual checking_system_home.html -->
-            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg bg-white">
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg bg-white checking-home-preview-container" style="position: relative;">
+              <!-- "See More" button - shown on hover -->
+              <button 
+                class="checking-home-enlarge-btn" 
+                onclick="openCheckingHomeModal()"
+                style="position: absolute; top: 12px; right: 12px; z-index: 50; background-color: rgba(43, 57, 144, 0.95); color: white; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.2s ease; cursor: pointer; border: none;"
+                title="See More"
+              >
+                <span style="display: flex; align-items: center; gap: 6px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+                  See More
+                </span>
+              </button>
+              
               <div class="p-6">
                 <!-- Header matching actual system -->
                 <div class="mb-6">
@@ -1007,6 +1044,17 @@ flowchart LR
                 </div>
               </div>
             </div>
+            
+            <style>
+              .checking-home-preview-container:hover .checking-home-enlarge-btn {
+                opacity: 1 !important;
+              }
+              .checking-home-enlarge-btn:hover {
+                background-color: rgba(43, 57, 144, 1) !important;
+                transform: translateY(-2px);
+                box-shadow: 0 6px 16px rgba(0,0,0,0.3) !important;
+              }
+            </style>
 
             <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 4.2: Check a Single Student</h3>
             <ol class="list-decimal ml-6 space-y-2 text-gray-700">
@@ -2272,6 +2320,8 @@ flowchart LR
     document.addEventListener('keydown', function(e) {
       if (e.key === 'Escape') {
         closeHomepageModal();
+        closeUploadInterfaceModal();
+        closeCheckingHomeModal();
       }
     });
 
@@ -2281,6 +2331,143 @@ flowchart LR
         closeHomepageModal();
       }
     });
+    
+    // Upload Interface Modal Functions
+    function openUploadInterfaceModal() {
+      const modal = document.getElementById('uploadInterfaceModal');
+      if (!modal) return;
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+    
+    function closeUploadInterfaceModal() {
+      const modal = document.getElementById('uploadInterfaceModal');
+      if (!modal) return;
+      modal.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+    
+    // Checking Home Modal Functions  
+    function openCheckingHomeModal() {
+      const modal = document.getElementById('checkingHomeModal');
+      if (!modal) return;
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+    
+    function closeCheckingHomeModal() {
+      const modal = document.getElementById('checkingHomeModal');
+      if (!modal) return;
+      modal.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+    
+    document.getElementById('uploadInterfaceModal')?.addEventListener('click', function(e) {
+      if (e.target === this) closeUploadInterfaceModal();
+    });
+    
+    document.getElementById('checkingHomeModal')?.addEventListener('click', function(e) {
+      if (e.target === this) closeCheckingHomeModal();
+    });
   </script>
+  
+  <!-- Upload Interface Modal for Step 2.2 -->
+  <div id="uploadInterfaceModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-[9999]" style="display: none;">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-4xl w-full mx-4 relative overflow-hidden" style="max-height: 90vh; overflow-y: auto;">
+      <div class="sticky top-0 bg-gradient-to-r from-primary to-indigo-600 text-white px-8 py-6 rounded-t-2xl z-10">
+        <div class="flex items-center justify-between">
+          <h2 class="text-2xl font-bold">Upload Interface: PC Number & Destination Setup</h2>
+          <button onclick="closeUploadInterfaceModal()" class="text-white hover:bg-white/20 rounded-full p-2 transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <p class="text-sm opacity-90 mt-2">Configuration badges appear at the top of the upload page</p>
+      </div>
+      <div class="p-8">
+        <div class="border-2 border-gray-300 rounded-lg p-8 bg-gradient-to-br from-blue-50 to-gray-50 mb-6">
+          <div class="text-center space-y-6">
+            <p class="text-sm text-gray-600 mb-4"><strong>Before Configuration:</strong></p>
+            <div class="flex justify-center gap-6 flex-wrap">
+              <div class="px-6 py-3 rounded-full bg-red-100 text-red-700 font-bold text-base border-3 border-red-300 shadow-lg">⚠️ PC Number: Not Set</div>
+              <div class="px-6 py-3 rounded-full bg-red-100 text-red-700 font-bold text-base border-3 border-red-300 shadow-lg">🔴 Destination: Not Set</div>
+            </div>
+            <div class="mt-8 pt-6 border-t border-gray-300">
+              <p class="text-sm text-gray-600 mb-4"><strong>After Configuration:</strong></p>
+              <div class="flex justify-center gap-6 flex-wrap">
+                <div class="px-6 py-3 rounded-full bg-green-100 text-green-700 font-bold text-base border-3 border-green-300 shadow-lg">✅ PC Number: 095</div>
+                <div class="px-6 py-3 rounded-full bg-green-100 text-green-700 font-bold text-base border-3 border-green-300 shadow-lg">✅ Destination: Set</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded">
+          <h4 class="font-semibold text-blue-900 mb-3">💡 Setup Steps</h4>
+          <ol class="list-decimal ml-6 space-y-2 text-sm text-gray-700">
+            <li><strong>Click PC Number badge</strong> → Enter 3-digit number → Save</li>
+            <li><strong>Click Destination badge</strong> → Select incoming/ folder → Grant permission</li>
+            <li><strong>Verify both badges turn green</strong> ✅</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Checking System Home Modal for Step 4.1 -->
+  <div id="checkingHomeModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-[9999]" style="display: none;">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-6xl w-full mx-4 relative overflow-hidden" style="max-height: 90vh; overflow-y: auto;">
+      <div class="sticky top-0 bg-gradient-to-r from-primary to-indigo-600 text-white px-8 py-6 rounded-t-2xl z-10">
+        <div class="flex items-center justify-between">
+          <h2 class="text-2xl font-bold">Checking System Homepage</h2>
+          <button onclick="closeCheckingHomeModal()" class="text-white hover:bg-white/20 rounded-full p-2 transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <p class="text-sm opacity-90 mt-2">Main interface for filtering and navigating assessment data</p>
+      </div>
+      <div class="p-8 bg-white">
+        <div class="mb-6">
+          <h1 class="text-2xl font-bold text-gray-800 mb-2 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4A90E2" stroke-width="2">
+              <circle cx="11" cy="11" r="8"></circle>
+              <path d="m21 21-4.35-4.35"></path>
+              <path d="M9 11l2 2 4-4"></path>
+            </svg>
+            Checking System
+          </h1>
+          <p class="text-gray-600 text-base">Search and analyse submitted data from every angle</p>
+        </div>
+        <div class="bg-gray-50 rounded-lg p-3 mb-4 border border-gray-200">
+          <div class="flex items-center gap-3 flex-wrap text-sm">
+            <div class="flex items-center gap-2 bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">
+              <span class="w-2 h-2 bg-green-500 rounded-full inline-block"></span>
+              <span>System Ready</span>
+            </div>
+            <span class="text-xs text-gray-500">Last Synced: <span class="font-mono">2 mins ago</span></span>
+          </div>
+        </div>
+        <div class="bg-white border-2 border-gray-200 rounded-lg p-5 mb-4">
+          <h2 class="text-base font-semibold text-gray-800 mb-4">Configure Filters</h2>
+          <button class="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 mb-4">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="16"></line>
+              <line x1="8" y1="12" x2="16" y2="12"></line>
+            </svg>
+            Add filter
+          </button>
+          <div class="pt-4 border-t border-gray-200 flex gap-3">
+            <button class="bg-gray-200 text-gray-700 px-5 py-2 rounded-full text-sm font-semibold">Clear All</button>
+            <button class="bg-blue-600 text-white px-6 py-2 rounded-full text-sm font-semibold">Start Checking</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
