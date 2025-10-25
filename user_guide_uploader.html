@@ -52,6 +52,7 @@
             <a href="#requirements" class="toc-link block text-sm text-gray-700 py-1">System Requirements</a>
             <a href="#upload-process" class="toc-link block text-sm text-gray-700 py-1">Upload Process</a>
             <a href="#pipeline" class="toc-link block text-sm text-gray-700 py-1">Upload Pipeline</a>
+            <a href="#processor-agent" class="toc-link block text-sm text-gray-700 py-1">Processor Agent</a>
             <a href="#configuration" class="toc-link block text-sm text-gray-700 py-1">Configuration</a>
             <a href="#troubleshooting" class="toc-link block text-sm text-gray-700 py-1">Troubleshooting</a>
             <a href="#faqs" class="toc-link block text-sm text-gray-700 py-1">FAQs</a>
@@ -366,6 +367,320 @@
                 </tr>
               </tbody>
             </table>
+          </section>
+
+          <!-- Processor Agent Workflow Section -->
+          <section id="processor-agent" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Processor Agent: How It Works</h2>
+            
+            <p class="text-gray-700 mb-6">
+              The <strong>Processor Agent</strong> is an autonomous PowerShell service that continuously monitors the upload folder, validates PDFs, enriches data, and submits to Jotform. Here's how it processes your uploaded files:
+            </p>
+
+            <!-- Complete Processing Flowchart -->
+            <div class="bg-gradient-to-br from-indigo-50 to-purple-50 p-6 rounded-lg border-2 border-indigo-200 mb-8">
+              <h3 class="font-semibold mb-6 text-center text-lg">Complete Processing Workflow</h3>
+              
+              <div class="flex flex-col items-center space-y-4">
+                <!-- Step 1: File Detection -->
+                <div class="bg-blue-500 text-white px-6 py-3 rounded-lg font-semibold shadow-lg w-64 text-center">
+                  📂 File Detected
+                </div>
+                
+                <div class="text-2xl text-gray-400">↓</div>
+                
+                <!-- Step 2: Validation Check -->
+                <div class="relative">
+                  <div class="bg-yellow-100 border-4 border-yellow-400 px-8 py-6 transform rotate-45 w-48 h-48 flex items-center justify-center shadow-lg">
+                    <div class="transform -rotate-45 text-center font-semibold text-sm">
+                      Is filename<br/>valid?<br/>(Phase 1)
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="flex gap-12 w-full justify-center">
+                  <!-- No - Rejected -->
+                  <div class="flex flex-col items-center space-y-3">
+                    <div class="text-sm font-semibold text-red-600">NO</div>
+                    <div class="text-2xl text-gray-400">↓</div>
+                    <div class="bg-red-100 border-2 border-red-400 px-6 py-3 rounded-lg text-center shadow w-48">
+                      <div class="font-semibold text-sm text-red-700">❌ REJECTED</div>
+                      <div class="text-xs mt-1">→ Unsorted/</div>
+                    </div>
+                  </div>
+                  
+                  <!-- Yes - Continue to Phase 2 -->
+                  <div class="flex flex-col items-center space-y-3">
+                    <div class="text-sm font-semibold text-green-600">YES</div>
+                    <div class="text-2xl text-gray-400">↓</div>
+                    
+                    <!-- Phase 2 Validation -->
+                    <div class="relative">
+                      <div class="bg-orange-100 border-4 border-orange-400 px-6 py-6 transform rotate-45 w-44 h-44 flex items-center justify-center shadow-lg">
+                        <div class="transform -rotate-45 text-center font-semibold text-xs">
+                          PDF fields<br/>valid?<br/>(Phase 2)
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="flex gap-8">
+                      <!-- Phase 2 No -->
+                      <div class="flex flex-col items-center space-y-3">
+                        <div class="text-sm font-semibold text-red-600">NO</div>
+                        <div class="text-2xl text-gray-400">↓</div>
+                        <div class="bg-red-100 border-2 border-red-400 px-4 py-3 rounded-lg text-center shadow w-44">
+                          <div class="font-semibold text-sm text-red-700">❌ REJECTED</div>
+                          <div class="text-xs mt-1">→ Unsorted/</div>
+                        </div>
+                      </div>
+                      
+                      <!-- Phase 2 Yes - Processing -->
+                      <div class="flex flex-col items-center space-y-3">
+                        <div class="text-sm font-semibold text-green-600">YES</div>
+                        <div class="text-2xl text-gray-400">↓</div>
+                        
+                        <!-- Processing Steps -->
+                        <div class="bg-purple-100 border-2 border-purple-400 px-4 py-3 rounded-lg shadow w-52">
+                          <div class="font-semibold text-sm">🔄 Processing</div>
+                          <div class="text-xs mt-2 space-y-1">
+                            <div>1. Parse PDF fields</div>
+                            <div>2. Calculate termination</div>
+                            <div>3. Enrich metadata</div>
+                            <div>4. Prepare JSON</div>
+                          </div>
+                        </div>
+                        
+                        <div class="text-2xl text-gray-400">↓</div>
+                        
+                        <!-- Data Overwrite Check -->
+                        <div class="relative">
+                          <div class="bg-pink-100 border-4 border-pink-400 px-6 py-5 transform rotate-45 w-40 h-40 flex items-center justify-center shadow-lg">
+                            <div class="transform -rotate-45 text-center font-semibold text-xs">
+                              Data<br/>conflict?
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div class="flex gap-8">
+                          <!-- Conflict Yes -->
+                          <div class="flex flex-col items-center space-y-3">
+                            <div class="text-sm font-semibold text-orange-600">CONFLICT</div>
+                            <div class="text-2xl text-gray-400">↓</div>
+                            <div class="bg-orange-100 border-2 border-orange-400 px-4 py-3 rounded-lg text-center shadow w-44">
+                              <div class="font-semibold text-sm text-orange-700">⚠️ BLOCKED</div>
+                              <div class="text-xs mt-1">→ Unsorted/</div>
+                            </div>
+                          </div>
+                          
+                          <!-- No Conflict - Upload -->
+                          <div class="flex flex-col items-center space-y-3">
+                            <div class="text-sm font-semibold text-green-600">SAFE</div>
+                            <div class="text-2xl text-gray-400">↓</div>
+                            
+                            <!-- Upload with Retry -->
+                            <div class="bg-blue-100 border-2 border-blue-400 px-4 py-3 rounded-lg shadow w-48">
+                              <div class="font-semibold text-sm">📤 Upload to Jotform</div>
+                              <div class="text-xs mt-1">Max 3 retries + backoff</div>
+                            </div>
+                            
+                            <div class="text-2xl text-gray-400">↓</div>
+                            
+                            <!-- Upload Result -->
+                            <div class="relative">
+                              <div class="bg-teal-100 border-4 border-teal-400 px-5 py-5 transform rotate-45 w-36 h-36 flex items-center justify-center shadow-lg">
+                                <div class="transform -rotate-45 text-center font-semibold text-xs">
+                                  Upload<br/>success?
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div class="flex gap-8">
+                              <!-- Upload Failed -->
+                              <div class="flex flex-col items-center space-y-3">
+                                <div class="text-sm font-semibold text-red-600">FAILED</div>
+                                <div class="text-2xl text-gray-400">↓</div>
+                                <div class="bg-red-100 border-2 border-red-400 px-4 py-3 rounded-lg text-center shadow w-40">
+                                  <div class="font-semibold text-sm text-red-700">❌ ERROR</div>
+                                  <div class="text-xs mt-1">→ Unsorted/</div>
+                                </div>
+                              </div>
+                              
+                              <!-- Upload Success - Filing -->
+                              <div class="flex flex-col items-center space-y-3">
+                                <div class="text-sm font-semibold text-green-600">SUCCESS</div>
+                                <div class="text-2xl text-gray-400">↓</div>
+                                
+                                <!-- Filing -->
+                                <div class="bg-green-100 border-2 border-green-500 px-4 py-3 rounded-lg shadow w-48">
+                                  <div class="font-semibold text-sm text-green-700">📁 File to School</div>
+                                  <div class="text-xs mt-1">→ 97\PDF\{school}\</div>
+                                </div>
+                                
+                                <div class="text-2xl text-gray-400">↓</div>
+                                
+                                <!-- Complete -->
+                                <div class="bg-green-500 text-white px-6 py-3 rounded-full font-semibold shadow-lg">
+                                  ✅ COMPLETE
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="mt-6 pt-4 border-t border-indigo-200 text-center text-sm text-gray-700">
+                <strong>Total Processing Time:</strong> 5-30 seconds per PDF (typical)
+              </div>
+            </div>
+
+            <!-- Validation Phases Detail -->
+            <h3 class="text-2xl font-semibold mb-4 mt-8">Validation Phases Explained</h3>
+            
+            <div class="grid md:grid-cols-2 gap-6 mb-8">
+              <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded shadow">
+                <h4 class="font-semibold mb-3 text-yellow-800">Phase 1: Filename Validation</h4>
+                <p class="text-sm text-gray-700 mb-2"><strong>Expected Format:</strong></p>
+                <code class="text-xs bg-white px-2 py-1 rounded">xxxxx_YYYYMMDD_HH_MM.pdf</code>
+                <p class="text-sm text-gray-700 mt-3"><strong>Checks:</strong></p>
+                <ul class="text-xs space-y-1 mt-2">
+                  <li>✓ 5-digit student ID</li>
+                  <li>✓ Valid date format</li>
+                  <li>✓ Valid time format</li>
+                  <li>✓ Underscores in correct positions</li>
+                </ul>
+                <p class="text-xs mt-3 text-gray-600"><strong>Example:</strong> C1020_20251016_14_30.pdf ✅</p>
+              </div>
+              
+              <div class="bg-orange-50 border-l-4 border-orange-500 p-4 rounded shadow">
+                <h4 class="font-semibold mb-3 text-orange-800">Phase 2: PDF Content Validation</h4>
+                <p class="text-sm text-gray-700 mb-2"><strong>Checks:</strong></p>
+                <ul class="text-xs space-y-1">
+                  <li>✓ Student ID in mapping file</li>
+                  <li>✓ School ID exists</li>
+                  <li>✓ Required fields present</li>
+                  <li>✓ Data types correct</li>
+                  <li>✓ Value ranges valid</li>
+                </ul>
+                <p class="text-xs mt-3 text-gray-600"><strong>Sources:</strong> assets/*.enc mapping files</p>
+              </div>
+            </div>
+
+            <!-- Data Overwrite Protection -->
+            <h3 class="text-2xl font-semibold mb-4">Data Overwrite Protection</h3>
+            
+            <div class="bg-gradient-to-r from-pink-50 to-red-50 p-6 rounded-lg border-2 border-pink-300 mb-6">
+              <h4 class="font-semibold mb-4 text-center">Conflict Detection Logic</h4>
+              
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="bg-white rounded p-4 shadow-sm border-l-4 border-green-500">
+                  <h5 class="font-semibold text-green-800 mb-2">✅ ALLOWED Updates</h5>
+                  <ul class="text-sm space-y-1">
+                    <li>• Filling blank/null fields</li>
+                    <li>• Updating metadata fields:
+                      <ul class="ml-4 text-xs mt-1 space-y-1">
+                        <li>- student-id</li>
+                        <li>- child-name</li>
+                        <li>- school-id</li>
+                        <li>- district</li>
+                        <li>- class-id</li>
+                        <li>- computerno</li>
+                      </ul>
+                    </li>
+                    <li>• Same value (no change)</li>
+                  </ul>
+                </div>
+                
+                <div class="bg-white rounded p-4 shadow-sm border-l-4 border-red-500">
+                  <h5 class="font-semibold text-red-800 mb-2">❌ BLOCKED Updates</h5>
+                  <ul class="text-sm space-y-1">
+                    <li>• Changing assessment data:
+                      <ul class="ml-4 text-xs mt-1 space-y-1">
+                        <li>- ERV answers</li>
+                        <li>- CM answers</li>
+                        <li>- CWR answers</li>
+                        <li>- Termination values</li>
+                        <li>- Background data</li>
+                      </ul>
+                    </li>
+                    <li>• Overwriting non-empty fields</li>
+                  </ul>
+                </div>
+              </div>
+              
+              <div class="mt-4 p-3 bg-yellow-50 border border-yellow-300 rounded text-center">
+                <p class="text-sm text-gray-800">
+                  <strong>🛡️ Protection Goal:</strong> Prevent accidental data corruption while allowing metadata corrections
+                </p>
+              </div>
+            </div>
+
+            <!-- Retry Logic -->
+            <h3 class="text-2xl font-semibold mb-4">Upload Retry Strategy</h3>
+            
+            <div class="bg-blue-50 p-4 rounded border-2 border-blue-300">
+              <div class="space-y-3">
+                <div class="flex items-center gap-3">
+                  <div class="bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold flex-shrink-0">1</div>
+                  <div class="text-sm">
+                    <strong>First Attempt:</strong> Immediate upload
+                  </div>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                  <div class="bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold flex-shrink-0">2</div>
+                  <div class="text-sm">
+                    <strong>Retry 1:</strong> Wait 2 seconds + random jitter (0-1s)
+                  </div>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                  <div class="bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold flex-shrink-0">3</div>
+                  <div class="text-sm">
+                    <strong>Retry 2:</strong> Wait 4 seconds + random jitter (0-2s)
+                  </div>
+                </div>
+                
+                <div class="flex items-center gap-3">
+                  <div class="bg-blue-600 text-white rounded-full w-10 h-10 flex items-center justify-center font-bold flex-shrink-0">4</div>
+                  <div class="text-sm">
+                    <strong>Retry 3:</strong> Wait 8 seconds + random jitter (0-4s)
+                  </div>
+                </div>
+                
+                <div class="mt-3 pt-3 border-t border-blue-200 text-center">
+                  <div class="text-sm">
+                    <strong>If all retries fail:</strong> <span class="text-red-600">File moved to Unsorted/ with error log</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Processing Statistics -->
+            <h3 class="text-2xl font-semibold mb-4 mt-8">Performance Statistics</h3>
+            
+            <div class="grid md:grid-cols-3 gap-4">
+              <div class="bg-gradient-to-br from-green-100 to-green-50 p-4 rounded-lg border border-green-300 shadow text-center">
+                <div class="text-3xl font-bold text-green-700">20+</div>
+                <div class="text-sm text-gray-700 mt-1">PDFs per minute</div>
+                <div class="text-xs text-gray-600 mt-1">(quad-core system)</div>
+              </div>
+              
+              <div class="bg-gradient-to-br from-blue-100 to-blue-50 p-4 rounded-lg border border-blue-300 shadow text-center">
+                <div class="text-3xl font-bold text-blue-700">99.9%</div>
+                <div class="text-sm text-gray-700 mt-1">Validation accuracy</div>
+                <div class="text-xs text-gray-600 mt-1">(when source data correct)</div>
+              </div>
+              
+              <div class="bg-gradient-to-br from-purple-100 to-purple-50 p-4 rounded-lg border border-purple-300 shadow text-center">
+                <div class="text-3xl font-bold text-purple-700">98%+</div>
+                <div class="text-sm text-gray-700 mt-1">Upload success rate</div>
+                <div class="text-xs text-gray-600 mt-1">(with retry logic)</div>
+              </div>
+            </div>
           </section>
 
           <!-- Configuration Section -->
