@@ -1109,81 +1109,118 @@ flowchart LR
               Use filters to quickly find specific students, schools, or data matching certain criteria.
             </p>
 
-            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 6.1: Filter by Student</h3>
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 6.1: Access the Filter Interface</h3>
             <ol class="list-decimal ml-6 space-y-2 text-gray-700">
-              <li>Go to any view in the Checking System</li>
-              <li>Find the <strong>Filter by Student</strong> dropdown</li>
-              <li>Start typing the student's Core ID or name</li>
-              <li>Select the student from the filtered list</li>
-              <li>Click <strong>Apply Filter</strong> to show only that student's data</li>
+              <li>Go to the Checking System home page</li>
+              <li>You'll see the <strong>Configure Filters</strong> card</li>
+              <li>Click <strong>Add filter</strong> button to create a new filter row</li>
+              <li>Select a filter type from the dropdown (District, Group, School, Class, or Student)</li>
+              <li>Choose the specific value from the second dropdown that appears</li>
             </ol>
 
-            <!-- Embedded Screenshot: Filter Dropdown -->
+            <!-- Embedded Screenshot: Filter Interface from Checking System -->
             <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
               <div class="bg-white p-6">
-                <div class="mb-4">
-                  <label class="block text-sm font-semibold text-gray-700 mb-2">Filter by Student</label>
-                  <div class="relative">
-                    <input 
-                      type="text" 
-                      placeholder="Search by Core ID or name..." 
-                      value="13268"
-                      class="w-full px-4 py-2 border-2 border-blue-500 rounded-lg focus:outline-none text-gray-800"
-                    />
-                    <!-- Dropdown results -->
-                    <div class="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto z-10">
-                      <div class="p-2 space-y-1">
-                        <div class="px-3 py-2 bg-blue-50 border border-blue-200 rounded cursor-pointer hover:bg-blue-100">
-                          <div class="font-semibold text-gray-800">C13268</div>
-                          <div class="text-sm text-gray-600">張三 • S023 • K2A</div>
-                        </div>
-                        <div class="px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
-                          <div class="font-semibold text-gray-800">C13269</div>
-                          <div class="text-sm text-gray-600">李四 • S023 • K2A</div>
-                        </div>
-                        <div class="px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
-                          <div class="font-semibold text-gray-800">C13270</div>
-                          <div class="text-sm text-gray-600">王五 • S023 • K2B</div>
-                        </div>
-                        <div class="px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
-                          <div class="font-semibold text-gray-800">C13271</div>
-                          <div class="text-sm text-gray-600">陳六 • S024 • K2A</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                <div class="mb-6">
+                  <h2 class="text-xl font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4A90E2" stroke-width="2">
+                      <line x1="4" y1="21" x2="4" y2="14"></line>
+                      <line x1="4" y1="10" x2="4" y2="3"></line>
+                      <line x1="12" y1="21" x2="12" y2="12"></line>
+                      <line x1="12" y1="8" x2="12" y2="3"></line>
+                      <line x1="20" y1="21" x2="20" y2="16"></line>
+                      <line x1="20" y1="12" x2="20" y2="3"></line>
+                      <line x1="1" y1="14" x2="7" y2="14"></line>
+                      <line x1="9" y1="8" x2="15" y2="8"></line>
+                      <line x1="17" y1="16" x2="23" y2="16"></line>
+                    </svg>
+                    Configure Filters
+                  </h2>
                 </div>
                 
-                <button class="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700">
-                  Apply Filter
-                </button>
+                <!-- Filter row example -->
+                <div class="space-y-3 mb-4">
+                  <div class="flex items-center gap-3">
+                    <select class="w-48 border border-gray-300 rounded-lg shadow-sm text-sm px-3 py-2 bg-white">
+                      <option value="">Select type...</option>
+                      <option value="District">District</option>
+                      <option value="Group">Group</option>
+                      <option value="School" selected>School</option>
+                      <option value="Class">Class</option>
+                      <option value="Student">Student</option>
+                    </select>
+                    <select class="flex-grow border border-gray-300 rounded-lg shadow-sm text-sm px-3 py-2 bg-white">
+                      <option value="">Select school...</option>
+                      <option value="S023" selected>S023 - 香港道教聯合會圓玄學院石圍角小學</option>
+                      <option value="S024">S024 - 沙田循道衛理小學</option>
+                      <option value="S025">S025 - 培基小學</option>
+                    </select>
+                    <button class="p-2 text-gray-500 hover:text-red-600">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Info box -->
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-3 mb-4 text-sm text-gray-700">
+                  <div class="flex items-start gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" class="flex-shrink-0 mt-0.5">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="16" x2="12" y2="12"></line>
+                      <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    <p><strong>Filter Rules:</strong> District and Group are independent (can use both). Once you select School → Class → Student, higher levels become unavailable to prevent conflicts.</p>
+                  </div>
+                </div>
+
+                <!-- Add filter button -->
+                <div class="pt-2 mb-6">
+                  <button class="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="8" x2="12" y2="16"></line>
+                      <line x1="8" y1="12" x2="16" y2="12"></line>
+                    </svg>
+                    Add filter
+                  </button>
+                </div>
+
+                <!-- Action buttons -->
+                <div class="pt-6 border-t border-gray-200 flex items-center justify-end gap-3">
+                  <button class="bg-gray-200 text-gray-700 px-6 py-2 rounded-full text-sm font-semibold hover:bg-gray-300">
+                    Clear All
+                  </button>
+                  <button class="bg-blue-600 text-white px-8 py-2.5 rounded-full text-sm font-semibold hover:bg-blue-700">
+                    Start Checking
+                  </button>
+                </div>
               </div>
             </div>
 
-            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 6.2: Filter by School</h3>
-            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
-              <li>Use the <strong>Filter by School</strong> dropdown</li>
-              <li>Select a school from the list</li>
-              <li>The view updates to show only students from that school</li>
-              <li>Use additional filters to narrow down further (e.g., by class or grade)</li>
-            </ol>
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 6.2: Understanding Filter Types</h3>
+            <p class="text-gray-700 mb-2">The system supports 5 filter types:</p>
+            <ul class="list-disc ml-6 space-y-1 text-gray-700 mb-4">
+              <li><strong>District</strong> - Filter by geographic region (e.g., Shatin, Sham Shui Po)</li>
+              <li><strong>Group</strong> - Filter by project group (1, 2, 3, 4, or 5)</li>
+              <li><strong>School</strong> - Filter by specific school</li>
+              <li><strong>Class</strong> - Filter by class within a school</li>
+              <li><strong>Student</strong> - Filter by individual student Core ID</li>
+            </ul>
 
-            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 6.3: Filter by Completion Status</h3>
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 6.3: Combining Multiple Filters</h3>
             <ol class="list-decimal ml-6 space-y-2 text-gray-700">
-              <li>Look for the <strong>Show</strong> or <strong>Status</strong> filter</li>
-              <li>Select from options like:
-                <ul class="list-disc ml-6 mt-1">
-                  <li>All students</li>
-                  <li>Missing data only</li>
-                  <li>Complete only</li>
-                  <li>Incomplete only</li>
-                </ul>
-              </li>
-              <li>The table updates to show only matching records</li>
+              <li>You can add multiple filters by clicking <strong>Add filter</strong> again</li>
+              <li>District and Group filters can be used together (they show intersection)</li>
+              <li>Once you select School/Class/Student, higher-level filters become unavailable</li>
+              <li>Filters work hierarchically: District → Group → School → Class → Student</li>
             </ol>
 
             <div class="info-box">
-              <p class="text-sm"><strong>💡 Combining Filters:</strong> You can combine multiple filters (e.g., School + Grade + Missing data) to pinpoint exactly what you need to review.</p>
+              <p class="text-sm"><strong>💡 Example:</strong> To check all students in K2A at School S023, add two filters: 1) School = S023, then 2) Class = K2A.</p>
             </div>
 
             <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 6.4: Export Filtered Data</h3>
@@ -1259,9 +1296,9 @@ flowchart LR
 
             <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 6.5: Clear Filters</h3>
             <ol class="list-decimal ml-6 space-y-2 text-gray-700">
-              <li>To reset and see all data, click <strong>Clear Filters</strong> or <strong>Reset</strong></li>
-              <li>All dropdowns return to their default state</li>
-              <li>The full dataset is displayed again</li>
+              <li>To reset and see all data, click <strong>Clear All</strong> button at the bottom of the filter card</li>
+              <li>All filter rows will be removed</li>
+              <li>Click <strong>Add filter</strong> again to start fresh</li>
             </ol>
           </section>
 
