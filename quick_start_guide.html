@@ -253,13 +253,18 @@
               </div>
             </div>
 
-            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 1.3: Configure Sync Folder</h3>
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 1.3: Configure Sync for KeySteps@JC Project</h3>
             <ol class="list-decimal ml-6 space-y-2 text-gray-700">
-              <li>During setup, select which folders to sync</li>
-              <li>Find and check <strong>4Set-Server</strong> folder</li>
+              <li>During setup, you'll see a list of SharePoint sites and Teams</li>
+              <li>Look for <strong>o365grp_KeySteps@JC</strong> in the list</li>
+              <li>Check the box next to <strong>General</strong> folder within this group/project</li>
               <li>Click <strong>Next</strong> to start syncing</li>
-              <li>Wait for the initial sync to complete (may take several minutes)</li>
+              <li>Wait for the initial sync to complete (may take several minutes depending on file size)</li>
             </ol>
+
+            <div class="info-box">
+              <p class="text-sm"><strong>💡 What is o365grp_KeySteps@JC?</strong> This is the Office 365 SharePoint group for the KeySteps@JC project. The "General" folder contains all shared project files including the 4Set-Server system.</p>
+            </div>
 
             <div class="success-box">
               <p class="text-sm"><strong>✅ Success!</strong> You should now see a <strong>green checkmark</strong> on the OneDrive icon in your system tray, indicating files are synced.</p>
@@ -268,10 +273,16 @@
             <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 1.4: Locate Your Sync Folder</h3>
             <ol class="list-decimal ml-6 space-y-2 text-gray-700">
               <li>Open <strong>File Explorer</strong> (Windows key + E)</li>
-              <li>Look for <strong>OneDrive - The Education University of Hong Kong</strong> in the left sidebar</li>
-              <li>Navigate to the <strong>4Set-Server</strong> folder</li>
-              <li>Bookmark this location for easy access</li>
+              <li>In the left sidebar, look for <strong>OneDrive - The Education University of Hong Kong</strong></li>
+              <li>Expand it and find <strong>o365grp_KeySteps@JC - General</strong></li>
+              <li>Navigate to: <strong>98 - IT Support \ 04 - Homemade Apps \ 4Set-Server</strong></li>
+              <li>Bookmark this location for easy access (right-click → Pin to Quick Access)</li>
             </ol>
+
+            <div class="warning-box">
+              <p class="text-sm"><strong>⚠️ Full Path:</strong> The 4Set-Server folder is located at:<br>
+              <code class="bg-gray-100 px-2 py-1 rounded text-xs font-mono">OneDrive - The Education University of Hong Kong\o365grp_KeySteps@JC - General\98 - IT Support\04 - Homemade Apps\4Set-Server</code></p>
+            </div>
 
             <!-- Embedded Screenshot: File Explorer with OneDrive -->
             <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
@@ -283,14 +294,14 @@
                     <button class="text-gray-400">→</button>
                     <button class="text-gray-600">↑</button>
                   </div>
-                  <div class="flex-1 bg-white px-3 py-1 border border-gray-300 rounded text-sm text-gray-700">
-                    📁 OneDrive - The Education University of Hong Kong \ 4Set-Server
+                  <div class="flex-1 bg-white px-3 py-1 border border-gray-300 rounded text-xs text-gray-700 overflow-x-auto">
+                    📁 OneDrive - The Education University of Hong Kong \ o365grp_KeySteps@JC - General \ 98 - IT Support \ 04 - Homemade Apps \ 4Set-Server
                   </div>
                 </div>
                 <!-- Explorer content -->
                 <div class="flex">
                   <!-- Sidebar -->
-                  <div class="w-48 bg-gray-50 border-r border-gray-300 p-3 text-sm">
+                  <div class="w-64 bg-gray-50 border-r border-gray-300 p-3 text-sm">
                     <div class="mb-3">
                       <div class="font-semibold text-gray-700 mb-1">Quick access</div>
                       <div class="text-gray-600">Desktop</div>
@@ -304,8 +315,10 @@
                         </svg>
                         OneDrive - EdUHK
                       </div>
-                      <div class="text-gray-600 ml-4">General</div>
-                      <div class="bg-blue-100 text-blue-700 font-semibold ml-4 px-2 py-1 rounded">4Set-Server</div>
+                      <div class="text-gray-600 ml-4">o365grp_KeySteps@JC - General</div>
+                      <div class="text-gray-500 ml-8 text-xs">98 - IT Support</div>
+                      <div class="text-gray-500 ml-12 text-xs">04 - Homemade Apps</div>
+                      <div class="bg-blue-100 text-blue-700 font-semibold ml-16 px-2 py-1 rounded text-xs">4Set-Server</div>
                     </div>
                   </div>
                   <!-- Main area -->
@@ -1260,64 +1273,84 @@ flowchart LR
 
             <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 5.2: Build the Cache</h3>
             <ol class="list-decimal ml-6 space-y-2 text-gray-700">
-              <li>Open the Checking System</li>
-              <li>Look for the <strong>Build Cache</strong> or <strong>Refresh Data</strong> button</li>
-              <li>Click the button to start the cache building process</li>
-              <li>Wait for the progress indicator to complete (may take 30-60 seconds)</li>
-              <li>You'll see a success message when done</li>
+              <li>Open the Checking System home page</li>
+              <li>Look at the <strong>System Status Pills</strong> at the top (below the header)</li>
+              <li>You'll see two pills: "Decryption Status" and "JotForm Cache Status"</li>
+              <li>If the cache status pill shows <strong class="text-red-600">"System Not Ready"</strong> (red), click on it</li>
+              <li>If it shows <strong class="text-green-600">"System Ready"</strong> (green), you can still click it to refresh the cache</li>
+              <li>A sync/refresh process will start automatically, showing progress in the pill itself</li>
+              <li>The pill will show <strong class="text-orange-600">"Syncing"</strong> (orange) with a percentage and progress bar</li>
+              <li>Wait for it to complete - the pill will turn <strong class="text-green-600">green</strong> when ready</li>
             </ol>
 
             <div class="info-box">
-              <p class="text-sm"><strong>💡 What is Cache?</strong> The cache stores pre-processed data in your browser for faster loading. It's temporary and rebuilds automatically when needed, but manual refresh ensures you have the latest data.</p>
+              <p class="text-sm"><strong>💡 What is Cache?</strong> The cache stores pre-processed data in your browser's IndexedDB for faster loading. It includes both raw JotForm submissions and validated task data. Manual refresh ensures you have the latest data from the server.</p>
             </div>
 
-            <!-- Embedded Screenshot: Cache Building Progress -->
-            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
-              <div class="bg-white p-8">
-                <div class="max-w-md mx-auto text-center">
-                  <div class="mb-6">
-                    <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-                      <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#4A90E2" stroke-width="2">
-                        <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
-                      </svg>
-                    </div>
-                    <h3 class="text-xl font-bold text-gray-800 mb-2">Building Cache...</h3>
-                    <p class="text-gray-600 text-sm">Fetching and processing data from JotForm</p>
-                  </div>
-                  
-                  <div class="space-y-3 mb-6">
-                    <div class="text-left">
-                      <div class="flex justify-between text-sm mb-1">
-                        <span class="text-gray-600">Downloading submissions</span>
-                        <span class="text-gray-800 font-semibold">100%</span>
-                      </div>
-                      <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="bg-green-500 h-2 rounded-full transition-all" style="width: 100%"></div>
-                      </div>
+            <!-- Embedded Screenshot: System Status Pills -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg bg-white">
+              <div class="p-6">
+                <h3 class="text-sm font-semibold text-gray-700 mb-4">System Status Pills (at top of Checking System page)</h3>
+                
+                <!-- Pills container -->
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                  <div class="flex items-center gap-3 flex-wrap">
+                    <!-- Decryption Status Pill (green - ready) -->
+                    <div class="flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium bg-green-100 text-green-800 border border-green-300">
+                      <span class="inline-block h-2 w-2 rounded-full bg-green-600"></span>
+                      <span>System Ready</span>
                     </div>
                     
-                    <div class="text-left">
-                      <div class="flex justify-between text-sm mb-1">
-                        <span class="text-gray-600">Processing student data</span>
-                        <span class="text-gray-800 font-semibold">65%</span>
-                      </div>
-                      <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="bg-blue-500 h-2 rounded-full transition-all" style="width: 65%"></div>
-                      </div>
+                    <!-- JotForm Cache Status Pill - RED (Not Ready) -->
+                    <div class="flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium bg-red-100 text-red-800 border border-red-300 cursor-pointer hover:bg-red-200">
+                      <span class="inline-block h-2 w-2 rounded-full bg-red-600"></span>
+                      <span>System Not Ready</span>
                     </div>
                     
-                    <div class="text-left">
-                      <div class="flex justify-between text-sm mb-1">
-                        <span class="text-gray-600">Calculating statistics</span>
-                        <span class="text-gray-400 font-semibold">0%</span>
-                      </div>
-                      <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div class="bg-gray-300 h-2 rounded-full transition-all" style="width: 0%"></div>
-                      </div>
-                    </div>
+                    <span class="text-xs text-gray-500">Last Synced: <span class="font-mono">—</span></span>
                   </div>
-                  
-                  <p class="text-xs text-gray-500">This may take 30-60 seconds...</p>
+                  <p class="text-xs text-gray-500 mt-2">← Click the red pill to build cache</p>
+                </div>
+
+                <!-- Pills during syncing -->
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                  <div class="flex items-center gap-3 flex-wrap">
+                    <div class="flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium bg-green-100 text-green-800 border border-green-300">
+                      <span class="inline-block h-2 w-2 rounded-full bg-green-600"></span>
+                      <span>System Ready</span>
+                    </div>
+                    
+                    <!-- JotForm Cache Status Pill - ORANGE (Syncing with progress) -->
+                    <div class="relative flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium bg-orange-100 text-orange-800 border border-orange-300 overflow-hidden">
+                      <!-- Progress bar background (inside pill) -->
+                      <div class="absolute left-0 top-0 bottom-0 bg-orange-200" style="width: 65%; z-index: 0;"></div>
+                      <!-- Content above progress bar -->
+                      <span class="inline-block h-2 w-2 rounded-full bg-orange-600 relative z-10"></span>
+                      <span class="relative z-10">Syncing 65%</span>
+                    </div>
+                    
+                    <span class="text-xs text-gray-500">Last Synced: <span class="font-mono">2 mins ago</span></span>
+                  </div>
+                  <p class="text-xs text-gray-500 mt-2">← Pill shows progress during sync</p>
+                </div>
+
+                <!-- Pills when ready -->
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <div class="flex items-center gap-3 flex-wrap">
+                    <div class="flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium bg-green-100 text-green-800 border border-green-300">
+                      <span class="inline-block h-2 w-2 rounded-full bg-green-600"></span>
+                      <span>System Ready</span>
+                    </div>
+                    
+                    <!-- JotForm Cache Status Pill - GREEN (Ready) -->
+                    <div class="flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium bg-green-100 text-green-800 border border-green-300 cursor-pointer hover:bg-green-200">
+                      <span class="inline-block h-2 w-2 rounded-full bg-green-600"></span>
+                      <span>System Ready</span>
+                    </div>
+                    
+                    <span class="text-xs text-gray-500">Last Synced: <span class="font-mono">just now</span></span>
+                  </div>
+                  <p class="text-xs text-gray-500 mt-2">← Both pills green = system fully ready</p>
                 </div>
               </div>
             </div>
@@ -1430,15 +1463,65 @@ flowchart LR
               </div>
             </div>
 
-            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 6.2: Understanding Filter Types</h3>
-            <p class="text-gray-700 mb-2">The system supports 5 filter types:</p>
-            <ul class="list-disc ml-6 space-y-1 text-gray-700 mb-4">
-              <li><strong>District</strong> - Filter by geographic region (e.g., Shatin, Sham Shui Po)</li>
-              <li><strong>Group</strong> - Filter by project group (1, 2, 3, 4, or 5)</li>
-              <li><strong>School</strong> - Filter by specific school</li>
-              <li><strong>Class</strong> - Filter by class within a school</li>
-              <li><strong>Student</strong> - Filter by individual student Core ID</li>
-            </ul>
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 6.2: Understanding Filter Types & Hierarchy</h3>
+            <p class="text-gray-700 mb-2">The system supports 5 filter types organized in a hierarchy:</p>
+            
+            <div class="bg-gradient-to-r from-blue-50 to-purple-50 border-2 border-blue-200 rounded-lg p-4 mb-4">
+              <h4 class="font-semibold text-gray-800 mb-3">Filter Hierarchy (from broad to specific):</h4>
+              <div class="space-y-2 text-sm">
+                <div class="flex items-center gap-3">
+                  <span class="bg-blue-100 text-blue-800 px-3 py-1 rounded-full font-semibold text-xs">Level 1</span>
+                  <div>
+                    <strong>District</strong> <span class="text-gray-600">or</span> <strong>Group</strong>
+                    <p class="text-xs text-gray-600">Independent filters - can use both together</p>
+                  </div>
+                </div>
+                <div class="ml-8 text-gray-400">↓</div>
+                <div class="flex items-center gap-3">
+                  <span class="bg-purple-100 text-purple-800 px-3 py-1 rounded-full font-semibold text-xs">Level 2</span>
+                  <div>
+                    <strong>School</strong>
+                    <p class="text-xs text-gray-600">Selecting this makes District & Group unavailable</p>
+                  </div>
+                </div>
+                <div class="ml-8 text-gray-400">↓</div>
+                <div class="flex items-center gap-3">
+                  <span class="bg-pink-100 text-pink-800 px-3 py-1 rounded-full font-semibold text-xs">Level 3</span>
+                  <div>
+                    <strong>Class</strong>
+                    <p class="text-xs text-gray-600">Requires School filter first</p>
+                  </div>
+                </div>
+                <div class="ml-8 text-gray-400">↓</div>
+                <div class="flex items-center gap-3">
+                  <span class="bg-red-100 text-red-800 px-3 py-1 rounded-full font-semibold text-xs">Level 4</span>
+                  <div>
+                    <strong>Student</strong>
+                    <p class="text-xs text-gray-600">Most specific - requires Class filter first</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="warning-box">
+              <p class="text-sm"><strong>⚠️ Why Some Options Become Unselectable:</strong></p>
+              <ul class="list-disc ml-6 mt-2 space-y-1 text-sm">
+                <li><strong>Higher-level filters disabled:</strong> Once you select School, Class, or Student, higher-level filters (District, Group) become grayed out and unavailable. This prevents conflicting filters.</li>
+                <li><strong>Example:</strong> If you select "School = S023", you can't then add a District filter because the school already has a specific district.</li>
+                <li><strong>Lower-level filters enabled:</strong> Selecting a higher-level filter (e.g., School) enables the next level down (Class dropdown will populate with classes from that school).</li>
+                <li><strong>Exception:</strong> District and Group are at the same level and <em>can</em> be used together - they show the intersection (schools that match both).</li>
+              </ul>
+            </div>
+
+            <div class="info-box">
+              <p class="text-sm"><strong>💡 Hierarchy Rules in Practice:</strong></p>
+              <ul class="list-disc ml-6 mt-2 space-y-1 text-sm">
+                <li>✅ <strong>Allowed:</strong> District + Group (independent dimensions)</li>
+                <li>✅ <strong>Allowed:</strong> School → Class → Student (drilling down)</li>
+                <li>❌ <strong>Not Allowed:</strong> School + District (conflicting levels)</li>
+                <li>❌ <strong>Not Allowed:</strong> Student without Class first (need hierarchy)</li>
+              </ul>
+            </div>
 
             <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 6.3: Combining Multiple Filters</h3>
             <ol class="list-decimal ml-6 space-y-2 text-gray-700">
@@ -1512,6 +1595,63 @@ flowchart LR
               <p class="text-sm"><strong>✅ Export Format:</strong> The exported markdown (.md) files include status indicators (✅ Complete, ⚠️ Incomplete, ⚪ Not Started) and can be opened in any text editor, markdown viewer, or imported into documentation tools.</p>
             </div>
 
+            <!-- Embedded Screenshot: Export File Preview -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg bg-white">
+              <div class="p-4">
+                <h3 class="text-sm font-semibold text-gray-700 mb-4">Example: Student Export File Preview</h3>
+                
+                <!-- File preview mockup -->
+                <div class="bg-gray-900 rounded-lg p-4 font-mono text-sm overflow-x-auto">
+                  <div class="text-gray-300">
+                    <div class="text-green-400"># Validation Report: 張三 (Chloe Wong)</div>
+                    <div class="text-gray-500">Generated: 2025-10-25 14:30:15</div>
+                    <div class="mt-4 text-white">## Student Profile</div>
+                    <div class="text-gray-400">- <span class="text-blue-400">Student ID:</span> St10001 (C13268)</div>
+                    <div class="text-gray-400">- <span class="text-blue-400">School:</span> S023 - 香港道教聯合會圓玄學院石圍角小學</div>
+                    <div class="text-gray-400">- <span class="text-blue-400">Class:</span> K2A</div>
+                    <div class="text-gray-400">- <span class="text-blue-400">Grade:</span> K2</div>
+                    
+                    <div class="mt-4 text-white">## Set Status Summary</div>
+                    <div class="text-gray-400">| Set | Status | Tasks Complete |</div>
+                    <div class="text-gray-400">|-----|--------|----------------|</div>
+                    <div class="text-gray-400">| Set 1 | <span class="text-green-400">✅ Complete</span> | 2/2 |</div>
+                    <div class="text-gray-400">| Set 2 | <span class="text-green-400">✅ Complete</span> | 2/2 |</div>
+                    <div class="text-gray-400">| Set 3 | <span class="text-yellow-400">⚠️ Incomplete</span> | 1/2 |</div>
+                    <div class="text-gray-400">| Set 4 | <span class="text-gray-500">⚪ Not Started</span> | 0/1 |</div>
+                    
+                    <div class="mt-4 text-white">## Task Details</div>
+                    <div class="text-gray-400">### ERV - Expressive Vocabulary</div>
+                    <div class="text-gray-400">- <span class="text-blue-400">Status:</span> <span class="text-green-400">✅ Complete</span></div>
+                    <div class="text-gray-400">- <span class="text-blue-400">Questions:</span> 36/36 answered</div>
+                    <div class="text-gray-400">- <span class="text-blue-400">Termination:</span> No</div>
+                    
+                    <div class="mt-2 text-gray-400">### CM - Counting & Magnitude</div>
+                    <div class="text-gray-400">- <span class="text-blue-400">Status:</span> <span class="text-green-400">✅ Complete</span></div>
+                    <div class="text-gray-400">- <span class="text-blue-400">Questions:</span> 22/22 answered</div>
+                    
+                    <div class="mt-2 text-gray-400">### CWR - Chinese Word Reading</div>
+                    <div class="text-gray-400">- <span class="text-blue-400">Status:</span> <span class="text-yellow-400">⚠️ Incomplete</span></div>
+                    <div class="text-gray-400">- <span class="text-blue-400">Questions:</span> 45/60 answered</div>
+                    <div class="text-gray-400">- <span class="text-blue-400">Warning:</span> Missing data (questions 46-60)</div>
+                    
+                    <div class="mt-2 text-gray-400">...</div>
+                  </div>
+                </div>
+                
+                <div class="mt-4 p-3 bg-green-50 border border-green-200 rounded">
+                  <p class="text-sm text-gray-700">
+                    <strong>✅ File Format:</strong> The markdown file can be opened in:
+                  </p>
+                  <ul class="list-disc ml-6 mt-1 text-xs text-gray-600 space-y-1">
+                    <li>Any text editor (Notepad, Notepad++, VS Code)</li>
+                    <li>Markdown viewers (Typora, Mark Text, online viewers)</li>
+                    <li>Documentation tools (Notion, Confluence, GitHub)</li>
+                    <li>Or converted to PDF/HTML for sharing</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
             <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 6.5: Clear Filters</h3>
             <ol class="list-decimal ml-6 space-y-2 text-gray-700">
               <li>To reset and see all data, click <strong>Clear All</strong> button at the bottom of the filter card</li>
@@ -1578,6 +1718,10 @@ flowchart LR
           <div class="mt-12 pt-6 border-t border-gray-200 text-center text-sm text-gray-600">
             <p><strong>4Set System</strong> - KeySteps@JC Assessment Data Processing</p>
             <p class="mt-1">The Education University of Hong Kong | Version 2025/26</p>
+            <p class="mt-2 text-xs text-gray-500">
+              System developed and maintained by Herman Chan | 
+              <a href="https://github.com/herman925/4Set-Server" target="_blank" class="text-blue-600 hover:underline">View on GitHub</a>
+            </p>
             <p class="mt-3">
               <a href="index.html" class="text-primary hover:underline">← Back to Home</a>
             </p>
