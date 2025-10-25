@@ -167,22 +167,25 @@
               The Checking System recognizes that <strong>termination values are RECORDS, not calculations</strong>:
             </p>
 
-            <div class="mermaid">
-graph LR
-    A[Test Administrator] -->|Records| B[Termination Decision]
-    C[System] -->|Calculates| D[Expected Termination]
-    B -->|Compare| E[Validation]
-    D -->|Compare| E
-    E -->|✅ Match| F[Verified]
-    E -->|⚠️ Mismatch| G[Needs Review]
-    
-    style A fill:#4A90E2,stroke:#2E5C8A,color:#fff
-    style C fill:#4A90E2,stroke:#2E5C8A,color:#fff
-    style B fill:#E8F5E9,stroke:#4CAF50
-    style D fill:#E8F5E9,stroke:#4CAF50
-    style E fill:#FFF3E0,stroke:#FF9800
-    style F fill:#E0F7E0,stroke:#2E7D32,color:#2E7D32
-    style G fill:#FFE0E0,stroke:#C62828,color:#C62828
+            <div class="diagram-box bg-blue-50 border-blue-300">
+              <div class="text-center text-gray-800">
+                <div class="mb-4">
+                  <div class="font-semibold mb-2">Test Administrator → Records → <span class="status-badge status-info">Termination Decision</span></div>
+                  <div class="font-semibold mb-2">System → Calculates → <span class="status-badge status-info">Expected Termination</span></div>
+                </div>
+                <div class="text-3xl mb-2">⬇️</div>
+                <div class="font-semibold mb-4">Compare for Validation</div>
+                <div class="flex justify-center gap-8">
+                  <div>
+                    <span class="status-badge status-complete">✅ Match</span>
+                    <div class="text-sm mt-2">Verified</div>
+                  </div>
+                  <div>
+                    <span class="status-badge status-warning">⚠️ Mismatch</span>
+                    <div class="text-sm mt-2">Needs Review</div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <p class="text-gray-700 mt-6">This dual approach provides:</p>
@@ -621,6 +624,73 @@ graph LR
 
             <div class="collapsible-section">
               <div class="collapsible-header">
+                <h3 class="text-xl font-semibold">Group View</h3>
+                <span class="text-2xl">▼</span>
+              </div>
+              <div class="collapsible-content">
+                <p class="mb-4"><strong>Purpose:</strong> Overview by project group assignment</p>
+                
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Group</th>
+                      <th>Schools</th>
+                      <th>Students</th>
+                      <th>Complete</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Group 1</td>
+                      <td>18</td>
+                      <td>240</td>
+                      <td><span class="status-badge status-complete">88%</span></td>
+                    </tr>
+                    <tr>
+                      <td>Group 2</td>
+                      <td>22</td>
+                      <td>295</td>
+                      <td><span class="status-badge status-complete">91%</span></td>
+                    </tr>
+                    <tr>
+                      <td>Group 3</td>
+                      <td>15</td>
+                      <td>198</td>
+                      <td><span class="status-badge status-warning">75%</span></td>
+                    </tr>
+                    <tr>
+                      <td>Group 4</td>
+                      <td>20</td>
+                      <td>267</td>
+                      <td><span class="status-badge status-complete">82%</span></td>
+                    </tr>
+                    <tr>
+                      <td>Group 5</td>
+                      <td>10</td>
+                      <td>125</td>
+                      <td><span class="status-badge status-complete">86%</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <p class="mt-4"><strong>Key Metrics:</strong></p>
+                <ul class="list-disc ml-6 space-y-1 text-gray-700">
+                  <li><strong>Schools:</strong> Number of schools in the project group</li>
+                  <li><strong>Students:</strong> Total students across all schools in the group</li>
+                  <li><strong>Complete:</strong> Percentage with all tasks done</li>
+                </ul>
+
+                <p class="mt-4"><strong>Actions:</strong></p>
+                <ul class="list-disc ml-6 space-y-1 text-gray-700">
+                  <li>Click group name to view all schools in that group</li>
+                  <li>Sort by clicking column headers</li>
+                  <li>Compare progress across different project groups</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="collapsible-section">
+              <div class="collapsible-header">
                 <h3 class="text-xl font-semibold">School View</h3>
                 <span class="text-2xl">▼</span>
               </div>
@@ -662,6 +732,88 @@ graph LR
                     </ul>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            <div class="collapsible-section">
+              <div class="collapsible-header">
+                <h3 class="text-xl font-semibold">Class View</h3>
+                <span class="text-2xl">▼</span>
+              </div>
+              <div class="collapsible-content">
+                <p class="mb-4"><strong>Purpose:</strong> All students within a specific classroom</p>
+
+                <div class="bg-gray-50 border rounded p-4 mb-4">
+                  <div class="text-lg font-semibold mb-2">Class: C-023-03</div>
+                  <div class="text-sm text-gray-600 mb-1">School: S023 - ABC Primary School</div>
+                  <div class="text-sm text-gray-600 mb-3">Grade: K1</div>
+                  <div class="grid grid-cols-2 gap-4 mt-4">
+                    <div>
+                      <div class="text-xs text-gray-500">Total Students</div>
+                      <div class="text-2xl font-bold">25</div>
+                    </div>
+                    <div>
+                      <div class="text-xs text-gray-500">Completed</div>
+                      <div class="text-2xl font-bold text-green-600">21 (84%)</div>
+                    </div>
+                  </div>
+                </div>
+
+                <p class="mt-4"><strong>What You See:</strong></p>
+                <table class="mt-3">
+                  <thead>
+                    <tr>
+                      <th>Core ID</th>
+                      <th>Name</th>
+                      <th>Tasks</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>C10207</td>
+                      <td>陳小明</td>
+                      <td>14/14</td>
+                      <td><span class="status-badge status-complete">✅ Complete</span></td>
+                    </tr>
+                    <tr>
+                      <td>C10208</td>
+                      <td>李小華</td>
+                      <td>12/14</td>
+                      <td><span class="status-badge status-warning">⚠️ In Progress</span></td>
+                    </tr>
+                    <tr>
+                      <td>C10209</td>
+                      <td>王小美</td>
+                      <td>3/14</td>
+                      <td><span class="status-badge status-error">🔴 Incomplete</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <p class="mt-4"><strong>Key Information:</strong></p>
+                <ul class="list-disc ml-6 space-y-1 text-gray-700">
+                  <li><strong>Student identification:</strong> Core ID and Name</li>
+                  <li><strong>Task completion count:</strong> Number of tasks completed out of total</li>
+                  <li><strong>Overall status indicator:</strong> Visual status for quick assessment</li>
+                  <li><strong>Sortable columns:</strong> Click headers to sort by any column</li>
+                </ul>
+
+                <p class="mt-4"><strong>Status Indicators:</strong></p>
+                <ul class="list-disc ml-6 space-y-1 text-gray-700">
+                  <li>✅ <strong>Green:</strong> All tasks complete, no issues</li>
+                  <li>⚠️ <strong>Yellow:</strong> Some tasks complete, needs review</li>
+                  <li>🔴 <strong>Red:</strong> Incomplete, missing data</li>
+                  <li>⭕ <strong>Grey:</strong> Not started</li>
+                </ul>
+
+                <p class="mt-4"><strong>Actions:</strong></p>
+                <ul class="list-disc ml-6 space-y-1 text-gray-700">
+                  <li>Click student to see detailed assessment view</li>
+                  <li>Sort by any column to organize data</li>
+                  <li>Filter by status to focus on specific needs</li>
+                  <li>Export class report for sharing</li>
+                </ul>
               </div>
             </div>
 
