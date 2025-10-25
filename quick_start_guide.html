@@ -633,59 +633,92 @@ flowchart LR
               <li>You'll see the Checking System home page with multiple view options</li>
             </ol>
 
-            <!-- Embedded Screenshot: Checking System Home -->
-            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
-              <div class="bg-gradient-to-br from-blue-50 to-white p-8">
-                <div class="max-w-4xl mx-auto">
-                  <div class="mb-6">
-                    <h1 class="text-4xl font-bold text-gray-800 mb-2 flex items-center gap-3">
-                      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#4A90E2" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <path d="m21 21-4.35-4.35"></path>
-                        <path d="M9 11l2 2 4-4"></path>
-                      </svg>
-                      Checking System
-                    </h1>
-                    <p class="text-gray-600 text-lg">Search and analyse submitted data from every angle</p>
+            <!-- Embedded Screenshot: Checking System Home - Built from actual checking_system_home.html -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg bg-white">
+              <div class="p-6">
+                <!-- Header matching actual system -->
+                <div class="mb-6">
+                  <h1 class="text-2xl font-bold text-gray-800 mb-2 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4A90E2" stroke-width="2">
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <path d="m21 21-4.35-4.35"></path>
+                      <path d="M9 11l2 2 4-4"></path>
+                    </svg>
+                    Checking System
+                  </h1>
+                  <p class="text-gray-600 text-base">Search and analyse submitted data from every angle</p>
+                </div>
+
+                <!-- System Status Pills (from actual system) -->
+                <div class="bg-gray-50 rounded-lg p-3 mb-4 border border-gray-200">
+                  <div class="flex items-center gap-3 flex-wrap text-sm">
+                    <div class="flex items-center gap-2 bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">
+                      <span class="w-2 h-2 bg-green-500 rounded-full inline-block"></span>
+                      <span>System Ready</span>
+                    </div>
+                    <span class="text-xs text-gray-500">Last Synced: <span class="font-mono">2 mins ago</span></span>
                   </div>
+                </div>
+
+                <!-- Filter Chips Display -->
+                <div class="bg-gray-50 rounded-lg p-3 mb-4 border border-gray-200">
+                  <div class="flex items-center justify-between">
+                    <div class="text-xs text-gray-500">No filters applied</div>
+                    <span class="text-xs text-gray-500 font-medium">0 filters applied</span>
+                  </div>
+                </div>
+
+                <!-- Configure Filters Card (from actual system) -->
+                <div class="bg-white border-2 border-gray-200 rounded-lg p-5 mb-4">
+                  <h2 class="text-base font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4A90E2" stroke-width="2">
+                      <line x1="4" y1="21" x2="4" y2="14"></line>
+                      <line x1="4" y1="10" x2="4" y2="3"></line>
+                      <line x1="12" y1="21" x2="12" y2="12"></line>
+                      <line x1="12" y1="8" x2="12" y2="3"></line>
+                      <line x1="20" y1="21" x2="20" y2="16"></line>
+                      <line x1="20" y1="12" x2="20" y2="3"></line>
+                      <line x1="1" y1="14" x2="7" y2="14"></line>
+                      <line x1="9" y1="8" x2="15" y2="8"></line>
+                      <line x1="17" y1="16" x2="23" y2="16"></line>
+                    </svg>
+                    Configure Filters
+                  </h2>
+                  <p class="text-xs text-gray-600 mb-3">Select filter type and value to narrow down the data. Click "Add filter" to add more filters.</p>
                   
-                  <!-- Status badges -->
-                  <div class="bg-white rounded-lg p-4 mb-6 flex items-center gap-3">
-                    <div class="flex items-center gap-2 bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
-                      <span class="w-2 h-2 bg-green-500 rounded-full"></span>
-                      System Ready
-                    </div>
-                    <span class="text-sm text-gray-500">Last Synced: 2 mins ago</span>
+                  <div class="bg-blue-50 border-l-4 border-blue-500 p-3 mb-3 text-xs text-gray-700">
+                    <strong>Filter Rules:</strong> District and Group are independent (can use both). Once you select School → Class → Student, higher levels become unavailable to prevent conflicts.
                   </div>
-                  
-                  <!-- Navigation cards -->
-                  <div class="grid md:grid-cols-2 gap-4">
-                    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition cursor-pointer border-2 border-transparent hover:border-blue-300">
-                      <div class="text-3xl mb-3">🏫</div>
-                      <h3 class="text-xl font-bold text-gray-800 mb-2">District View</h3>
-                      <p class="text-gray-600 text-sm">View by geographic region</p>
-                    </div>
-                    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition cursor-pointer border-2 border-transparent hover:border-blue-300">
-                      <div class="text-3xl mb-3">👥</div>
-                      <h3 class="text-xl font-bold text-gray-800 mb-2">Group View</h3>
-                      <p class="text-gray-600 text-sm">View by project group</p>
-                    </div>
-                    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition cursor-pointer border-2 border-transparent hover:border-blue-300">
-                      <div class="text-3xl mb-3">🏛️</div>
-                      <h3 class="text-xl font-bold text-gray-800 mb-2">School View</h3>
-                      <p class="text-gray-600 text-sm">View individual school data</p>
-                    </div>
-                    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition cursor-pointer border-2 border-transparent hover:border-blue-300">
-                      <div class="text-3xl mb-3">📚</div>
-                      <h3 class="text-xl font-bold text-gray-800 mb-2">Class View</h3>
-                      <p class="text-gray-600 text-sm">View class-level details</p>
-                    </div>
-                    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition cursor-pointer border-2 border-transparent hover:border-blue-300 md:col-span-2">
-                      <div class="text-3xl mb-3">👤</div>
-                      <h3 class="text-xl font-bold text-gray-800 mb-2">Student View</h3>
-                      <p class="text-gray-600 text-sm">View individual student assessments</p>
-                    </div>
+
+                  <button class="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="8" x2="12" y2="16"></line>
+                      <line x1="8" y1="12" x2="16" y2="12"></line>
+                    </svg>
+                    Add filter
+                  </button>
+
+                  <div class="pt-4 border-t border-gray-200 flex items-center justify-end gap-3">
+                    <button class="bg-gray-200 text-gray-700 px-5 py-2 rounded-full text-sm font-semibold hover:bg-gray-300">
+                      Clear All
+                    </button>
+                    <button class="bg-blue-600 text-white px-6 py-2 rounded-full text-sm font-semibold hover:bg-blue-700" disabled>
+                      Start Checking
+                    </button>
                   </div>
+                </div>
+
+                <!-- Recent Checks -->
+                <div class="bg-white border-2 border-gray-200 rounded-lg p-5">
+                  <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    Recent Checks
+                  </h3>
+                  <p class="text-xs text-gray-500">No recent checks</p>
                 </div>
               </div>
             </div>
@@ -700,54 +733,130 @@ flowchart LR
               <li>Verify termination flags match calculations</li>
             </ol>
 
-            <!-- Embedded Screenshot: Student Detail View -->
-            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
-              <div class="bg-white p-6">
-                <div class="mb-4 pb-4 border-b">
-                  <h2 class="text-2xl font-bold text-gray-800 mb-1">Student: C13268</h2>
-                  <p class="text-gray-600">張三 • School S023 • Class K2A</p>
-                </div>
-                
-                <!-- Task completion grid -->
-                <div class="space-y-3">
-                  <div class="text-sm font-semibold text-gray-700 mb-2">Assessment Tasks</div>
-                  
-                  <div class="grid grid-cols-[auto_1fr_auto] gap-4 items-center p-3 bg-green-50 border border-green-200 rounded">
-                    <div class="text-2xl">✅</div>
-                    <div>
-                      <div class="font-semibold text-gray-800">ERV - Expressive Vocabulary</div>
-                      <div class="text-xs text-gray-600">36/36 questions answered</div>
+            <!-- Embedded Screenshot: Student Detail View - Built from actual checking_system_4_student.html -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg bg-white">
+              <div class="p-4">
+                <!-- Header Navigation Bar (from actual system) -->
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2 text-xs font-mono text-gray-600">
+                      <span class="px-2 py-1 rounded bg-gray-200 text-gray-700">Shatin</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                      <span class="px-2 py-1 rounded bg-gray-200 text-gray-700">Group 3</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                      <span class="px-2 py-1 rounded bg-gray-200 text-gray-700">S023</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                      <span class="px-2 py-1 rounded bg-gray-200 text-gray-700">K2A</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                      <span class="px-2 py-1 rounded bg-blue-100 text-blue-700 font-semibold">C13268</span>
                     </div>
-                    <div class="text-green-700 font-semibold text-sm">Complete</div>
-                  </div>
-                  
-                  <div class="grid grid-cols-[auto_1fr_auto] gap-4 items-center p-3 bg-green-50 border border-green-200 rounded">
-                    <div class="text-2xl">✅</div>
-                    <div>
-                      <div class="font-semibold text-gray-800">CM - Counting & Magnitude</div>
-                      <div class="text-xs text-gray-600">22/22 questions answered</div>
-                    </div>
-                    <div class="text-green-700 font-semibold text-sm">Complete</div>
-                  </div>
-                  
-                  <div class="grid grid-cols-[auto_1fr_auto] gap-4 items-center p-3 bg-yellow-50 border border-yellow-300 rounded">
-                    <div class="text-2xl">⚠️</div>
-                    <div>
-                      <div class="font-semibold text-gray-800">CWR - Chinese Word Reading</div>
-                      <div class="text-xs text-gray-600">45/60 questions answered</div>
-                    </div>
-                    <div class="text-orange-600 font-semibold text-sm">Incomplete</div>
-                  </div>
-                  
-                  <div class="grid grid-cols-[auto_1fr_auto] gap-4 items-center p-3 bg-gray-50 border border-gray-200 rounded">
-                    <div class="text-2xl">⚪</div>
-                    <div>
-                      <div class="font-semibold text-gray-800">TGMD - Gross Motor Development</div>
-                      <div class="text-xs text-gray-600">Not started</div>
-                    </div>
-                    <div class="text-gray-500 font-semibold text-sm">Not Started</div>
+                    <button class="bg-gray-200 text-gray-700 px-3 py-1 rounded text-xs font-semibold hover:bg-gray-300">
+                      Export
+                    </button>
                   </div>
                 </div>
+
+                <!-- Student Profile Panel (entry-card from actual system) -->
+                <div class="bg-white border-l-4 border-blue-600 rounded-lg p-4 mb-4 shadow-sm">
+                  <div class="mb-3">
+                    <h2 class="text-sm font-semibold text-gray-800">Profile of 張三 (Chloe Wong)</h2>
+                    <p class="text-xs text-gray-500 mt-1">Student identifiers and metadata</p>
+                  </div>
+                  <div class="grid grid-cols-3 gap-2 text-xs">
+                    <div class="border border-gray-200 rounded p-2 bg-gradient-to-br from-white to-gray-50">
+                      <p class="text-xs uppercase text-gray-500 mb-1">Student ID</p>
+                      <p class="text-sm font-semibold text-gray-800 font-mono">St10001 <span class="text-gray-500">(C13268)</span></p>
+                    </div>
+                    <div class="border border-gray-200 rounded p-2 bg-gradient-to-br from-white to-gray-50">
+                      <p class="text-xs uppercase text-gray-500 mb-1">School</p>
+                      <p class="text-sm font-semibold text-gray-800">S023 - 石圍角小學</p>
+                    </div>
+                    <div class="border border-gray-200 rounded p-2 bg-gradient-to-br from-white to-gray-50">
+                      <p class="text-xs uppercase text-gray-500 mb-1">Class</p>
+                      <p class="text-sm font-semibold text-gray-800">K2A</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Student-level Task Status Overview (from actual system) -->
+                <div class="bg-white border-l-4 border-green-600 rounded-lg p-4 mb-4 shadow-sm">
+                  <h2 class="text-sm font-semibold text-gray-800 mb-3">Student-level Task Status Overview</h2>
+                  <div class="grid grid-cols-4 gap-3">
+                    <div class="bg-gradient-to-br from-white to-green-50 rounded border border-green-200 px-3 py-2">
+                      <div class="flex items-center gap-1 mb-1">
+                        <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                        <h3 class="text-xs text-gray-600">Complete</h3>
+                      </div>
+                      <p class="text-xl font-bold text-green-700">5</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-white to-yellow-50 rounded border border-yellow-200 px-3 py-2">
+                      <div class="flex items-center gap-1 mb-1">
+                        <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+                        <h3 class="text-xs text-gray-600">Post-term</h3>
+                      </div>
+                      <p class="text-xl font-bold text-yellow-700">1</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-white to-red-50 rounded border border-red-200 px-3 py-2">
+                      <div class="flex items-center gap-1 mb-1">
+                        <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                        <h3 class="text-xs text-gray-600">Incomplete</h3>
+                      </div>
+                      <p class="text-xl font-bold text-red-700">2</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-white to-gray-50 rounded border border-gray-200 px-3 py-2">
+                      <div class="flex items-center gap-1 mb-1">
+                        <span class="w-3 h-3 rounded-full bg-gray-400"></span>
+                        <h3 class="text-xs text-gray-600">Not started</h3>
+                      </div>
+                      <p class="text-xl font-bold text-gray-700">1</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Task Progress (from actual system) -->
+                <div class="bg-white border-l-4 border-purple-600 rounded-lg shadow-sm">
+                  <div class="p-4 border-b border-gray-200">
+                    <h2 class="text-sm font-semibold text-gray-800">Task Progress</h2>
+                    <p class="text-xs text-gray-500 mt-1">Expand a task to review individual questions, responses, and correctness</p>
+                  </div>
+                  <div class="p-3 space-y-2">
+                    <!-- Task rows with status circles (matching actual system) -->
+                    <div class="border border-green-200 bg-green-50 rounded p-2 flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                        <span class="text-xs font-semibold text-gray-800">ERV</span>
+                        <span class="text-xs text-gray-600">- Expressive Vocabulary</span>
+                      </div>
+                      <span class="text-xs text-green-700 font-semibold">36/36</span>
+                    </div>
+                    <div class="border border-green-200 bg-green-50 rounded p-2 flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                        <span class="text-xs font-semibold text-gray-800">CM</span>
+                        <span class="text-xs text-gray-600">- Counting & Magnitude</span>
+                      </div>
+                      <span class="text-xs text-green-700 font-semibold">22/22</span>
+                    </div>
+                    <div class="border border-yellow-200 bg-yellow-50 rounded p-2 flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+                        <span class="text-xs font-semibold text-gray-800">CWR</span>
+                        <span class="text-xs text-gray-600">- Chinese Word Reading</span>
+                      </div>
+                      <span class="text-xs text-yellow-700 font-semibold">45/60</span>
+                    </div>
+                    <div class="border border-gray-200 bg-gray-50 rounded p-2 flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-gray-400"></span>
+                        <span class="text-xs font-semibold text-gray-800">TGMD</span>
+                        <span class="text-xs text-gray-600">- Gross Motor Development</span>
+                      </div>
+                      <span class="text-xs text-gray-500 font-semibold">Not started</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
               </div>
             </div>
 
@@ -771,65 +880,169 @@ flowchart LR
               <li>Click on a student to see individual details</li>
             </ol>
 
-            <!-- Embedded Screenshot: Class View -->
-            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
-              <div class="bg-white p-6">
-                <div class="mb-4 pb-4 border-b">
-                  <h2 class="text-2xl font-bold text-gray-800 mb-1">Class K2A - School S023</h2>
-                  <p class="text-gray-600">25 students • 80% completion rate</p>
-                </div>
-                
-                <!-- Student grid -->
-                <div class="grid grid-cols-5 gap-2">
-                  <div class="aspect-square bg-green-100 border-2 border-green-500 rounded-lg flex items-center justify-center text-center p-2">
-                    <div>
-                      <div class="text-xl mb-1">✅</div>
-                      <div class="text-xs font-semibold">C13268</div>
-                      <div class="text-xs text-gray-600">張三</div>
+            <!-- Embedded Screenshot: Class View - Built from actual checking_system_3_class.html -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg bg-white">
+              <div class="p-4">
+                <!-- Header Navigation Bar (breadcrumb from actual system) -->
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2 text-xs font-mono text-gray-600">
+                      <span class="px-2 py-1 rounded bg-gray-200 text-gray-700">Shatin</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                      <span class="px-2 py-1 rounded bg-gray-200 text-gray-700">Group 3</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                      <span class="px-2 py-1 rounded bg-gray-200 text-gray-700">S023</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                      <span class="px-2 py-1 rounded bg-blue-100 text-blue-700 font-semibold">K2A</span>
                     </div>
-                  </div>
-                  <div class="aspect-square bg-green-100 border-2 border-green-500 rounded-lg flex items-center justify-center text-center p-2">
-                    <div>
-                      <div class="text-xl mb-1">✅</div>
-                      <div class="text-xs font-semibold">C13269</div>
-                      <div class="text-xs text-gray-600">李四</div>
-                    </div>
-                  </div>
-                  <div class="aspect-square bg-yellow-100 border-2 border-yellow-500 rounded-lg flex items-center justify-center text-center p-2">
-                    <div>
-                      <div class="text-xl mb-1">⚠️</div>
-                      <div class="text-xs font-semibold">C13270</div>
-                      <div class="text-xs text-gray-600">王五</div>
-                    </div>
-                  </div>
-                  <div class="aspect-square bg-green-100 border-2 border-green-500 rounded-lg flex items-center justify-center text-center p-2">
-                    <div>
-                      <div class="text-xl mb-1">✅</div>
-                      <div class="text-xs font-semibold">C13271</div>
-                      <div class="text-xs text-gray-600">陳六</div>
-                    </div>
-                  </div>
-                  <div class="aspect-square bg-gray-100 border-2 border-gray-300 rounded-lg flex items-center justify-center text-center p-2">
-                    <div>
-                      <div class="text-xl mb-1">⚪</div>
-                      <div class="text-xs font-semibold">C13272</div>
-                      <div class="text-xs text-gray-600">林七</div>
-                    </div>
+                    <button class="bg-gray-200 text-gray-700 px-3 py-1 rounded text-xs font-semibold hover:bg-gray-300">
+                      Export
+                    </button>
                   </div>
                 </div>
-                
-                <div class="mt-4 flex items-center gap-4 text-sm">
-                  <div class="flex items-center gap-2">
-                    <div class="w-4 h-4 bg-green-500 rounded"></div>
-                    <span>Complete (20)</span>
+
+                <!-- Class Profile (entry-card with blue left border) -->
+                <div class="bg-white border-l-4 border-blue-600 rounded-lg p-4 mb-4 shadow-sm">
+                  <div class="mb-3">
+                    <h2 class="text-sm font-semibold text-gray-800">Class K2A</h2>
+                    <p class="text-xs text-gray-500">石圍角小學 (Starlight Primary)</p>
                   </div>
-                  <div class="flex items-center gap-2">
-                    <div class="w-4 h-4 bg-yellow-500 rounded"></div>
-                    <span>Incomplete (4)</span>
+                  <div class="grid grid-cols-5 gap-2 text-xs">
+                    <div class="border border-gray-200 rounded p-2 bg-gray-50">
+                      <p class="text-xs uppercase text-gray-500">Grade</p>
+                      <p class="text-sm font-semibold">K2</p>
+                    </div>
+                    <div class="border border-gray-200 rounded p-2 bg-gray-50">
+                      <p class="text-xs uppercase text-gray-500">Students</p>
+                      <p class="text-sm font-semibold">25</p>
+                    </div>
+                    <div class="border border-gray-200 rounded p-2 bg-gray-50">
+                      <p class="text-xs uppercase text-gray-500">Teacher</p>
+                      <p class="text-sm font-semibold">Ms. Chan</p>
+                    </div>
+                    <div class="border border-gray-200 rounded p-2 bg-gray-50">
+                      <p class="text-xs uppercase text-gray-500">District</p>
+                      <p class="text-sm font-semibold">Shatin</p>
+                    </div>
+                    <div class="border border-gray-200 rounded p-2 bg-gray-50">
+                      <p class="text-xs uppercase text-gray-500">Group</p>
+                      <p class="text-sm font-semibold">3</p>
+                    </div>
                   </div>
-                  <div class="flex items-center gap-2">
-                    <div class="w-4 h-4 bg-gray-300 rounded"></div>
-                    <span>Not Started (1)</span>
+                </div>
+
+                <!-- Class-level Task Status Overview (with Set completion metrics) -->
+                <div class="bg-white border-l-4 border-green-600 rounded-lg p-4 mb-4 shadow-sm">
+                  <h2 class="text-sm font-semibold text-gray-800 mb-3">Class-level Task Status Overview</h2>
+                  <div class="grid grid-cols-4 gap-3">
+                    <div class="bg-gradient-to-br from-white to-blue-50 rounded border border-blue-200 px-3 py-2">
+                      <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-medium text-blue-700">Set 1</span>
+                        <span class="text-xs text-gray-500">25 students</span>
+                      </div>
+                      <p class="text-xl font-bold text-blue-900">88%</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-white to-green-50 rounded border border-green-200 px-3 py-2">
+                      <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-medium text-green-700">Set 2</span>
+                        <span class="text-xs text-gray-500">25 students</span>
+                      </div>
+                      <p class="text-xl font-bold text-green-900">92%</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-white to-purple-50 rounded border border-purple-200 px-3 py-2">
+                      <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-medium text-purple-700">Set 3</span>
+                        <span class="text-xs text-gray-500">25 students</span>
+                      </div>
+                      <p class="text-xl font-bold text-purple-900">76%</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-white to-amber-50 rounded border border-amber-200 px-3 py-2">
+                      <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-medium text-amber-700">Set 4</span>
+                        <span class="text-xs text-gray-500">25 students</span>
+                      </div>
+                      <p class="text-xl font-bold text-amber-900">84%</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Student List Preview (entry-card with purple left border) -->
+                <div class="bg-white border-l-4 border-purple-600 rounded-lg shadow-sm">
+                  <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+                    <div>
+                      <h2 class="text-sm font-semibold text-gray-800">Student List</h2>
+                      <p class="text-xs text-gray-500">Click student name to view detailed assessment data</p>
+                    </div>
+                    <div class="flex items-center gap-2 text-xs">
+                      <span class="text-gray-500">View Mode:</span>
+                      <button class="bg-blue-600 text-white px-3 py-1 rounded text-xs font-semibold">By Set</button>
+                      <button class="bg-gray-100 text-gray-600 px-3 py-1 rounded text-xs font-semibold">By Task</button>
+                    </div>
+                  </div>
+                  <div class="p-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between text-xs">
+                    <div class="flex items-center gap-3 text-gray-600">
+                      <div class="flex items-center gap-1">
+                        <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                        <span>Complete</span>
+                      </div>
+                      <div class="flex items-center gap-1">
+                        <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+                        <span>Post-term</span>
+                      </div>
+                      <div class="flex items-center gap-1">
+                        <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                        <span>Incomplete</span>
+                      </div>
+                      <div class="flex items-center gap-1">
+                        <span class="w-3 h-3 rounded-full bg-gray-400"></span>
+                        <span>Not started</span>
+                      </div>
+                    </div>
+                    <select class="border border-gray-300 rounded px-2 py-1 text-xs bg-white">
+                      <option>All Students</option>
+                      <option>With Data Only</option>
+                      <option>Incomplete Only</option>
+                    </select>
+                  </div>
+                  <div class="overflow-x-auto p-3">
+                    <table class="w-full text-xs">
+                      <thead>
+                        <tr class="bg-gray-100 text-gray-600">
+                          <th class="text-left py-2 px-2 font-semibold">#</th>
+                          <th class="text-left py-2 px-2 font-semibold">Student Name</th>
+                          <th class="text-center py-2 px-2 font-semibold">Set 1</th>
+                          <th class="text-center py-2 px-2 font-semibold">Set 2</th>
+                          <th class="text-center py-2 px-2 font-semibold">Set 3</th>
+                          <th class="text-center py-2 px-2 font-semibold">Set 4</th>
+                        </tr>
+                      </thead>
+                      <tbody class="text-gray-700">
+                        <tr class="border-b border-gray-100 hover:bg-blue-50 cursor-pointer">
+                          <td class="py-2 px-2">1</td>
+                          <td class="py-2 px-2 font-semibold">張三 (C13268)</td>
+                          <td class="text-center py-2 px-2"><span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span></td>
+                          <td class="text-center py-2 px-2"><span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span></td>
+                          <td class="text-center py-2 px-2"><span class="w-3 h-3 rounded-full bg-yellow-500 inline-block"></span></td>
+                          <td class="text-center py-2 px-2"><span class="w-3 h-3 rounded-full bg-red-500 inline-block"></span></td>
+                        </tr>
+                        <tr class="border-b border-gray-100 hover:bg-blue-50 cursor-pointer">
+                          <td class="py-2 px-2">2</td>
+                          <td class="py-2 px-2 font-semibold">李四 (C13269)</td>
+                          <td class="text-center py-2 px-2"><span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span></td>
+                          <td class="text-center py-2 px-2"><span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span></td>
+                          <td class="text-center py-2 px-2"><span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span></td>
+                          <td class="text-center py-2 px-2"><span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span></td>
+                        </tr>
+                        <tr class="border-b border-gray-100 hover:bg-blue-50 cursor-pointer">
+                          <td class="py-2 px-2">3</td>
+                          <td class="py-2 px-2 font-semibold">王五 (C13270)</td>
+                          <td class="text-center py-2 px-2"><span class="w-3 h-3 rounded-full bg-yellow-500 inline-block"></span></td>
+                          <td class="text-center py-2 px-2"><span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span></td>
+                          <td class="text-center py-2 px-2"><span class="w-3 h-3 rounded-full bg-red-500 inline-block"></span></td>
+                          <td class="text-center py-2 px-2"><span class="w-3 h-3 rounded-full bg-gray-400 inline-block"></span></td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
