@@ -1661,6 +1661,45 @@ A:
 
 Always manually verify when mismatch detected.
 
+**Q: How secure is the Checking System? What about data privacy?**  
+A: The Checking System is designed with multiple layers of security and privacy protection:
+
+**🔒 Data Encryption & Transmission**
+- **HTTPS encryption:** All API calls to JotForm and Qualtrics use encrypted connections
+- **Encrypted credentials:** System password and API keys are encrypted at rest in `assets/credentials.enc`
+- **No plaintext passwords:** Credentials never stored in browser history or logs
+- **Secure key derivation:** Uses PBKDF2 with salt for password-based encryption
+
+**🔐 Access Control**
+- **Password required:** System password needed to decrypt credentials and access data
+- **Session timeout:** Automatically locks after 30 minutes of inactivity
+- **No persistent login:** Password must be re-entered after browser close
+- **Limited access:** Only authorized project personnel should have the password
+
+**💾 Data Storage & Privacy**
+- **Local-only cache:** Data cached in browser's IndexedDB, never sent to external servers
+- **No cloud storage:** System runs entirely client-side (in your browser)
+- **No third-party tracking:** No analytics, no cookies, no external tracking scripts
+- **Data isolation:** Each browser has its own isolated cache (no cross-browser sharing)
+- **Automatic cleanup:** Cache expires after 1 hour or can be manually cleared
+
+**🛡️ Student Data Protection**
+- **Read-only access:** System cannot modify or delete student data
+- **No data export to cloud:** Exports saved locally to your computer only
+- **Anonymized IDs:** Students identified by Core IDs (e.g., C10207), not personal names in most views
+- **Secure source:** All data fetched directly from JotForm's secure API
+- **Audit trail:** Console logs can track who accessed what data (if enabled)
+
+**⚠️ Security Best Practices**
+- **Don't share the password:** Limit access to authorized personnel only
+- **Use trusted devices:** Don't access from public or shared computers
+- **Clear cache when done:** Especially on shared devices, delete cache before closing
+- **Lock your screen:** Always lock your computer when stepping away
+- **Use updated browsers:** Keep browser up-to-date for latest security patches
+- **Report security concerns:** Contact project administrators immediately if you notice suspicious activity
+
+*Note: While the system implements strong security measures, ultimate data security also depends on user practices. Always follow institutional data protection policies and guidelines when handling student assessment data.*
+
 **Q: What does "Not Started" mean?**  
 A: Zero questions answered for that task. Either not attempted, or PDF not uploaded yet.
 
