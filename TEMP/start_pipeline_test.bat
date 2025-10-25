@@ -30,14 +30,14 @@ if errorlevel 1 (
     )
 )
 
-REM Kill any existing proxy server processes on port 3000
+REM Kill any existing proxy server processes on port 5000
 echo Checking for existing proxy servers...
-for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":3000"') do (
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":5000"') do (
     taskkill /PID %%a /F >nul 2>&1
 )
 
 echo.
-echo Starting CORS proxy server on http://127.0.0.1:3000
+echo Starting CORS proxy server on http://127.0.0.1:5000
 echo This allows the test page to access JotForm and Qualtrics APIs
 echo.
 echo Opening test page in 3 seconds...
@@ -46,18 +46,27 @@ echo.
 
 REM Start the proxy server from parent directory
 cd ..
-start /B python proxy_server.py --port 3000 --host 127.0.0.1
+start /B python proxy_server.py --port 5000 --host 127.0.0.1
 
 REM Wait 3 seconds for server to start
 timeout /t 3 /nobreak >nul
 
-REM Open browser to test page
-start http://127.0.0.1:3000/TEMP/test-pipeline-core-id.html
+REM Open test page through proxy server (not file://)
+start http://localhost:5000/TEMP/test-pipeline-core-id.html
 
 echo.
-echo Server is running! Test page should open automatically.
+echo ========================================
+echo Server is running!
+echo ========================================
 echo.
-echo IMPORTANT: Make sure credentials.json exists in the assets/ folder
+echo Test page URL: http://localhost:5000/TEMP/test-pipeline-core-id.html
+echo.
+echo IMPORTANT: The page MUST be accessed via http://localhost:5000
+echo            (NOT file:// protocol) for the proxy to work!
+echo.
+echo If the page doesn't open automatically:
+echo 1. Open your browser manually
+echo 2. Navigate to: http://localhost:5000/TEMP/test-pipeline-core-id.html
 echo.
 echo Close this window to stop the server.
 echo.

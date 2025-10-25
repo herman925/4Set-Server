@@ -28,27 +28,27 @@ if errorlevel 1 (
     )
 )
 
-REM Kill any existing proxy server processes on port 3000
+REM Kill any existing proxy server processes on port 5000
 echo Checking for existing proxy servers...
-for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":3000"') do (
+for /f "tokens=5" %%a in ('netstat -ano ^| findstr ":5000"') do (
     taskkill /PID %%a /F >nul 2>&1
 )
 
 echo.
-echo Starting CORS proxy server on http://127.0.0.1:3000
+echo Starting CORS proxy server on http://127.0.0.1:5000
 echo.
 echo Opening browser in 3 seconds...
 echo Press Ctrl+C to stop the server
 echo.
 
 REM Start the proxy server in background and wait for it to initialize
-start /B python proxy_server.py --port 3000 --host 127.0.0.1
+start /B python proxy_server.py --port 5000 --host 127.0.0.1
 
 REM Wait 3 seconds for server to start
 timeout /t 3 /nobreak >nul
 
 REM Open browser
-start http://127.0.0.1:3000/index.html
+start http://127.0.0.1:5000/index.html
 
 echo.
 echo Server is running! Browser should open automatically.
