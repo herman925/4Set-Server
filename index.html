@@ -51,13 +51,23 @@
             <span>Assessment Uploader</span>
             <span class="text-sm font-medium text-primary-foreground/80">Upload PDFs</span>
           </a>
-          <a
-            href="checking_system_home.html"
-            class="hero-button secondary-button btn-secondary flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold"
-          >
-            <span>Checking System</span>
-            <span class="text-sm font-medium text-secondary-foreground/80">See What's Missing</span>
-          </a>
+          <div class="flex items-center gap-2">
+            <a
+              href="checking_system_home.html"
+              class="hero-button secondary-button btn-secondary flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold"
+            >
+              <span>Checking System</span>
+              <span class="text-sm font-medium text-secondary-foreground/80">See What's Missing</span>
+            </a>
+            <a
+              href="guide_homepage.html"
+              class="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors text-gray-700 hover:text-primary"
+              title="View Guides & Documentation"
+              aria-label="View Guides & Documentation"
+            >
+              <i data-lucide="help-circle" class="w-6 h-6"></i>
+            </a>
+          </div>
         </div>
       </div>
 
@@ -113,88 +123,6 @@
         </article>
       </section>
     </main>
-
-    <!-- User Guides Section -->
-    <section class="relative z-10 mx-auto w-full max-w-6xl px-6 py-16">
-      <div class="text-center mb-8">
-        <h2 class="text-3xl font-bold" style="color: var(--primary)">User Guides</h2>
-        <p class="text-gray-600 mt-2">Comprehensive documentation for all system features</p>
-      </div>
-      
-      <!-- Featured Quick Start Guide -->
-      <div class="mb-6">
-        <a href="quick_start_guide.html" class="entry-card p-8 hover:shadow-xl transition-shadow block border-2 border-primary/30">
-          <div class="flex items-start gap-6">
-            <div class="text-6xl">🚀</div>
-            <div class="flex-1">
-              <div class="flex items-center gap-2 mb-2">
-                <h3 class="text-2xl font-bold" style="color: var(--primary)">Quick Start Guide</h3>
-                <span class="bg-primary text-white text-xs px-3 py-1 rounded-full font-semibold">NEW</span>
-              </div>
-              <p class="text-base text-gray-700 mb-4">Get up and running in minutes! Simple, step-by-step instructions for new users to start using the system right away.</p>
-              <div class="grid md:grid-cols-3 gap-4 text-xs text-gray-600">
-                <div>✓ OneDrive setup & sync</div>
-                <div>✓ Upload PDFs with correct naming</div>
-                <div>✓ Check upload logs</div>
-                <div>✓ Use the checking system</div>
-                <div>✓ Build cache for performance</div>
-                <div>✓ Filter and find data</div>
-              </div>
-            </div>
-          </div>
-        </a>
-      </div>
-      
-      <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <!-- Checking System Guide -->
-        <a href="user_guide_checking_system.html" class="entry-card p-6 hover:shadow-xl transition-shadow">
-          <div class="text-4xl mb-4">📊</div>
-          <h3 class="text-lg font-semibold mb-2" style="color: var(--primary)">Checking System</h3>
-          <p class="text-sm text-gray-600">Learn how to monitor and validate assessment data with the multi-level dashboard</p>
-          <div class="mt-4 text-xs text-gray-500">
-            <div>✓ Navigation guide</div>
-            <div>✓ Status indicators</div>
-            <div>✓ Data validation</div>
-          </div>
-        </a>
-
-        <!-- Uploader Guide -->
-        <a href="user_guide_uploader.html" class="entry-card p-6 hover:shadow-xl transition-shadow">
-          <div class="text-4xl mb-4">📤</div>
-          <h3 class="text-lg font-semibold mb-2" style="color: var(--primary)">Assessment Uploader</h3>
-          <p class="text-sm text-gray-600">Step-by-step guide to uploading assessment PDFs via the web interface</p>
-          <div class="mt-4 text-xs text-gray-500">
-            <div>✓ Setup instructions</div>
-            <div>✓ Upload process</div>
-            <div>✓ Troubleshooting</div>
-          </div>
-        </a>
-
-        <!-- Qualtrics Guide -->
-        <a href="user_guide_qualtrics.html" class="entry-card p-6 hover:shadow-xl transition-shadow">
-          <div class="text-4xl mb-4">🔄</div>
-          <h3 class="text-lg font-semibold mb-2" style="color: var(--primary)">Qualtrics Integration</h3>
-          <p class="text-sm text-gray-600">Understanding how Qualtrics survey data integrates with the system</p>
-          <div class="mt-4 text-xs text-gray-500">
-            <div>✓ Data merging</div>
-            <div>✓ TGMD assessments</div>
-            <div>✓ Sync process</div>
-          </div>
-        </a>
-
-        <!-- Conflicts Guide -->
-        <a href="user_guide_conflicts.html" class="entry-card p-6 hover:shadow-xl transition-shadow">
-          <div class="text-4xl mb-4">⚠️</div>
-          <h3 class="text-lg font-semibold mb-2" style="color: var(--primary)">Handling Conflicts</h3>
-          <p class="text-sm text-gray-600">Guide for operators on resolving data overwrite conflicts</p>
-          <div class="mt-4 text-xs text-gray-500">
-            <div>✓ Conflict detection</div>
-            <div>✓ Resolution steps</div>
-            <div>✓ Best practices</div>
-          </div>
-        </a>
-      </div>
-    </section>
   </div>
 
   <div class="modal-backdrop hidden" data-modal="password" aria-hidden="true">

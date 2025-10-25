@@ -238,7 +238,7 @@
                 <p class="text-gray-600 mb-6 max-w-2xl">Web-based PDF uploads trigger the processor agent to validate, parse, and submit survey data to Jotform...</p>
                 
                 <!-- Main action buttons -->
-                <div class="flex gap-4 mb-8">
+                <div class="flex gap-4 items-center mb-8">
                   <div class="bg-blue-600 text-white px-6 py-3 rounded-lg shadow-lg">
                     <div class="font-semibold">Assessment Uploader</div>
                     <div class="text-xs opacity-90">Upload PDFs</div>
@@ -246,6 +246,9 @@
                   <div class="bg-white border-2 border-blue-600 text-blue-600 px-6 py-3 rounded-lg shadow">
                     <div class="font-semibold">Checking System</div>
                     <div class="text-xs">See What's Missing</div>
+                  </div>
+                  <div class="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+                    <span class="text-2xl">❓</span>
                   </div>
                 </div>
                 
@@ -275,55 +278,75 @@
               </div>
             </div>
 
-            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 0.2: User Guides Section</h3>
-            <p class="text-gray-700 mb-4">Below the main interface, you'll find comprehensive user guides for each feature:</p>
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 0.2: Finding Guides & Documentation</h3>
+            <p class="text-gray-700 mb-4">Click the question mark icon (❓) next to the buttons to access the Guide Homepage where you'll find:</p>
             
-            <!-- Embedded Screenshot: User Guides Section -->
+            <!-- Embedded Screenshot: Guide Homepage -->
             <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg bg-white">
               <div class="p-6">
-                <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4 flex items-center gap-2">
                   <span class="text-2xl">📚</span>
-                  User Guides
+                  Documentation & Guides
                 </h2>
-                <p class="text-gray-600 text-sm mb-6">Comprehensive documentation for all system features</p>
+                <p class="text-gray-600 text-lg mb-6">Find everything you need to effectively use the 4Set System. From quick start guides for beginners to detailed documentation for advanced users.</p>
                 
-                <div class="grid gap-4">
+                <div class="space-y-4">
                   <!-- Quick Start Guide Card -->
-                  <div class="border-2 border-blue-400 bg-blue-50 rounded-lg p-4 relative">
+                  <div class="border-2 border-blue-400 bg-blue-50 rounded-lg p-6 relative">
                     <div class="absolute top-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full font-semibold">NEW</div>
                     <div class="flex items-start gap-4">
-                      <div class="text-3xl">🚀</div>
+                      <div class="text-4xl">🚀</div>
                       <div>
-                        <h3 class="font-bold text-lg text-blue-800 mb-1">Quick Start Guide</h3>
-                        <p class="text-sm text-gray-700 mb-2">Get up and running in minutes! Simple, step-by-step instructions for new users to start using the system right away.</p>
-                        <ul class="text-xs text-gray-600 space-y-1 ml-4">
-                          <li>✓ OneDrive setup & sync</li>
-                          <li>✓ Upload PDFs with correct naming</li>
-                          <li>✓ Use the checking system</li>
-                          <li>✓ Build cache for performance</li>
-                          <li>✓ Filter and find data</li>
-                        </ul>
+                        <h3 class="font-bold text-2xl text-blue-800 mb-2">Quick Start Guide</h3>
+                        <p class="text-sm text-gray-700 mb-3">Get up and running in minutes! Simple, step-by-step instructions for new users to start using the system right away.</p>
+                        <div class="grid md:grid-cols-3 gap-2 text-xs text-gray-600">
+                          <div>✓ OneDrive setup & sync</div>
+                          <div>✓ Upload PDFs with correct naming</div>
+                          <div>✓ Check upload logs</div>
+                          <div>✓ Use the checking system</div>
+                          <div>✓ Build cache for performance</div>
+                          <div>✓ Filter and export data</div>
+                        </div>
                       </div>
                     </div>
                   </div>
                   
-                  <!-- Other guides -->
-                  <div class="border border-gray-300 rounded-lg p-4 bg-white">
-                    <div class="flex items-start gap-4">
-                      <div class="text-2xl">📊</div>
-                      <div>
-                        <h3 class="font-semibold text-gray-800">Checking System</h3>
-                        <p class="text-sm text-gray-600">Learn how to monitor and validate assessment data</p>
-                      </div>
+                  <!-- Feature Guides Grid -->
+                  <div class="text-sm font-semibold text-gray-700 mb-2 mt-6">Feature Guides:</div>
+                  <div class="grid md:grid-cols-4 gap-3">
+                    <div class="border border-gray-300 rounded-lg p-3 bg-white text-center">
+                      <div class="text-3xl mb-2">📊</div>
+                      <h4 class="font-semibold text-sm text-gray-800">Checking System</h4>
+                    </div>
+                    <div class="border border-gray-300 rounded-lg p-3 bg-white text-center">
+                      <div class="text-3xl mb-2">📤</div>
+                      <h4 class="font-semibold text-sm text-gray-800">Assessment Uploader</h4>
+                    </div>
+                    <div class="border border-gray-300 rounded-lg p-3 bg-white text-center">
+                      <div class="text-3xl mb-2">🔄</div>
+                      <h4 class="font-semibold text-sm text-gray-800">Qualtrics Integration</h4>
+                    </div>
+                    <div class="border border-gray-300 rounded-lg p-3 bg-white text-center">
+                      <div class="text-3xl mb-2">⚠️</div>
+                      <h4 class="font-semibold text-sm text-gray-800">Handling Conflicts</h4>
                     </div>
                   </div>
                   
-                  <div class="border border-gray-300 rounded-lg p-4 bg-white">
-                    <div class="flex items-start gap-4">
-                      <div class="text-2xl">📤</div>
+                  <!-- Documentation -->
+                  <div class="text-sm font-semibold text-gray-700 mb-2 mt-4">Documentation & Resources:</div>
+                  <div class="grid md:grid-cols-2 gap-3">
+                    <div class="border border-gray-300 rounded-lg p-3 bg-white flex items-center gap-3">
+                      <div class="text-2xl">📖</div>
                       <div>
-                        <h3 class="font-semibold text-gray-800">Assessment Uploader</h3>
-                        <p class="text-sm text-gray-600">Step-by-step guide to uploading assessment PDFs</p>
+                        <h4 class="font-semibold text-sm text-gray-800">Full Documentation</h4>
+                        <p class="text-xs text-gray-600">Complete technical documentation</p>
+                      </div>
+                    </div>
+                    <div class="border border-gray-300 rounded-lg p-3 bg-white flex items-center gap-3">
+                      <div class="text-2xl">🌳</div>
+                      <div>
+                        <h4 class="font-semibold text-sm text-gray-800">PRD Tree</h4>
+                        <p class="text-xs text-gray-600">Product Requirements Documents</p>
                       </div>
                     </div>
                   </div>
@@ -332,7 +355,7 @@
             </div>
 
             <div class="success-box">
-              <p class="text-sm"><strong>✅ What to do:</strong> Click on <strong>"Quick Start Guide"</strong> (this guide) to learn the essential workflows, or choose a specific guide for detailed information.</p>
+              <p class="text-sm"><strong>✅ What to do:</strong> Click the <strong>question mark icon (❓)</strong> from the home page to access all guides and documentation. This Quick Start Guide is perfect for beginners!</p>
             </div>
           </section>
 
