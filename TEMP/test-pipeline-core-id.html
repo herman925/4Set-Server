@@ -544,7 +544,7 @@
 
             // Step 5: Merge Data
             updateStep(5, 'loading');
-            const mergedData = await mergeData(jotformData.mergedAnswers, transformedQualtrics, coreId);
+            const mergedData = await mergeData(jotformData.jotformRecords, transformedQualtrics, coreId);
             updateStep(5, 'complete', 'Data merged successfully');
 
             // Step 6: Validate Tasks
@@ -588,7 +588,7 @@
 
             // Step 5: Merge Data
             updateStep(5, 'loading');
-            const mergedData = await mergeData(jotformData.mergedAnswers, transformedQualtrics, coreId);
+            const mergedData = await mergeData(jotformData.jotformRecords, transformedQualtrics, coreId);
             updateStep(5, 'complete', 'Data merged successfully');
 
             // Step 6: Validate Tasks
@@ -736,19 +736,19 @@
             
             console.log(`[Test] ✅ Received ${submissions.length} submissions`);
 
-            // Merge multiple submissions for the same student
-            const mergedAnswers = mergeJotFormSubmissions(submissions);
+            // Transform submissions to records (no merging - production DataMerger will handle that)
+            const jotformRecords = transformJotFormSubmissions(submissions);
             
-            return { submissions, mergedAnswers };
+            return { submissions, jotformRecords };
         }
 
-        // Merge multiple JotForm submissions (earliest non-empty wins)
-        // MAPS QIDs to field names using jotformQuestionsData
-        function mergeJotFormSubmissions(submissions) {
-            console.log('[Test] Merging JotForm submissions (earliest non-empty value wins)...');
+        // Transform JotForm submissions to records format for DataMerger
+        // This matches the production transformSubmissionsToRecords logic
+        function transformJotFormSubmissions(submissions) {
+            console.log('[Test] Transforming JotForm submissions to records...');
             
             if (submissions.length === 0) {
-                return {};
+                return [];
             }
 
             // Create reverse mapping: QID -> field name
@@ -757,73 +757,40 @@
                 for (const [fieldName, qid] of Object.entries(jotformQuestionsData)) {
                     qidToFieldName[qid] = fieldName;
                 }
-                console.log(`[Test] Loaded QID mapping: ${Object.keys(qidToFieldName).length} QIDs mapped to field names`);
-            } else {
-                console.error('[Test] ❌ jotformQuestionsData is NULL! Cannot map QIDs to field names!');
-                console.error('[Test] This means TaskValidator will not be able to find any fields!');
             }
 
-            // If only one submission, map its QIDs to field names
-            if (submissions.length === 1) {
-                const answers = submissions[0].answers || {};
-                const mapped = {};
+            const records = [];
+            
+            for (const submission of submissions) {
+                const record = {
+                    coreId: submission.answers?.['3']?.answer, // sessionkey contains coreId
+                    sessionkey: submission.answers?.['3']?.answer || submission.answers?.['3']?.text,
+                    created_at: submission.created_at,
+                    _meta: {
+                        source: 'jotform',
+                        submissionId: submission.id
+                    }
+                };
+                
+                // Map all answers from QID to field names
+                const answers = submission.answers || {};
                 for (const [qid, answerObj] of Object.entries(answers)) {
                     const fieldName = qidToFieldName[qid];
                     if (fieldName) {
-                        // Include field if it has either answer or text
-                        const hasValue = answerObj.answer || answerObj.text;
-                        if (hasValue) {
-                            mapped[fieldName] = answerObj;
+                        const value = answerObj.answer || answerObj.text;
+                        if (value) {
+                            record[fieldName] = value;
                         }
                     }
                 }
-                console.log(`[Test] Mapped ${Object.keys(mapped).length} fields from QIDs to field names`);
-                console.log(`[Test] Sample mapped fields:`, Object.keys(mapped).slice(0, 10).join(', '));
-                return mapped;
-            }
-
-            // Sort by created_at (earliest first)
-            const sorted = submissions.sort((a, b) => {
-                const dateA = new Date(a.created_at);
-                const dateB = new Date(b.created_at);
-                return dateA - dateB;
-            });
-
-            // Merge answers - earliest non-empty value wins
-            // Map QIDs to field names during merge
-            const merged = {};
-            
-            for (const submission of sorted) {
-                const answers = submission.answers || {};
                 
-                for (const [qid, answerObj] of Object.entries(answers)) {
-                    const fieldName = qidToFieldName[qid];
-                    
-                    // Skip if no field name mapping
-                    if (!fieldName) continue;
-                    
-                    // Check if field has any value (answer or text)
-                    const hasValue = answerObj.answer || answerObj.text;
-                    if (!hasValue) continue;
-                    
-                    // Only set if not already present (earliest wins)
-                    if (!merged[fieldName]) {
-                        merged[fieldName] = answerObj;
-                    } else {
-                        // Check if existing is empty and new has value
-                        const existingValue = merged[fieldName].answer || merged[fieldName].text;
-                        const newValue = answerObj.answer || answerObj.text;
-                        
-                        if (!existingValue && newValue) {
-                            merged[fieldName] = answerObj;
-                        }
-                    }
+                if (record.coreId) {
+                    records.push(record);
                 }
             }
 
-            console.log(`[Test] Merged ${submissions.length} submissions into ${Object.keys(merged).length} unique fields`);
-            console.log(`[Test] Sample fields:`, Object.keys(merged).slice(0, 10).join(', '));
-            return merged;
+            console.log(`[Test] Transformed ${records.length} submissions to records`);
+            return records;
         }
 
         // Fetch Qualtrics data
@@ -961,135 +928,37 @@
         // Merge JotForm + Qualtrics data using "earliest non-empty wins" strategy
         // This matches the merge logic in jotform-cache.js (line 795-815)
         // Also groups data by grade (K1/K2/K3) for separate display
-        async function mergeData(jotformAnswers, qualtricsRecords, coreId) {
-            console.log('[Test] ========== MERGING DATA ==========');
-            console.log('[Test] JotForm fields:', Object.keys(jotformAnswers).length);
+        // Merge JotForm + Qualtrics data using production DataMerger
+        // This ensures test-pipeline uses the SAME logic as production
+        async function mergeData(jotformRecords, qualtricsRecords, coreId) {
+            console.log('[Test] ========== MERGING DATA (Production DataMerger) ==========');
+            console.log('[Test] JotForm records:', jotformRecords.length);
             console.log('[Test] Qualtrics records:', qualtricsRecords.length);
 
-            // Group all data by grade first (to show K1/K2/K3 separately)
-            const dataByGrade = {};
+            // Use production DataMerger for consistency
+            const merger = new window.DataMerger();
+            const mergedRecords = merger.mergeDataSources(jotformRecords, qualtricsRecords);
             
-            // Process Qualtrics records and group by grade
-            for (const record of qualtricsRecords) {
-                let grade = 'Unknown';
-                if (window.GradeDetector && record.recordedDate) {
-                    const gradeData = { recordedDate: record.recordedDate };
-                    grade = window.GradeDetector.determineGrade(gradeData);
-                }
-                
+            console.log(`[Test] ✅ Merged into ${mergedRecords.length} record(s)`);
+            
+            // Group results by grade for display
+            const dataByGrade = {};
+            for (const record of mergedRecords) {
+                const grade = record.grade || 'Unknown';
                 if (!dataByGrade[grade]) {
                     dataByGrade[grade] = {
-                        qualtrics: [],
-                        jotform: {},
+                        records: [],
                         merged: null
                     };
                 }
+                dataByGrade[grade].records.push(record);
                 
-                dataByGrade[grade].qualtrics.push(record);
-            }
-            
-            // Add JotForm data (try to extract date from sessionkey for grading)
-            // sessionkey format: {coreId}_{YYYYMMDD}_{HH}_{MM}
-            for (const [fieldName, answerObj] of Object.entries(jotformAnswers)) {
-                if (fieldName === 'sessionkey') {
-                    const sessionkey = answerObj.answer || answerObj.text;
-                    if (sessionkey && window.GradeDetector) {
-                        const gradeData = { sessionkey: sessionkey };
-                        const grade = window.GradeDetector.determineGrade(gradeData);
-                        
-                        if (!dataByGrade[grade]) {
-                            dataByGrade[grade] = {
-                                qualtrics: [],
-                                jotform: {},
-                                merged: null
-                            };
-                        }
-                        
-                        // Store all JotForm data in this grade bucket
-                        dataByGrade[grade].jotform = { ...jotformAnswers };
-                        break; // Found sessionkey, no need to continue
-                    }
+                // For display, use the first record's data as "merged"
+                if (!dataByGrade[grade].merged) {
+                    dataByGrade[grade].merged = record;
                 }
             }
             
-            // If no grade detected from sessionkey, put JotForm data in Unknown
-            if (Object.keys(dataByGrade).length === 0 || !Object.values(dataByGrade).some(g => Object.keys(g.jotform).length > 0)) {
-                if (!dataByGrade['Unknown']) {
-                    dataByGrade['Unknown'] = {
-                        qualtrics: [],
-                        jotform: {},
-                        merged: null
-                    };
-                }
-                dataByGrade['Unknown'].jotform = { ...jotformAnswers };
-            }
-            
-            // Now merge data within each grade using "earliest non-empty wins"
-            for (const [grade, gradeData] of Object.entries(dataByGrade)) {
-                const allSources = [];
-                
-                // Add JotForm data
-                for (const [fieldName, answerObj] of Object.entries(gradeData.jotform)) {
-                    allSources.push({
-                        fieldName,
-                        value: answerObj,
-                        source: 'jotform',
-                        timestamp: new Date(0) // JotForm already sorted, treat as earliest
-                    });
-                }
-                
-                // Add Qualtrics data with recordedDate timestamps
-                for (const record of gradeData.qualtrics) {
-                    const timestamp = record.recordedDate ? new Date(record.recordedDate) : new Date();
-                    for (const [key, value] of Object.entries(record)) {
-                        // Skip metadata fields
-                        if (key.startsWith('_') || !value || key === 'recordedDate') continue;
-                        
-                        allSources.push({
-                            fieldName: key,
-                            value: { answer: value, text: value },
-                            source: 'qualtrics',
-                            timestamp: timestamp
-                        });
-                    }
-                }
-                
-                // Sort by timestamp (earliest first)
-                allSources.sort((a, b) => a.timestamp - b.timestamp);
-                
-                // Merge: earliest non-empty value wins
-                const merged = {};
-                const conflicts = [];
-                
-                for (const item of allSources) {
-                    const { fieldName, value, source, timestamp } = item;
-                    
-                    // Only set if not already present (earliest non-empty value wins)
-                    if (!merged[fieldName]) {
-                        merged[fieldName] = value;
-                        merged[fieldName]._source = source;
-                        merged[fieldName]._timestamp = timestamp;
-                    } else {
-                        // Track conflicts when both sources have values
-                        const existingSource = merged[fieldName]._source;
-                        if (existingSource !== source) {
-                            conflicts.push({
-                                field: fieldName,
-                                kept: existingSource,
-                                discarded: source,
-                                keptValue: merged[fieldName].answer || merged[fieldName].text,
-                                discardedValue: value.answer || value.text
-                            });
-                        }
-                    }
-                }
-                
-                dataByGrade[grade].merged = merged;
-                dataByGrade[grade].conflicts = conflicts;
-                
-                console.log(`[Test] Grade ${grade}: merged ${Object.keys(merged).length} fields, ${conflicts.length} conflicts`);
-            }
-
             console.log('[Test] ✅ Data grouped by grade:', Object.keys(dataByGrade).join(', '));
             
             return dataByGrade;
