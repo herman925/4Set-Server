@@ -599,17 +599,19 @@ Documented in `PRDs/processor_agent_runbook_prd.md`:
 ### Documentation
 - **PRDs/** - Detailed product requirement documents (consolidated location)
 - **README.md** - Quick start guide and technical overview
-- **AGENTS.md** - This file (roadmap and strategic planning)
+- **AGENTS.md** - Development roadmap and strategic planning
+- **TEMP/README.md** - Test files documentation and usage guide
 
 ### Key PRD Files
 - `overview_prd.md` - System architecture and user journeys
 - `processor_agent_prd.md` - Agent specification and requirements
-- `checking_system_prd.md` - Quality assurance and validation rules
+- `checking_system_prd.md` - Quality assurance, validation rules, and implementation notes
+- `jotform_qualtrics_integration_prd.md` - API integration, cache system, and data merging
 - `data_security_prd.md` - Encryption and credential management
 - `termination-rules.md` - Assessment termination logic
 - `upload_monitoring_prd.md` - Upload failure detection and retry
-- `jotform_qualtrics_integration_prd.md` - JotForm and Qualtrics integration (updated Oct 2025)
 - `qualtrics_implementation_plan.md` - Qualtrics features implementation status
+- `calculation_bible.md` - Complete calculation and validation reference
 
 ### User Guides (Consolidated October 2025)
 All user guides moved to PRDs folder for centralized documentation:
@@ -617,6 +619,8 @@ All user guides moved to PRDs folder for centralized documentation:
 - `assessment_uploader_user_guide_prd.md` - Upload interface usage
 - `qualtrics_tgmd_user_guide_prd.md` - Qualtrics integration guide
 - `data_conflicts_user_guide_prd.md` - Data conflict resolution
+
+**Note**: Documentation consolidation (October 2025) moved all implementation summaries, bug fix documentation, and historical notes from TEMP folder into authoritative PRD files. TEMP now contains only active test files and test documentation.
 
 ### External References
 - JotForm API Documentation: https://api.jotform.com/docs/
@@ -691,6 +695,14 @@ All user guides moved to PRDs folder for centralized documentation:
   - TGMD matrix-radio scoring ✅
   - Complete Qualtrics data extraction (632 fields) ✅
   - Unique Core ID filtering ✅
+- ✅ **TEMP Folder Cleanup** (Issue #108):
+  - Removed 18 redundant markdown files from TEMP folder (implementation summaries, bug docs, historical PR/issue summaries)
+  - Consolidated information into authoritative PRD files:
+    - `jotform_qualtrics_integration_prd.md` - Added comprehensive cache system documentation
+    - `checking_system_prd.md` - Added implementation notes covering all major fixes and enhancements
+  - Created `TEMP/README.md` to document remaining test files and their purpose
+  - Retained only essential test documentation (3 MD files vs 19 before)
+  - Result: Cleaner TEMP folder with only active test files, improved documentation discoverability
 
 ### Future Updates
 This section will track major system updates, feature additions, and architectural changes as they occur.

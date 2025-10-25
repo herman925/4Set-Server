@@ -2341,6 +2341,159 @@ Four-column grid showing termination stages only:
 #### Display
 Shows pass/fail status for square cutting trial with score breakdown
 
+## Implementation Notes
+
+### Task Validator Fixes (October 2025)
+
+#### UMD Pattern for Test Compatibility
+**Issue**: Test files (in TEMP folder) needed to import task-validator.js in Node.js environment for automated testing, but the production version was browser-only.
+
+**Solution**: Created test-specific versions with Universal Module Definition (UMD) pattern:
+- `TEMP/task-validator-test.js` - Node.js and browser compatible
+- `TEMP/grade-detector-test.js` - Node.js and browser compatible
+- `TEMP/jotform-cache-test.js` - Test-specific enhancements
+
+**Pattern Applied**:
+```javascript
+(function(global) {
+  const TaskValidator = (() => {
+    // ... implementation ...
+  })();
+
+  // Export for both Node.js and browser
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = TaskValidator;
+  } else if (typeof global !== 'undefined') {
+    global.TaskValidator = TaskValidator;
+  }
+})(typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : this);
+```
+
+This allows the same test files to be used in both automated Node.js testing and browser-based manual testing.
+
+### TGMD Matrix-Radio Scoring Implementation
+
+**Enhancement**: Added support for Qualtrics matrix questions with radio button inputs for TGMD assessments.
+
+**Key Changes** (in `assets/js/task-validator.js`):
+1. **Matrix Field Detection**: Identifies matrix sub-questions (format: `TGMD_XXX_YYY_tZ`)
+2. **Radio Value Handling**: Treats `1` as correct, `0` or empty as incorrect
+3. **Criteria Aggregation**: Sums criteria scores per trial (t1/t2)
+4. **Standard Score Calculation**: Uses same 0-2-3 rubric as other tasks
+
+**Example**: TGMD Hopping task
+- Fields: `TGMD_111_Hop_t1` through `TGMD_114_Hop_t1` (trial 1, criteria 1-4)
+- Values: Each criterion is `1` (met) or `0` (not met)
+- Score: Sum of criteria (0-4) → mapped to 0 (0-1 met), 2 (2-3 met), 3 (4 met)
+
+### Qualtrics Text Field Extraction Fix
+
+**Issue**: Qualtrics responses with `_TEXT` suffix fields (other-specify options in multiple choice questions) were not being extracted correctly.
+
+**Solution**: Enhanced `qualtrics-transformer.js` to:
+- Detect `_TEXT` suffix fields (e.g., `QID123_4_TEXT` for "Other" option text)
+- Extract text values from Qualtrics response structure
+- Map to standard field names (e.g., `fieldName_TEXT`)
+- Preserve text data in merged dataset
+
+**Impact**: Ensures administrator comments and "Other" option text are preserved from Qualtrics surveys.
+
+### Status Light Calculation Fix (October 2025)
+
+**Issue**: Status lights on school/class pages showing incorrect completion status due to validation cache inconsistencies.
+
+**Root Cause**: 
+- Class 99 (無班級 - unassigned students) being created dynamically but not properly included in validation cache
+- Validation cache not rebuilding when student assignments changed
+- Race condition between data loading and validation cache updates
+
+**Solution**:
+1. **Auto-Assignment Logic**: Students without Class ID for any year (23/24, 24/25, 25/26) automatically assigned to grade-specific 無班級 classes
+   - 無班級 (K1): `C-{schoolId}-99-K1` for students without Class ID 23/24
+   - 無班級 (K2): `C-{schoolId}-99-K2` for students without Class ID 24/25  
+   - 無班級 (K3): `C-{schoolId}-99-K3` for students without Class ID 25/26
+   
+2. **Validation Cache Rebuild**: Triggered automatically after data merge operations
+
+3. **Composite Student Key**: `{coreId}-{year}` allows students to appear in multiple 無班級 classes if missing assignments for multiple years
+
+**Files Modified**:
+- `assets/js/checking-system-data-loader.js` - Auto-assignment logic (~55 lines)
+- `assets/js/jotform-cache.js` - Cache rebuild triggers
+
+### Grade Detection from Multiple Sources
+
+**Enhancement**: Determine student grade level from multiple data sources with fallback logic.
+
+**Priority Order**:
+1. **Qualtrics recordedDate** (highest priority) - When TGMD assessment was recorded
+2. **JotForm sessionkey** (fallback) - Extract date from sessionkey format `{studentId}_{YYYYMMDD}_{HH}_{MM}`
+3. **Class ID metadata** (last resort) - Use grade from class assignment
+
+**School Year Mapping**:
+- August-July academic year cycle
+- Dates Aug 2023 - Jul 2024 → K1 (Grade 1)
+- Dates Aug 2024 - Jul 2025 → K2 (Grade 2)
+- Dates Aug 2025 - Jul 2026 → K3 (Grade 3)
+
+**Implementation**: `assets/js/grade-detector.js` with helper functions in test version
+
+### JotForm API Filter Implementation (Critical)
+
+**Discovery** (October 2025): JotForm's standard filter operators (`:eq`, `:contains`) **DO NOT WORK** for student ID field (QID 20).
+
+**Working Solution**: Use `:matches` operator on sessionkey field (QID 3)
+```javascript
+const studentIdNumeric = coreId.replace(/^C/, ''); // Remove "C" prefix
+const filter = { "q3:matches": studentIdNumeric };
+```
+
+**Performance Impact**:
+- ❌ Without filter: Downloads 545+ submissions (~30 MB), filters client-side, takes 3-5 seconds
+- ✅ With :matches filter: Downloads ~1-3 submissions (~110 KB), instant response
+
+**Critical for**: Student drilldown pages, individual data lookups
+
+### Qualtrics API useLabels Parameter Fix
+
+**Issue**: 400 error (RTE_7.2) when exporting survey responses: "useLabels cannot be used for JSON or NDJSON exports"
+
+**Root Cause**: Qualtrics API restriction - `useLabels` parameter not allowed for JSON/NDJSON format exports (only for CSV, TSV, SPSS, XML)
+
+**Solution**:
+- **Production code** (`assets/js/qualtrics-api.js`): Removed `useLabels: false` from export payload
+- **Test application** (`Qualtrics Test/web/js/main.js`): Added conditional logic to include `useLabels` only for non-JSON/NDJSON formats
+- **Backend safety** (`Qualtrics Test/app.py`): Automatically strips `useLabels` if format is JSON/NDJSON
+
+**Test Results**: Successfully fetches TGMD data with 200 status (previously failed with 400)
+
+### Qualtrics Data Transformation Bug Fix
+
+**Critical Bug** (October 2025): `refreshWithQualtrics()` method caused complete data loss (773 submissions → 0) when merging Qualtrics data.
+
+**Root Cause**: Data format mismatch between JotForm submissions API and data-merger expectations
+- JotForm API returns: `{ id, answers: { "20": { answer: "10261" } } }`
+- Data merger expects: `{ coreId: "C10261", fieldName: "value" }`
+- Merger skipped all 773 records due to missing `coreId` field, returned empty array
+
+**Solution**: Added two transformation methods in `jotform-cache.js`:
+
+1. **`transformSubmissionsToRecords()` method**
+   - Converts JotForm submissions with answers object to flat records
+   - Extracts `coreId` from `answers['20']`
+   - Creates data-merger compatible structure
+
+2. **`transformRecordsToSubmissions()` method**
+   - Converts merged records back to JotForm submission format
+   - Preserves original structure for cache compatibility
+   - Updates answer values with merged TGMD data from Qualtrics
+
+**Workflow After Fix**:
+1. Fetch JotForm submissions (original format)
+2. Transform to records → merge with Qualtrics → transform back to submissions
+3. Save to cache (submissions format preserved)
+4. Result: ✅ All 773 submissions preserved with TGMD data merged
+
 ## Open Questions
 - Preferred schedule (hourly, daily, manual trigger) for production.
 - Storage choice for historical snapshots (SQLite vs. JSON vs. external DB).
