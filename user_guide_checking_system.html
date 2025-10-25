@@ -8,6 +8,7 @@
   <script src="assets/js/tailwind.config.js"></script>
   <link rel="stylesheet" href="assets/css/theme_pantone_light_1.css">
   <link rel="stylesheet" href="assets/css/global.css">
+  <link rel="stylesheet" href="assets/css/user-guides.css">
   <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,112 +17,6 @@
     body {
       font-family: 'Inter', sans-serif;
       background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    }
-    .sidebar {
-      position: sticky;
-      top: 2rem;
-      max-height: calc(100vh - 4rem);
-      overflow-y: auto;
-    }
-    .content-section {
-      scroll-margin-top: 2rem;
-    }
-    .toc-link {
-      transition: all 0.2s;
-    }
-    .toc-link:hover {
-      color: var(--primary);
-      padding-left: 0.75rem;
-    }
-    .toc-link.active {
-      color: var(--primary);
-      font-weight: 600;
-      border-left: 3px solid var(--primary);
-      padding-left: 0.75rem;
-    }
-    pre {
-      background: #1e293b;
-      color: #e2e8f0;
-      padding: 1.5rem;
-      border-radius: 0.5rem;
-      overflow-x: auto;
-      font-family: 'JetBrains Mono', monospace;
-      font-size: 0.875rem;
-      line-height: 1.6;
-    }
-    code {
-      font-family: 'JetBrains Mono', monospace;
-      background: #f1f5f9;
-      padding: 0.125rem 0.375rem;
-      border-radius: 0.25rem;
-      font-size: 0.875em;
-    }
-    pre code {
-      background: transparent;
-      padding: 0;
-    }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 1.5rem 0;
-    }
-    th, td {
-      border: 1px solid #e2e8f0;
-      padding: 0.75rem 1rem;
-      text-align: left;
-    }
-    th {
-      background: var(--primary);
-      color: white;
-      font-weight: 600;
-    }
-    tr:nth-child(even) {
-      background: #f8fafc;
-    }
-    .collapsible-section {
-      border: 1px solid #e2e8f0;
-      border-radius: 0.5rem;
-      margin: 1rem 0;
-      overflow: hidden;
-    }
-    .collapsible-header {
-      background: #f8fafc;
-      padding: 1rem 1.5rem;
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      transition: background 0.2s;
-    }
-    .collapsible-header:hover {
-      background: #f1f5f9;
-    }
-    .collapsible-content {
-      padding: 1.5rem;
-      display: none;
-    }
-    .collapsible-content.active {
-      display: block;
-    }
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.375rem 0.75rem;
-      border-radius: 9999px;
-      font-size: 0.875rem;
-      font-weight: 500;
-    }
-    .status-complete { background: #dcfce7; color: #166534; }
-    .status-warning { background: #fef3c7; color: #92400e; }
-    .status-error { background: #fee2e2; color: #991b1b; }
-    .status-info { background: #dbeafe; color: #1e40af; }
-    .diagram-box {
-      border: 2px solid var(--primary);
-      border-radius: 0.5rem;
-      padding: 1.5rem;
-      margin: 1.5rem 0;
-      background: white;
     }
   </style>
 </head>
@@ -985,58 +880,18 @@
   </div>
 
   <!-- JavaScript for collapsible sections and navigation -->
+  <script src="assets/js/user-guides.js"></script>
   <script>
-    // Collapsible sections
-    document.querySelectorAll('.collapsible-header').forEach(header => {
-      header.addEventListener('click', () => {
-        const content = header.nextElementSibling;
-        const arrow = header.querySelector('span:last-child');
-        
-        content.classList.toggle('active');
-        arrow.textContent = content.classList.contains('active') ? '▲' : '▼';
-      });
-    });
-
-    // Active TOC link on scroll
-    const sections = document.querySelectorAll('.content-section');
-    const tocLinks = document.querySelectorAll('.toc-link');
-
-    window.addEventListener('scroll', () => {
-      let current = '';
-      sections.forEach(section => {
-        const sectionTop = section.offsetTop;
-        const sectionHeight = section.clientHeight;
-        if (window.scrollY >= (sectionTop - 100)) {
-          current = section.getAttribute('id');
-        }
-      });
-
-      tocLinks.forEach(link => {
-        link.classList.remove('active');
-        if (link.getAttribute('href') === `#${current}`) {
-          link.classList.add('active');
-        }
-      });
-    });
-
-    // Smooth scroll for TOC links
-    tocLinks.forEach(link => {
-      link.addEventListener('click', (e) => {
-        e.preventDefault();
-        const targetId = link.getAttribute('href');
-        const targetSection = document.querySelector(targetId);
-        if (targetSection) {
-          targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-      });
-    });
-
-    // Open first collapsible in each section by default
-    document.querySelectorAll('.collapsible-content').forEach((content, index) => {
-      if (index === 0) {
-        content.classList.add('active');
-        content.previousElementSibling.querySelector('span:last-child').textContent = '▲';
-      }
+    // Guide-specific customizations can go here
+    document.addEventListener('DOMContentLoaded', () => {
+      // Update arrow elements after collapsibles initialize
+      setTimeout(() => {
+        document.querySelectorAll('.collapsible-header span:last-child').forEach(arrow => {
+          const content = arrow.closest('.collapsible-header').nextElementSibling;
+          arrow.textContent = content.classList.contains('active') ? '▲' : '▼';
+          arrow.classList.add('arrow');
+        });
+      }, 100);
     });
   </script>
 </body>

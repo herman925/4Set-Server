@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>User Guide: Assessment Uploader - 4Set System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="assets/js/tailwind.config.js"></script>
+  <link rel="stylesheet" href="assets/css/theme_pantone_light_1.css">
+  <link rel="stylesheet" href="assets/css/global.css">
+  <link rel="stylesheet" href="assets/css/user-guides.css">
+  <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <!-- Header -->
+  <header class="bg-white shadow-md sticky top-0 z-50">
+    <div class="container mx-auto px-6 py-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <a href="index.html" class="text-2xl font-bold" style="color: var(--primary)">4Set System</a>
+          <span class="text-gray-400">|</span>
+          <h1 class="text-xl font-semibold text-gray-700">User Guide: Assessment Uploader</h1>
+        </div>
+        <div class="flex items-center gap-4">
+          <a href="user_guide_checking_system.html" class="text-sm text-gray-600 hover:text-primary transition">Checking System</a>
+          <a href="user_guide_qualtrics.html" class="text-sm text-gray-600 hover:text-primary transition">Qualtrics Guide</a>
+          <a href="user_guide_conflicts.html" class="text-sm text-gray-600 hover:text-primary transition">Conflicts Guide</a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <div class="container mx-auto px-6 py-8">
+    <div class="flex gap-8">
+      <!-- Sidebar Navigation -->
+      <aside class="sidebar w-64 flex-shrink-0">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+          <h2 class="text-lg font-bold mb-4" style="color: var(--primary)">Table of Contents</h2>
+          <nav class="space-y-2">
+            <a href="#overview" class="toc-link block text-sm text-gray-700 py-1">Overview</a>
+            <a href="#getting-started" class="toc-link block text-sm text-gray-700 py-1">Getting Started</a>
+            <a href="#requirements" class="toc-link block text-sm text-gray-700 py-1">System Requirements</a>
+            <a href="#upload-process" class="toc-link block text-sm text-gray-700 py-1">Upload Process</a>
+            <a href="#pipeline" class="toc-link block text-sm text-gray-700 py-1">Upload Pipeline</a>
+            <a href="#configuration" class="toc-link block text-sm text-gray-700 py-1">Configuration</a>
+            <a href="#troubleshooting" class="toc-link block text-sm text-gray-700 py-1">Troubleshooting</a>
+            <a href="#faqs" class="toc-link block text-sm text-gray-700 py-1">FAQs</a>
+            <a href="#best-practices" class="toc-link block text-sm text-gray-700 py-1">Best Practices</a>
+          </nav>
+        </div>
+      </aside>
+
+      <!-- Main Content Area -->
+      <main class="flex-1 max-w-4xl">
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+          <!-- Document Info -->
+          <div class="mb-8 pb-6 border-b border-gray-200">
+            <div class="flex flex-wrap gap-4 text-sm text-gray-600">
+              <div><strong>Version:</strong> 2.0</div>
+              <div><strong>Last Updated:</strong> October 16, 2025</div>
+              <div><strong>Target Users:</strong> Research assistants, test administrators, operators</div>
+            </div>
+          </div>
+
+          <!-- Overview Section -->
+          <section id="overview" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Overview</h2>
+            
+            <p class="text-gray-700 mb-6 text-lg leading-relaxed">
+              The <strong>4Set Assessment Uploader</strong> is a web-based interface that allows you to upload assessment PDFs directly from your browser. The system uses modern browser technology to write files to monitored folders.
+            </p>
+
+            <h3 class="text-2xl font-semibold mb-4">What It Does</h3>
+            <ul class="space-y-2 text-gray-700 mb-6">
+              <li>✅ <strong>Direct File Upload:</strong> Write PDF files directly to OneDrive-synced folders</li>
+              <li>✅ <strong>Automatic Processing:</strong> Files automatically validated, parsed, and uploaded</li>
+              <li>✅ <strong>No Backend Required:</strong> Everything happens in your browser</li>
+              <li>✅ <strong>Real-time Status:</strong> See upload progress and completion status instantly</li>
+              <li>✅ <strong>Metadata Tracking:</strong> Tracks which PC uploaded each file</li>
+            </ul>
+
+            <div class="diagram-box bg-green-50 border-green-300">
+              <h4 class="font-semibold mb-3">Key Benefits</h4>
+              <ul class="space-y-1 text-gray-700">
+                <li>• <strong>Simple:</strong> Drag and drop PDFs or click to browse</li>
+                <li>• <strong>Secure:</strong> Files never leave your local network until synced via OneDrive</li>
+                <li>• <strong>Fast:</strong> No server uploads - files written directly to local folders</li>
+                <li>• <strong>Reliable:</strong> Built-in validation and error handling</li>
+              </ul>
+            </div>
+          </section>
+
+          <!-- Getting Started Section -->
+          <section id="getting-started" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Getting Started</h2>
+
+            <h3 class="text-2xl font-semibold mb-4">Quick Start (3 Steps)</h3>
+
+            <div class="diagram-box bg-blue-50 border-blue-300">
+              <div class="space-y-3">
+                <div class="flex items-center gap-3">
+                  <div class="step-number">1</div>
+                  <div class="text-gray-800">Open <code>upload.html</code> in Chrome/Edge browser</div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="step-number">2</div>
+                  <div class="text-gray-800">Configure your PC number and upload destination</div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="step-number">3</div>
+                  <div class="text-gray-800">Drag & drop PDF files to upload</div>
+                </div>
+              </div>
+              <p class="mt-4 text-center text-gray-600 font-semibold">That's it! The processor agent will handle the rest.</p>
+            </div>
+          </section>
+
+          <!-- System Requirements Section -->
+          <section id="requirements" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">System Requirements</h2>
+
+            <div class="grid md:grid-cols-2 gap-6">
+              <div class="diagram-box bg-green-50 border-green-300">
+                <h3 class="text-xl font-semibold mb-3">✅ Required</h3>
+                <ul class="space-y-2 text-sm text-gray-700">
+                  <li>• <strong>Browser:</strong> Chrome 86+ or Edge 86+</li>
+                  <li>• <strong>OS:</strong> Windows 10/11 with OneDrive sync</li>
+                  <li>• <strong>Network:</strong> OneDrive folder syncing properly</li>
+                  <li>• <strong>Agent:</strong> Processor agent running</li>
+                </ul>
+              </div>
+
+              <div class="diagram-box bg-red-50 border-red-300">
+                <h3 class="text-xl font-semibold mb-3">❌ Not Supported</h3>
+                <ul class="space-y-2 text-sm text-gray-700">
+                  <li>• Firefox (no File System Access API)</li>
+                  <li>• Safari (no File System Access API)</li>
+                  <li>• Mobile browsers (limited API support)</li>
+                  <li>• Private/Incognito mode</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="collapsible-section mt-6">
+              <div class="collapsible-header">
+                <h3 class="text-xl font-semibold">How to Check Compatibility</h3>
+                <span class="text-2xl">▼</span>
+              </div>
+              <div class="collapsible-content">
+                <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+                  <li>Open Chrome or Edge</li>
+                  <li>Visit: <code>chrome://version</code> or <code>edge://version</code></li>
+                  <li>Check version number is 86 or higher</li>
+                  <li>Verify OneDrive icon shows "Up to date" in system tray</li>
+                </ol>
+              </div>
+            </div>
+          </section>
+
+          <!-- Upload Process Section -->
+          <section id="upload-process" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Step-by-Step Upload Process</h2>
+
+            <h3 class="text-2xl font-semibold mb-4">First Time Setup</h3>
+
+            <div class="collapsible-section">
+              <div class="collapsible-header">
+                <h4 class="text-lg font-semibold">Step 1: Configure PC Number</h4>
+                <span class="text-xl">▼</span>
+              </div>
+              <div class="collapsible-content">
+                <div class="bg-yellow-50 border rounded p-4 mb-4">
+                  <div class="text-center space-y-2">
+                    <div class="font-semibold">System Status: Setup Required</div>
+                    <div><span class="status-badge status-warning">⚠️ PC Number: Not Set</span></div>
+                    <div><span class="status-badge status-error">🔴 Destination: Not Set</span></div>
+                  </div>
+                </div>
+                <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+                  <li><strong>Click on the red "PC Number" badge</strong> at the top of the page</li>
+                  <li>A modal will appear asking for your PC number</li>
+                  <li><strong>Enter your 3-digit PC number</strong> (e.g., <code>010</code>, <code>095</code>, <code>999</code>)
+                    <ul class="list-disc ml-6 mt-1 space-y-1 text-sm">
+                      <li>If your computer is named <code>KS095</code>, enter <code>095</code></li>
+                      <li>If you're on <code>LAPTOP-123</code>, enter the assigned number</li>
+                    </ul>
+                  </li>
+                  <li>Click <strong>"Save PC Number"</strong></li>
+                  <li>The badge should turn green ✅</li>
+                </ol>
+                <div class="alert-box alert-info mt-4">
+                  <strong>Why is this needed?</strong> The PC number identifies which computer uploaded each file, helping track the source of submissions.
+                </div>
+              </div>
+            </div>
+
+            <div class="collapsible-section">
+              <div class="collapsible-header">
+                <h4 class="text-lg font-semibold">Step 2: Set Upload Destination</h4>
+                <span class="text-xl">▼</span>
+              </div>
+              <div class="collapsible-content">
+                <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+                  <li><strong>Click on the red "Upload Destination" badge</strong></li>
+                  <li>Read the information modal about folder permissions</li>
+                  <li>Click <strong>"Set Upload Destination"</strong></li>
+                  <li>A browser folder picker will appear</li>
+                  <li><strong>Navigate to the monitored folder</strong> (typically <code>incoming/</code>)</li>
+                  <li><strong>Click "Select Folder"</strong> to grant permission</li>
+                  <li>The badge should turn green ✅</li>
+                </ol>
+                <div class="alert-box alert-warning mt-4">
+                  <strong>Important:</strong> This is a one-time setup per browser. The permission is saved and you won't be asked again.
+                </div>
+              </div>
+            </div>
+
+            <h3 class="text-2xl font-semibold mb-4 mt-8">Regular Upload Process</h3>
+
+            <div class="diagram-box">
+              <h4 class="font-semibold mb-3">Once Configured</h4>
+              <div class="space-y-4">
+                <div class="border-l-4 border-blue-500 pl-4">
+                  <div class="font-semibold">Method A: Drag & Drop</div>
+                  <ol class="text-sm text-gray-700 mt-1 space-y-1">
+                    <li>1. Drag one or more PDF files from File Explorer</li>
+                    <li>2. Drop them on the upload zone (large dotted box)</li>
+                    <li>3. Files will be added to the upload queue</li>
+                  </ol>
+                </div>
+                <div class="border-l-4 border-green-500 pl-4">
+                  <div class="font-semibold">Method B: Click to Browse</div>
+                  <ol class="text-sm text-gray-700 mt-1 space-y-1">
+                    <li>1. Click anywhere in the upload zone</li>
+                    <li>2. A file picker will open</li>
+                    <li>3. Select one or more PDF files</li>
+                    <li>4. Click "Open"</li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+
+            <h4 class="text-lg font-semibold mb-3 mt-6">Monitor Progress</h4>
+            <div class="bg-gray-50 border rounded p-4">
+              <p class="mb-3">A floating panel will show:</p>
+              <div class="space-y-2">
+                <div class="flex items-center gap-2">
+                  <span class="text-yellow-600">⏳</span>
+                  <span class="text-sm"><strong>Uploading:</strong> File being written</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-green-600">✅</span>
+                  <span class="text-sm"><strong>Complete:</strong> File uploaded successfully</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="text-red-600">❌</span>
+                  <span class="text-sm"><strong>Error:</strong> Upload failed (see error message)</span>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Pipeline Section -->
+          <section id="pipeline" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Understanding the Upload Pipeline</h2>
+
+            <div class="diagram-box bg-purple-50 border-purple-300">
+              <h3 class="text-lg font-semibold mb-4 text-center">Complete Data Flow</h3>
+              <div class="space-y-3 text-sm">
+                <div class="flex items-center gap-3">
+                  <div class="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold flex-shrink-0">1</div>
+                  <div><strong>User:</strong> Drag & drop PDF to browser</div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold flex-shrink-0">2</div>
+                  <div><strong>Browser:</strong> Validate PC number & destination</div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold flex-shrink-0">3</div>
+                  <div><strong>Local Folder:</strong> Write PDF file & metadata.json</div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold flex-shrink-0">4</div>
+                  <div><strong>OneDrive:</strong> Auto-sync to cloud (seconds)</div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold flex-shrink-0">5</div>
+                  <div><strong>Agent:</strong> Detect file and process</div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold flex-shrink-0">6</div>
+                  <div><strong>Jotform:</strong> Upload submission</div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <div class="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold flex-shrink-0">7</div>
+                  <div><strong>Filed:</strong> Move to school folder</div>
+                </div>
+              </div>
+              <div class="mt-4 pt-4 border-t border-purple-200 text-center">
+                <strong>Total Time:</strong> <span class="text-purple-700">~30-60 seconds</span> end-to-end
+              </div>
+            </div>
+
+            <h3 class="text-2xl font-semibold mb-4 mt-8">Timeline Summary</h3>
+            <table class="text-sm">
+              <thead>
+                <tr>
+                  <th>Step</th>
+                  <th>Time</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Upload to browser</td>
+                  <td>Instant</td>
+                  <td>You see feedback</td>
+                </tr>
+                <tr>
+                  <td>Write files</td>
+                  <td>1-2 sec</td>
+                  <td>Floating panel updates</td>
+                </tr>
+                <tr>
+                  <td>OneDrive sync</td>
+                  <td>5-30 sec</td>
+                  <td>Background</td>
+                </tr>
+                <tr>
+                  <td>Agent detection</td>
+                  <td>Immediate</td>
+                  <td>Background</td>
+                </tr>
+                <tr>
+                  <td>Processing</td>
+                  <td>5-10 sec</td>
+                  <td>Check logs</td>
+                </tr>
+                <tr>
+                  <td>Jotform upload</td>
+                  <td>10-30 sec</td>
+                  <td>Check logs</td>
+                </tr>
+                <tr>
+                  <td>Filing</td>
+                  <td>Instant</td>
+                  <td>Check filed/ folder</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <!-- Configuration Section -->
+          <section id="configuration" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Configuration and Setup</h2>
+
+            <div class="collapsible-section">
+              <div class="collapsible-header">
+                <h3 class="text-xl font-semibold">PC Number Configuration</h3>
+                <span class="text-2xl">▼</span>
+              </div>
+              <div class="collapsible-content">
+                <h4 class="font-semibold mb-2">Auto-Detection</h4>
+                <p class="text-gray-700 mb-3">The system tries to auto-detect your PC number from:</p>
+                <ol class="list-decimal ml-6 space-y-1 text-gray-700 mb-4">
+                  <li>Computer name (e.g., <code>KS095</code> → <code>095</code>)</li>
+                  <li>Username in file paths</li>
+                  <li>Registry settings</li>
+                </ol>
+                <p class="text-gray-700 mb-3">If auto-detection fails, you'll see <code>000</code> or <code>???</code> - configure manually.</p>
+
+                <h4 class="font-semibold mb-2 mt-4">Manual Configuration</h4>
+                <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+                  <li>Click the PC Number badge (red or showing wrong number)</li>
+                  <li>Enter your 3-digit number</li>
+                  <li><strong>Formatting:</strong> System auto-pads to 3 digits
+                    <ul class="list-disc ml-6 mt-1 space-y-1 text-sm">
+                      <li>Enter <code>10</code> → Saved as <code>010</code></li>
+                      <li>Enter <code>95</code> → Saved as <code>095</code></li>
+                      <li>Enter <code>999</code> → Saved as <code>999</code></li>
+                    </ul>
+                  </li>
+                  <li><strong>Validation:</strong> Must be numeric and not <code>000</code></li>
+                </ol>
+
+                <div class="alert-box alert-info mt-4">
+                  <strong>Storage:</strong> Saved in browser's localStorage, persists across page refreshes, cleared if you clear browser data.
+                </div>
+              </div>
+            </div>
+
+            <div class="collapsible-section">
+              <div class="collapsible-header">
+                <h3 class="text-xl font-semibold">Upload Destination Configuration</h3>
+                <span class="text-2xl">▼</span>
+              </div>
+              <div class="collapsible-content">
+                <p class="text-gray-700 mb-3">The upload destination is the folder where the processor agent watches for new files.</p>
+                <p class="text-gray-700 mb-4"><strong>Typical Setup:</strong></p>
+                <pre class="text-xs">C:\Users\[YourName]\OneDrive - Organization\
+  └── Project Folder\
+      └── incoming\          ← Select this folder</pre>
+
+                <h4 class="font-semibold mb-2 mt-4">Permission Model</h4>
+                <p class="text-gray-700 mb-2">When you set the destination:</p>
+                <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+                  <li><strong>Browser shows native folder picker</strong> (Chrome/Edge security feature)</li>
+                  <li><strong>You select the folder</strong> (exact folder agent monitors)</li>
+                  <li><strong>Permission granted</strong> (persists until you clear browser data)</li>
+                  <li><strong>Verification</strong> (badge turns green ✅)</li>
+                </ol>
+              </div>
+            </div>
+          </section>
+
+          <!-- Troubleshooting Section -->
+          <section id="troubleshooting" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Troubleshooting</h2>
+
+            <div class="space-y-4">
+              <div class="collapsible-section">
+                <div class="collapsible-header">
+                  <h3 class="text-xl font-semibold">"Files not appearing in folder"</h3>
+                  <span class="text-2xl">▼</span>
+                </div>
+                <div class="collapsible-content">
+                  <p class="mb-3"><strong>Possible Causes:</strong></p>
+                  <ol class="list-decimal ml-6 space-y-1 text-gray-700 mb-4">
+                    <li>Wrong folder selected</li>
+                    <li>Permission expired/revoked</li>
+                    <li>OneDrive sync paused</li>
+                  </ol>
+                  <p class="mb-3"><strong>Solutions:</strong></p>
+                  <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+                    <li>Verify folder path in badge</li>
+                    <li>Re-grant folder permission</li>
+                    <li>Check OneDrive sync status (system tray icon)</li>
+                    <li>Restart OneDrive if needed</li>
+                  </ol>
+                </div>
+              </div>
+
+              <div class="collapsible-section">
+                <div class="collapsible-header">
+                  <h3 class="text-xl font-semibold">"Can't save PC number"</h3>
+                  <span class="text-2xl">▼</span>
+                </div>
+                <div class="collapsible-content">
+                  <p class="mb-3"><strong>Possible Causes:</strong></p>
+                  <ol class="list-decimal ml-6 space-y-1 text-gray-700 mb-4">
+                    <li>LocalStorage disabled</li>
+                    <li>Private browsing mode</li>
+                    <li>Browser storage full</li>
+                  </ol>
+                  <p class="mb-3"><strong>Solutions:</strong></p>
+                  <ol class="list-decimal ml-6 space-y-1 text-gray-700">
+                    <li>Enable cookies and site data in browser settings</li>
+                    <li>Use normal browsing mode (not private/incognito)</li>
+                    <li>Clear browser data to free space</li>
+                  </ol>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- FAQs Section -->
+          <section id="faqs" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">FAQs</h2>
+
+            <div class="space-y-4">
+              <div class="collapsible-section">
+                <div class="collapsible-header">
+                  <h3 class="text-lg font-semibold">Do I need internet access to upload?</h3>
+                  <span class="text-xl">▼</span>
+                </div>
+                <div class="collapsible-content">
+                  <p class="text-gray-700">No! Files are written to local folders. Internet only needed for OneDrive sync (which can happen later).</p>
+                </div>
+              </div>
+
+              <div class="collapsible-section">
+                <div class="collapsible-header">
+                  <h3 class="text-lg font-semibold">Can I upload while offline?</h3>
+                  <span class="text-xl">▼</span>
+                </div>
+                <div class="collapsible-content">
+                  <p class="text-gray-700">Yes! Files are written locally. They'll sync to OneDrive when you reconnect.</p>
+                </div>
+              </div>
+
+              <div class="collapsible-section">
+                <div class="collapsible-header">
+                  <h3 class="text-lg font-semibold">Why Chrome/Edge only?</h3>
+                  <span class="text-xl">▼</span>
+                </div>
+                <div class="collapsible-content">
+                  <p class="text-gray-700">File System Access API is only available in Chromium browsers. Firefox and Safari don't support it yet.</p>
+                </div>
+              </div>
+
+              <div class="collapsible-section">
+                <div class="collapsible-header">
+                  <h3 class="text-lg font-semibold">Can I use this on multiple computers?</h3>
+                  <span class="text-xl">▼</span>
+                </div>
+                <div class="collapsible-content">
+                  <p class="text-gray-700">Yes! Configure each computer with its own PC number. Permissions are per-browser on each computer.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Best Practices Section -->
+          <section id="best-practices" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Best Practices</h2>
+
+            <div class="grid md:grid-cols-2 gap-6">
+              <div class="diagram-box bg-blue-50 border-blue-300">
+                <h3 class="text-lg font-semibold mb-3">📤 For Efficient Uploads</h3>
+                <ul class="space-y-2 text-sm text-gray-700">
+                  <li>✓ Upload 10-20 files at a time</li>
+                  <li>✓ Wait for each batch to complete</li>
+                  <li>✓ Use standard filename format</li>
+                  <li>✓ Check OneDrive status before uploading</li>
+                </ul>
+              </div>
+
+              <div class="diagram-box bg-green-50 border-green-300">
+                <h3 class="text-lg font-semibold mb-3">✅ For Data Quality</h3>
+                <ul class="space-y-2 text-sm text-gray-700">
+                  <li>✓ Verify PC number matches your computer</li>
+                  <li>✓ Check file quality before uploading</li>
+                  <li>✓ Upload assessments same day</li>
+                  <li>✓ Review results in Checking System</li>
+                </ul>
+              </div>
+
+              <div class="diagram-box bg-yellow-50 border-yellow-300">
+                <h3 class="text-lg font-semibold mb-3">🔧 For Troubleshooting</h3>
+                <ul class="space-y-2 text-sm text-gray-700">
+                  <li>✓ Keep browser console open (F12)</li>
+                  <li>✓ Test with one file first</li>
+                  <li>✓ Document issues with screenshots</li>
+                  <li>✓ Clear browser cache weekly</li>
+                </ul>
+              </div>
+
+              <div class="diagram-box bg-purple-50 border-purple-300">
+                <h3 class="text-lg font-semibold mb-3">📋 File Naming</h3>
+                <ul class="space-y-2 text-sm text-gray-700">
+                  <li>✓ Format: <code>xxxxx_YYYYMMDD_HH_MM.pdf</code></li>
+                  <li>✓ Correct format = faster processing</li>
+                  <li>✓ Wrong format = rejected by agent</li>
+                </ul>
+              </div>
+            </div>
+          </section>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center text-gray-600 text-sm py-8">
+          <p><strong>4Set System</strong> - KeySteps@JC (Phase Two)</p>
+          <p class="mt-2">The Education University of Hong Kong | Version 2.0 | October 2025</p>
+          <p class="mt-4">For questions or feedback, please contact the project maintainers or open a GitHub issue.</p>
+        </footer>
+      </main>
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script src="assets/js/user-guides.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        document.querySelectorAll('.collapsible-header span:last-child').forEach(arrow => {
+          const content = arrow.closest('.collapsible-header').nextElementSibling;
+          arrow.textContent = content.classList.contains('active') ? '▲' : '▼';
+          arrow.classList.add('arrow');
+        });
+      }, 100);
+    });
+  </script>
+</body>
+</html>
