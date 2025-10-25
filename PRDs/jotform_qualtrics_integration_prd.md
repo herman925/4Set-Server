@@ -2786,9 +2786,9 @@ JotFormCacheDB (IndexedDB database)
 5. Duration: 60-90 seconds typical
 
 **Status Indicators:**
-- 🔴 **System Not Ready**: No cache exists - click to build
-- 🟠 **Syncing X%**: Cache building in progress
-- 🟢 **System Ready**: Cache valid and loaded
+- **System Not Ready** (red badge with `badge-error` class): No cache exists - click to build
+- **Syncing X%** (orange badge with `badge-warning` class): Cache building in progress with animated progress bar
+- **System Ready** (green badge with `badge-success` class): Cache valid and loaded
 
 #### Cache Deletion
 
