@@ -184,8 +184,27 @@
               <li>Click <strong>Download</strong> at the top to install the OneDrive sync client</li>
             </ol>
 
-            <div class="screenshot-placeholder">
-              [Screenshot: OneDrive download page showing the Download button]
+            <!-- Embedded Screenshot: OneDrive Download Page -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
+              <div class="bg-gradient-to-br from-blue-50 to-white p-8">
+                <div class="bg-white rounded-lg shadow-md p-6 max-w-2xl mx-auto">
+                  <div class="flex items-start gap-4">
+                    <div class="w-16 h-16 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="white">
+                        <path d="M23 19V8.5l-8.5-4.7L6 8.5V19l8.5 4.5L23 19z"/>
+                        <path opacity="0.5" d="M1 5L9.5 9.7V19l-8.5-4.5V5z"/>
+                      </svg>
+                    </div>
+                    <div class="flex-1">
+                      <h3 class="text-xl font-bold text-gray-800 mb-2">OneDrive for Business</h3>
+                      <p class="text-gray-600 mb-4">Sync your files and folders to this computer</p>
+                      <button class="bg-blue-600 text-white px-6 py-2 rounded font-semibold hover:bg-blue-700">
+                        Download
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 1.2: Sign In to OneDrive</h3>
@@ -197,8 +216,25 @@
               <li>Click <strong>Next</strong> and follow the setup wizard</li>
             </ol>
 
-            <div class="screenshot-placeholder">
-              [Screenshot: OneDrive sign-in screen]
+            <!-- Embedded Screenshot: OneDrive Sign-in Screen -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
+              <div class="bg-white p-12">
+                <div class="max-w-md mx-auto text-center">
+                  <div class="w-16 h-16 bg-blue-600 rounded-lg mx-auto mb-6 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="white">
+                      <path d="M23 19V8.5l-8.5-4.7L6 8.5V19l8.5 4.5L23 19z"/>
+                    </svg>
+                  </div>
+                  <h2 class="text-2xl font-bold text-gray-800 mb-2">Sign in to OneDrive</h2>
+                  <p class="text-gray-600 mb-6">Enter your EdUHK account</p>
+                  <div class="space-y-4">
+                    <input type="text" placeholder="Email, phone, or Skype" class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:border-blue-600 focus:outline-none" />
+                    <button class="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700">
+                      Next
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 1.3: Configure Sync Folder</h3>
@@ -221,8 +257,72 @@
               <li>Bookmark this location for easy access</li>
             </ol>
 
-            <div class="screenshot-placeholder">
-              [Screenshot: File Explorer showing OneDrive folder structure with 4Set-Server highlighted]
+            <!-- Embedded Screenshot: File Explorer with OneDrive -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
+              <div class="bg-white">
+                <!-- Explorer toolbar -->
+                <div class="bg-gray-100 px-4 py-2 border-b border-gray-300 flex items-center gap-4">
+                  <div class="flex gap-2">
+                    <button class="text-gray-400">←</button>
+                    <button class="text-gray-400">→</button>
+                    <button class="text-gray-600">↑</button>
+                  </div>
+                  <div class="flex-1 bg-white px-3 py-1 border border-gray-300 rounded text-sm text-gray-700">
+                    📁 OneDrive - The Education University of Hong Kong \ 4Set-Server
+                  </div>
+                </div>
+                <!-- Explorer content -->
+                <div class="flex">
+                  <!-- Sidebar -->
+                  <div class="w-48 bg-gray-50 border-r border-gray-300 p-3 text-sm">
+                    <div class="mb-3">
+                      <div class="font-semibold text-gray-700 mb-1">Quick access</div>
+                      <div class="text-gray-600">Desktop</div>
+                      <div class="text-gray-600">Documents</div>
+                      <div class="text-gray-600">Downloads</div>
+                    </div>
+                    <div>
+                      <div class="font-semibold text-gray-700 mb-1 flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2">
+                          <path d="M23 19V8.5l-8.5-4.7L6 8.5V19l8.5 4.5L23 19z"/>
+                        </svg>
+                        OneDrive - EdUHK
+                      </div>
+                      <div class="text-gray-600 ml-4">General</div>
+                      <div class="bg-blue-100 text-blue-700 font-semibold ml-4 px-2 py-1 rounded">4Set-Server</div>
+                    </div>
+                  </div>
+                  <!-- Main area -->
+                  <div class="flex-1 p-4">
+                    <div class="space-y-2">
+                      <div class="flex items-center gap-3 hover:bg-blue-50 p-2 rounded">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#FFD700" stroke="#FF8C00" stroke-width="1">
+                          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        <span class="text-gray-700">assets</span>
+                      </div>
+                      <div class="flex items-center gap-3 hover:bg-blue-50 p-2 rounded">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#FFD700" stroke="#FF8C00" stroke-width="1">
+                          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        <span class="text-gray-700">config</span>
+                      </div>
+                      <div class="flex items-center gap-3 hover:bg-blue-50 p-2 rounded bg-blue-50 border border-blue-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#FFD700" stroke="#FF8C00" stroke-width="1">
+                          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        <span class="text-gray-700 font-semibold">incoming</span>
+                      </div>
+                      <div class="flex items-center gap-3 hover:bg-blue-50 p-2 rounded">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#FFD700" stroke="#FF8C00" stroke-width="1">
+                          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        <span class="text-gray-700">logs</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="info-box">
@@ -271,8 +371,40 @@
               <li>Wait for the upload progress bar to complete</li>
             </ol>
 
-            <div class="screenshot-placeholder">
-              [Screenshot: Assessment Uploader interface showing drag-and-drop zone]
+            <!-- Embedded Screenshot: Upload Interface -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
+              <div class="bg-white p-8 text-center">
+                <div class="flex flex-col items-center gap-4">
+                  <div class="p-6 rounded-full bg-blue-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#4A90E2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                      <line x1="12" y1="18" x2="12" y2="12"></line>
+                      <line x1="9" y1="15" x2="15" y2="15"></line>
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Drop PDF Files Here</h2>
+                    <p class="text-gray-600 mb-4">or click anywhere to browse your computer</p>
+                  </div>
+                  <button class="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    Browse Files
+                  </button>
+                  <div class="mt-4 space-y-1.5 text-gray-500 text-sm">
+                    <p class="flex items-center gap-2 justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                      </svg>
+                      Only PDF files are supported
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="info-box">
@@ -346,8 +478,51 @@ flowchart LR
               <li>Open the most recent log file with Excel or a text editor</li>
             </ol>
 
-            <div class="screenshot-placeholder">
-              [Screenshot: Logs folder showing dated log files]
+            <!-- Embedded Screenshot: Logs Folder -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
+              <div class="bg-white">
+                <!-- Explorer toolbar -->
+                <div class="bg-gray-100 px-4 py-2 border-b border-gray-300 flex items-center gap-4">
+                  <div class="flex gap-2">
+                    <button class="text-gray-400">←</button>
+                    <button class="text-gray-400">→</button>
+                    <button class="text-gray-600">↑</button>
+                  </div>
+                  <div class="flex-1 bg-white px-3 py-1 border border-gray-300 rounded text-sm text-gray-700">
+                    📁 4Set-Server \ logs
+                  </div>
+                </div>
+                <!-- File list -->
+                <div class="p-4">
+                  <div class="grid grid-cols-[auto_1fr_auto_auto] gap-x-4 gap-y-1 text-sm">
+                    <div class="col-span-4 text-xs text-gray-500 border-b pb-1 mb-2 grid grid-cols-[auto_1fr_auto_auto] gap-x-4">
+                      <span></span>
+                      <span>Name</span>
+                      <span>Date modified</span>
+                      <span>Size</span>
+                    </div>
+                    <div>📄</div>
+                    <div class="text-gray-700">20251020_processing_agent.csv</div>
+                    <div class="text-gray-500">2025-10-20 23:59</div>
+                    <div class="text-gray-500">145 KB</div>
+                    
+                    <div>📄</div>
+                    <div class="text-gray-700">20251021_processing_agent.csv</div>
+                    <div class="text-gray-500">2025-10-21 23:59</div>
+                    <div class="text-gray-500">158 KB</div>
+                    
+                    <div>📄</div>
+                    <div class="text-gray-700">20251022_processing_agent.csv</div>
+                    <div class="text-gray-500">2025-10-22 23:59</div>
+                    <div class="text-gray-500">132 KB</div>
+                    
+                    <div>📄</div>
+                    <div class="text-gray-700 font-semibold bg-blue-50">20251025_processing_agent.csv</div>
+                    <div class="text-gray-700 font-semibold bg-blue-50">2025-10-25 14:30</div>
+                    <div class="text-gray-700 font-semibold bg-blue-50">87 KB</div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 3.2: Understanding Log Entries</h3>
@@ -378,8 +553,64 @@ flowchart LR
               <li>Review all matching entries to see the complete processing history</li>
             </ol>
 
-            <div class="screenshot-placeholder">
-              [Screenshot: Excel showing log file with search/filter applied]
+            <!-- Embedded Screenshot: Excel Log File View -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
+              <div class="bg-white">
+                <!-- Excel toolbar -->
+                <div class="bg-gray-50 px-4 py-2 border-b border-gray-300 text-sm">
+                  <div class="flex items-center gap-4">
+                    <span class="font-semibold">📊 20251025_processing_agent.csv - Excel</span>
+                    <div class="flex gap-2 ml-auto">
+                      <input type="text" placeholder="🔍 Find (Ctrl+F)" class="px-3 py-1 border border-gray-300 rounded text-xs w-48" />
+                    </div>
+                  </div>
+                </div>
+                <!-- Spreadsheet -->
+                <div class="overflow-x-auto">
+                  <table class="w-full text-xs border-collapse">
+                    <thead>
+                      <tr class="bg-gray-100 border-b border-gray-300">
+                        <th class="border border-gray-300 px-2 py-1 font-semibold text-left">A<br/>Timestamp</th>
+                        <th class="border border-gray-300 px-2 py-1 font-semibold text-left">B<br/>Level</th>
+                        <th class="border border-gray-300 px-2 py-1 font-semibold text-left">C<br/>Filename</th>
+                        <th class="border border-gray-300 px-2 py-1 font-semibold text-left">D<br/>Message</th>
+                      </tr>
+                    </thead>
+                    <tbody class="font-mono">
+                      <tr>
+                        <td class="border border-gray-300 px-2 py-1">2025-10-25 09:15:23</td>
+                        <td class="border border-gray-300 px-2 py-1 text-blue-600">INFO</td>
+                        <td class="border border-gray-300 px-2 py-1">13268_20251025_09_10.pdf</td>
+                        <td class="border border-gray-300 px-2 py-1">Processing started</td>
+                      </tr>
+                      <tr>
+                        <td class="border border-gray-300 px-2 py-1">2025-10-25 09:15:24</td>
+                        <td class="border border-gray-300 px-2 py-1 text-blue-600">INFO</td>
+                        <td class="border border-gray-300 px-2 py-1">13268_20251025_09_10.pdf</td>
+                        <td class="border border-gray-300 px-2 py-1">Validation passed</td>
+                      </tr>
+                      <tr class="bg-green-50">
+                        <td class="border border-gray-300 px-2 py-1">2025-10-25 09:15:26</td>
+                        <td class="border border-gray-300 px-2 py-1 text-blue-600">INFO</td>
+                        <td class="border border-gray-300 px-2 py-1">13268_20251025_09_10.pdf</td>
+                        <td class="border border-gray-300 px-2 py-1 font-semibold">Jotform upload successful</td>
+                      </tr>
+                      <tr>
+                        <td class="border border-gray-300 px-2 py-1">2025-10-25 09:15:27</td>
+                        <td class="border border-gray-300 px-2 py-1 text-blue-600">INFO</td>
+                        <td class="border border-gray-300 px-2 py-1">13268_20251025_09_10.pdf</td>
+                        <td class="border border-gray-300 px-2 py-1">Filed to S023</td>
+                      </tr>
+                      <tr class="bg-yellow-50">
+                        <td class="border border-gray-300 px-2 py-1">2025-10-25 10:22:15</td>
+                        <td class="border border-gray-300 px-2 py-1 text-orange-600">WARN</td>
+                        <td class="border border-gray-300 px-2 py-1">99999_20251025_10_20.pdf</td>
+                        <td class="border border-gray-300 px-2 py-1">rejected: invalid filename format</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -402,8 +633,61 @@ flowchart LR
               <li>You'll see the Checking System home page with multiple view options</li>
             </ol>
 
-            <div class="screenshot-placeholder">
-              [Screenshot: Checking System home page showing navigation options]
+            <!-- Embedded Screenshot: Checking System Home -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
+              <div class="bg-gradient-to-br from-blue-50 to-white p-8">
+                <div class="max-w-4xl mx-auto">
+                  <div class="mb-6">
+                    <h1 class="text-4xl font-bold text-gray-800 mb-2 flex items-center gap-3">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#4A90E2" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <path d="m21 21-4.35-4.35"></path>
+                        <path d="M9 11l2 2 4-4"></path>
+                      </svg>
+                      Checking System
+                    </h1>
+                    <p class="text-gray-600 text-lg">Search and analyse submitted data from every angle</p>
+                  </div>
+                  
+                  <!-- Status badges -->
+                  <div class="bg-white rounded-lg p-4 mb-6 flex items-center gap-3">
+                    <div class="flex items-center gap-2 bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-semibold">
+                      <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                      System Ready
+                    </div>
+                    <span class="text-sm text-gray-500">Last Synced: 2 mins ago</span>
+                  </div>
+                  
+                  <!-- Navigation cards -->
+                  <div class="grid md:grid-cols-2 gap-4">
+                    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition cursor-pointer border-2 border-transparent hover:border-blue-300">
+                      <div class="text-3xl mb-3">🏫</div>
+                      <h3 class="text-xl font-bold text-gray-800 mb-2">District View</h3>
+                      <p class="text-gray-600 text-sm">View by geographic region</p>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition cursor-pointer border-2 border-transparent hover:border-blue-300">
+                      <div class="text-3xl mb-3">👥</div>
+                      <h3 class="text-xl font-bold text-gray-800 mb-2">Group View</h3>
+                      <p class="text-gray-600 text-sm">View by project group</p>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition cursor-pointer border-2 border-transparent hover:border-blue-300">
+                      <div class="text-3xl mb-3">🏛️</div>
+                      <h3 class="text-xl font-bold text-gray-800 mb-2">School View</h3>
+                      <p class="text-gray-600 text-sm">View individual school data</p>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition cursor-pointer border-2 border-transparent hover:border-blue-300">
+                      <div class="text-3xl mb-3">📚</div>
+                      <h3 class="text-xl font-bold text-gray-800 mb-2">Class View</h3>
+                      <p class="text-gray-600 text-sm">View class-level details</p>
+                    </div>
+                    <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition cursor-pointer border-2 border-transparent hover:border-blue-300 md:col-span-2">
+                      <div class="text-3xl mb-3">👤</div>
+                      <h3 class="text-xl font-bold text-gray-800 mb-2">Student View</h3>
+                      <p class="text-gray-600 text-sm">View individual student assessments</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 4.2: Check a Single Student</h3>
@@ -416,8 +700,55 @@ flowchart LR
               <li>Verify termination flags match calculations</li>
             </ol>
 
-            <div class="screenshot-placeholder">
-              [Screenshot: Student detail view showing task completion grid]
+            <!-- Embedded Screenshot: Student Detail View -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
+              <div class="bg-white p-6">
+                <div class="mb-4 pb-4 border-b">
+                  <h2 class="text-2xl font-bold text-gray-800 mb-1">Student: C13268</h2>
+                  <p class="text-gray-600">張三 • School S023 • Class K2A</p>
+                </div>
+                
+                <!-- Task completion grid -->
+                <div class="space-y-3">
+                  <div class="text-sm font-semibold text-gray-700 mb-2">Assessment Tasks</div>
+                  
+                  <div class="grid grid-cols-[auto_1fr_auto] gap-4 items-center p-3 bg-green-50 border border-green-200 rounded">
+                    <div class="text-2xl">✅</div>
+                    <div>
+                      <div class="font-semibold text-gray-800">ERV - Expressive Vocabulary</div>
+                      <div class="text-xs text-gray-600">36/36 questions answered</div>
+                    </div>
+                    <div class="text-green-700 font-semibold text-sm">Complete</div>
+                  </div>
+                  
+                  <div class="grid grid-cols-[auto_1fr_auto] gap-4 items-center p-3 bg-green-50 border border-green-200 rounded">
+                    <div class="text-2xl">✅</div>
+                    <div>
+                      <div class="font-semibold text-gray-800">CM - Counting & Magnitude</div>
+                      <div class="text-xs text-gray-600">22/22 questions answered</div>
+                    </div>
+                    <div class="text-green-700 font-semibold text-sm">Complete</div>
+                  </div>
+                  
+                  <div class="grid grid-cols-[auto_1fr_auto] gap-4 items-center p-3 bg-yellow-50 border border-yellow-300 rounded">
+                    <div class="text-2xl">⚠️</div>
+                    <div>
+                      <div class="font-semibold text-gray-800">CWR - Chinese Word Reading</div>
+                      <div class="text-xs text-gray-600">45/60 questions answered</div>
+                    </div>
+                    <div class="text-orange-600 font-semibold text-sm">Incomplete</div>
+                  </div>
+                  
+                  <div class="grid grid-cols-[auto_1fr_auto] gap-4 items-center p-3 bg-gray-50 border border-gray-200 rounded">
+                    <div class="text-2xl">⚪</div>
+                    <div>
+                      <div class="font-semibold text-gray-800">TGMD - Gross Motor Development</div>
+                      <div class="text-xs text-gray-600">Not started</div>
+                    </div>
+                    <div class="text-gray-500 font-semibold text-sm">Not Started</div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="info-box">
@@ -440,8 +771,68 @@ flowchart LR
               <li>Click on a student to see individual details</li>
             </ol>
 
-            <div class="screenshot-placeholder">
-              [Screenshot: Class view showing student grid with completion status]
+            <!-- Embedded Screenshot: Class View -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
+              <div class="bg-white p-6">
+                <div class="mb-4 pb-4 border-b">
+                  <h2 class="text-2xl font-bold text-gray-800 mb-1">Class K2A - School S023</h2>
+                  <p class="text-gray-600">25 students • 80% completion rate</p>
+                </div>
+                
+                <!-- Student grid -->
+                <div class="grid grid-cols-5 gap-2">
+                  <div class="aspect-square bg-green-100 border-2 border-green-500 rounded-lg flex items-center justify-center text-center p-2">
+                    <div>
+                      <div class="text-xl mb-1">✅</div>
+                      <div class="text-xs font-semibold">C13268</div>
+                      <div class="text-xs text-gray-600">張三</div>
+                    </div>
+                  </div>
+                  <div class="aspect-square bg-green-100 border-2 border-green-500 rounded-lg flex items-center justify-center text-center p-2">
+                    <div>
+                      <div class="text-xl mb-1">✅</div>
+                      <div class="text-xs font-semibold">C13269</div>
+                      <div class="text-xs text-gray-600">李四</div>
+                    </div>
+                  </div>
+                  <div class="aspect-square bg-yellow-100 border-2 border-yellow-500 rounded-lg flex items-center justify-center text-center p-2">
+                    <div>
+                      <div class="text-xl mb-1">⚠️</div>
+                      <div class="text-xs font-semibold">C13270</div>
+                      <div class="text-xs text-gray-600">王五</div>
+                    </div>
+                  </div>
+                  <div class="aspect-square bg-green-100 border-2 border-green-500 rounded-lg flex items-center justify-center text-center p-2">
+                    <div>
+                      <div class="text-xl mb-1">✅</div>
+                      <div class="text-xs font-semibold">C13271</div>
+                      <div class="text-xs text-gray-600">陳六</div>
+                    </div>
+                  </div>
+                  <div class="aspect-square bg-gray-100 border-2 border-gray-300 rounded-lg flex items-center justify-center text-center p-2">
+                    <div>
+                      <div class="text-xl mb-1">⚪</div>
+                      <div class="text-xs font-semibold">C13272</div>
+                      <div class="text-xs text-gray-600">林七</div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="mt-4 flex items-center gap-4 text-sm">
+                  <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 bg-green-500 rounded"></div>
+                    <span>Complete (20)</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 bg-yellow-500 rounded"></div>
+                    <span>Incomplete (4)</span>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <div class="w-4 h-4 bg-gray-300 rounded"></div>
+                    <span>Not Started (1)</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 4.4: Check a Whole School</h3>
@@ -453,8 +844,94 @@ flowchart LR
               <li>Click on a class to drill down to class-level details</li>
             </ol>
 
-            <div class="screenshot-placeholder">
-              [Screenshot: School view showing class-level summary statistics]
+            <!-- Embedded Screenshot: School View -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
+              <div class="bg-white p-6">
+                <div class="mb-4 pb-4 border-b">
+                  <h2 class="text-2xl font-bold text-gray-800 mb-1">School S023</h2>
+                  <p class="text-gray-600">香港道教聯合會圓玄學院石圍角小學 • District: Shatin</p>
+                </div>
+                
+                <!-- Class summary table -->
+                <div class="overflow-x-auto">
+                  <table class="w-full text-sm">
+                    <thead>
+                      <tr class="bg-gray-100 border-b-2 border-gray-300">
+                        <th class="text-left py-2 px-3 font-semibold">Class</th>
+                        <th class="text-left py-2 px-3 font-semibold">Students</th>
+                        <th class="text-left py-2 px-3 font-semibold">ERV</th>
+                        <th class="text-left py-2 px-3 font-semibold">CM</th>
+                        <th class="text-left py-2 px-3 font-semibold">CWR</th>
+                        <th class="text-left py-2 px-3 font-semibold">Overall</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr class="border-b border-gray-200 hover:bg-blue-50 cursor-pointer">
+                        <td class="py-2 px-3 font-semibold">K2A</td>
+                        <td class="py-2 px-3">25</td>
+                        <td class="py-2 px-3">
+                          <div class="flex items-center gap-2">
+                            <div class="w-20 bg-gray-200 rounded-full h-2">
+                              <div class="bg-green-500 h-2 rounded-full" style="width: 88%"></div>
+                            </div>
+                            <span class="text-xs">88%</span>
+                          </div>
+                        </td>
+                        <td class="py-2 px-3">
+                          <div class="flex items-center gap-2">
+                            <div class="w-20 bg-gray-200 rounded-full h-2">
+                              <div class="bg-green-500 h-2 rounded-full" style="width: 92%"></div>
+                            </div>
+                            <span class="text-xs">92%</span>
+                          </div>
+                        </td>
+                        <td class="py-2 px-3">
+                          <div class="flex items-center gap-2">
+                            <div class="w-20 bg-gray-200 rounded-full h-2">
+                              <div class="bg-yellow-500 h-2 rounded-full" style="width: 76%"></div>
+                            </div>
+                            <span class="text-xs">76%</span>
+                          </div>
+                        </td>
+                        <td class="py-2 px-3">
+                          <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-semibold">80%</span>
+                        </td>
+                      </tr>
+                      <tr class="border-b border-gray-200 hover:bg-blue-50 cursor-pointer">
+                        <td class="py-2 px-3 font-semibold">K2B</td>
+                        <td class="py-2 px-3">23</td>
+                        <td class="py-2 px-3">
+                          <div class="flex items-center gap-2">
+                            <div class="w-20 bg-gray-200 rounded-full h-2">
+                              <div class="bg-green-500 h-2 rounded-full" style="width: 95%"></div>
+                            </div>
+                            <span class="text-xs">95%</span>
+                          </div>
+                        </td>
+                        <td class="py-2 px-3">
+                          <div class="flex items-center gap-2">
+                            <div class="w-20 bg-gray-200 rounded-full h-2">
+                              <div class="bg-green-500 h-2 rounded-full" style="width: 87%"></div>
+                            </div>
+                            <span class="text-xs">87%</span>
+                          </div>
+                        </td>
+                        <td class="py-2 px-3">
+                          <div class="flex items-center gap-2">
+                            <div class="w-20 bg-gray-200 rounded-full h-2">
+                              <div class="bg-green-500 h-2 rounded-full" style="width: 91%"></div>
+                            </div>
+                            <span class="text-xs">91%</span>
+                          </div>
+                        </td>
+                        <td class="py-2 px-3">
+                          <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-semibold">88%</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
 
             <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 4.5: Check a Whole Group</h3>
@@ -475,8 +952,56 @@ flowchart LR
               <li>Drill down to individual schools for details</li>
             </ol>
 
-            <div class="screenshot-placeholder">
-              [Screenshot: District view showing regional summary]
+            <!-- Embedded Screenshot: District View -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
+              <div class="bg-white p-6">
+                <div class="mb-4 pb-4 border-b">
+                  <h2 class="text-2xl font-bold text-gray-800 mb-1">District: Shatin</h2>
+                  <p class="text-gray-600">8 schools • 342 students total</p>
+                </div>
+                
+                <!-- School cards -->
+                <div class="grid md:grid-cols-2 gap-4">
+                  <div class="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-300 cursor-pointer transition">
+                    <div class="flex items-start justify-between mb-2">
+                      <div class="font-semibold text-gray-800">S023</div>
+                      <div class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-semibold">85%</div>
+                    </div>
+                    <div class="text-sm text-gray-600 mb-3">香港道教聯合會圓玄學院石圍角小學</div>
+                    <div class="flex items-center gap-2 text-xs text-gray-500">
+                      <span>48 students</span>
+                      <span>•</span>
+                      <span>2 classes</span>
+                    </div>
+                  </div>
+                  
+                  <div class="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-300 cursor-pointer transition">
+                    <div class="flex items-start justify-between mb-2">
+                      <div class="font-semibold text-gray-800">S024</div>
+                      <div class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-xs font-semibold">72%</div>
+                    </div>
+                    <div class="text-sm text-gray-600 mb-3">沙田循道衛理小學</div>
+                    <div class="flex items-center gap-2 text-xs text-gray-500">
+                      <span>52 students</span>
+                      <span>•</span>
+                      <span>2 classes</span>
+                    </div>
+                  </div>
+                  
+                  <div class="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-300 cursor-pointer transition">
+                    <div class="flex items-start justify-between mb-2">
+                      <div class="font-semibold text-gray-800">S025</div>
+                      <div class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-semibold">91%</div>
+                    </div>
+                    <div class="text-sm text-gray-600 mb-3">培基小學</div>
+                    <div class="flex items-center gap-2 text-xs text-gray-500">
+                      <span>45 students</span>
+                      <span>•</span>
+                      <span>2 classes</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="success-box">
@@ -517,8 +1042,55 @@ flowchart LR
               <p class="text-sm"><strong>💡 What is Cache?</strong> The cache stores pre-processed data in your browser for faster loading. It's temporary and rebuilds automatically when needed, but manual refresh ensures you have the latest data.</p>
             </div>
 
-            <div class="screenshot-placeholder">
-              [Screenshot: Cache building progress indicator]
+            <!-- Embedded Screenshot: Cache Building Progress -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
+              <div class="bg-white p-8">
+                <div class="max-w-md mx-auto text-center">
+                  <div class="mb-6">
+                    <div class="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+                      <svg class="animate-spin" xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#4A90E2" stroke-width="2">
+                        <path d="M21 12a9 9 0 1 1-6.219-8.56"></path>
+                      </svg>
+                    </div>
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Building Cache...</h3>
+                    <p class="text-gray-600 text-sm">Fetching and processing data from JotForm</p>
+                  </div>
+                  
+                  <div class="space-y-3 mb-6">
+                    <div class="text-left">
+                      <div class="flex justify-between text-sm mb-1">
+                        <span class="text-gray-600">Downloading submissions</span>
+                        <span class="text-gray-800 font-semibold">100%</span>
+                      </div>
+                      <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-green-500 h-2 rounded-full transition-all" style="width: 100%"></div>
+                      </div>
+                    </div>
+                    
+                    <div class="text-left">
+                      <div class="flex justify-between text-sm mb-1">
+                        <span class="text-gray-600">Processing student data</span>
+                        <span class="text-gray-800 font-semibold">65%</span>
+                      </div>
+                      <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-blue-500 h-2 rounded-full transition-all" style="width: 65%"></div>
+                      </div>
+                    </div>
+                    
+                    <div class="text-left">
+                      <div class="flex justify-between text-sm mb-1">
+                        <span class="text-gray-600">Calculating statistics</span>
+                        <span class="text-gray-400 font-semibold">0%</span>
+                      </div>
+                      <div class="w-full bg-gray-200 rounded-full h-2">
+                        <div class="bg-gray-300 h-2 rounded-full transition-all" style="width: 0%"></div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <p class="text-xs text-gray-500">This may take 30-60 seconds...</p>
+                </div>
+              </div>
             </div>
 
             <div class="success-box">
@@ -546,8 +1118,46 @@ flowchart LR
               <li>Click <strong>Apply Filter</strong> to show only that student's data</li>
             </ol>
 
-            <div class="screenshot-placeholder">
-              [Screenshot: Filter dropdown showing student search]
+            <!-- Embedded Screenshot: Filter Dropdown -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
+              <div class="bg-white p-6">
+                <div class="mb-4">
+                  <label class="block text-sm font-semibold text-gray-700 mb-2">Filter by Student</label>
+                  <div class="relative">
+                    <input 
+                      type="text" 
+                      placeholder="Search by Core ID or name..." 
+                      value="13268"
+                      class="w-full px-4 py-2 border-2 border-blue-500 rounded-lg focus:outline-none text-gray-800"
+                    />
+                    <!-- Dropdown results -->
+                    <div class="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-gray-200 rounded-lg shadow-lg max-h-64 overflow-y-auto z-10">
+                      <div class="p-2 space-y-1">
+                        <div class="px-3 py-2 bg-blue-50 border border-blue-200 rounded cursor-pointer hover:bg-blue-100">
+                          <div class="font-semibold text-gray-800">C13268</div>
+                          <div class="text-sm text-gray-600">張三 • S023 • K2A</div>
+                        </div>
+                        <div class="px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+                          <div class="font-semibold text-gray-800">C13269</div>
+                          <div class="text-sm text-gray-600">李四 • S023 • K2A</div>
+                        </div>
+                        <div class="px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+                          <div class="font-semibold text-gray-800">C13270</div>
+                          <div class="text-sm text-gray-600">王五 • S023 • K2B</div>
+                        </div>
+                        <div class="px-3 py-2 hover:bg-gray-50 rounded cursor-pointer">
+                          <div class="font-semibold text-gray-800">C13271</div>
+                          <div class="text-sm text-gray-600">陳六 • S024 • K2A</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <button class="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700">
+                  Apply Filter
+                </button>
+              </div>
             </div>
 
             <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 6.2: Filter by School</h3>
@@ -585,8 +1195,62 @@ flowchart LR
               <li>Open the file to review or share the data</li>
             </ol>
 
-            <div class="screenshot-placeholder">
-              [Screenshot: Export options dialog]
+            <!-- Embedded Screenshot: Export Options Dialog -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
+              <div class="bg-gray-900 bg-opacity-50 p-12">
+                <div class="bg-white rounded-lg shadow-2xl max-w-md mx-auto p-6">
+                  <div class="mb-4">
+                    <h3 class="text-xl font-bold text-gray-800 mb-2">Export Data</h3>
+                    <p class="text-sm text-gray-600">Choose your export format</p>
+                  </div>
+                  
+                  <div class="space-y-3 mb-6">
+                    <div class="border-2 border-green-500 bg-green-50 rounded-lg p-4 cursor-pointer hover:bg-green-100">
+                      <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-green-600 rounded flex items-center justify-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                          </svg>
+                        </div>
+                        <div class="flex-1">
+                          <div class="font-semibold text-gray-800">Excel (.xlsx)</div>
+                          <div class="text-xs text-gray-600">Recommended for analysis</div>
+                        </div>
+                        <div class="w-5 h-5 bg-green-600 rounded-full flex items-center justify-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                          </svg>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div class="border-2 border-gray-200 rounded-lg p-4 cursor-pointer hover:bg-gray-50">
+                      <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-gray-400 rounded flex items-center justify-center">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="white">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                          </svg>
+                        </div>
+                        <div class="flex-1">
+                          <div class="font-semibold text-gray-800">CSV (.csv)</div>
+                          <div class="text-xs text-gray-600">Plain text format</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div class="flex gap-3">
+                    <button class="flex-1 bg-gray-200 text-gray-700 py-2 rounded-lg font-semibold hover:bg-gray-300">
+                      Cancel
+                    </button>
+                    <button class="flex-1 bg-blue-600 text-white py-2 rounded-lg font-semibold hover:bg-blue-700">
+                      Export
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
 
             <div class="success-box">
