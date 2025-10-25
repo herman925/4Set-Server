@@ -75,6 +75,14 @@
     main .border-2 table {
       min-width: 100%;
     }
+    /* Ensure all content within main respects boundaries */
+    main > * {
+      max-width: 100%;
+    }
+    main .bg-white.rounded-lg {
+      max-width: 100%;
+      overflow-x: auto;
+    }
   </style>
   <script>
     document.addEventListener('DOMContentLoaded', function() {
