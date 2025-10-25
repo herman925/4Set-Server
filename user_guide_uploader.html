@@ -792,34 +792,110 @@ flowchart TD
               </div>
             </div>
 
-            <!-- Processing Statistics -->
-            <h3 class="text-2xl font-semibold mb-4 mt-8">Performance Statistics</h3>
-            
-            <div class="grid md:grid-cols-3 gap-4">
-              <div class="bg-gradient-to-br from-green-100 to-green-50 p-4 rounded-lg border border-green-300 shadow text-center">
-                <div class="text-3xl font-bold text-green-700">20+</div>
-                <div class="text-sm text-gray-700 mt-1">PDFs per minute</div>
-                <div class="text-xs text-gray-600 mt-1">(quad-core system)</div>
-              </div>
-              
-              <div class="bg-gradient-to-br from-blue-100 to-blue-50 p-4 rounded-lg border border-blue-300 shadow text-center">
-                <div class="text-3xl font-bold text-blue-700">99.9%</div>
-                <div class="text-sm text-gray-700 mt-1">Validation accuracy</div>
-                <div class="text-xs text-gray-600 mt-1">(when source data correct)</div>
-              </div>
-              
-              <div class="bg-gradient-to-br from-purple-100 to-purple-50 p-4 rounded-lg border border-purple-300 shadow text-center">
-                <div class="text-3xl font-bold text-purple-700">98%+</div>
-                <div class="text-sm text-gray-700 mt-1">Upload success rate</div>
-                <div class="text-xs text-gray-600 mt-1">(with retry logic)</div>
-              </div>
-            </div>
           </section>
 
           <!-- Configuration Section -->
           <section id="configuration" class="content-section mb-12">
             <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Configuration and Setup</h2>
 
+            <!-- Config File Overview -->
+            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border-2 border-blue-300 mb-6">
+              <h3 class="text-2xl font-semibold mb-4 text-blue-900">📋 Configuration Files</h3>
+              <p class="text-sm text-gray-700 mb-4">The processor agent uses JSON configuration files to control its behavior. All files are located in the <code class="bg-white px-2 py-1 rounded">config/</code> directory.</p>
+              
+              <div class="space-y-4">
+                <div class="bg-white p-4 rounded border-l-4 border-blue-500">
+                  <h4 class="font-semibold text-blue-800 mb-2">config/agent.json</h4>
+                  <p class="text-sm text-gray-700 mb-2"><strong>Purpose:</strong> Main agent configuration - folder paths, OneDrive sync, polling behavior</p>
+                  <details class="text-sm">
+                    <summary class="cursor-pointer font-semibold text-blue-700 hover:text-blue-900">View Key Settings</summary>
+                    <ul class="ml-6 mt-2 space-y-1 text-xs">
+                      <li><strong>oneDrive.relativePath:</strong> Path to project folder within OneDrive</li>
+                      <li><strong>watchPath:</strong> Folder where uploader writes PDFs (default: ./incoming)</li>
+                      <li><strong>stagingPath:</strong> Temporary processing folder (default: ./processing)</li>
+                      <li><strong>filingRoot:</strong> Base folder for organized PDFs (default: ./filed)</li>
+                      <li><strong>unsortedRoot:</strong> Quarantine folder for rejected PDFs (default: ./filed/Unsorted)</li>
+                      <li><strong>worker.maxConcurrent:</strong> Max PDFs processed simultaneously (default: 2)</li>
+                      <li><strong>worker.pollIntervalSeconds:</strong> How often to check for new files (default: 5s)</li>
+                    </ul>
+                  </details>
+                </div>
+
+                <div class="bg-white p-4 rounded border-l-4 border-green-500">
+                  <h4 class="font-semibold text-green-800 mb-2">config/jotform_config.json</h4>
+                  <p class="text-sm text-gray-700 mb-2"><strong>Purpose:</strong> Jotform API settings, retry logic, and log level configuration</p>
+                  <details class="text-sm">
+                    <summary class="cursor-pointer font-semibold text-green-700 hover:text-green-900">View Key Settings</summary>
+                    <ul class="ml-6 mt-2 space-y-1 text-xs">
+                      <li><strong>powershell.maxConcurrentPdfs:</strong> PDFs processed in parallel (default: 2)</li>
+                      <li><strong>powershell.maxRetries:</strong> Upload retry attempts (default: 4)</li>
+                      <li><strong>powershell.rateLimitMs:</strong> Delay between API calls (default: 200ms)</li>
+                      <li><strong>logging.*:</strong> Enable/disable each log level (true/false)</li>
+                    </ul>
+                    <div class="mt-2 p-2 bg-green-50 rounded">
+                      <p class="font-semibold text-xs">💡 See "How Logs Help" section for all 9 configurable log levels</p>
+                    </div>
+                  </details>
+                </div>
+
+                <div class="bg-white p-4 rounded border-l-4 border-purple-500">
+                  <h4 class="font-semibold text-purple-800 mb-2">config/host_identity.json</h4>
+                  <p class="text-sm text-gray-700 mb-2"><strong>Purpose:</strong> Override PC identity (optional - usually auto-detected)</p>
+                  <details class="text-sm">
+                    <summary class="cursor-pointer font-semibold text-purple-700 hover:text-purple-900">View Example</summary>
+                    <pre class="mt-2 p-2 bg-gray-800 text-gray-100 rounded text-xs overflow-x-auto">{
+  "computerName": "KS095",
+  "pcNumber": "095"
+}</pre>
+                  </details>
+                </div>
+              </div>
+            </div>
+
+            <!-- Config GUI -->
+            <div class="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-lg border-2 border-purple-300 mb-6">
+              <h3 class="text-2xl font-semibold mb-4 text-purple-900">🖥️ Configuration GUI Tool</h3>
+              <p class="text-sm text-gray-700 mb-4">A graphical interface for editing agent configuration without manually editing JSON files.</p>
+              
+              <div class="bg-white p-4 rounded border-l-4 border-purple-500 mb-4">
+                <h4 class="font-semibold mb-2">How to Launch</h4>
+                <ol class="list-decimal ml-6 space-y-1 text-sm text-gray-700">
+                  <li>Navigate to <code class="bg-gray-200 px-2 py-1 rounded">tools/</code> directory</li>
+                  <li>Run: <code class="bg-gray-800 text-gray-100 px-2 py-1 rounded">python agent_config_gui.py</code></li>
+                  <li>GUI window opens with editable configuration fields</li>
+                </ol>
+              </div>
+
+              <div class="grid md:grid-cols-2 gap-4">
+                <div class="bg-white p-4 rounded shadow">
+                  <h5 class="font-semibold text-purple-800 mb-2">✅ What You Can Edit</h5>
+                  <ul class="text-sm space-y-1">
+                    <li>• OneDrive Relative Path</li>
+                    <li>• Watch Path (incoming folder)</li>
+                    <li>• Staging Path (processing folder)</li>
+                    <li>• Filing Root (organized PDFs)</li>
+                    <li>• Unsorted Root (quarantine folder)</li>
+                  </ul>
+                </div>
+
+                <div class="bg-white p-4 rounded shadow">
+                  <h5 class="font-semibold text-purple-800 mb-2">🛠️ Features</h5>
+                  <ul class="text-sm space-y-1">
+                    <li>• Browse button (...) to select folders</li>
+                    <li>• Save button to persist changes</li>
+                    <li>• Reset to Defaults button</li>
+                    <li>• Reload from File button</li>
+                    <li>• Status bar shows operation results</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="mt-4 p-3 bg-yellow-100 border border-yellow-300 rounded">
+                <p class="text-sm"><strong>⚠️ Important:</strong> After saving changes in the GUI, restart the processor agent for changes to take effect.</p>
+              </div>
+            </div>
+
+            <!-- PC Number Config -->
             <div class="collapsible-section">
               <div class="collapsible-header">
                 <h3 class="text-xl font-semibold">PC Number Configuration</h3>

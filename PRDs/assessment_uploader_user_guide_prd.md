@@ -562,6 +562,74 @@ Edit `config/jotform_config.json` → "logging" section to enable/disable each l
 
 ## Configuration and Setup
 
+### 📋 Configuration Files
+
+The processor agent uses JSON configuration files to control its behavior. All files are located in the `config/` directory.
+
+#### config/agent.json
+
+**Purpose:** Main agent configuration - folder paths, OneDrive sync, polling behavior
+
+**Key Settings:**
+- `oneDrive.relativePath`: Path to project folder within OneDrive
+- `watchPath`: Folder where uploader writes PDFs (default: ./incoming)
+- `stagingPath`: Temporary processing folder (default: ./processing)
+- `filingRoot`: Base folder for organized PDFs (default: ./filed)
+- `unsortedRoot`: Quarantine folder for rejected PDFs (default: ./filed/Unsorted)
+- `worker.maxConcurrent`: Max PDFs processed simultaneously (default: 2)
+- `worker.pollIntervalSeconds`: How often to check for new files (default: 5s)
+
+#### config/jotform_config.json
+
+**Purpose:** Jotform API settings, retry logic, and log level configuration
+
+**Key Settings:**
+- `powershell.maxConcurrentPdfs`: PDFs processed in parallel (default: 2)
+- `powershell.maxRetries`: Upload retry attempts (default: 4)
+- `powershell.rateLimitMs`: Delay between API calls (default: 200ms)
+- `logging.*`: Enable/disable each log level (true/false)
+
+💡 See "How Logs Help" section for all 9 configurable log levels
+
+#### config/host_identity.json
+
+**Purpose:** Override PC identity (optional - usually auto-detected)
+
+**Example:**
+```json
+{
+  "computerName": "KS095",
+  "pcNumber": "095"
+}
+```
+
+### 🖥️ Configuration GUI Tool
+
+A graphical interface for editing agent configuration without manually editing JSON files.
+
+**File Location:** `tools/agent_config_gui.py`
+
+**How to Launch:**
+1. Navigate to `tools/` directory
+2. Run: `python agent_config_gui.py`
+3. GUI window opens with editable configuration fields
+
+**What You Can Edit:**
+- OneDrive Relative Path
+- Watch Path (incoming folder)
+- Staging Path (processing folder)
+- Filing Root (organized PDFs)
+- Unsorted Root (quarantine folder)
+
+**Features:**
+- Browse button (...) to select folders
+- Save button to persist changes to `config/agent.json`
+- Reset to Defaults button (restores current file values)
+- Reload from File button (discards unsaved changes)
+- Status bar shows operation results
+
+**⚠️ Important:** After saving changes in the GUI, restart the processor agent for changes to take effect.
+
 ### PC Number Configuration
 
 #### Auto-Detection
