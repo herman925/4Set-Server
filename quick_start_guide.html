@@ -1,0 +1,2286 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quick Start Guide - 4Set System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="assets/js/tailwind.config.js"></script>
+  <link rel="stylesheet" href="assets/css/theme_pantone_light_1.css">
+  <link rel="stylesheet" href="assets/css/global.css">
+  <link rel="stylesheet" href="assets/css/user-guides.css">
+  <link rel="stylesheet" href="assets/css/spotlight-system.css">
+  <link rel="stylesheet" href="assets/css/tooltip-styles.css">
+  <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
+    .mermaid {
+      display: flex;
+      justify-content: center;
+      margin: 2rem 0;
+    }
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2rem;
+      height: 2rem;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      font-weight: bold;
+      margin-right: 0.75rem;
+    }
+    .screenshot-placeholder {
+      background: linear-gradient(135deg, #e0e7ff 0%, #f3f4f6 100%);
+      border: 2px dashed #9ca3af;
+      border-radius: 8px;
+      padding: 3rem 2rem;
+      text-align: center;
+      color: #6b7280;
+      font-style: italic;
+      margin: 1.5rem 0;
+    }
+    .info-box {
+      background: #eff6ff;
+      border-left: 4px solid #3b82f6;
+      padding: 1rem;
+      margin: 1rem 0;
+      border-radius: 0.25rem;
+    }
+    .warning-box {
+      background: #fffbeb;
+      border-left: 4px solid #f59e0b;
+      padding: 1rem;
+      margin: 1rem 0;
+      border-radius: 0.25rem;
+    }
+    .success-box {
+      background: #f0fdf4;
+      border-left: 4px solid #10b981;
+      padding: 1rem;
+      margin: 1rem 0;
+      border-radius: 0.25rem;
+    }
+    /* Prevent embedded visualizations from overflowing */
+    main .border-2 {
+      max-width: 100%;
+      overflow-x: auto;
+    }
+    main .border-2 table {
+      min-width: 100%;
+    }
+    /* Ensure all content within main respects boundaries */
+    main > * {
+      max-width: 100%;
+    }
+    main .bg-white.rounded-lg {
+      max-width: 100%;
+      overflow-x: auto;
+    }
+  </style>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ 
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+          primaryColor: '#4A90E2',
+          primaryTextColor: '#1F2937',
+          primaryBorderColor: '#2E5C8A',
+          lineColor: '#6B7280',
+          secondaryColor: '#E8F5E9',
+          tertiaryColor: '#FFF3E0',
+          edgeLabelBackground: '#ffffff',
+          textColor: '#1F2937',
+          mainBkg: '#ffffff',
+          nodeBorder: '#6B7280'
+        }
+      });
+    });
+  </script>
+</head>
+<body class="min-h-screen">
+  <!-- Header -->
+  <header class="bg-white shadow-md sticky top-0 z-50">
+    <div class="container mx-auto px-6 py-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <a href="index.html" class="text-2xl font-bold" style="color: var(--primary)">4Set System</a>
+          <span class="text-gray-400">|</span>
+          <h1 class="text-xl font-semibold text-gray-700">Quick Start Guide</h1>
+        </div>
+        <div class="flex items-center gap-3">
+          <a href="user_guide_uploader.html" class="text-gray-600 hover:text-primary transition p-2 rounded-lg hover:bg-gray-100" title="Assessment Uploader Guide">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+          </a>
+          <a href="user_guide_checking_system.html" class="text-gray-600 hover:text-primary transition p-2 rounded-lg hover:bg-gray-100" title="Checking System Guide">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 11 12 14 22 4"></polyline>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+            </svg>
+          </a>
+          <a href="guide_homepage.html" class="text-gray-600 hover:text-primary transition p-2 rounded-lg hover:bg-gray-100" title="Back to Guide Homepage">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+          </a>
+          <a href="index.html" class="text-gray-600 hover:text-primary transition p-2 rounded-lg hover:bg-gray-100" title="Back to System Home">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <div class="container mx-auto px-6 py-8">
+    <div class="flex gap-8">
+      <!-- Sidebar Navigation -->
+      <aside class="sidebar w-64 flex-shrink-0">
+        <div class="bg-white rounded-lg shadow-lg p-6 sticky top-24">
+          <h2 class="text-lg font-bold mb-4" style="color: var(--primary)">Table of Contents</h2>
+          <nav class="space-y-2">
+            <a href="#welcome" class="toc-link block text-sm text-gray-700 py-1">Welcome</a>
+            <a href="#preparation" class="toc-link block text-sm text-gray-700 py-1 font-semibold">I. Preparation</a>
+            <a href="#system-home" class="toc-link block text-sm text-gray-700 py-1 ml-3">1.1 System Home Page</a>
+            <a href="#onedrive-setup" class="toc-link block text-sm text-gray-700 py-1 ml-3">1.2 OneDrive Setup</a>
+            <a href="#operation" class="toc-link block text-sm text-gray-700 py-1 font-semibold mt-2">II. Operation</a>
+            <a href="#data-upload" class="toc-link block text-sm text-gray-700 py-1 ml-3 font-medium">Data Upload</a>
+            <a href="#upload-pdf" class="toc-link block text-sm text-gray-700 py-1 ml-6">2.1 Upload PDFs</a>
+            <a href="#data-prep" class="toc-link block text-sm text-gray-700 py-1 ml-6">2.2 Data Preparation</a>
+            <a href="#checking-system-flow" class="toc-link block text-sm text-gray-700 py-1 ml-3 font-medium mt-2">Checking System</a>
+            <a href="#filter-data" class="toc-link block text-sm text-gray-700 py-1 ml-6">2.3 Applying Filters</a>
+            <a href="#check-student" class="toc-link block text-sm text-gray-700 py-1 ml-6">2.4 Check Student</a>
+            <a href="#check-class" class="toc-link block text-sm text-gray-700 py-1 ml-6">2.5 Check Class</a>
+            <a href="#check-higher" class="toc-link block text-sm text-gray-700 py-1 ml-6">2.6 Check School/Group/District</a>
+            <a href="#export-data" class="toc-link block text-sm text-gray-700 py-1 ml-6">2.7 Export Data</a>
+            <a href="#learn-more" class="toc-link block text-sm text-gray-700 py-1 mt-2">Learn More</a>
+          </nav>
+        </div>
+      </aside>
+
+      <!-- Main Content Area -->
+      <main class="flex-1 max-w-4xl min-w-0">
+        <div class="bg-white rounded-lg shadow-lg p-8 mb-8">
+          <!-- Document Info -->
+          <div class="mb-8 pb-6 border-b border-gray-200">
+            <div class="flex flex-wrap gap-4 text-sm text-gray-600">
+              <div><strong>Version:</strong> 1.0</div>
+              <div><strong>Last Updated:</strong> October 25, 2025</div>
+              <div><strong>Target Users:</strong> New users, test administrators, operators</div>
+            </div>
+          </div>
+
+          <!-- Welcome Section -->
+          <section id="welcome" class="mb-12">
+            <h2 class="text-3xl font-bold mb-4" style="color: var(--primary)">🚀 Welcome to 4Set System</h2>
+            <p class="text-gray-700 mb-4">
+              This Quick Start Guide helps you get up and running with the 4Set System in minutes. Follow these simple steps to start uploading and managing assessment data.
+            </p>
+            
+            <div class="info-box">
+              <p class="text-sm font-semibold mb-2">💡 What This Guide Covers</p>
+              <p class="text-sm mb-2">This guide is organized into two major sections:</p>
+              <div class="text-sm space-y-2 ml-4">
+                <div>
+                  <strong>I. Preparation</strong> - Set up before using the system
+                  <ul class="ml-4 mt-1 space-y-1">
+                    <li>✓ Understanding the system home page and navigation</li>
+                    <li>✓ Setting up OneDrive for file sync</li>
+                  </ul>
+                </div>
+                <div class="mt-2">
+                  <strong>II. Operation</strong> - How to perform key tasks
+                  <ul class="ml-4 mt-1 space-y-1">
+                    <li><em>Data Upload:</em> Uploading PDFs, data preparation from JotForm & Qualtrics</li>
+                    <li><em>Checking System:</em> Applying filters, checking data at all levels, exporting</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div class="warning-box">
+              <p class="text-sm"><strong>⚠️ Note:</strong> This guide focuses on <em>how to do it</em> rather than explaining concepts. For detailed explanations, see the <a href="#learn-more" class="text-blue-600 underline">Learn More</a> section.</p>
+            </div>
+          </section>
+
+          <!-- Section I: Preparation -->
+          <section id="preparation" class="mb-12">
+            <h2 class="text-4xl font-bold mb-6 pb-4 border-b-4 border-primary" style="color: var(--primary)">
+              Section I: Preparation
+            </h2>
+            <p class="text-gray-700 text-lg mb-6">
+              Before you start using the 4Set System, complete these setup steps to ensure everything is ready.
+            </p>
+          </section>
+
+          <!-- Section I.1: System Home Page -->
+          <section id="system-home" class="mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">
+              <span class="step-number">1.1</span>
+              System Home Page Navigation
+            </h2>
+            
+            <p class="text-gray-700 mb-4">
+              The 4Set System home page is your starting point. It's available at <strong>https://herman925.github.io/4Set-Server/index.html</strong>
+            </p>
+
+            <div class="info-box">
+              <p class="text-sm"><strong>💡 Quick Access:</strong> Bookmark this page for easy access to the system.</p>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Understanding the Home Page</h3>
+            <p class="text-gray-700 mb-4">The home page provides quick access to the two main features and help documentation:</p>
+            
+            <!-- Embedded Screenshot: System Home Page - CSS Scaled Version (Zoom Out) -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg homepage-preview-container" style="position: relative;">
+              <!-- "See More" button - shown on hover -->
+              <button 
+                class="homepage-enlarge-btn" 
+                onclick="openHomepageModal()"
+                style="position: absolute; top: 12px; right: 12px; z-index: 50; background-color: rgba(43, 57, 144, 0.95); color: white; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.2s ease; cursor: pointer; border: none;"
+                title="See More"
+              >
+                <span style="display: flex; align-items: center; gap: 6px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+                  See More
+                </span>
+              </button>
+              
+              <!-- Wrapper for CSS scaling - maintains all original styles but zooms out -->
+              <div style="width: 100%; height: 450px; overflow: hidden; position: relative; background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);">
+                <!-- Original layout scaled down to 50% using CSS transform -->
+                <div style="transform: scale(0.5); transform-origin: top left; width: 200%; height: 900px;">
+                  <!-- Full viewport mockup matching actual index.html layout -->
+                  <div class="relative overflow-hidden" style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); min-height: 100vh;">
+                    
+                    <main class="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 py-16 lg:flex-row lg:items-center lg:justify-between lg:gap-16" style="z-index: 10;">
+                      <div class="max-w-2xl space-y-6 text-center lg:w-1/2 lg:max-w-none lg:text-left">
+                        <!-- Logos -->
+                        <div class="flex items-center justify-between gap-12" style="max-width: 100%;">
+                          <img src="assets/logos/KS.png" alt="KeySteps@JC" style="height: 85px; object-fit: contain; width: auto;">
+                          <img src="assets/logos/EdUHK.png" alt="EdUHK" style="height: 70px; object-fit: contain; width: auto;">
+                        </div>
+                        
+                        <!-- Badge -->
+                        <span class="inline-flex items-center gap-2 px-4 py-2 text-xs uppercase tracking-wide" style="background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border-radius: 9999px; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);">
+                          <span class="inline-block h-2 w-2 rounded-full" style="background-color: #2b3990;"></span>
+                          <span style="color: #333333;">KeySteps@JC (Phase Two)</span>
+                        </span>
+                        
+                        <!-- Title -->
+                        <h1 class="text-4xl font-bold sm:text-5xl lg:text-6xl" style="color: #2b3990;">
+                          4Set System (2025/26)
+                        </h1>
+                        <p class="text-base sm:text-lg lg:text-xl" style="color: #465275;">
+                          Web-based PDF uploads trigger the processor agent to validate, parse, and submit survey data to Jotform while the dashboard tracks queue health, rejections, and recent activity for KeySteps@JC maintainers.
+                        </p>
+                        
+                        <!-- Action Buttons -->
+                        <div class="flex flex-col items-center gap-4 sm:flex-row sm:justify-center lg:items-stretch lg:justify-start">
+                          <div class="flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold" style="background-color: #2b3990; color: #ffffff; box-shadow: 0 6px 16px -6px rgba(43, 57, 144, 0.55); border-radius: 1rem; transition: transform 0.25s ease, box-shadow 0.25s ease;">
+                            <span>Assessment Uploader</span>
+                            <span class="text-sm font-medium" style="color: rgba(255, 255, 255, 0.8);">Upload PDFs</span>
+                          </div>
+                          <div class="flex items-center gap-2">
+                            <div class="flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold" style="background-color: #f99d33; color: #3b2a12; box-shadow: 0 6px 16px -6px rgba(249, 157, 51, 0.55); border-radius: 1rem; transition: transform 0.25s ease, box-shadow 0.25s ease;">
+                              <span>Checking System</span>
+                              <span class="text-sm font-medium" style="color: rgba(59, 42, 18, 0.8);">See What's Missing</span>
+                            </div>
+                            <div class="inline-flex items-center justify-center rounded-full" style="width: 48px; height: 48px; background-color: #f3f4f6; color: #374151;">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <!-- Right side: JotForm Card -->
+                      <section class="mt-12 grid w-full gap-6 lg:mt-0 lg:w-1/2 lg:max-w-none">
+                        <article class="w-full p-6 sm:p-8 lg:p-10 lg:px-12" style="background: linear-gradient(140deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.88)); border-radius: 0.5rem; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); border: 1px solid rgba(43, 57, 144, 0.08);">
+                          <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                              <p class="text-sm uppercase tracking-wide" style="color: #465275;">JotForm Latest</p>
+                              <h2 class="mt-1 text-2xl font-semibold" style="color: #333333;">Recent Submission</h2>
+                            </div>
+                            <div class="flex items-center gap-2 rounded-full px-4 py-1 text-xs font-medium" style="background-color: rgba(34, 197, 94, 0.1); color: rgb(34, 197, 94); border: 1px solid rgba(34, 197, 94, 0.25);">
+                              <span class="inline-block h-2 w-2 rounded-full" style="background-color: rgb(34, 197, 94);"></span>
+                              <span>Last Sync: 0 mins ago</span>
+                            </div>
+                          </div>
+                          <div class="mt-6 rounded-xl p-5" style="border: 1px solid rgba(43, 57, 144, 0.2); background: rgba(255, 255, 255, 0.75); box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);">
+                            <div class="grid gap-4 sm:grid-cols-2">
+                              <div>
+                                <p class="text-xs uppercase tracking-wide" style="color: #465275;">Submission ID</p>
+                                <p class="text-sm font-medium" style="color: #2b3990; word-break: break-all;">6362362003245961...</p>
+                              </div>
+                              <div>
+                                <p class="text-xs uppercase tracking-wide" style="color: #465275;">Uploaded</p>
+                                <p class="text-sm font-medium" style="color: #333333;">14 Oct 2025, 07:30</p>
+                              </div>
+                              <div>
+                                <p class="text-xs uppercase tracking-wide" style="color: #465275;">Session Key</p>
+                                <p class="text-sm font-medium" style="color: #2b3990;">99999_20251225_00_00</p>
+                              </div>
+                              <div>
+                                <p class="text-xs uppercase tracking-wide" style="color: #465275;">School ID</p>
+                                <p class="text-sm font-medium" style="color: #333333;">S999</p>
+                              </div>
+                            </div>
+                            <div class="mt-6 flex flex-col gap-2 sm:flex-row">
+                              <button class="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold" style="background-color: #2b3990; color: #ffffff; box-shadow: 0 6px 16px -6px rgba(43, 57, 144, 0.55); border-radius: 1rem; transition: transform 0.25s ease, box-shadow 0.25s ease;" type="button">
+                                <span>Resync</span>
+                              </button>
+                              <button class="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold" style="background-color: #2b3990; color: #ffffff; box-shadow: 0 6px 16px -6px rgba(43, 57, 144, 0.55); border-radius: 1rem; transition: transform 0.25s ease, box-shadow 0.25s ease;" type="button">
+                                <span>View Table</span>
+                              </button>
+                            </div>
+                          </div>
+                        </article>
+                      </section>
+                    </main>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Add CSS for hover button -->
+            <style>
+              .homepage-preview-container:hover .homepage-enlarge-btn {
+                opacity: 1 !important;
+              }
+              .homepage-enlarge-btn:hover {
+                background-color: rgba(43, 57, 144, 1) !important;
+                transform: translateY(-2px);
+                box-shadow: 0 6px 16px rgba(0,0,0,0.3) !important;
+              }
+            </style>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Finding Guides & Documentation</h3>
+            <p class="text-gray-700 mb-4">Click the question mark icon (❓) next to the buttons to access the Guide Homepage where you'll find:</p>
+            
+            <!-- Embedded Screenshot: Guide Homepage -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg bg-white">
+              <div class="p-6">
+                <h2 class="text-3xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                  <span class="text-2xl">📚</span>
+                  Documentation & Guides
+                </h2>
+                <p class="text-gray-600 text-lg mb-6">Find everything you need to effectively use the 4Set System. From quick start guides for beginners to detailed documentation for advanced users.</p>
+                
+                <div class="space-y-4">
+                  <!-- Quick Start Guide Card -->
+                  <div class="border-2 border-blue-400 bg-blue-50 rounded-lg p-6 relative">
+                    <div class="absolute top-2 right-2 bg-blue-600 text-white text-xs px-2 py-1 rounded-full font-semibold">NEW</div>
+                    <div class="flex items-start gap-4">
+                      <div class="text-4xl">🚀</div>
+                      <div>
+                        <h3 class="font-bold text-2xl text-blue-800 mb-2">Quick Start Guide</h3>
+                        <p class="text-sm text-gray-700 mb-3">Get up and running in minutes! Simple, step-by-step instructions for new users to start using the system right away.</p>
+                        <div class="grid md:grid-cols-3 gap-2 text-xs text-gray-600">
+                          <div>✓ OneDrive setup & sync</div>
+                          <div>✓ Upload PDFs with correct naming</div>
+                          <div>✓ Check upload logs</div>
+                          <div>✓ Use the checking system</div>
+                          <div>✓ Build cache for performance</div>
+                          <div>✓ Filter and export data</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <!-- Feature Guides Grid -->
+                  <div class="text-sm font-semibold text-gray-700 mb-2 mt-6">Feature Guides:</div>
+                  <div class="grid md:grid-cols-4 gap-3">
+                    <div class="border border-gray-300 rounded-lg p-3 bg-white text-center">
+                      <div class="text-3xl mb-2">📊</div>
+                      <h4 class="font-semibold text-sm text-gray-800">Checking System</h4>
+                    </div>
+                    <div class="border border-gray-300 rounded-lg p-3 bg-white text-center">
+                      <div class="text-3xl mb-2">📤</div>
+                      <h4 class="font-semibold text-sm text-gray-800">Assessment Uploader</h4>
+                    </div>
+                    <div class="border border-gray-300 rounded-lg p-3 bg-white text-center">
+                      <div class="text-3xl mb-2">🔄</div>
+                      <h4 class="font-semibold text-sm text-gray-800">Qualtrics Integration</h4>
+                    </div>
+                    <div class="border border-gray-300 rounded-lg p-3 bg-white text-center">
+                      <div class="text-3xl mb-2">⚠️</div>
+                      <h4 class="font-semibold text-sm text-gray-800">Handling Conflicts</h4>
+                    </div>
+                  </div>
+                  
+                  <!-- Documentation -->
+                  <div class="text-sm font-semibold text-gray-700 mb-2 mt-4">Documentation & Resources:</div>
+                  <div class="grid md:grid-cols-2 gap-3">
+                    <div class="border border-gray-300 rounded-lg p-3 bg-white flex items-center gap-3">
+                      <div class="text-2xl">📖</div>
+                      <div>
+                        <h4 class="font-semibold text-sm text-gray-800">Full Documentation</h4>
+                        <p class="text-xs text-gray-600">Complete technical documentation</p>
+                      </div>
+                    </div>
+                    <div class="border border-gray-300 rounded-lg p-3 bg-white flex items-center gap-3">
+                      <div class="text-2xl">🌳</div>
+                      <div>
+                        <h4 class="font-semibold text-sm text-gray-800">PRD Tree</h4>
+                        <p class="text-xs text-gray-600">Product Requirements Documents</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="success-box">
+              <p class="text-sm"><strong>✅ What to do:</strong> Click the <strong>question mark icon (❓)</strong> from the home page to access all guides and documentation. This Quick Start Guide is perfect for beginners!</p>
+            </div>
+          </section>
+
+          <!-- Section I.2: OneDrive Setup -->
+          <section id="onedrive-setup" class="mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">
+              <span class="step-number">1.2</span>
+              OneDrive Setup & Sync
+            </h2>
+            
+            <p class="text-gray-700 mb-4">
+              Set up OneDrive for Business to sync your assessment files automatically. This is essential for the upload process.
+            </p>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 1.1: Install OneDrive for Business</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Open your web browser and go to <strong>office.com</strong></li>
+              <li>Sign in with your EdUHK account credentials</li>
+              <li>Click the <strong>App Launcher</strong> (grid icon) in the top-left corner</li>
+              <li>Select <strong>OneDrive</strong></li>
+              <li>Click <strong>Download</strong> at the top to install the OneDrive sync client</li>
+            </ol>
+
+            <!-- Embedded Screenshot: OneDrive Download Page -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
+              <img src="assets/img/OneDrive.png" alt="OneDrive Download Page" class="w-full" />
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 1.2: Sign In to OneDrive</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>After installation, open <strong>OneDrive</strong> from the Start menu</li>
+              <li>Click <strong>Sign in</strong></li>
+              <li>Enter your EdUHK email address</li>
+              <li>Enter your password when prompted</li>
+              <li>Click <strong>Next</strong> and follow the setup wizard</li>
+            </ol>
+
+            <!-- Embedded Screenshot: OneDrive Sign-in Screen -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
+              <img src="assets/img/OneDriveSignin.jpeg" alt="OneDrive Sign-in Screen" class="w-full" />
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 1.3: Configure Sync for KeySteps@JC Project</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>During setup, you'll see a list of SharePoint sites and Teams</li>
+              <li>Look for <strong>o365grp_KeySteps@JC</strong> in the list</li>
+              <li>Check the box next to <strong>General</strong> folder within this group/project</li>
+              <li>Click <strong>Next</strong> to start syncing</li>
+              <li>Wait for the initial sync to complete (may take several minutes depending on file size)</li>
+            </ol>
+
+            <div class="info-box">
+              <p class="text-sm"><strong>💡 What is o365grp_KeySteps@JC?</strong> This is the Office 365 SharePoint group for the KeySteps@JC project. The "General" folder contains all shared project files including the 4Set-Server system.</p>
+            </div>
+
+            <div class="success-box">
+              <p class="text-sm"><strong>✅ Success!</strong> You should now see a <strong>green checkmark</strong> on the OneDrive icon in your system tray, indicating files are synced.</p>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 1.4: Locate Your Sync Folder</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Open <strong>File Explorer</strong> (Windows key + E)</li>
+              <li>In the left sidebar, look for <strong>OneDrive - The Education University of Hong Kong</strong></li>
+              <li>Expand it and find <strong>o365grp_KeySteps@JC - General</strong></li>
+              <li>Navigate to: <strong>98 - IT Support \ 04 - Homemade Apps \ 4Set-Server</strong></li>
+              <li>Bookmark this location for easy access (right-click → Pin to Quick Access)</li>
+            </ol>
+
+            <div class="warning-box">
+              <p class="text-sm"><strong>⚠️ Full Path:</strong> The 4Set-Server folder is located at:<br>
+              <code class="bg-gray-100 px-2 py-1 rounded text-xs font-mono">OneDrive - The Education University of Hong Kong\o365grp_KeySteps@JC - General\98 - IT Support\04 - Homemade Apps\4Set-Server</code></p>
+            </div>
+
+            <!-- Embedded Screenshot: File Explorer with OneDrive -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
+              <div class="bg-white">
+                <!-- Explorer toolbar -->
+                <div class="bg-gray-100 px-4 py-2 border-b border-gray-300 flex items-center gap-4">
+                  <div class="flex gap-2">
+                    <button class="text-gray-400">←</button>
+                    <button class="text-gray-400">→</button>
+                    <button class="text-gray-600">↑</button>
+                  </div>
+                  <div class="flex-1 bg-white px-3 py-1 border border-gray-300 rounded text-xs text-gray-700 overflow-x-auto">
+                    📁 OneDrive - The Education University of Hong Kong \ o365grp_KeySteps@JC - General \ 98 - IT Support \ 04 - Homemade Apps \ 4Set-Server
+                  </div>
+                </div>
+                <!-- Explorer content -->
+                <div class="flex">
+                  <!-- Sidebar -->
+                  <div class="w-64 bg-gray-50 border-r border-gray-300 p-3 text-sm">
+                    <div class="mb-3">
+                      <div class="font-semibold text-gray-700 mb-1">Quick access</div>
+                      <div class="text-gray-600">Desktop</div>
+                      <div class="text-gray-600">Documents</div>
+                      <div class="text-gray-600">Downloads</div>
+                    </div>
+                    <div>
+                      <div class="font-semibold text-gray-700 mb-1 flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2">
+                          <path d="M23 19V8.5l-8.5-4.7L6 8.5V19l8.5 4.5L23 19z"/>
+                        </svg>
+                        OneDrive - EdUHK
+                      </div>
+                      <div class="text-gray-600 ml-4">o365grp_KeySteps@JC - General</div>
+                      <div class="text-gray-500 ml-8 text-xs">98 - IT Support</div>
+                      <div class="text-gray-500 ml-12 text-xs">04 - Homemade Apps</div>
+                      <div class="bg-blue-100 text-blue-700 font-semibold ml-16 px-2 py-1 rounded text-xs">4Set-Server</div>
+                    </div>
+                  </div>
+                  <!-- Main area -->
+                  <div class="flex-1 p-4">
+                    <div class="space-y-2">
+                      <div class="flex items-center gap-3 hover:bg-blue-50 p-2 rounded">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#FFD700" stroke="#FF8C00" stroke-width="1">
+                          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        <span class="text-gray-700">assets</span>
+                      </div>
+                      <div class="flex items-center gap-3 hover:bg-blue-50 p-2 rounded">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#FFD700" stroke="#FF8C00" stroke-width="1">
+                          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        <span class="text-gray-700">config</span>
+                      </div>
+                      <div class="flex items-center gap-3 hover:bg-blue-50 p-2 rounded bg-blue-50 border border-blue-300">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#FFD700" stroke="#FF8C00" stroke-width="1">
+                          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        <span class="text-gray-700 font-semibold">incoming</span>
+                      </div>
+                      <div class="flex items-center gap-3 hover:bg-blue-50 p-2 rounded">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#FFD700" stroke="#FF8C00" stroke-width="1">
+                          <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                        </svg>
+                        <span class="text-gray-700">logs</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="info-box">
+              <p class="text-sm"><strong>💡 Tip:</strong> Right-click the 4Set-Server folder and select <strong>Pin to Quick Access</strong> for faster navigation.</p>
+            </div>
+          </section>
+
+          <!-- Section II: Operation -->
+          <section id="operation" class="mb-12 mt-16">
+            <h2 class="text-4xl font-bold mb-6 pb-4 border-b-4 border-primary" style="color: var(--primary)">
+              Section II: Operation
+            </h2>
+            <p class="text-gray-700 text-lg mb-6">
+              Now that you're set up, learn how to perform the key tasks in the 4Set System. This section is organized by workflow: Data Upload and Checking System.
+            </p>
+          </section>
+
+          <!-- Data Upload Workflow Header -->
+          <div id="data-upload" class="mb-8">
+            <h3 class="text-2xl font-bold mb-3 text-gray-800 flex items-center gap-2">
+              <span class="text-blue-600">📤</span> Data Upload Workflow
+            </h3>
+            <p class="text-gray-600">Upload assessment PDFs and prepare data from JotForm & Qualtrics.</p>
+          </div>
+
+          <!-- Section II.1 (2.1): Upload PDFs -->
+          <section id="upload-pdf" class="mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">
+              <span class="step-number">2.1</span>
+              Upload PDFs
+            </h2>
+            
+            <p class="text-gray-700 mb-4">
+              Upload assessment PDF files following the correct naming convention. The system will automatically process them.
+            </p>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 2.1: Prepare Your PDF Files</h3>
+            
+            <div class="warning-box mb-4">
+              <p class="text-sm font-semibold mb-2">⚠️ Important: File Naming Convention</p>
+              <p class="text-sm">Files must be named exactly like this:</p>
+              <p class="text-sm font-mono bg-gray-100 p-2 rounded mt-2"><strong>xxxxx_YYYYMMDD_HH_MM.pdf</strong></p>
+              <ul class="text-sm space-y-1 mt-2 ml-4">
+                <li>• <strong>xxxxx</strong> = 5-digit student ID (e.g., 13268)</li>
+                <li>• <strong>YYYYMMDD</strong> = Date (e.g., 20250904 for Sept 4, 2025)</li>
+                <li>• <strong>HH_MM</strong> = Time in 24-hour format (e.g., 14_07 for 2:07 PM)</li>
+              </ul>
+              <p class="text-sm font-mono bg-gray-100 p-2 rounded mt-2">Example: <strong>13268_20250904_14_07.pdf</strong></p>
+            </div>
+
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Scan or export your assessment forms as PDF files</li>
+              <li>Rename each file using the correct naming convention shown above</li>
+              <li>Double-check the naming before uploading</li>
+            </ol>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 2.2: Upload via Web Interface</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Open the 4Set System in your web browser</li>
+              <li>Click <strong>Assessment Uploader</strong> button on the home page</li>
+              <li>On the upload page, configure <strong>PC Number</strong> (one-time setup)</li>
+              <li>Set your <strong>Upload Destination</strong> to the OneDrive sync folder's <strong>incoming</strong> subfolder</li>
+              <li>Drag and drop PDF files into the upload zone, or click to browse</li>
+              <li>Wait for the upload progress bar to complete</li>
+            </ol>
+
+            <!-- Embedded Screenshot: Upload Interface -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
+              <div class="bg-white p-8 text-center">
+                <div class="flex flex-col items-center gap-4">
+                  <div class="p-6 rounded-full bg-blue-100">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#4A90E2" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                      <polyline points="14 2 14 8 20 8"></polyline>
+                      <line x1="12" y1="18" x2="12" y2="12"></line>
+                      <line x1="9" y1="15" x2="15" y2="15"></line>
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 class="text-2xl font-bold text-gray-800 mb-2">Drop PDF Files Here</h2>
+                    <p class="text-gray-600 mb-4">or click anywhere to browse your computer</p>
+                  </div>
+                  <button class="bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    Browse Files
+                  </button>
+                  <div class="mt-4 space-y-1.5 text-gray-500 text-sm">
+                    <p class="flex items-center gap-2 justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="12" y1="16" x2="12" y2="12"></line>
+                        <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                      </svg>
+                      Only PDF files are supported
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="info-box">
+              <p class="text-sm"><strong>💡 Alternative Method:</strong> You can also copy PDF files directly to the <strong>incoming</strong> folder in File Explorer instead of using the web interface.</p>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 2.3: Verify Upload Success</h3>
+            <p class="text-gray-700 mb-4">After uploading, your files go through automatic processing:</p>
+            
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Files are moved from <strong>incoming</strong> to <strong>processing</strong> folder</li>
+              <li>System validates the filename format</li>
+              <li>PDF is parsed to extract data</li>
+              <li>Data is uploaded to JotForm database</li>
+              <li>Successfully processed files are moved to <strong>filed/S###/</strong> (by school ID)</li>
+              <li>Failed files are moved to <strong>filed/Unsorted/</strong> for review</li>
+            </ol>
+
+            <div class="mermaid">
+flowchart LR
+    A[Upload PDF] --> B[incoming folder]
+    B --> C[processing folder]
+    C --> D{Validation}
+    D -->|Pass| E[Extract Data]
+    D -->|Fail| F[filed/Unsorted/]
+    E --> G{Upload to JotForm}
+    G -->|Success| H[filed/S###/]
+    G -->|Fail| F
+    
+    style A fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    style H fill:#10b981,stroke:#059669,color:#fff
+    style F fill:#ef4444,stroke:#dc2626,color:#fff
+            </div>
+
+            <div class="success-box">
+              <p class="text-sm"><strong>✅ How to Check:</strong> Look in the <strong>filed/S###/</strong> folder (where ### is the school ID). If your PDF and JSON files are there, upload was successful!</p>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 2.4: What If Upload Fails?</h3>
+            <p class="text-gray-700 mb-2">Check the <strong>filed/Unsorted/</strong> folder for:</p>
+            <ul class="list-disc ml-6 space-y-1 text-gray-700">
+              <li>Files with incorrect naming format</li>
+              <li>Files with validation errors (student not found, school mismatch)</li>
+              <li>Files that failed to upload to JotForm</li>
+            </ul>
+            
+            <p class="text-gray-700 mt-4">To retry:</p>
+            <ol class="list-decimal ml-6 space-y-1 text-gray-700">
+              <li>Fix the issue (rename file, verify student ID, etc.)</li>
+              <li>Move the PDF file back to the <strong>incoming</strong> folder</li>
+              <li>System will automatically retry processing</li>
+            </ol>
+          </section>
+
+          <!-- Section 3: Check Logs -->
+          <section id="check-logs" class="mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">
+              <span class="step-number">3</span>
+              Checking Upload Logs
+            </h2>
+            
+            <p class="text-gray-700 mb-4">
+              Monitor the system's processing activity and troubleshoot issues using the log files.
+            </p>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 3.1: Locate Log Files</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Open the <strong>4Set-Server</strong> folder in File Explorer</li>
+              <li>Navigate to the <strong>logs</strong> subfolder</li>
+              <li>Log files are named by date: <strong>YYYYMMDD_processing_agent.csv</strong></li>
+              <li>Open the most recent log file with Excel or a text editor</li>
+            </ol>
+
+            <!-- Embedded Screenshot: Logs Folder -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
+              <div class="bg-white">
+                <!-- Explorer toolbar -->
+                <div class="bg-gray-100 px-4 py-2 border-b border-gray-300 flex items-center gap-4">
+                  <div class="flex gap-2">
+                    <button class="text-gray-400">←</button>
+                    <button class="text-gray-400">→</button>
+                    <button class="text-gray-600">↑</button>
+                  </div>
+                  <div class="flex-1 bg-white px-3 py-1 border border-gray-300 rounded text-sm text-gray-700">
+                    📁 4Set-Server \ logs
+                  </div>
+                </div>
+                <!-- File list -->
+                <div class="p-4">
+                  <div class="grid grid-cols-[auto_1fr_auto_auto] gap-x-4 gap-y-1 text-sm">
+                    <div class="col-span-4 text-xs text-gray-500 border-b pb-1 mb-2 grid grid-cols-[auto_1fr_auto_auto] gap-x-4">
+                      <span></span>
+                      <span>Name</span>
+                      <span>Date modified</span>
+                      <span>Size</span>
+                    </div>
+                    <div>📄</div>
+                    <div class="text-gray-700">20251020_processing_agent.csv</div>
+                    <div class="text-gray-500">2025-10-20 23:59</div>
+                    <div class="text-gray-500">145 KB</div>
+                    
+                    <div>📄</div>
+                    <div class="text-gray-700">20251021_processing_agent.csv</div>
+                    <div class="text-gray-500">2025-10-21 23:59</div>
+                    <div class="text-gray-500">158 KB</div>
+                    
+                    <div>📄</div>
+                    <div class="text-gray-700">20251022_processing_agent.csv</div>
+                    <div class="text-gray-500">2025-10-22 23:59</div>
+                    <div class="text-gray-500">132 KB</div>
+                    
+                    <div>📄</div>
+                    <div class="text-gray-700 font-semibold bg-blue-50">20251025_processing_agent.csv</div>
+                    <div class="text-gray-700 font-semibold bg-blue-50">2025-10-25 14:30</div>
+                    <div class="text-gray-700 font-semibold bg-blue-50">87 KB</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 3.2: Understanding Log Entries</h3>
+            <p class="text-gray-700 mb-2">Each log entry contains:</p>
+            <ul class="list-disc ml-6 space-y-1 text-gray-700 mb-4">
+              <li><strong>Timestamp</strong> - When the event occurred</li>
+              <li><strong>Level</strong> - INFO, WARN, or ERROR</li>
+              <li><strong>Filename</strong> - The PDF being processed</li>
+              <li><strong>Message</strong> - What happened</li>
+            </ul>
+
+            <div class="info-box">
+              <p class="text-sm font-semibold mb-2">💡 Common Log Messages</p>
+              <ul class="text-sm space-y-1 ml-4">
+                <li>• <strong>"Jotform upload successful"</strong> - File processed successfully ✅</li>
+                <li>• <strong>"rejected"</strong> - Validation failed, check filename or data ⚠️</li>
+                <li>• <strong>"PERMANENTLY FAILED"</strong> - Upload failed after retries ❌</li>
+                <li>• <strong>"Filed to S###"</strong> - Successfully archived by school ID 📁</li>
+              </ul>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 3.3: Search for Specific Files</h3>
+            <p class="text-gray-700 mb-2">To find information about a specific upload:</p>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Open the log file in Excel</li>
+              <li>Press <strong>Ctrl+F</strong> to open Find</li>
+              <li>Search for the student ID or filename</li>
+              <li>Review all matching entries to see the complete processing history</li>
+            </ol>
+
+            <!-- Embedded Screenshot: Excel Log File View -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
+              <div class="bg-white">
+                <!-- Excel toolbar -->
+                <div class="bg-gray-50 px-4 py-2 border-b border-gray-300 text-sm">
+                  <div class="flex items-center gap-4">
+                    <span class="font-semibold">📊 20251025_processing_agent.csv - Excel</span>
+                    <div class="flex gap-2 ml-auto">
+                      <input type="text" placeholder="🔍 Find (Ctrl+F)" class="px-3 py-1 border border-gray-300 rounded text-xs w-48" />
+                    </div>
+                  </div>
+                </div>
+                <!-- Spreadsheet -->
+                <div class="overflow-x-auto">
+                  <table class="w-full text-xs border-collapse">
+                    <thead>
+                      <tr class="bg-gray-100 border-b border-gray-300">
+                        <th class="border border-gray-300 px-2 py-1 font-semibold text-left">A<br/>Timestamp</th>
+                        <th class="border border-gray-300 px-2 py-1 font-semibold text-left">B<br/>Level</th>
+                        <th class="border border-gray-300 px-2 py-1 font-semibold text-left">C<br/>Filename</th>
+                        <th class="border border-gray-300 px-2 py-1 font-semibold text-left">D<br/>Message</th>
+                      </tr>
+                    </thead>
+                    <tbody class="font-mono">
+                      <tr>
+                        <td class="border border-gray-300 px-2 py-1">2025-10-25 09:15:23</td>
+                        <td class="border border-gray-300 px-2 py-1 text-blue-600">INFO</td>
+                        <td class="border border-gray-300 px-2 py-1">13268_20251025_09_10.pdf</td>
+                        <td class="border border-gray-300 px-2 py-1">Processing started</td>
+                      </tr>
+                      <tr>
+                        <td class="border border-gray-300 px-2 py-1">2025-10-25 09:15:24</td>
+                        <td class="border border-gray-300 px-2 py-1 text-blue-600">INFO</td>
+                        <td class="border border-gray-300 px-2 py-1">13268_20251025_09_10.pdf</td>
+                        <td class="border border-gray-300 px-2 py-1">Validation passed</td>
+                      </tr>
+                      <tr class="bg-green-50">
+                        <td class="border border-gray-300 px-2 py-1">2025-10-25 09:15:26</td>
+                        <td class="border border-gray-300 px-2 py-1 text-blue-600">INFO</td>
+                        <td class="border border-gray-300 px-2 py-1">13268_20251025_09_10.pdf</td>
+                        <td class="border border-gray-300 px-2 py-1 font-semibold">Jotform upload successful</td>
+                      </tr>
+                      <tr>
+                        <td class="border border-gray-300 px-2 py-1">2025-10-25 09:15:27</td>
+                        <td class="border border-gray-300 px-2 py-1 text-blue-600">INFO</td>
+                        <td class="border border-gray-300 px-2 py-1">13268_20251025_09_10.pdf</td>
+                        <td class="border border-gray-300 px-2 py-1">Filed to S023</td>
+                      </tr>
+                      <tr class="bg-yellow-50">
+                        <td class="border border-gray-300 px-2 py-1">2025-10-25 10:22:15</td>
+                        <td class="border border-gray-300 px-2 py-1 text-orange-600">WARN</td>
+                        <td class="border border-gray-300 px-2 py-1">99999_20251025_10_20.pdf</td>
+                        <td class="border border-gray-300 px-2 py-1">rejected: invalid filename format</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Section 4: Checking System -->
+          <section id="checking-system" class="mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">
+              <span class="step-number">4</span>
+              Using the Checking System
+            </h2>
+            
+            <p class="text-gray-700 mb-4">
+              The Checking System helps you monitor assessment completion and validate data quality at different levels.
+            </p>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 4.1: Access the Checking System</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Go to the 4Set System home page</li>
+              <li>Click <strong>Checking System</strong> button</li>
+              <li>Enter the system password when prompted</li>
+              <li>You'll see the Checking System home page with multiple view options</li>
+            </ol>
+
+            <!-- Embedded Screenshot: Checking System Home - Built from actual checking_system_home.html -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg bg-white">
+              <div class="p-6">
+                <!-- Header matching actual system -->
+                <div class="mb-6">
+                  <h1 class="text-2xl font-bold text-gray-800 mb-2 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#4A90E2" stroke-width="2">
+                      <circle cx="11" cy="11" r="8"></circle>
+                      <path d="m21 21-4.35-4.35"></path>
+                      <path d="M9 11l2 2 4-4"></path>
+                    </svg>
+                    Checking System
+                  </h1>
+                  <p class="text-gray-600 text-base">Search and analyse submitted data from every angle</p>
+                </div>
+
+                <!-- System Status Pills (from actual system) -->
+                <div class="bg-gray-50 rounded-lg p-3 mb-4 border border-gray-200">
+                  <div class="flex items-center gap-3 flex-wrap text-sm">
+                    <div class="flex items-center gap-2 bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold">
+                      <span class="w-2 h-2 bg-green-500 rounded-full inline-block"></span>
+                      <span>System Ready</span>
+                    </div>
+                    <span class="text-xs text-gray-500">Last Synced: <span class="font-mono">2 mins ago</span></span>
+                  </div>
+                </div>
+
+                <!-- Filter Chips Display -->
+                <div class="bg-gray-50 rounded-lg p-3 mb-4 border border-gray-200">
+                  <div class="flex items-center justify-between">
+                    <div class="text-xs text-gray-500">No filters applied</div>
+                    <span class="text-xs text-gray-500 font-medium">0 filters applied</span>
+                  </div>
+                </div>
+
+                <!-- Configure Filters Card (from actual system) -->
+                <div class="bg-white border-2 border-gray-200 rounded-lg p-5 mb-4">
+                  <h2 class="text-base font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#4A90E2" stroke-width="2">
+                      <line x1="4" y1="21" x2="4" y2="14"></line>
+                      <line x1="4" y1="10" x2="4" y2="3"></line>
+                      <line x1="12" y1="21" x2="12" y2="12"></line>
+                      <line x1="12" y1="8" x2="12" y2="3"></line>
+                      <line x1="20" y1="21" x2="20" y2="16"></line>
+                      <line x1="20" y1="12" x2="20" y2="3"></line>
+                      <line x1="1" y1="14" x2="7" y2="14"></line>
+                      <line x1="9" y1="8" x2="15" y2="8"></line>
+                      <line x1="17" y1="16" x2="23" y2="16"></line>
+                    </svg>
+                    Configure Filters
+                  </h2>
+                  <p class="text-xs text-gray-600 mb-3">Select filter type and value to narrow down the data. Click "Add filter" to add more filters.</p>
+                  
+                  <div class="bg-blue-50 border-l-4 border-blue-500 p-3 mb-3 text-xs text-gray-700">
+                    <strong>Filter Rules:</strong> District and Group are independent (can use both). Once you select School → Class → Student, higher levels become unavailable to prevent conflicts.
+                  </div>
+
+                  <button class="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700 mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="8" x2="12" y2="16"></line>
+                      <line x1="8" y1="12" x2="16" y2="12"></line>
+                    </svg>
+                    Add filter
+                  </button>
+
+                  <div class="pt-4 border-t border-gray-200 flex items-center justify-end gap-3">
+                    <button class="bg-gray-200 text-gray-700 px-5 py-2 rounded-full text-sm font-semibold hover:bg-gray-300">
+                      Clear All
+                    </button>
+                    <button class="bg-blue-600 text-white px-6 py-2 rounded-full text-sm font-semibold hover:bg-blue-700" disabled>
+                      Start Checking
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Recent Checks -->
+                <div class="bg-white border-2 border-gray-200 rounded-lg p-5">
+                  <h3 class="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    Recent Checks
+                  </h3>
+                  <p class="text-xs text-gray-500">No recent checks</p>
+                </div>
+              </div>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 4.2: Check a Single Student</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Click <strong>Student View</strong></li>
+              <li>Use the filter dropdown to select a student by Core ID</li>
+              <li>Click <strong>Load Student Data</strong></li>
+              <li>Review all assessment tasks and completion status</li>
+              <li>Check for missing data (shown in grey or with warning icons)</li>
+              <li>Verify termination flags match calculations</li>
+            </ol>
+
+            <!-- Embedded Screenshot: Student Detail View - Built from actual checking_system_4_student.html -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg bg-white">
+              <div class="p-4">
+                <!-- Header Navigation Bar (from actual system) -->
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2 text-xs font-mono text-gray-600">
+                      <span class="px-2 py-1 rounded bg-gray-200 text-gray-700">Shatin</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                      <span class="px-2 py-1 rounded bg-gray-200 text-gray-700">Group 3</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                      <span class="px-2 py-1 rounded bg-gray-200 text-gray-700">S023</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                      <span class="px-2 py-1 rounded bg-gray-200 text-gray-700">K2A</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                      <span class="px-2 py-1 rounded bg-blue-100 text-blue-700 font-semibold">C13268</span>
+                    </div>
+                    <button class="bg-gray-200 text-gray-700 px-3 py-1 rounded text-xs font-semibold hover:bg-gray-300">
+                      Export
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Student Profile Panel (entry-card from actual system) -->
+                <div class="bg-white border-l-4 border-blue-600 rounded-lg p-4 mb-4 shadow-sm">
+                  <div class="mb-3">
+                    <h2 class="text-sm font-semibold text-gray-800">Profile of 張三 (Chloe Wong)</h2>
+                    <p class="text-xs text-gray-500 mt-1">Student identifiers and metadata</p>
+                  </div>
+                  <div class="grid grid-cols-3 gap-2 text-xs">
+                    <div class="border border-gray-200 rounded p-2 bg-gradient-to-br from-white to-gray-50">
+                      <p class="text-xs uppercase text-gray-500 mb-1">Student ID</p>
+                      <p class="text-sm font-semibold text-gray-800 font-mono">St10001 <span class="text-gray-500">(C13268)</span></p>
+                    </div>
+                    <div class="border border-gray-200 rounded p-2 bg-gradient-to-br from-white to-gray-50">
+                      <p class="text-xs uppercase text-gray-500 mb-1">School</p>
+                      <p class="text-sm font-semibold text-gray-800">S023 - 石圍角小學</p>
+                    </div>
+                    <div class="border border-gray-200 rounded p-2 bg-gradient-to-br from-white to-gray-50">
+                      <p class="text-xs uppercase text-gray-500 mb-1">Class</p>
+                      <p class="text-sm font-semibold text-gray-800">K2A</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Student-level Task Status Overview (from actual system) -->
+                <div class="bg-white border-l-4 border-green-600 rounded-lg p-4 mb-4 shadow-sm">
+                  <h2 class="text-sm font-semibold text-gray-800 mb-3">Student-level Task Status Overview</h2>
+                  <div class="grid grid-cols-4 gap-3">
+                    <div class="bg-gradient-to-br from-white to-green-50 rounded border border-green-200 px-3 py-2">
+                      <div class="flex items-center gap-1 mb-1">
+                        <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                        <h3 class="text-xs text-gray-600">Complete</h3>
+                      </div>
+                      <p class="text-xl font-bold text-green-700">5</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-white to-yellow-50 rounded border border-yellow-200 px-3 py-2">
+                      <div class="flex items-center gap-1 mb-1">
+                        <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+                        <h3 class="text-xs text-gray-600">Post-term</h3>
+                      </div>
+                      <p class="text-xl font-bold text-yellow-700">1</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-white to-red-50 rounded border border-red-200 px-3 py-2">
+                      <div class="flex items-center gap-1 mb-1">
+                        <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                        <h3 class="text-xs text-gray-600">Incomplete</h3>
+                      </div>
+                      <p class="text-xl font-bold text-red-700">2</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-white to-gray-50 rounded border border-gray-200 px-3 py-2">
+                      <div class="flex items-center gap-1 mb-1">
+                        <span class="w-3 h-3 rounded-full bg-gray-400"></span>
+                        <h3 class="text-xs text-gray-600">Not started</h3>
+                      </div>
+                      <p class="text-xl font-bold text-gray-700">1</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Task Progress (from actual system) -->
+                <div class="bg-white border-l-4 border-purple-600 rounded-lg shadow-sm">
+                  <div class="p-4 border-b border-gray-200">
+                    <h2 class="text-sm font-semibold text-gray-800">Task Progress</h2>
+                    <p class="text-xs text-gray-500 mt-1">Expand a task to review individual questions, responses, and correctness</p>
+                  </div>
+                  <div class="p-3 space-y-2">
+                    <!-- Task rows with status circles (matching actual system) -->
+                    <div class="border border-green-200 bg-green-50 rounded p-2 flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                        <span class="text-xs font-semibold text-gray-800">ERV</span>
+                        <span class="text-xs text-gray-600">- Expressive Vocabulary</span>
+                      </div>
+                      <span class="text-xs text-green-700 font-semibold">36/36</span>
+                    </div>
+                    <div class="border border-green-200 bg-green-50 rounded p-2 flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                        <span class="text-xs font-semibold text-gray-800">CM</span>
+                        <span class="text-xs text-gray-600">- Counting & Magnitude</span>
+                      </div>
+                      <span class="text-xs text-green-700 font-semibold">22/22</span>
+                    </div>
+                    <div class="border border-yellow-200 bg-yellow-50 rounded p-2 flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+                        <span class="text-xs font-semibold text-gray-800">CWR</span>
+                        <span class="text-xs text-gray-600">- Chinese Word Reading</span>
+                      </div>
+                      <span class="text-xs text-yellow-700 font-semibold">45/60</span>
+                    </div>
+                    <div class="border border-gray-200 bg-gray-50 rounded p-2 flex items-center justify-between">
+                      <div class="flex items-center gap-2">
+                        <span class="w-3 h-3 rounded-full bg-gray-400"></span>
+                        <span class="text-xs font-semibold text-gray-800">TGMD</span>
+                        <span class="text-xs text-gray-600">- Gross Motor Development</span>
+                      </div>
+                      <span class="text-xs text-gray-500 font-semibold">Not started</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="info-box">
+              <p class="text-sm font-semibold mb-2">💡 Status Indicators</p>
+              <ul class="text-sm space-y-1 ml-4">
+                <li>• <strong>✅ Green checkmark</strong> - Data verified, calculation matches</li>
+                <li>• <strong>⚠️ Orange warning</strong> - Mismatch detected, needs review</li>
+                <li>• <strong>🔴 Red highlight</strong> - Assessment terminated</li>
+                <li>• <strong>⚪ Grey circle</strong> - Not started or missing data</li>
+              </ul>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 4.3: Check a Whole Class</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>From the home page, click <strong>Class View</strong></li>
+              <li>Select a school from the dropdown</li>
+              <li>Select a class from the available classes</li>
+              <li>View the class completion heatmap showing all students</li>
+              <li>Identify students with incomplete assessments (highlighted)</li>
+              <li>Click on a student to see individual details</li>
+            </ol>
+
+            <!-- Embedded Screenshot: Class View - Built from actual checking_system_3_class.html -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg bg-white">
+              <div class="p-4">
+                <!-- Header Navigation Bar (breadcrumb from actual system) -->
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-3 mb-4">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2 text-xs font-mono text-gray-600">
+                      <span class="px-2 py-1 rounded bg-gray-200 text-gray-700">Shatin</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                      <span class="px-2 py-1 rounded bg-gray-200 text-gray-700">Group 3</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                      <span class="px-2 py-1 rounded bg-gray-200 text-gray-700">S023</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                      <span class="px-2 py-1 rounded bg-blue-100 text-blue-700 font-semibold">K2A</span>
+                    </div>
+                    <button class="bg-gray-200 text-gray-700 px-3 py-1 rounded text-xs font-semibold hover:bg-gray-300">
+                      Export
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Class Profile (entry-card with blue left border) -->
+                <div class="bg-white border-l-4 border-blue-600 rounded-lg p-4 mb-4 shadow-sm">
+                  <div class="mb-3">
+                    <h2 class="text-sm font-semibold text-gray-800">Class K2A</h2>
+                    <p class="text-xs text-gray-500">石圍角小學 (Starlight Primary)</p>
+                  </div>
+                  <div class="grid grid-cols-5 gap-2 text-xs">
+                    <div class="border border-gray-200 rounded p-2 bg-gray-50">
+                      <p class="text-xs uppercase text-gray-500">Grade</p>
+                      <p class="text-sm font-semibold">K2</p>
+                    </div>
+                    <div class="border border-gray-200 rounded p-2 bg-gray-50">
+                      <p class="text-xs uppercase text-gray-500">Students</p>
+                      <p class="text-sm font-semibold">25</p>
+                    </div>
+                    <div class="border border-gray-200 rounded p-2 bg-gray-50">
+                      <p class="text-xs uppercase text-gray-500">Teacher</p>
+                      <p class="text-sm font-semibold">Ms. Chan</p>
+                    </div>
+                    <div class="border border-gray-200 rounded p-2 bg-gray-50">
+                      <p class="text-xs uppercase text-gray-500">District</p>
+                      <p class="text-sm font-semibold">Shatin</p>
+                    </div>
+                    <div class="border border-gray-200 rounded p-2 bg-gray-50">
+                      <p class="text-xs uppercase text-gray-500">Group</p>
+                      <p class="text-sm font-semibold">3</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Class-level Task Status Overview (with Set completion metrics) -->
+                <div class="bg-white border-l-4 border-green-600 rounded-lg p-4 mb-4 shadow-sm">
+                  <h2 class="text-sm font-semibold text-gray-800 mb-3">Class-level Task Status Overview</h2>
+                  <div class="grid grid-cols-4 gap-3">
+                    <div class="bg-gradient-to-br from-white to-blue-50 rounded border border-blue-200 px-3 py-2">
+                      <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-medium text-blue-700">Set 1</span>
+                        <span class="text-xs text-gray-500">25 students</span>
+                      </div>
+                      <p class="text-xl font-bold text-blue-900">88%</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-white to-green-50 rounded border border-green-200 px-3 py-2">
+                      <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-medium text-green-700">Set 2</span>
+                        <span class="text-xs text-gray-500">25 students</span>
+                      </div>
+                      <p class="text-xl font-bold text-green-900">92%</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-white to-purple-50 rounded border border-purple-200 px-3 py-2">
+                      <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-medium text-purple-700">Set 3</span>
+                        <span class="text-xs text-gray-500">25 students</span>
+                      </div>
+                      <p class="text-xl font-bold text-purple-900">76%</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-white to-amber-50 rounded border border-amber-200 px-3 py-2">
+                      <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-medium text-amber-700">Set 4</span>
+                        <span class="text-xs text-gray-500">25 students</span>
+                      </div>
+                      <p class="text-xl font-bold text-amber-900">84%</p>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Student List Preview (entry-card with purple left border) -->
+                <div class="bg-white border-l-4 border-purple-600 rounded-lg shadow-sm">
+                  <div class="p-4 border-b border-gray-200 flex items-center justify-between">
+                    <div>
+                      <h2 class="text-sm font-semibold text-gray-800">Student List</h2>
+                      <p class="text-xs text-gray-500">Click student name to view detailed assessment data</p>
+                    </div>
+                    <div class="flex items-center gap-2 text-xs">
+                      <span class="text-gray-500">View Mode:</span>
+                      <button class="bg-blue-600 text-white px-3 py-1 rounded text-xs font-semibold">By Set</button>
+                      <button class="bg-gray-100 text-gray-600 px-3 py-1 rounded text-xs font-semibold">By Task</button>
+                    </div>
+                  </div>
+                  <div class="p-3 bg-gray-50 border-b border-gray-200 flex items-center justify-between text-xs">
+                    <div class="flex items-center gap-3 text-gray-600">
+                      <div class="flex items-center gap-1">
+                        <span class="w-3 h-3 rounded-full bg-green-500"></span>
+                        <span>Complete</span>
+                      </div>
+                      <div class="flex items-center gap-1">
+                        <span class="w-3 h-3 rounded-full bg-yellow-500"></span>
+                        <span>Post-term</span>
+                      </div>
+                      <div class="flex items-center gap-1">
+                        <span class="w-3 h-3 rounded-full bg-red-500"></span>
+                        <span>Incomplete</span>
+                      </div>
+                      <div class="flex items-center gap-1">
+                        <span class="w-3 h-3 rounded-full bg-gray-400"></span>
+                        <span>Not started</span>
+                      </div>
+                    </div>
+                    <select class="border border-gray-300 rounded px-2 py-1 text-xs bg-white">
+                      <option>All Students</option>
+                      <option>With Data Only</option>
+                      <option>Incomplete Only</option>
+                    </select>
+                  </div>
+                  <div class="overflow-x-auto p-3">
+                    <table class="w-full text-xs">
+                      <thead>
+                        <tr class="bg-gray-100 text-gray-600">
+                          <th class="text-left py-2 px-2 font-semibold">#</th>
+                          <th class="text-left py-2 px-2 font-semibold">Student Name</th>
+                          <th class="text-center py-2 px-2 font-semibold">Set 1</th>
+                          <th class="text-center py-2 px-2 font-semibold">Set 2</th>
+                          <th class="text-center py-2 px-2 font-semibold">Set 3</th>
+                          <th class="text-center py-2 px-2 font-semibold">Set 4</th>
+                        </tr>
+                      </thead>
+                      <tbody class="text-gray-700">
+                        <tr class="border-b border-gray-100 hover:bg-blue-50 cursor-pointer">
+                          <td class="py-2 px-2">1</td>
+                          <td class="py-2 px-2 font-semibold">張三 (C13268)</td>
+                          <td class="text-center py-2 px-2"><span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span></td>
+                          <td class="text-center py-2 px-2"><span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span></td>
+                          <td class="text-center py-2 px-2"><span class="w-3 h-3 rounded-full bg-yellow-500 inline-block"></span></td>
+                          <td class="text-center py-2 px-2"><span class="w-3 h-3 rounded-full bg-red-500 inline-block"></span></td>
+                        </tr>
+                        <tr class="border-b border-gray-100 hover:bg-blue-50 cursor-pointer">
+                          <td class="py-2 px-2">2</td>
+                          <td class="py-2 px-2 font-semibold">李四 (C13269)</td>
+                          <td class="text-center py-2 px-2"><span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span></td>
+                          <td class="text-center py-2 px-2"><span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span></td>
+                          <td class="text-center py-2 px-2"><span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span></td>
+                          <td class="text-center py-2 px-2"><span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span></td>
+                        </tr>
+                        <tr class="border-b border-gray-100 hover:bg-blue-50 cursor-pointer">
+                          <td class="py-2 px-2">3</td>
+                          <td class="py-2 px-2 font-semibold">王五 (C13270)</td>
+                          <td class="text-center py-2 px-2"><span class="w-3 h-3 rounded-full bg-yellow-500 inline-block"></span></td>
+                          <td class="text-center py-2 px-2"><span class="w-3 h-3 rounded-full bg-green-500 inline-block"></span></td>
+                          <td class="text-center py-2 px-2"><span class="w-3 h-3 rounded-full bg-red-500 inline-block"></span></td>
+                          <td class="text-center py-2 px-2"><span class="w-3 h-3 rounded-full bg-gray-400 inline-block"></span></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 4.4: Check a Whole School</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Click <strong>School View</strong></li>
+              <li>Select a school from the dropdown</li>
+              <li>View aggregated statistics for all classes in the school</li>
+              <li>See completion percentages by task type</li>
+              <li>Click on a class to drill down to class-level details</li>
+            </ol>
+
+            <!-- Embedded Screenshot: School View -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
+              <div class="bg-white p-6">
+                <div class="mb-4 pb-4 border-b">
+                  <h2 class="text-2xl font-bold text-gray-800 mb-1">School S023</h2>
+                  <p class="text-gray-600">香港道教聯合會圓玄學院石圍角小學 • District: Shatin</p>
+                </div>
+                
+                <!-- Class summary table -->
+                <div class="overflow-x-auto">
+                  <table class="w-full text-sm">
+                    <thead>
+                      <tr class="bg-gray-100 border-b-2 border-gray-300">
+                        <th class="text-left py-2 px-3 font-semibold">Class</th>
+                        <th class="text-left py-2 px-3 font-semibold">Students</th>
+                        <th class="text-left py-2 px-3 font-semibold">ERV</th>
+                        <th class="text-left py-2 px-3 font-semibold">CM</th>
+                        <th class="text-left py-2 px-3 font-semibold">CWR</th>
+                        <th class="text-left py-2 px-3 font-semibold">Overall</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr class="border-b border-gray-200 hover:bg-blue-50 cursor-pointer">
+                        <td class="py-2 px-3 font-semibold">K2A</td>
+                        <td class="py-2 px-3">25</td>
+                        <td class="py-2 px-3">
+                          <div class="flex items-center gap-2">
+                            <div class="w-20 bg-gray-200 rounded-full h-2">
+                              <div class="bg-green-500 h-2 rounded-full" style="width: 88%"></div>
+                            </div>
+                            <span class="text-xs">88%</span>
+                          </div>
+                        </td>
+                        <td class="py-2 px-3">
+                          <div class="flex items-center gap-2">
+                            <div class="w-20 bg-gray-200 rounded-full h-2">
+                              <div class="bg-green-500 h-2 rounded-full" style="width: 92%"></div>
+                            </div>
+                            <span class="text-xs">92%</span>
+                          </div>
+                        </td>
+                        <td class="py-2 px-3">
+                          <div class="flex items-center gap-2">
+                            <div class="w-20 bg-gray-200 rounded-full h-2">
+                              <div class="bg-yellow-500 h-2 rounded-full" style="width: 76%"></div>
+                            </div>
+                            <span class="text-xs">76%</span>
+                          </div>
+                        </td>
+                        <td class="py-2 px-3">
+                          <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-semibold">80%</span>
+                        </td>
+                      </tr>
+                      <tr class="border-b border-gray-200 hover:bg-blue-50 cursor-pointer">
+                        <td class="py-2 px-3 font-semibold">K2B</td>
+                        <td class="py-2 px-3">23</td>
+                        <td class="py-2 px-3">
+                          <div class="flex items-center gap-2">
+                            <div class="w-20 bg-gray-200 rounded-full h-2">
+                              <div class="bg-green-500 h-2 rounded-full" style="width: 95%"></div>
+                            </div>
+                            <span class="text-xs">95%</span>
+                          </div>
+                        </td>
+                        <td class="py-2 px-3">
+                          <div class="flex items-center gap-2">
+                            <div class="w-20 bg-gray-200 rounded-full h-2">
+                              <div class="bg-green-500 h-2 rounded-full" style="width: 87%"></div>
+                            </div>
+                            <span class="text-xs">87%</span>
+                          </div>
+                        </td>
+                        <td class="py-2 px-3">
+                          <div class="flex items-center gap-2">
+                            <div class="w-20 bg-gray-200 rounded-full h-2">
+                              <div class="bg-green-500 h-2 rounded-full" style="width: 91%"></div>
+                            </div>
+                            <span class="text-xs">91%</span>
+                          </div>
+                        </td>
+                        <td class="py-2 px-3">
+                          <span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-semibold">88%</span>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 4.5: Check a Whole Group</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Click <strong>Group View</strong></li>
+              <li>Select a project group (1, 2, 3, 4, or 5)</li>
+              <li>View all schools in that group</li>
+              <li>Compare completion rates across schools</li>
+              <li>Click on a school to see more details</li>
+            </ol>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 4.6: Check Entire District</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Click <strong>District View</strong></li>
+              <li>Select a district (Shatin, Sham Shui Po, etc.)</li>
+              <li>View geographic aggregation of all schools in that district</li>
+              <li>Track overall progress at the highest level</li>
+              <li>Drill down to individual schools for details</li>
+            </ol>
+
+            <!-- Embedded Screenshot: District View -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
+              <div class="bg-white p-6">
+                <div class="mb-4 pb-4 border-b">
+                  <h2 class="text-2xl font-bold text-gray-800 mb-1">District: Shatin</h2>
+                  <p class="text-gray-600">8 schools • 342 students total</p>
+                </div>
+                
+                <!-- School cards -->
+                <div class="grid md:grid-cols-2 gap-4">
+                  <div class="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-300 cursor-pointer transition">
+                    <div class="flex items-start justify-between mb-2">
+                      <div class="font-semibold text-gray-800">S023</div>
+                      <div class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-semibold">85%</div>
+                    </div>
+                    <div class="text-sm text-gray-600 mb-3">香港道教聯合會圓玄學院石圍角小學</div>
+                    <div class="flex items-center gap-2 text-xs text-gray-500">
+                      <span>48 students</span>
+                      <span>•</span>
+                      <span>2 classes</span>
+                    </div>
+                  </div>
+                  
+                  <div class="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-300 cursor-pointer transition">
+                    <div class="flex items-start justify-between mb-2">
+                      <div class="font-semibold text-gray-800">S024</div>
+                      <div class="bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-xs font-semibold">72%</div>
+                    </div>
+                    <div class="text-sm text-gray-600 mb-3">沙田循道衛理小學</div>
+                    <div class="flex items-center gap-2 text-xs text-gray-500">
+                      <span>52 students</span>
+                      <span>•</span>
+                      <span>2 classes</span>
+                    </div>
+                  </div>
+                  
+                  <div class="border-2 border-gray-200 rounded-lg p-4 hover:border-blue-300 cursor-pointer transition">
+                    <div class="flex items-start justify-between mb-2">
+                      <div class="font-semibold text-gray-800">S025</div>
+                      <div class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs font-semibold">91%</div>
+                    </div>
+                    <div class="text-sm text-gray-600 mb-3">培基小學</div>
+                    <div class="flex items-center gap-2 text-xs text-gray-500">
+                      <span>45 students</span>
+                      <span>•</span>
+                      <span>2 classes</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="success-box">
+              <p class="text-sm"><strong>✅ Navigation Tip:</strong> You can drill down from District → Group → School → Class → Student, or jump directly to any level from the home page.</p>
+            </div>
+          </section>
+
+          <!-- Section 2.2: Data Preparation -->
+          <section id="data-prep" class="mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">
+              <span class="step-number">2.2</span>
+              Data Preparation from JotForm & Qualtrics
+            </h2>
+            
+            <p class="text-gray-700 mb-4">
+              The system merges data from two sources (JotForm submissions and Qualtrics surveys) to create a complete picture of each student's assessment. You need to sync this data for accurate checking.
+            </p>
+
+            <div class="info-box">
+              <p class="text-sm font-semibold mb-2">💡 How Data Merge Works (Simple Explanation)</p>
+              <p class="text-sm">Think of it like putting together a puzzle: JotForm has the uploaded PDF data, while Qualtrics has the survey responses. The system combines both pieces to show you the complete assessment for each student. When you "build the cache," you're telling the system to fetch the latest pieces and assemble them together.</p>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">When to Prepare Data</h3>
+            <p class="text-gray-700 mb-2">Sync the data:</p>
+            <ul class="list-disc ml-6 space-y-1 text-gray-700">
+              <li>After uploading a batch of new assessments</li>
+              <li>When the Checking System feels slow to load</li>
+              <li>At the start of each day if you're doing checking work</li>
+              <li>After any major data updates from JotForm or Qualtrics</li>
+            </ul>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">How to Prepare Data</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Open the Checking System home page</li>
+              <li>Look at the <strong>System Status Pills</strong> at the top (below the header)</li>
+              <li>You'll see two pills: "Decryption Status" and "JotForm Cache Status"</li>
+              <li>If the cache status pill shows <strong class="text-red-600">"System Not Ready"</strong> (red), click on it</li>
+              <li>If it shows <strong class="text-green-600">"System Ready"</strong> (green), you can still click it to refresh the data</li>
+              <li>A sync/refresh process will start automatically, showing progress in the pill itself</li>
+              <li>The pill will show <strong class="text-orange-600">"Syncing"</strong> (orange) with a percentage and progress bar</li>
+              <li>Wait for it to complete - the pill will turn <strong class="text-green-600">green</strong> when ready</li>
+            </ol>
+
+            <div class="info-box">
+              <p class="text-sm"><strong>💡 What is Cache?</strong> The cache stores pre-processed data in your browser's IndexedDB for faster loading. It includes both raw JotForm submissions and validated task data. Manual refresh ensures you have the latest data from the server.</p>
+            </div>
+
+            <!-- Embedded Screenshot: System Status Pills -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg bg-white">
+              <div class="p-6">
+                <h3 class="text-sm font-semibold text-gray-700 mb-4">System Status Pills (at top of Checking System page)</h3>
+                
+                <!-- Pills container -->
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                  <div class="flex items-center gap-3 flex-wrap">
+                    <!-- Decryption Status Pill (green - ready) -->
+                    <div class="flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium bg-green-100 text-green-800 border border-green-300">
+                      <span class="inline-block h-2 w-2 rounded-full bg-green-600"></span>
+                      <span>System Ready</span>
+                    </div>
+                    
+                    <!-- JotForm Cache Status Pill - RED (Not Ready) -->
+                    <div class="flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium bg-red-100 text-red-800 border border-red-300 cursor-pointer hover:bg-red-200">
+                      <span class="inline-block h-2 w-2 rounded-full bg-red-600"></span>
+                      <span>System Not Ready</span>
+                    </div>
+                    
+                    <span class="text-xs text-gray-500">Last Synced: <span class="font-mono">—</span></span>
+                  </div>
+                  <p class="text-xs text-gray-500 mt-2">← Click the red pill to build cache</p>
+                </div>
+
+                <!-- Pills during syncing -->
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+                  <div class="flex items-center gap-3 flex-wrap">
+                    <div class="flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium bg-green-100 text-green-800 border border-green-300">
+                      <span class="inline-block h-2 w-2 rounded-full bg-green-600"></span>
+                      <span>System Ready</span>
+                    </div>
+                    
+                    <!-- JotForm Cache Status Pill - ORANGE (Syncing with progress) -->
+                    <div class="relative flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium bg-orange-100 text-orange-800 border border-orange-300 overflow-hidden">
+                      <!-- Progress bar background (inside pill) -->
+                      <div class="absolute left-0 top-0 bottom-0 bg-orange-200" style="width: 65%; z-index: 0;"></div>
+                      <!-- Content above progress bar -->
+                      <span class="inline-block h-2 w-2 rounded-full bg-orange-600 relative z-10"></span>
+                      <span class="relative z-10">Syncing 65%</span>
+                    </div>
+                    
+                    <span class="text-xs text-gray-500">Last Synced: <span class="font-mono">2 mins ago</span></span>
+                  </div>
+                  <p class="text-xs text-gray-500 mt-2">← Pill shows progress during sync</p>
+                </div>
+
+                <!-- Pills when ready -->
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <div class="flex items-center gap-3 flex-wrap">
+                    <div class="flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium bg-green-100 text-green-800 border border-green-300">
+                      <span class="inline-block h-2 w-2 rounded-full bg-green-600"></span>
+                      <span>System Ready</span>
+                    </div>
+                    
+                    <!-- JotForm Cache Status Pill - GREEN (Ready) -->
+                    <div class="flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium bg-green-100 text-green-800 border border-green-300 cursor-pointer hover:bg-green-200">
+                      <span class="inline-block h-2 w-2 rounded-full bg-green-600"></span>
+                      <span>System Ready</span>
+                    </div>
+                    
+                    <span class="text-xs text-gray-500">Last Synced: <span class="font-mono">just now</span></span>
+                  </div>
+                  <p class="text-xs text-gray-500 mt-2">← Both pills green = system fully ready</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="success-box">
+              <p class="text-sm"><strong>✅ Performance Boost:</strong> With cache built, loading student data is 5-10x faster!</p>
+            </div>
+          </section>
+
+          <!-- Section 6: Filter Data -->
+          <section id="filter-data" class="mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">
+              <span class="step-number">6</span>
+              Using Filters
+            </h2>
+            
+            <p class="text-gray-700 mb-4">
+              Use filters to quickly find specific students, schools, or data matching certain criteria.
+            </p>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 6.1: Access the Filter Interface</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Go to the Checking System home page</li>
+              <li>You'll see the <strong>Configure Filters</strong> card</li>
+              <li>Click <strong>Add filter</strong> button to create a new filter row</li>
+              <li>Select a filter type from the dropdown (District, Group, School, Class, or Student)</li>
+              <li>Choose the specific value from the second dropdown that appears</li>
+            </ol>
+
+            <!-- Embedded Screenshot: Filter Interface from Checking System -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg">
+              <div class="bg-white p-6">
+                <div class="mb-6">
+                  <h2 class="text-xl font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4A90E2" stroke-width="2">
+                      <line x1="4" y1="21" x2="4" y2="14"></line>
+                      <line x1="4" y1="10" x2="4" y2="3"></line>
+                      <line x1="12" y1="21" x2="12" y2="12"></line>
+                      <line x1="12" y1="8" x2="12" y2="3"></line>
+                      <line x1="20" y1="21" x2="20" y2="16"></line>
+                      <line x1="20" y1="12" x2="20" y2="3"></line>
+                      <line x1="1" y1="14" x2="7" y2="14"></line>
+                      <line x1="9" y1="8" x2="15" y2="8"></line>
+                      <line x1="17" y1="16" x2="23" y2="16"></line>
+                    </svg>
+                    Configure Filters
+                  </h2>
+                </div>
+                
+                <!-- Filter row example -->
+                <div class="space-y-3 mb-4">
+                  <div class="flex items-center gap-3">
+                    <select class="w-48 border border-gray-300 rounded-lg shadow-sm text-sm px-3 py-2 bg-white">
+                      <option value="">Select type...</option>
+                      <option value="District">District</option>
+                      <option value="Group">Group</option>
+                      <option value="School" selected>School</option>
+                      <option value="Class">Class</option>
+                      <option value="Student">Student</option>
+                    </select>
+                    <select class="flex-grow border border-gray-300 rounded-lg shadow-sm text-sm px-3 py-2 bg-white">
+                      <option value="">Select school...</option>
+                      <option value="S023" selected>S023 - 香港道教聯合會圓玄學院石圍角小學</option>
+                      <option value="S024">S024 - 沙田循道衛理小學</option>
+                      <option value="S025">S025 - 培基小學</option>
+                    </select>
+                    <button class="p-2 text-gray-500 hover:text-red-600">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <line x1="15" y1="9" x2="9" y2="15"></line>
+                        <line x1="9" y1="9" x2="15" y2="15"></line>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+
+                <!-- Info box -->
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-3 mb-4 text-sm text-gray-700">
+                  <div class="flex items-start gap-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" class="flex-shrink-0 mt-0.5">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="16" x2="12" y2="12"></line>
+                      <line x1="12" y1="8" x2="12.01" y2="8"></line>
+                    </svg>
+                    <p><strong>Filter Rules:</strong> District and Group are independent (can use both). Once you select School → Class → Student, higher levels become unavailable to prevent conflicts.</p>
+                  </div>
+                </div>
+
+                <!-- Add filter button -->
+                <div class="pt-2 mb-6">
+                  <button class="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:text-blue-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <circle cx="12" cy="12" r="10"></circle>
+                      <line x1="12" y1="8" x2="12" y2="16"></line>
+                      <line x1="8" y1="12" x2="16" y2="12"></line>
+                    </svg>
+                    Add filter
+                  </button>
+                </div>
+
+                <!-- Action buttons -->
+                <div class="pt-6 border-t border-gray-200 flex items-center justify-end gap-3">
+                  <button class="bg-gray-200 text-gray-700 px-6 py-2 rounded-full text-sm font-semibold hover:bg-gray-300">
+                    Clear All
+                  </button>
+                  <button class="bg-blue-600 text-white px-8 py-2.5 rounded-full text-sm font-semibold hover:bg-blue-700">
+                    Start Checking
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 6.2: Apply Your Filters</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Select your filter type and value from the dropdowns</li>
+              <li>Click <strong>Add filter</strong> to add more filters if needed</li>
+              <li>Click <strong>Start Checking</strong> when ready to view results</li>
+              <li>The system will show only the data matching your filters</li>
+            </ol>
+
+            <div class="success-box">
+              <p class="text-sm"><strong>✅ Quick Tip:</strong> Start with broader filters (like School) then drill down to more specific ones (like Class or Student) to narrow your search.</p>
+            </div>
+          </section>
+
+          <!-- Section 7: Export Data -->
+          <section id="export-data" class="mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">
+              <span class="step-number">7</span>
+              Exporting Data
+            </h2>
+            
+            <p class="text-gray-700 mb-4">
+              Export validation reports as markdown files for offline review and analysis.
+            </p>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 7.1: Navigate to What You Want to Export</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>Go to the Checking System and navigate to a specific student, class, school, group, or district page</li>
+              <li>Make sure you're on the detailed view (not the home/filter page)</li>
+            </ol>
+
+            <div class="warning-box">
+              <p class="text-sm"><strong>⚠️ Important:</strong> The Export button only appears on individual checking pages, not on the filter/home page.</p>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 7.2: Click Export and Download</h3>
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+              <li>On the individual page, look for the <strong>Export</strong> button in the top-right corner</li>
+              <li>Click the button to download the markdown (.md) file</li>
+              <li>The file will be saved to your Downloads folder</li>
+              <li>Open it in any text editor or markdown viewer</li>
+            </ol>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6" style="color: var(--secondary)">Step 7.3: Understanding the Export File</h3>
+            <p class="text-gray-700 mb-2">Different export types contain different information:</p>
+            
+            <ul class="list-disc ml-6 space-y-2 text-gray-700">
+              <li><strong>Student export:</strong> Full validation report with task details, status indicators, and profile info</li>
+              <li><strong>Class export:</strong> All students in the class with completion status for each set</li>
+              <li><strong>School/Group/District export:</strong> Summary statistics and aggregated data</li>
+            </ul>
+
+            <!-- Embedded Screenshot: Export Button Location (from class view) -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg bg-white">
+              <div class="p-4">
+                <!-- Header showing Export button location -->
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                  <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-2 text-xs font-mono text-gray-600">
+                      <span class="px-2 py-1 rounded bg-gray-200 text-gray-700">Shatin</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                      <span class="px-2 py-1 rounded bg-gray-200 text-gray-700">Group 3</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                      <span class="px-2 py-1 rounded bg-gray-200 text-gray-700">S023</span>
+                      <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                      <span class="px-2 py-1 rounded bg-blue-100 text-blue-700 font-semibold">K2A</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <button class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded text-xs font-semibold inline-flex items-center gap-1.5">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                          <polyline points="7 10 12 15 17 10"></polyline>
+                          <line x1="12" y1="15" x2="12" y2="3"></line>
+                        </svg>
+                        <span>Export</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded">
+                  <p class="text-sm text-gray-700">
+                    <strong>💡 What gets exported?</strong> The export creates a markdown file containing:
+                  </p>
+                  <ul class="list-disc ml-6 mt-2 text-sm text-gray-700 space-y-1">
+                    <li><strong>Student export:</strong> Full validation report with task details, status indicators, and profile info</li>
+                    <li><strong>Class export:</strong> All students in the class with completion status for each set</li>
+                    <li><strong>School/Group/District export:</strong> Summary statistics and aggregated data</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div class="success-box">
+              <p class="text-sm"><strong>✅ Export Format:</strong> The exported markdown (.md) files include status indicators (✅ Complete, ⚠️ Incomplete, ⚪ Not Started) and can be opened in any text editor, markdown viewer, or imported into documentation tools.</p>
+            </div>
+
+            <!-- Embedded Screenshot: Export File Preview -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg bg-white">
+              <div class="p-4">
+                <h3 class="text-sm font-semibold text-gray-700 mb-4">Example: Student Export File Preview</h3>
+                
+                <!-- File preview mockup -->
+                <div class="bg-gray-900 rounded-lg p-4 font-mono text-sm overflow-x-auto">
+                  <div class="text-gray-300">
+                    <div class="text-green-400"># Validation Report: 張三 (Chloe Wong)</div>
+                    <div class="text-gray-500">Generated: 2025-10-25 14:30:15</div>
+                    <div class="mt-4 text-white">## Student Profile</div>
+                    <div class="text-gray-400">- <span class="text-blue-400">Student ID:</span> St10001 (C13268)</div>
+                    <div class="text-gray-400">- <span class="text-blue-400">School:</span> S023 - 香港道教聯合會圓玄學院石圍角小學</div>
+                    <div class="text-gray-400">- <span class="text-blue-400">Class:</span> K2A</div>
+                    <div class="text-gray-400">- <span class="text-blue-400">Grade:</span> K2</div>
+                    
+                    <div class="mt-4 text-white">## Set Status Summary</div>
+                    <div class="text-gray-400">| Set | Status | Tasks Complete |</div>
+                    <div class="text-gray-400">|-----|--------|----------------|</div>
+                    <div class="text-gray-400">| Set 1 | <span class="text-green-400">✅ Complete</span> | 2/2 |</div>
+                    <div class="text-gray-400">| Set 2 | <span class="text-green-400">✅ Complete</span> | 2/2 |</div>
+                    <div class="text-gray-400">| Set 3 | <span class="text-yellow-400">⚠️ Incomplete</span> | 1/2 |</div>
+                    <div class="text-gray-400">| Set 4 | <span class="text-gray-500">⚪ Not Started</span> | 0/1 |</div>
+                    
+                    <div class="mt-4 text-white">## Task Details</div>
+                    <div class="text-gray-400">### ERV - Expressive Vocabulary</div>
+                    <div class="text-gray-400">- <span class="text-blue-400">Status:</span> <span class="text-green-400">✅ Complete</span></div>
+                    <div class="text-gray-400">- <span class="text-blue-400">Questions:</span> 36/36 answered</div>
+                    <div class="text-gray-400">- <span class="text-blue-400">Termination:</span> No</div>
+                    
+                    <div class="mt-2 text-gray-400">### CM - Counting & Magnitude</div>
+                    <div class="text-gray-400">- <span class="text-blue-400">Status:</span> <span class="text-green-400">✅ Complete</span></div>
+                    <div class="text-gray-400">- <span class="text-blue-400">Questions:</span> 22/22 answered</div>
+                    
+                    <div class="mt-2 text-gray-400">### CWR - Chinese Word Reading</div>
+                    <div class="text-gray-400">- <span class="text-blue-400">Status:</span> <span class="text-yellow-400">⚠️ Incomplete</span></div>
+                    <div class="text-gray-400">- <span class="text-blue-400">Questions:</span> 45/60 answered</div>
+                    <div class="text-gray-400">- <span class="text-blue-400">Warning:</span> Missing data (questions 46-60)</div>
+                    
+                    <div class="mt-2 text-gray-400">...</div>
+                  </div>
+                </div>
+                
+                <div class="mt-4 p-3 bg-green-50 border border-green-200 rounded">
+                  <p class="text-sm text-gray-700">
+                    <strong>✅ File Format:</strong> The markdown file can be opened in:
+                  </p>
+                  <ul class="list-disc ml-6 mt-1 text-xs text-gray-600 space-y-1">
+                    <li>Any text editor (Notepad, Notepad++, VS Code)</li>
+                    <li>Markdown viewers (Typora, Mark Text, online viewers)</li>
+                    <li>Documentation tools (Notion, Confluence, GitHub)</li>
+                    <li>Or converted to PDF/HTML for sharing</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Learn More Section -->
+          <section id="learn-more" class="mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">📚 Learn More</h2>
+            
+            <p class="text-gray-700 mb-6">
+              This Quick Start Guide covered the essential steps. For deeper understanding and advanced features, explore these detailed guides:
+            </p>
+
+            <div class="grid md:grid-cols-2 gap-4">
+              <a href="user_guide_uploader.html" class="block p-4 border-2 border-gray-200 rounded-lg hover:border-primary hover:shadow-lg transition">
+                <h3 class="font-semibold text-lg mb-2" style="color: var(--primary)">📤 Assessment Uploader Guide</h3>
+                <p class="text-sm text-gray-600">Detailed documentation on the upload interface, processor agent setup, and troubleshooting upload issues.</p>
+              </a>
+
+              <a href="user_guide_checking_system.html" class="block p-4 border-2 border-gray-200 rounded-lg hover:border-primary hover:shadow-lg transition">
+                <h3 class="font-semibold text-lg mb-2" style="color: var(--primary)">📊 Checking System Guide</h3>
+                <p class="text-sm text-gray-600">Complete guide to data validation, status indicators, navigation, and understanding the multi-level dashboard.</p>
+              </a>
+
+              <a href="user_guide_qualtrics.html" class="block p-4 border-2 border-gray-200 rounded-lg hover:border-primary hover:shadow-lg transition">
+                <h3 class="font-semibold text-lg mb-2" style="color: var(--primary)">🔄 Qualtrics Integration</h3>
+                <p class="text-sm text-gray-600">Learn about TGMD assessments, data merging, and how Qualtrics survey data integrates with the system.</p>
+              </a>
+
+              <a href="user_guide_conflicts.html" class="block p-4 border-2 border-gray-200 rounded-lg hover:border-primary hover:shadow-lg transition">
+                <h3 class="font-semibold text-lg mb-2" style="color: var(--primary)">⚠️ Handling Conflicts</h3>
+                <p class="text-sm text-gray-600">Guide for resolving data overwrite conflicts and understanding conflict detection.</p>
+              </a>
+
+              <a href="README.md" class="block p-4 border-2 border-gray-200 rounded-lg hover:border-primary hover:shadow-lg transition">
+                <h3 class="font-semibold text-lg mb-2" style="color: var(--primary)">📖 Full Documentation</h3>
+                <p class="text-sm text-gray-600">Comprehensive system documentation including architecture, security, and advanced configuration.</p>
+              </a>
+
+              <a href="PRDs/" class="block p-4 border-2 border-gray-200 rounded-lg hover:border-primary hover:shadow-lg transition">
+                <h3 class="font-semibold text-lg mb-2" style="color: var(--primary)">🏗️ Technical PRDs</h3>
+                <p class="text-sm text-gray-600">Product requirement documents for developers and system administrators.</p>
+              </a>
+            </div>
+
+            <div class="mt-8 p-6 bg-blue-50 border-l-4 border-blue-500 rounded">
+              <h3 class="font-semibold mb-2" style="color: var(--primary)">💬 Need Help?</h3>
+              <p class="text-sm text-gray-700">
+                If you encounter issues not covered in this guide:
+              </p>
+              <ul class="text-sm text-gray-700 mt-2 ml-4 space-y-1">
+                <li>• Check the <strong>Troubleshooting</strong> sections in the detailed guides</li>
+                <li>• Review log files for error messages</li>
+                <li>• Check the <strong>filed/Unsorted/</strong> folder for failed uploads</li>
+                <li>• Contact the system administrator or IT support team</li>
+              </ul>
+            </div>
+          </section>
+
+          <!-- Footer -->
+          <div class="mt-12 pt-6 border-t border-gray-200 text-center text-sm text-gray-600">
+            <p><strong>4Set System</strong> - KeySteps@JC Assessment Data Processing</p>
+            <p class="mt-1">The Education University of Hong Kong | Version 2025/26</p>
+            <p class="mt-2 text-xs text-gray-700">
+              System developed and maintained by Herman Chan | 
+              <a href="https://github.com/herman925/4Set-Server" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">View on GitHub</a>
+            </p>
+            <p class="mt-2 text-xs text-gray-500">
+              © 2025 All rights reserved - Herman Chan
+            </p>
+            <p class="mt-3">
+              <a href="index.html" class="text-primary hover:underline">← Back to Home</a>
+            </p>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // Add smooth scrolling for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      });
+    });
+
+    // Highlight active section in TOC
+    const sections = document.querySelectorAll('section[id]');
+    const navLinks = document.querySelectorAll('.toc-link');
+
+    window.addEventListener('scroll', () => {
+      let current = '';
+      sections.forEach(section => {
+        const sectionTop = section.offsetTop;
+        const sectionHeight = section.clientHeight;
+        if (window.pageYOffset >= sectionTop - 100) {
+          current = section.getAttribute('id');
+        }
+      });
+
+      navLinks.forEach(link => {
+        link.classList.remove('text-primary', 'font-semibold');
+        if (link.getAttribute('href') === `#${current}`) {
+          link.classList.add('text-primary', 'font-semibold');
+        }
+      });
+    });
+  </script>
+
+  <!-- Homepage Preview Modal -->
+  <div id="homepageModal" style="display: none; position: fixed; inset: 0; z-index: 9999; padding: 2rem; overflow-y: auto;">
+    
+    <div style="max-width: 1400px; margin: 0 auto; position: relative; z-index: 2;">
+      <!-- Dimming overlay - INSIDE content container so it appears above background -->
+      <div id="modalOverlay" style="position: fixed; inset: 0; pointer-events: none; z-index: 10000;"></div>
+      
+      <!-- Close Button -->
+      <button data-spotlight="close" onclick="closeHomepageModal()" style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10002;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+      
+      <!-- Enlarged Homepage Content -->
+      <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); overflow: hidden; position: relative; z-index: 10;">
+        <div class="relative overflow-hidden">
+          
+          <main class="relative z-10 mx-auto flex min-h-screen w-full max-w-6xl flex-col px-6 py-16 lg:flex-row lg:items-center lg:justify-between lg:gap-16">
+            <div class="max-w-2xl space-y-6 text-center lg:w-1/2 lg:max-w-none lg:text-left">
+              <!-- Logos -->
+              <div class="flex items-center justify-between gap-12" style="max-width: 100%;">
+                <img src="assets/logos/KS.png" alt="KeySteps@JC" style="height: 85px; object-fit: contain; width: auto;">
+                <img src="assets/logos/EdUHK.png" alt="EdUHK" style="height: 70px; object-fit: contain; width: auto;">
+              </div>
+              
+              <!-- Badge (NOT interactive) -->
+              <span class="inline-flex items-center gap-2 px-4 py-2 text-xs uppercase tracking-wide non-interactive" style="background: rgba(255, 255, 255, 0.9); backdrop-filter: blur(10px); border-radius: 9999px; box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);">
+                <span class="inline-block h-2 w-2 rounded-full" style="background-color: #2b3990;"></span>
+                <span style="color: #333333;">KeySteps@JC (Phase Two)</span>
+              </span>
+              
+              <!-- Title -->
+              <h1 class="text-4xl font-bold sm:text-5xl lg:text-6xl" style="color: #2b3990;">
+                4Set System (2025/26)
+              </h1>
+              <p class="text-base sm:text-lg lg:text-xl" style="color: #465275;">
+                Web-based PDF uploads trigger the processor agent to validate, parse, and submit survey data to Jotform while the dashboard tracks queue health, rejections, and recent activity for KeySteps@JC maintainers.
+              </p>
+              
+              <!-- Action Buttons - Interactive with Tooltips -->
+              <div class="flex flex-col items-center gap-4 sm:flex-row sm:justify-center lg:items-stretch lg:justify-start">
+                <div class="interactive-btn-wrapper" style="position: relative;">
+                  <div data-spotlight="button" class="flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold" style="background-color: #2b3990; color: #ffffff; box-shadow: 0 6px 16px -6px rgba(43, 57, 144, 0.55); border-radius: 1rem; transition: transform 0.25s ease, box-shadow 0.25s ease; cursor: pointer;" onclick="toggleTooltip('tooltip-uploader')">
+                    <span>Assessment Uploader</span>
+                    <span class="text-sm font-medium" style="color: rgba(255, 255, 255, 0.8);">Upload PDFs</span>
+                  </div>
+                  <!-- Tooltip -->
+                  <div id="tooltip-uploader" class="feature-tooltip" style="display: none;">
+                    <div style="font-weight: 600; margin-bottom: 4px;">📤 Assessment Uploader</div>
+                    <div style="font-size: 13px; opacity: 0.9;">Upload PDF forms to trigger automated processing</div>
+                    <div style="position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 6px solid #1f2937;"></div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-2">
+                  <div class="interactive-btn-wrapper" style="position: relative;">
+                    <div data-spotlight="button" class="flex items-center justify-center gap-2 px-6 py-3 text-base font-semibold" style="background-color: #f99d33; color: #3b2a12; box-shadow: 0 6px 16px -6px rgba(249, 157, 51, 0.55); border-radius: 1rem; transition: transform 0.25s ease, box-shadow 0.25s ease; cursor: pointer;" onclick="toggleTooltip('tooltip-checking')">
+                      <span>Checking System</span>
+                      <span class="text-sm font-medium" style="color: rgba(59, 42, 18, 0.8);">See What's Missing</span>
+                    </div>
+                    <!-- Tooltip -->
+                    <div id="tooltip-checking" class="feature-tooltip" style="display: none;">
+                      <div style="font-weight: 600; margin-bottom: 4px;">🔍 Checking System</div>
+                      <div style="font-size: 13px; opacity: 0.9;">Monitor data completeness and task progress</div>
+                      <div style="position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 6px solid #1f2937;"></div>
+                    </div>
+                  </div>
+                  <div class="interactive-btn-wrapper" style="position: relative;">
+                    <div data-spotlight="help" class="inline-flex items-center justify-center rounded-full" style="width: 48px; height: 48px; background-color: #f3f4f6; color: #374151; cursor: pointer;" onclick="toggleTooltip('tooltip-help')">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+                    </div>
+                    <!-- Tooltip -->
+                    <div id="tooltip-help" class="feature-tooltip" style="display: none;">
+                      <div style="font-weight: 600; margin-bottom: 4px;">📚 Help & Documentation</div>
+                      <div style="font-size: 13px; opacity: 0.9;">Access user guides and system documentation</div>
+                      <div style="position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 6px solid #1f2937;"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Right side: JotForm Card - Interactive -->
+            <section class="mt-12 grid w-full gap-6 lg:mt-0 lg:w-1/2 lg:max-w-none">
+              <article class="w-full p-6 sm:p-8 lg:p-10 lg:px-12" style="background: linear-gradient(140deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.88)); border-radius: 0.5rem; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1); border: 1px solid rgba(43, 57, 144, 0.08);">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between non-interactive">
+                  <div>
+                    <p class="text-sm uppercase tracking-wide" style="color: #465275;">JotForm Latest</p>
+                    <h2 class="mt-1 text-2xl font-semibold" style="color: #333333;">Recent Submission</h2>
+                  </div>
+                  <div class="flex items-center gap-2 rounded-full px-4 py-1 text-xs font-medium" style="background-color: rgba(34, 197, 94, 0.1); color: rgb(34, 197, 94); border: 1px solid rgba(34, 197, 94, 0.25);">
+                    <span class="inline-block h-2 w-2 rounded-full" style="background-color: rgb(34, 197, 94);"></span>
+                    <span>Last Sync: 0 mins ago</span>
+                  </div>
+                </div>
+                <div class="mt-6 rounded-xl p-5 non-interactive" style="border: 1px solid rgba(43, 57, 144, 0.2); background: rgba(255, 255, 255, 0.75); box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);">
+                  <div class="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <p class="text-xs uppercase tracking-wide" style="color: #465275;">Submission ID</p>
+                      <p class="text-sm font-medium" style="color: #2b3990; word-break: break-all;">6362362003245961...</p>
+                    </div>
+                    <div>
+                      <p class="text-xs uppercase tracking-wide" style="color: #465275;">Uploaded</p>
+                      <p class="text-sm font-medium" style="color: #333333;">14 Oct 2025, 07:30</p>
+                    </div>
+                    <div>
+                      <p class="text-xs uppercase tracking-wide" style="color: #465275;">Session Key</p>
+                      <p class="text-sm font-medium" style="color: #2b3990;">99999_20251225_00_00</p>
+                    </div>
+                    <div>
+                      <p class="text-xs uppercase tracking-wide" style="color: #465275;">School ID</p>
+                      <p class="text-sm font-medium" style="color: #333333;">S999</p>
+                    </div>
+                  </div>
+                  <!-- Interactive buttons container - ONLY these should be spotlighted -->
+                  <div class="mt-6 flex flex-col gap-2 sm:flex-row jotform-actions">
+                    <div class="interactive-btn-wrapper" style="position: relative;">
+                      <button data-spotlight="button" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold" style="background-color: #2b3990; color: #ffffff; box-shadow: 0 6px 16px -6px rgba(43, 57, 144, 0.55); border-radius: 1rem; transition: transform 0.25s ease, box-shadow 0.25s ease; border: none; cursor: pointer;" type="button" onclick="event.stopPropagation(); toggleTooltip('tooltip-resync')">
+                        <span>Resync</span>
+                      </button>
+                      <!-- Tooltip -->
+                      <div id="tooltip-resync" class="feature-tooltip" style="display: none;">
+                        <div style="font-weight: 600; margin-bottom: 4px;">🔄 Resync Data</div>
+                        <div style="font-size: 13px; opacity: 0.9;">Refresh to see the latest JotForm submission's basic info (password required on 1st Use)</div>
+                        <div style="position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 6px solid #1f2937;"></div>
+                      </div>
+                    </div>
+                    <div class="interactive-btn-wrapper" style="position: relative;">
+                      <button data-spotlight="button" class="inline-flex items-center justify-center gap-2 px-4 py-2 text-xs font-semibold" style="background-color: #2b3990; color: #ffffff; box-shadow: 0 6px 16px -6px rgba(43, 57, 144, 0.55); border-radius: 1rem; transition: transform 0.25s ease, box-shadow 0.25s ease; border: none; cursor: pointer;" type="button" onclick="event.stopPropagation(); toggleTooltip('tooltip-viewtable')">
+                        <span>View Table</span>
+                      </button>
+                      <!-- Tooltip -->
+                      <div id="tooltip-viewtable" class="feature-tooltip" style="display: none;">
+                        <div style="font-weight: 600; margin-bottom: 4px;">📋 View Full Table</div>
+                        <div style="font-size: 13px; opacity: 0.9;">Open JotForm table view to see all submissions (password required for security purposes)</div>
+                        <div style="position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 6px solid #1f2937;"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            </section>
+          </main>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateX(-50%) translateY(4px); }
+      to { opacity: 1; transform: translateX(-50%) translateY(0); }
+    }
+    
+    /* Simple fade-in animation without transform (for JS-positioned tooltips) */
+    @keyframes simpleFadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .interactive-btn-wrapper:hover > div:first-child,
+    .interactive-btn-wrapper:hover > button {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2) !important;
+    }
+    /* Spotlight system styles moved to assets/css/spotlight-system.css */
+  </style>
+
+  <!-- Spotlight System -->
+  <script src="assets/js/spotlight-system.js"></script>
+  <script src="assets/js/tooltip-positioner.js"></script>
+
+  <script>
+    // Initialize global spotlight system
+    const spotlightSystem = new SpotlightSystem({
+      overlaySelector: '#modalOverlay',
+      targets: '[data-spotlight="button"], [data-spotlight="help"]',
+      closeButton: '[data-spotlight="close"]',
+      modalSelector: '#homepageModal',
+      padding: 14,
+      dimOpacity: 0.55
+    });
+
+    // Initialize tooltip positioner (make it globally accessible for spotlight system)
+    window.tooltipPositioner = new TooltipPositioner({
+      tooltipSelector: '.feature-tooltip',
+      padding: 10,
+      arrowSize: 6
+    });
+    const tooltipPositioner = window.tooltipPositioner;
+
+    function openHomepageModal() {
+      const modal = document.getElementById('homepageModal');
+      modal.style.display = 'block';
+      document.body.style.overflow = 'hidden';
+      
+      // Enable spotlight system
+      spotlightSystem.enable();
+      
+      // DON'T enable auto-repositioning - causes duplicate positioning calls
+      // tooltipPositioner.enableAutoReposition();
+    }
+
+    function closeHomepageModal() {
+      const modal = document.getElementById('homepageModal');
+      
+      modal.style.display = 'none';
+      document.body.style.overflow = 'auto';
+      
+      // Disable spotlight system
+      spotlightSystem.disable();
+      
+      // Hide all tooltips when closing
+      document.querySelectorAll('.feature-tooltip').forEach(tooltip => {
+        tooltip.style.display = 'none';
+      });
+    }
+
+    function toggleTooltip(tooltipId) {
+      const tooltip = document.getElementById(tooltipId);
+      const isVisible = tooltip.style.display === 'block';
+      
+      // Hide all other tooltips first
+      document.querySelectorAll('.feature-tooltip').forEach(t => {
+        if (t.id !== tooltipId) {
+          t.style.display = 'none';
+        }
+      });
+      
+      // Toggle this tooltip
+      const newDisplay = isVisible ? 'none' : 'block';
+      
+      // Initial state logging (can be removed in production)
+      // console.log(`[${tooltipId}] Toggling tooltip`);
+      
+      // Don't set left:0 - creates intermediate visible state
+      // Let positioner handle ALL positioning from the start
+      tooltip.style.transform = 'none';   // Override transform
+      tooltip.style.animation = 'none';   // Disable animation
+      
+      if (!isVisible) {
+        // Keep COMPLETELY hidden during positioning
+        tooltip.style.display = 'none';
+      } else {
+        // Closing: reset ALL tooltip state so it can be reopened
+        tooltip.style.display = 'none';
+        tooltip.style.visibility = 'hidden';
+        tooltip.style.opacity = '0';
+        tooltip.style.left = '';
+        tooltip.style.top = '';
+      }
+      
+      // console.log('[toggleTooltip]', tooltipId, 'set display to:', newDisplay);
+      
+      // Position tooltip FIRST (while hidden), THEN show with animation + cutout simultaneously
+      if (!isVisible) {
+        const wrapper = tooltip.closest('.interactive-btn-wrapper');
+        if (wrapper) {
+          const trigger = wrapper.querySelector('button') || wrapper.querySelector('[data-spotlight]');
+          if (trigger) {
+            const totalStart = performance.now();
+            
+            // Position AND show tooltip (positioner handles everything)
+            tooltipPositioner.positionTooltip(tooltip, trigger);
+            
+            // Update cutout to match visible tooltip
+            spotlightSystem.updateHoles();
+          }
+        }
+      } else {
+        // Update spotlight immediately when hiding
+        spotlightSystem.updateHoles();
+      }
+      
+      // Auto-hide after 5 seconds
+      if (!isVisible) {
+        setTimeout(() => {
+          tooltip.style.display = 'none';
+          spotlightSystem.updateHoles();
+        }, 5000);
+      }
+    }
+
+    // Close modal on ESC key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeHomepageModal();
+      }
+    });
+
+    // Close modal when clicking outside content
+    document.getElementById('homepageModal')?.addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeHomepageModal();
+      }
+    });
+  </script>
+</body>
+</html>

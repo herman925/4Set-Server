@@ -180,6 +180,28 @@ def index():
     return app.send_static_file('index.html')
 
 
+@app.route('/<path:path>')
+def serve_static(path):
+    """
+    Serve static files from the workspace root
+    
+    This allows accessing files like:
+    - /TEMP/test-pipeline-core-id.html
+    - /assets/js/task-validator.js
+    - /assets/tasks/CM.json
+    
+    Without this route, Flask only serves files from the exact static_folder root.
+    """
+    try:
+        return app.send_static_file(path)
+    except Exception as e:
+        logger.error(f'[STATIC] Error serving {path}: {str(e)}')
+        return jsonify({
+            'error': 'file_not_found',
+            'message': f'File not found: {path}'
+        }), 404
+
+
 def print_banner(host, port):
     """Print startup banner"""
     print(f"""
@@ -209,8 +231,8 @@ if __name__ == '__main__':
     parser.add_argument(
         '--port', '-p',
         type=int,
-        default=3000,
-        help='Port to run the proxy server (default: 3000)'
+        default=5000,
+        help='Port to run the proxy server (default: 5000, avoiding Windows reserved port 3000)'
     )
     parser.add_argument(
         '--host', '-H',

@@ -1,0 +1,38 @@
+/**
+ * Spotlight System Styles
+ * 
+ * Reusable styles for modal spotlight with SVG mask cutouts.
+ * Include this CSS file alongside spotlight-system.js
+ */
+
+/* Overlay container for SVG spotlight mask */
+#modalOverlay {
+  background-color: transparent;
+  transition: background 0.4s ease;
+  z-index: 10000 !important;
+}
+
+/* Highlighted elements - no visual styling, just z-index */
+.spotlight-highlight {
+  position: relative;
+  z-index: 10001 !important; /* Above overlay */
+  overflow: visible;
+  pointer-events: auto;
+}
+
+/* Static spotlight for close button */
+.spotlight-static {
+  position: relative;
+  z-index: 10002 !important; /* Above overlay and targets */
+}
+
+/* Tooltips appear above everything */
+.feature-tooltip {
+  pointer-events: none;
+  z-index: 10003 !important; /* Above overlay AND buttons */
+}
+
+/* Deprecated - no longer using per-target holes */
+.spotlight-hole {
+  display: none;
+}
