@@ -13,12 +13,38 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
   <style>
     body {
       font-family: 'Inter', sans-serif;
       background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     }
+    .mermaid {
+      display: flex;
+      justify-content: center;
+      margin: 2rem 0;
+    }
   </style>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ 
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+          primaryColor: '#4A90E2',
+          primaryTextColor: '#1F2937',
+          primaryBorderColor: '#2E5C8A',
+          lineColor: '#6B7280',
+          secondaryColor: '#E8F5E9',
+          tertiaryColor: '#FFF3E0',
+          edgeLabelBackground: '#ffffff',
+          textColor: '#1F2937',
+          mainBkg: '#ffffff',
+          nodeBorder: '#6B7280'
+        }
+      });
+    });
+  </script>
 </head>
 <body class="min-h-screen">
   <!-- Header -->
@@ -119,7 +145,7 @@
 
             <h3 class="text-2xl font-semibold mb-4 mt-8">Key Questions Answered</h3>
 
-            <div class="space-y-4">
+            <div class="grid md:grid-cols-2 gap-6 my-6">
               <div class="diagram-box">
                 <h4 class="text-lg font-semibold mb-3">📊 DATA COMPLETENESS</h4>
                 <ul class="space-y-1 text-gray-700 ml-4">
@@ -445,12 +471,27 @@
 
             <h3 class="text-2xl font-semibold mb-4 mt-8">Homepage Layout</h3>
 
+            <p class="text-gray-700 mb-4">The Checking System homepage provides <strong>four primary navigation options</strong> to access data from different starting points, plus additional features for system management and filtering:</p>
+
             <div class="diagram-box">
               <div class="border border-gray-300 rounded p-4">
                 <div class="bg-primary text-white p-3 rounded mb-4 text-center font-bold">
                   4Set Checking System
                 </div>
+                <div class="mb-4 p-3 bg-gray-50 rounded border border-gray-200">
+                  <div class="text-xs font-semibold text-gray-600 mb-2">System Status & Cache Management</div>
+                  <div class="flex gap-2 flex-wrap">
+                    <span class="text-xs px-2 py-1 bg-red-100 text-red-700 rounded">🔴 System Not Ready</span>
+                    <span class="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded">🟠 Syncing...</span>
+                    <span class="text-xs px-2 py-1 bg-green-100 text-green-700 rounded">🟢 System Ready</span>
+                  </div>
+                </div>
+                <div class="mb-4 p-3 bg-blue-50 rounded border border-blue-200">
+                  <div class="text-xs font-semibold text-gray-600 mb-2">Filter Configuration Panel</div>
+                  <div class="text-xs text-gray-500">Add filters by District, Group, School, Class, Student, or Grade</div>
+                </div>
                 <div class="space-y-3">
+                  <div class="font-semibold text-gray-700 mb-2">Navigation Options:</div>
                   <div class="border border-gray-200 rounded p-3 hover:bg-gray-50 cursor-pointer">
                     📊 <strong>District View</strong> - View by district (Shatin, etc.)
                   </div>
@@ -464,6 +505,15 @@
                     👨‍🎓 <strong>Student Search</strong> - Direct student lookup
                   </div>
                 </div>
+                <div class="mt-4 p-3 bg-gray-50 rounded border border-gray-200">
+                  <div class="text-xs font-semibold text-gray-600 mb-1">Recent Checks</div>
+                  <div class="text-xs text-gray-500">Quick access to previously viewed data</div>
+                </div>
+              </div>
+              <div class="mt-4 p-3 bg-blue-50 border-l-4 border-blue-500 rounded">
+                <p class="text-sm text-gray-700">
+                  <strong>💡 Note:</strong> The homepage serves as a powerful filtering interface. Configure filters before clicking navigation options to narrow down your data view.
+                </p>
               </div>
             </div>
 
@@ -493,6 +543,33 @@
           <!-- Data Views Section -->
           <section id="data-views" class="content-section mb-12">
             <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Understanding Data Views</h2>
+
+            <p class="text-gray-700 mb-6">The Checking System provides <strong>five hierarchical data views</strong> that allow you to drill down from the broadest overview to individual student details:</p>
+
+            <div class="bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-lg border-2 border-purple-200 mb-6">
+              <ol class="space-y-2 text-gray-800">
+                <li class="flex items-center gap-3">
+                  <span class="bg-purple-600 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm">1</span>
+                  <div><strong>District View</strong> - High-level overview by geographic region</div>
+                </li>
+                <li class="flex items-center gap-3">
+                  <span class="bg-purple-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm">2</span>
+                  <div><strong>Group View</strong> - Overview by project group assignment</div>
+                </li>
+                <li class="flex items-center gap-3">
+                  <span class="bg-blue-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm">3</span>
+                  <div><strong>School View</strong> - Detailed view of individual school performance</div>
+                </li>
+                <li class="flex items-center gap-3">
+                  <span class="bg-blue-400 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm">4</span>
+                  <div><strong>Class View</strong> - All students within a specific classroom</div>
+                </li>
+                <li class="flex items-center gap-3">
+                  <span class="bg-green-500 text-white rounded-full w-8 h-8 flex items-center justify-center font-bold text-sm">5</span>
+                  <div><strong>Student View</strong> - Complete assessment details for one student</div>
+                </li>
+              </ol>
+            </div>
 
             <div class="collapsible-section">
               <div class="collapsible-header">
@@ -551,6 +628,73 @@
 
             <div class="collapsible-section">
               <div class="collapsible-header">
+                <h3 class="text-xl font-semibold">Group View</h3>
+                <span class="text-2xl">▼</span>
+              </div>
+              <div class="collapsible-content">
+                <p class="mb-4"><strong>Purpose:</strong> Overview by project group assignment</p>
+                
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Group</th>
+                      <th>Schools</th>
+                      <th>Students</th>
+                      <th>Complete</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>Group 1</td>
+                      <td>18</td>
+                      <td>240</td>
+                      <td><span class="status-badge status-complete">88%</span></td>
+                    </tr>
+                    <tr>
+                      <td>Group 2</td>
+                      <td>22</td>
+                      <td>295</td>
+                      <td><span class="status-badge status-complete">91%</span></td>
+                    </tr>
+                    <tr>
+                      <td>Group 3</td>
+                      <td>15</td>
+                      <td>198</td>
+                      <td><span class="status-badge status-warning">75%</span></td>
+                    </tr>
+                    <tr>
+                      <td>Group 4</td>
+                      <td>20</td>
+                      <td>267</td>
+                      <td><span class="status-badge status-complete">82%</span></td>
+                    </tr>
+                    <tr>
+                      <td>Group 5</td>
+                      <td>10</td>
+                      <td>125</td>
+                      <td><span class="status-badge status-complete">86%</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <p class="mt-4"><strong>Key Metrics:</strong></p>
+                <ul class="list-disc ml-6 space-y-1 text-gray-700">
+                  <li><strong>Schools:</strong> Number of schools in the project group</li>
+                  <li><strong>Students:</strong> Total students across all schools in the group</li>
+                  <li><strong>Complete:</strong> Percentage with all tasks done</li>
+                </ul>
+
+                <p class="mt-4"><strong>Actions:</strong></p>
+                <ul class="list-disc ml-6 space-y-1 text-gray-700">
+                  <li>Click group name to view all schools in that group</li>
+                  <li>Sort by clicking column headers</li>
+                  <li>Compare progress across different project groups</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="collapsible-section">
+              <div class="collapsible-header">
                 <h3 class="text-xl font-semibold">School View</h3>
                 <span class="text-2xl">▼</span>
               </div>
@@ -597,51 +741,193 @@
 
             <div class="collapsible-section">
               <div class="collapsible-header">
+                <h3 class="text-xl font-semibold">Class View</h3>
+                <span class="text-2xl">▼</span>
+              </div>
+              <div class="collapsible-content">
+                <p class="mb-4"><strong>Purpose:</strong> All students within a specific classroom</p>
+
+                <div class="bg-gray-50 border rounded p-4 mb-4">
+                  <div class="text-lg font-semibold mb-2">Class: C-023-03</div>
+                  <div class="text-sm text-gray-600 mb-1">School: S023 - ABC Primary School</div>
+                  <div class="text-sm text-gray-600 mb-3">Grade: K1</div>
+                  <div class="grid grid-cols-2 gap-4 mt-4">
+                    <div>
+                      <div class="text-xs text-gray-500">Total Students</div>
+                      <div class="text-2xl font-bold">25</div>
+                    </div>
+                    <div>
+                      <div class="text-xs text-gray-500">Completed</div>
+                      <div class="text-2xl font-bold text-green-600">21 (84%)</div>
+                    </div>
+                  </div>
+                </div>
+
+                <p class="mt-4"><strong>What You See:</strong></p>
+                <table class="mt-3">
+                  <thead>
+                    <tr>
+                      <th>Core ID</th>
+                      <th>Name</th>
+                      <th>Tasks</th>
+                      <th>Status</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>C10207</td>
+                      <td>陳小明</td>
+                      <td>14/14</td>
+                      <td><span class="status-badge status-complete">✅ Complete</span></td>
+                    </tr>
+                    <tr>
+                      <td>C10208</td>
+                      <td>李小華</td>
+                      <td>12/14</td>
+                      <td><span class="status-badge status-warning">⚠️ In Progress</span></td>
+                    </tr>
+                    <tr>
+                      <td>C10209</td>
+                      <td>王小美</td>
+                      <td>3/14</td>
+                      <td><span class="status-badge status-error">🔴 Incomplete</span></td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <p class="mt-4"><strong>Key Information:</strong></p>
+                <ul class="list-disc ml-6 space-y-1 text-gray-700">
+                  <li><strong>Student identification:</strong> Core ID and Name</li>
+                  <li><strong>Task completion count:</strong> Number of tasks completed out of total</li>
+                  <li><strong>Overall status indicator:</strong> Visual status for quick assessment</li>
+                  <li><strong>Sortable columns:</strong> Click headers to sort by any column</li>
+                </ul>
+
+                <p class="mt-4"><strong>Status Indicators:</strong></p>
+                <ul class="list-disc ml-6 space-y-1 text-gray-700">
+                  <li>✅ <strong>Green:</strong> All tasks complete, no issues</li>
+                  <li>⚠️ <strong>Yellow:</strong> Some tasks complete, needs review</li>
+                  <li>🔴 <strong>Red:</strong> Incomplete, missing data</li>
+                  <li>⭕ <strong>Grey:</strong> Not started</li>
+                </ul>
+
+                <p class="mt-4"><strong>Actions:</strong></p>
+                <ul class="list-disc ml-6 space-y-1 text-gray-700">
+                  <li>Click student to see detailed assessment view</li>
+                  <li>Sort by any column to organize data</li>
+                  <li>Filter by status to focus on specific needs</li>
+                  <li>Export class report for sharing</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="collapsible-section">
+              <div class="collapsible-header">
                 <h3 class="text-xl font-semibold">Student View (Most Detailed)</h3>
                 <span class="text-2xl">▼</span>
               </div>
               <div class="collapsible-content">
                 <p class="mb-4"><strong>Purpose:</strong> Complete assessment details for one student</p>
 
-                <div class="space-y-4">
-                  <div class="border rounded p-4">
-                    <div class="font-semibold mb-2 text-lg">Set 1: Background Information</div>
-                    <div class="flex items-center gap-2">
-                      <span class="status-badge status-complete">✅ Complete</span>
-                      <span class="text-sm text-gray-600">Background Survey - 12/12 Q's</span>
-                    </div>
-                  </div>
+                <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4 rounded">
+                  <p class="text-sm text-gray-800">
+                    <strong>The 4 Sets Organization:</strong> Assessment tasks are grouped into 4 sets based on the testing protocol. Each set contains specific tasks listed below.
+                  </p>
+                </div>
 
-                  <div class="border rounded p-4">
-                    <div class="font-semibold mb-2 text-lg">Set 2: Language Tasks</div>
-                    <div class="space-y-2">
+                <div class="space-y-4">
+                  <div class="border rounded p-4 bg-gradient-to-r from-blue-50 to-white">
+                    <div class="font-semibold mb-2 text-lg flex items-center gap-2">
+                      <span class="bg-blue-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">1</span>
+                      Set 1 (第一組)
+                    </div>
+                    <div class="space-y-2 ml-8">
                       <div class="flex items-center gap-2">
                         <span class="status-badge status-complete">✅</span>
-                        <span class="text-sm">ERV (English) - 36/36 Q's</span>
+                        <span class="text-sm">ERV (English Receptive Vocabulary)</span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="status-badge status-complete">✅</span>
+                        <span class="text-sm">SYM (Symbolic Reasoning)</span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="status-badge status-complete">✅</span>
+                        <span class="text-sm">Theory of Mind</span>
                       </div>
                       <div class="flex items-center gap-2">
                         <span class="status-badge status-warning">⚠️</span>
-                        <span class="text-sm">Chinese Word Reading - 58/60 Q's</span>
-                      </div>
-                      <div class="flex items-center gap-2">
-                        <span class="status-badge status-complete">✅</span>
-                        <span class="text-sm">CM (Chinese) - 22/22 Q's</span>
+                        <span class="text-sm">Chinese Word Reading</span>
                       </div>
                     </div>
                   </div>
 
-                  <div class="border rounded p-4">
-                    <div class="font-semibold mb-2 text-lg">Set 3: Cognitive Tasks</div>
-                    <div class="space-y-2">
+                  <div class="border rounded p-4 bg-gradient-to-r from-green-50 to-white">
+                    <div class="font-semibold mb-2 text-lg flex items-center gap-2">
+                      <span class="bg-green-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">2</span>
+                      Set 2 (第二組)
+                    </div>
+                    <div class="space-y-2 ml-8">
                       <div class="flex items-center gap-2">
                         <span class="status-badge status-complete">✅</span>
-                        <span class="text-sm">SYM - 20/20 Q's</span>
+                        <span class="text-sm">TEC (Male/Female - gender-conditional)</span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="status-badge status-complete">✅</span>
+                        <span class="text-sm">Math Pattern</span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="status-badge status-complete">✅</span>
+                        <span class="text-sm">CCM (Cross-Cultural Mathematics)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="border rounded p-4 bg-gradient-to-r from-purple-50 to-white">
+                    <div class="font-semibold mb-2 text-lg flex items-center gap-2">
+                      <span class="bg-purple-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">3</span>
+                      Set 3 (第三組)
+                    </div>
+                    <div class="space-y-2 ml-8">
+                      <div class="flex items-center gap-2">
+                        <span class="status-badge status-complete">✅</span>
+                        <span class="text-sm">HTKS (Head-Toe-Knee-Shoulder)</span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="status-badge status-complete">✅</span>
+                        <span class="text-sm">EPN (Early Problem Numeracy)</span>
                       </div>
                       <div class="flex items-center gap-2">
                         <span class="status-badge status-error">🔴</span>
-                        <span class="text-sm">Math Pattern - 0/20 Q's</span>
+                        <span class="text-sm">CM (Chinese Morphology)</span>
                       </div>
                     </div>
+                  </div>
+
+                  <div class="border rounded p-4 bg-gradient-to-r from-amber-50 to-white">
+                    <div class="font-semibold mb-2 text-lg flex items-center gap-2">
+                      <span class="bg-amber-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm">4</span>
+                      Set 4 (第四組)
+                    </div>
+                    <div class="space-y-2 ml-8">
+                      <div class="flex items-center gap-2">
+                        <span class="status-badge status-complete">✅</span>
+                        <span class="text-sm">Fine Motor</span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="status-badge status-complete">✅</span>
+                        <span class="text-sm">TGMD (Test of Gross Motor Development)</span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <span class="status-badge status-complete">✅</span>
+                        <span class="text-sm">MF (Movement & Fitness)</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded mt-4">
+                    <p class="text-sm text-gray-700">
+                      <strong>Note:</strong> TEC has two versions (TEC_Male and TEC_Female) - only one appears per student based on their gender. Click "Expand each task for details" to see question-level information.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -656,102 +942,37 @@
             <div class="bg-gradient-to-br from-gray-50 to-blue-50 p-6 rounded-lg border-2 border-gray-300 mb-8">
               <h3 class="font-semibold mb-6 text-center text-lg">Status Indicator Logic Flowchart</h3>
               
-              <div class="flex flex-col items-center space-y-4">
-                <!-- Start -->
-                <div class="bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold shadow-lg">
-                  Task Submitted
-                </div>
-                
-                <div class="text-2xl text-gray-400">↓</div>
-                
-                <!-- Question 1 -->
-                <div class="relative">
-                  <div class="bg-purple-100 border-4 border-purple-400 px-8 py-6 transform rotate-45 w-44 h-44 flex items-center justify-center shadow-lg">
-                    <div class="transform -rotate-45 text-center font-semibold text-sm">
-                      Any<br/>questions<br/>answered?
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="flex gap-8 w-full justify-center">
-                  <!-- No Path - Grey -->
-                  <div class="flex flex-col items-center space-y-3">
-                    <div class="text-sm font-semibold">NO</div>
-                    <div class="text-2xl text-gray-400">↓</div>
-                    <div class="bg-gray-200 border-4 border-gray-400 px-6 py-4 rounded-lg text-center shadow-lg">
-                      <div class="text-2xl mb-2">⭕</div>
-                      <div class="font-bold text-gray-700">GREY</div>
-                      <div class="text-xs mt-1">Not Started</div>
-                    </div>
-                  </div>
-                  
-                  <!-- Yes Path - Continue -->
-                  <div class="flex flex-col items-center space-y-3">
-                    <div class="text-sm font-semibold">YES</div>
-                    <div class="text-2xl text-gray-400">↓</div>
-                    
-                    <!-- Question 2 -->
-                    <div class="relative">
-                      <div class="bg-yellow-100 border-4 border-yellow-400 px-6 py-6 transform rotate-45 w-40 h-40 flex items-center justify-center shadow-lg">
-                        <div class="transform -rotate-45 text-center font-semibold text-xs">
-                          All required<br/>questions<br/>answered?
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div class="flex gap-8">
-                      <!-- No - Red -->
-                      <div class="flex flex-col items-center space-y-3">
-                        <div class="text-sm font-semibold">NO</div>
-                        <div class="text-2xl text-gray-400">↓</div>
-                        <div class="bg-red-100 border-4 border-red-400 px-6 py-4 rounded-lg text-center shadow-lg">
-                          <div class="text-2xl mb-2">🔴</div>
-                          <div class="font-bold text-red-700">RED</div>
-                          <div class="text-xs mt-1">Incomplete</div>
-                        </div>
-                      </div>
-                      
-                      <!-- Yes - Check Termination -->
-                      <div class="flex flex-col items-center space-y-3">
-                        <div class="text-sm font-semibold">YES</div>
-                        <div class="text-2xl text-gray-400">↓</div>
-                        
-                        <!-- Question 3 -->
-                        <div class="relative">
-                          <div class="bg-green-100 border-4 border-green-400 px-6 py-5 transform rotate-45 w-36 h-36 flex items-center justify-center shadow-lg">
-                            <div class="transform -rotate-45 text-center font-semibold text-xs">
-                              Termination<br/>matches?
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div class="flex gap-8">
-                          <!-- No - Yellow -->
-                          <div class="flex flex-col items-center space-y-3">
-                            <div class="text-sm font-semibold">NO</div>
-                            <div class="text-2xl text-gray-400">↓</div>
-                            <div class="bg-yellow-100 border-4 border-yellow-400 px-6 py-4 rounded-lg text-center shadow-lg">
-                              <div class="text-2xl mb-2">⚠️</div>
-                              <div class="font-bold text-yellow-700">YELLOW</div>
-                              <div class="text-xs mt-1">Needs Review</div>
-                            </div>
-                          </div>
-                          
-                          <!-- Yes - Green -->
-                          <div class="flex flex-col items-center space-y-3">
-                            <div class="text-sm font-semibold">YES / N/A</div>
-                            <div class="text-2xl text-gray-400">↓</div>
-                            <div class="bg-green-100 border-4 border-green-500 px-6 py-4 rounded-lg text-center shadow-lg">
-                              <div class="text-2xl mb-2">✅</div>
-                              <div class="font-bold text-green-700">GREEN</div>
-                              <div class="text-xs mt-1">Complete</div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              <div class="mermaid">
+flowchart TD
+    Start([Task Submitted]) --> Q1{Any questions<br/>answered?}
+    
+    Q1 -->|NO| Grey[⭕ GREY<br/>Not Started]
+    Q1 -->|YES| Q2{All required<br/>questions<br/>answered?}
+    
+    Q2 -->|NO| Red[🔴 RED<br/>Incomplete]
+    Q2 -->|YES| Q3{Post-termination<br/>answers<br/>detected?}
+    
+    Q3 -->|YES| Yellow[⚠️ YELLOW<br/>Post-termination<br/>Activity]
+    Q3 -->|NO| Green[✅ GREEN<br/>Complete]
+    
+    style Start fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    style Grey fill:#E0E0E0,stroke:#9E9E9E,color:#333
+    style Red fill:#FFE0E0,stroke:#E57373,color:#C62828
+    style Yellow fill:#FFF9E0,stroke:#FFD54F,color:#F57C00
+    style Green fill:#E0F7E0,stroke:#81C784,color:#2E7D32
+    style Q1 fill:#F3E5F5,stroke:#9C27B0,color:#4A148C
+    style Q2 fill:#FFF3E0,stroke:#FF9800,color:#E65100
+    style Q3 fill:#E8F5E9,stroke:#4CAF50,color:#1B5E20
+              </div>
+              
+              <div class="mt-6 p-4 bg-white rounded border">
+                <p class="text-sm font-semibold mb-2">Decision Logic:</p>
+                <ol class="text-xs text-gray-700 space-y-1 ml-4">
+                  <li>1. <strong>Grey (⭕):</strong> Zero questions answered → Task not started</li>
+                  <li>2. <strong>Red (🔴):</strong> Some but not all required questions answered → Incomplete</li>
+                  <li>3. <strong>Yellow (⚠️):</strong> All required questions answered BUT answers exist after termination point → Post-termination activity</li>
+                  <li>4. <strong>Green (✅):</strong> All required questions answered AND no post-termination answers → Complete and verified</li>
+                </ol>
               </div>
             </div>
 
@@ -774,22 +995,33 @@
               <div class="diagram-box bg-yellow-50 border-yellow-300">
                 <div class="flex items-center gap-4 mb-3">
                   <span class="status-badge status-warning text-xl">⚠️</span>
-                  <h3 class="text-xl font-semibold">Yellow - Complete but Needs Review</h3>
+                  <h3 class="text-xl font-semibold">Yellow - Post-Termination Activity (Needs Review)</h3>
                 </div>
                 <p class="text-gray-700 mb-2"><strong>Meaning:</strong></p>
                 <ul class="list-disc ml-6 space-y-1 text-gray-700">
-                  <li>All questions answered BUT</li>
-                  <li>Termination rule mismatch detected</li>
-                  <li>Recorded decision ≠ calculated result</li>
-                  <li>Possible recording error</li>
+                  <li>All required questions answered BUT</li>
+                  <li>Answers were recorded AFTER termination point</li>
+                  <li>Post-termination data detected (data quality issue)</li>
+                  <li>Administrator continued testing beyond where termination should have occurred</li>
                 </ul>
                 <p class="mt-3 text-gray-700"><strong>What to do:</strong></p>
                 <ol class="list-decimal ml-6 space-y-1 text-gray-700 mt-2">
                   <li>Expand task details</li>
-                  <li>Review termination rule comparison</li>
-                  <li>Manually verify correctness</li>
-                  <li>Document if error found</li>
+                  <li>Review termination point and post-termination answers</li>
+                  <li>Verify if termination rules were correctly applied</li>
+                  <li>Document the issue - post-termination data indicates:
+                    <ul class="list-disc ml-6 text-sm mt-1">
+                      <li>Administrator may not have recognized termination trigger</li>
+                      <li>Testing protocol not followed correctly</li>
+                      <li>Possible need for administrator retraining</li>
+                    </ul>
+                  </li>
                 </ol>
+                <div class="mt-3 p-3 bg-yellow-100 rounded border border-yellow-300">
+                  <p class="text-xs text-gray-700">
+                    <strong>Example:</strong> CWR termination triggered at Q24 (10 consecutive incorrect), but student has answers for Q25-Q30 → Yellow ⚠️ status
+                  </p>
+                </div>
               </div>
 
               <div class="diagram-box bg-red-50 border-red-300">
@@ -824,6 +1056,211 @@
                   <li>No data submitted</li>
                 </ul>
               </div>
+            </div>
+          </section>
+
+          <!-- Filters and Search Section -->
+          <section id="filters" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Filters and Search</h2>
+
+            <p class="text-gray-700 mb-6">
+              The Checking System homepage features a powerful <strong>Filter Configuration Panel</strong> that allows you to narrow down data before viewing it. This advanced filtering system works independently from the navigation hierarchy.
+            </p>
+
+            <h3 class="text-2xl font-semibold mb-4">Homepage Filter Panel</h3>
+
+            <div class="diagram-box bg-blue-50 border-blue-300">
+              <p class="text-gray-700 mb-4">The filter panel on the homepage includes:</p>
+              <ol class="list-decimal ml-6 space-y-2 text-gray-700">
+                <li><strong>Filter chips display</strong> - Shows currently active filters</li>
+                <li><strong>Configure Filters section</strong> - Add and configure multiple filter criteria</li>
+                <li><strong>Filter count indicator</strong> - Shows how many filters are applied</li>
+                <li><strong>Recent checks</strong> - Quick access to previously used filter combinations</li>
+              </ol>
+            </div>
+
+            <div class="collapsible-section mt-6">
+              <div class="collapsible-header">
+                <h3 class="text-xl font-semibold">How to Use Filters</h3>
+                <span class="text-2xl">▼</span>
+              </div>
+              <div class="collapsible-content">
+                <h4 class="text-lg font-semibold mb-3">Adding Filters</h4>
+                <ol class="list-decimal ml-6 space-y-2 text-gray-700 mb-6">
+                  <li>Click <strong>"Add filter"</strong> button in the Configure Filters section</li>
+                  <li>A new filter row appears with dropdown selectors</li>
+                  <li>Choose filter type from available options:
+                    <ul class="list-disc ml-6 mt-2 space-y-1">
+                      <li><strong>District</strong> - Filter by geographic district (e.g., Shatin, Tuen Mun)</li>
+                      <li><strong>Group</strong> - Filter by project group (1-5)</li>
+                      <li><strong>School</strong> - Filter by specific school ID or name</li>
+                      <li><strong>Class</strong> - Filter by classroom ID</li>
+                      <li><strong>Student</strong> - Filter by student Core ID</li>
+                      <li><strong>Grade</strong> - Filter by grade level (K1, K2, K3)</li>
+                    </ul>
+                  </li>
+                  <li>Select specific value for your chosen filter type</li>
+                  <li>Click <strong>"Start Checking"</strong> to apply filters and view results</li>
+                </ol>
+
+                <h4 class="text-lg font-semibold mb-3">Filter Rules and Hierarchy</h4>
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4 rounded">
+                  <p class="text-sm text-gray-700 mb-2"><strong>Important filtering behavior:</strong></p>
+                  <ul class="list-disc ml-6 text-sm text-gray-700 space-y-1">
+                    <li><strong>District and Group are independent</strong> - You can use both simultaneously (e.g., "Group 1 schools in Shatin district")</li>
+                    <li><strong>School/Class/Student are hierarchical</strong> - Once you select a lower level (e.g., School), higher incompatible levels become unavailable</li>
+                    <li><strong>Multiple filters of same type</strong> - You can add multiple filters of the same type to create "OR" conditions</li>
+                  </ul>
+                </div>
+
+                <h4 class="text-lg font-semibold mb-3">Removing Filters</h4>
+                <ul class="list-disc ml-6 space-y-1 text-gray-700">
+                  <li>Click the <strong>X</strong> button on any filter chip to remove individual filters</li>
+                  <li>Click <strong>"Clear All"</strong> button to remove all filters at once</li>
+                  <li>Filters persist until manually cleared or page is refreshed</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="collapsible-section">
+              <div class="collapsible-header">
+                <h3 class="text-xl font-semibold">School and Class Page Filters</h3>
+                <span class="text-2xl">▼</span>
+              </div>
+              <div class="collapsible-content">
+                <p class="text-gray-700 mb-4">In addition to homepage filters, <strong>School View</strong> and <strong>Class View</strong> pages have their own built-in filtering:</p>
+
+                <h4 class="text-lg font-semibold mb-3">School View Filters</h4>
+                <div class="space-y-3">
+                  <div class="border-l-4 border-blue-500 pl-4">
+                    <div class="font-semibold text-sm mb-1">1. Data Filter (Dropdown)</div>
+                    <ul class="text-sm text-gray-700 space-y-1">
+                      <li>• <strong>All:</strong> Show all classes/students</li>
+                      <li>• <strong>With Data Only:</strong> Show only those with submission data</li>
+                      <li>• <strong>Incomplete Only:</strong> Show only those with incomplete tasks</li>
+                    </ul>
+                  </div>
+
+                  <div class="border-l-4 border-green-500 pl-4">
+                    <div class="font-semibold text-sm mb-1">2. Grade Filter (Button → Modal)</div>
+                    <ul class="text-sm text-gray-700 space-y-1">
+                      <li>• <strong>All Grades:</strong> Show all classes/students</li>
+                      <li>• <strong>K1:</strong> Show only K1 (23/24 academic year)</li>
+                      <li>• <strong>K2:</strong> Show only K2 (24/25 academic year)</li>
+                      <li>• <strong>K3:</strong> Show only K3 (25/26 academic year)</li>
+                      <li>• <strong>Others:</strong> Show grade 0 or unspecified</li>
+                    </ul>
+                  </div>
+
+                  <div class="border-l-4 border-purple-500 pl-4">
+                    <div class="font-semibold text-sm mb-1">3. View Mode Toggle</div>
+                    <ul class="text-sm text-gray-700 space-y-1">
+                      <li>• <strong>By Class:</strong> Show classes with Set 1-4 completion</li>
+                      <li>• <strong>By Student → By Set:</strong> Student view with Set 1-4 status</li>
+                      <li>• <strong>By Student → By Task:</strong> Student view with individual task completion</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="collapsible-section">
+              <div class="collapsible-header">
+                <h3 class="text-xl font-semibold">Filter Use Cases</h3>
+                <span class="text-2xl">▼</span>
+              </div>
+              <div class="collapsible-content">
+                <div class="grid md:grid-cols-2 gap-4">
+                  <div class="diagram-box bg-blue-50 border-blue-300">
+                    <h4 class="font-semibold mb-2">Review incomplete K1 students in Shatin</h4>
+                    <div class="text-sm text-gray-700">
+                      <div class="mb-2"><strong>Homepage Filters:</strong></div>
+                      <ul class="list-disc ml-6 space-y-1">
+                        <li>District: Shatin</li>
+                        <li>Grade: K1</li>
+                      </ul>
+                      <div class="mt-2 text-xs text-gray-600">Then navigate to School → toggle "By Student" → apply "Incomplete Only" filter</div>
+                    </div>
+                  </div>
+
+                  <div class="diagram-box bg-green-50 border-green-300">
+                    <h4 class="font-semibold mb-2">Check specific school's progress</h4>
+                    <div class="text-sm text-gray-700">
+                      <div class="mb-2"><strong>Homepage Filter:</strong></div>
+                      <ul class="list-disc ml-6 space-y-1">
+                        <li>School: S023</li>
+                      </ul>
+                      <div class="mt-2 text-xs text-gray-600">Click "Start Checking" → View school summary → Review by class or student</div>
+                    </div>
+                  </div>
+
+                  <div class="diagram-box bg-purple-50 border-purple-300">
+                    <h4 class="font-semibold mb-2">Monitor Group 1 completion rates</h4>
+                    <div class="text-sm text-gray-700">
+                      <div class="mb-2"><strong>Homepage Filter:</strong></div>
+                      <ul class="list-disc ml-6 space-y-1">
+                        <li>Group: 1</li>
+                      </ul>
+                      <div class="mt-2 text-xs text-gray-600">View all Group 1 schools → Identify lagging schools → Drill down</div>
+                    </div>
+                  </div>
+
+                  <div class="diagram-box bg-amber-50 border-amber-300">
+                    <h4 class="font-semibold mb-2">Combine filters for precision</h4>
+                    <div class="text-sm text-gray-700">
+                      <div class="mb-2"><strong>Example:</strong></div>
+                      <div class="text-xs text-gray-600">Homepage → "District: Shatin" → School S023 → "Incomplete Only" → "Grade: K1"</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <!-- Data Export Section -->
+          <section id="export" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">Data Export</h2>
+
+            <p class="text-gray-700 mb-6">
+              Export functionality is available at multiple levels (District, Group, School, Class, Student) to generate reports for analysis and sharing.
+            </p>
+
+            <div class="grid md:grid-cols-3 gap-4">
+              <div class="diagram-box bg-blue-50 border-blue-300">
+                <h3 class="font-semibold mb-2">CSV Export</h3>
+                <ul class="text-sm text-gray-700 space-y-1">
+                  <li>✓ Excel-compatible format</li>
+                  <li>✓ All visible columns</li>
+                  <li>✓ UTF-8 encoding (Chinese support)</li>
+                  <li>✓ Best for data analysis</li>
+                </ul>
+              </div>
+
+              <div class="diagram-box bg-green-50 border-green-300">
+                <h3 class="font-semibold mb-2">PDF Export</h3>
+                <ul class="text-sm text-gray-700 space-y-1">
+                  <li>✓ Formatted tables</li>
+                  <li>✓ Charts and graphs</li>
+                  <li>✓ Summary statistics</li>
+                  <li>✓ Best for printing/presentations</li>
+                </ul>
+              </div>
+
+              <div class="diagram-box bg-purple-50 border-purple-300">
+                <h3 class="font-semibold mb-2">JSON Export</h3>
+                <ul class="text-sm text-gray-700 space-y-1">
+                  <li>✓ Raw data structure</li>
+                  <li>✓ All metadata included</li>
+                  <li>✓ API-compatible format</li>
+                  <li>✓ Best for technical use</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded mt-6">
+              <p class="text-sm text-gray-700">
+                <strong>💡 Tip:</strong> To export data, navigate to the desired level (e.g., School page), apply any filters, then click the "Export" button. Choose your preferred format and save the file.
+              </p>
             </div>
           </section>
 
@@ -894,71 +1331,58 @@
             <div class="bg-gradient-to-br from-blue-50 to-purple-50 p-6 rounded-lg border-2 border-blue-200 mb-8">
               <h4 class="font-semibold mb-6 text-center text-lg">Cache Management Workflow</h4>
               
-              <div class="flex flex-col items-center space-y-4">
-                <!-- Start -->
-                <div class="bg-blue-500 text-white px-6 py-3 rounded-full font-semibold shadow-lg">
-                  Open Checking System
-                </div>
-                
-                <div class="text-2xl text-gray-400">↓</div>
-                
-                <!-- Decision Diamond -->
-                <div class="relative">
-                  <div class="bg-yellow-100 border-4 border-yellow-400 px-8 py-6 transform rotate-45 w-48 h-48 flex items-center justify-center shadow-lg">
-                    <div class="transform -rotate-45 text-center font-semibold text-sm">
-                      Is cache<br/>built?
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="flex gap-12 w-full justify-center">
-                  <!-- No Path -->
-                  <div class="flex flex-col items-center space-y-3">
-                    <div class="text-sm font-semibold text-red-600">NO (🔴 Red Pill)</div>
-                    <div class="text-2xl text-gray-400">↓</div>
-                    <div class="bg-red-100 border-2 border-red-400 px-4 py-3 rounded-lg text-center max-w-xs shadow">
-                      <div class="font-semibold text-sm">Click Red Pill</div>
-                      <div class="text-xs mt-1">Opens modal</div>
-                    </div>
-                    <div class="text-2xl text-gray-400">↓</div>
-                    <div class="bg-red-100 border-2 border-red-400 px-4 py-3 rounded-lg text-center max-w-xs shadow">
-                      <div class="font-semibold text-sm">Click "Sync Now"</div>
-                      <div class="text-xs mt-1">Wait 60-90 seconds</div>
-                    </div>
-                    <div class="text-2xl text-gray-400">↓</div>
-                    <div class="bg-orange-100 border-2 border-orange-400 px-4 py-3 rounded-lg text-center max-w-xs shadow">
-                      <div class="font-semibold text-sm">🟠 Syncing...</div>
-                      <div class="text-xs mt-1">Shows progress %</div>
-                    </div>
-                  </div>
-                  
-                  <!-- Yes Path -->
-                  <div class="flex flex-col items-center space-y-3">
-                    <div class="text-sm font-semibold text-green-600">YES (🟢 Green Pill)</div>
-                    <div class="text-2xl text-gray-400">↓</div>
-                    <div class="bg-green-100 border-2 border-green-400 px-4 py-3 rounded-lg text-center max-w-xs shadow">
-                      <div class="font-semibold text-sm">System Ready</div>
-                      <div class="text-xs mt-1">Browse data normally</div>
-                    </div>
-                    <div class="text-2xl text-gray-400">↓</div>
-                    <div class="bg-blue-100 border-2 border-blue-400 px-4 py-3 rounded-lg text-center max-w-xs shadow">
-                      <div class="font-semibold text-sm">Need fresh data?</div>
-                      <div class="text-xs mt-1">Click green pill</div>
-                    </div>
-                    <div class="text-2xl text-gray-400">↓</div>
-                    <div class="bg-purple-100 border-2 border-purple-400 px-4 py-3 rounded-lg text-center max-w-xs shadow">
-                      <div class="font-semibold text-sm">Choose option:</div>
-                      <div class="text-xs mt-1">"Delete Cache" or<br/>"Refresh with Qualtrics"</div>
-                    </div>
-                  </div>
-                </div>
-                
-                <div class="text-2xl text-gray-400">↓</div>
-                
-                <!-- End -->
-                <div class="bg-green-500 text-white px-6 py-3 rounded-full font-semibold shadow-lg">
-                  ✅ Ready to Use
-                </div>
+              <div class="mermaid">
+flowchart TD
+    Start([Open Checking System]) --> CheckCache{Is cache<br/>built?}
+    
+    CheckCache -->|NO - 🔴 Red Pill| ClickRed[Click Red Pill<br/>'System Not Ready']
+    CheckCache -->|YES - 🟢 Green Pill| Ready[System Ready<br/>Browse Data]
+    
+    ClickRed --> OpenModal[Modal Opens]
+    OpenModal --> SyncNow[Click 'Sync Now']
+    SyncNow --> Syncing[🟠 Syncing...<br/>Shows Progress %]
+    Syncing --> SyncDone{Sync<br/>Complete?}
+    
+    SyncDone -->|YES| GreenPill[✅ Pill turns GREEN<br/>System Ready]
+    SyncDone -->|ERROR| ErrorState[❌ Check Console<br/>for Errors]
+    
+    ErrorState --> TryAgain[Refresh page<br/>Try again]
+    TryAgain --> Start
+    
+    Ready --> NeedRefresh{Need fresh<br/>data?}
+    NeedRefresh -->|NO| Continue[Continue browsing]
+    NeedRefresh -->|YES| ClickGreen[Click Green Pill]
+    
+    ClickGreen --> ChooseOption{Choose<br/>Option}
+    ChooseOption -->|Delete Cache| DeleteAll[Removes ALL:<br/>1. JotForm cache<br/>2. Validation cache<br/>3. Qualtrics cache]
+    ChooseOption -->|Refresh Qualtrics| RefreshTGMD[Re-sync only<br/>TGMD data<br/>Keep JotForm cache]
+    
+    DeleteAll --> Syncing
+    RefreshTGMD --> QuickSync[Quick refresh<br/>~20-30 seconds]
+    
+    QuickSync --> GreenPill
+    GreenPill --> End([Ready to Use])
+    Continue --> End
+    
+    style Start fill:#4A90E2,stroke:#2E5C8A,color:#fff
+    style End fill:#4CAF50,stroke:#2E7D32,color:#fff
+    style CheckCache fill:#F3E5F5,stroke:#9C27B0,color:#4A148C
+    style SyncDone fill:#FFF3E0,stroke:#FF9800,color:#E65100
+    style NeedRefresh fill:#E8F5E9,stroke:#4CAF50,color:#1B5E20
+    style ChooseOption fill:#E1F5FE,stroke:#0288D1,color:#01579B
+    style ClickRed fill:#FFE0E0,stroke:#E57373,color:#C62828
+    style Syncing fill:#FFE0B2,stroke:#FF9800,color:#E65100
+    style GreenPill fill:#E0F7E0,stroke:#81C784,color:#2E7D32
+    style ErrorState fill:#FFE0E0,stroke:#E57373,color:#C62828
+              </div>
+              
+              <div class="mt-6 p-4 bg-white rounded border">
+                <p class="text-sm font-semibold mb-2">Key Paths:</p>
+                <ul class="text-xs text-gray-700 space-y-1 ml-4">
+                  <li>• <strong>First-time setup:</strong> Red Pill → Sync Now → Wait for green</li>
+                  <li>• <strong>Refresh data:</strong> Green Pill → Delete Cache → Re-sync</li>
+                  <li>• <strong>Quick TGMD update:</strong> Green Pill → Refresh with Qualtrics</li>
+                </ul>
               </div>
             </div>
 
@@ -1088,6 +1512,155 @@
                 </div>
               </div>
             </div>
+
+            <div class="collapsible-section">
+              <div class="collapsible-header">
+                <h3 class="text-xl font-semibold">How to Check Console Errors and Report to Admin</h3>
+                <span class="text-2xl">▼</span>
+              </div>
+              <div class="collapsible-content">
+                <p class="text-gray-700 mb-4">When you encounter unexpected behavior or errors, checking the browser console can help identify the root cause. Follow these steps:</p>
+
+                <h4 class="text-lg font-semibold mb-3 mt-4">Step 1: Open Browser Developer Tools</h4>
+                <p class="text-sm text-gray-700 mb-3"><em>Note: If you use assistive technologies or cannot use keyboard shortcuts, look for "Developer Tools" or "Inspect" options in your browser's menu.</em></p>
+                <div class="space-y-2 mb-4">
+                  <div class="border-l-4 border-blue-500 pl-4">
+                    <div class="font-semibold text-sm">For Chrome/Edge:</div>
+                    <ul class="text-sm text-gray-700 space-y-1">
+                      <li>• Press <code class="bg-gray-100 px-1 rounded">F12</code> on your keyboard, OR</li>
+                      <li>• Right-click anywhere → Select "Inspect", OR</li>
+                      <li>• Click three-dot menu (⋮) → More tools → Developer tools</li>
+                    </ul>
+                  </div>
+                  <div class="border-l-4 border-orange-500 pl-4">
+                    <div class="font-semibold text-sm">For Firefox:</div>
+                    <ul class="text-sm text-gray-700 space-y-1">
+                      <li>• Press <code class="bg-gray-100 px-1 rounded">F12</code> on your keyboard, OR</li>
+                      <li>• Right-click anywhere → Select "Inspect Element", OR</li>
+                      <li>• Click hamburger menu (≡) → More tools → Web Developer Tools</li>
+                    </ul>
+                  </div>
+                  <div class="border-l-4 border-purple-500 pl-4">
+                    <div class="font-semibold text-sm">For Safari (Mac):</div>
+                    <ul class="text-sm text-gray-700 space-y-1">
+                      <li>• Enable Developer menu: Safari → Preferences → Advanced → Check "Show Develop menu"</li>
+                      <li>• Press <code class="bg-gray-100 px-1 rounded">Option + Command + C</code>, OR</li>
+                      <li>• Develop menu → Show Web Inspector</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <h4 class="text-lg font-semibold mb-3">Step 2: Navigate to the Console Tab</h4>
+                <ol class="list-decimal ml-6 space-y-2 text-gray-700 mb-4">
+                  <li>In the Developer Tools panel (usually at bottom or right side of browser)</li>
+                  <li>Look for tabs at the top: Elements, Console, Sources, Network, etc.</li>
+                  <li>Click the <strong>"Console"</strong> tab</li>
+                  <li>You should now see a log of messages, warnings, and errors</li>
+                </ol>
+
+                <div class="bg-gray-50 border rounded p-4 mb-4">
+                  <p class="text-sm font-semibold mb-2">What you'll see:</p>
+                  <ul class="text-xs text-gray-700 space-y-1">
+                    <li>• <span class="text-blue-600">ℹ️ Blue/Info messages:</span> General information, usually safe to ignore</li>
+                    <li>• <span class="text-yellow-600">⚠️ Yellow/Warning messages:</span> Non-critical warnings, worth noting</li>
+                    <li>• <span class="text-red-600">❌ Red/Error messages:</span> Critical errors that break functionality - <strong>THESE are what to report</strong></li>
+                  </ul>
+                </div>
+
+                <h4 class="text-lg font-semibold mb-3">Step 3: Reproduce the Issue</h4>
+                <ol class="list-decimal ml-6 space-y-2 text-gray-700 mb-4">
+                  <li><strong>Clear the console first:</strong> Click the "Clear console" button (🚫 icon) or press <code class="bg-gray-100 px-1 rounded">Ctrl+L</code></li>
+                  <li><strong>Perform the action that causes the error:</strong> Click the button, navigate to the page, apply the filter, etc.</li>
+                  <li><strong>Watch for new red error messages</strong> to appear in the console</li>
+                </ol>
+
+                <h4 class="text-lg font-semibold mb-3">Step 4: Identify Relevant Errors</h4>
+                <p class="text-sm text-gray-700 mb-2">Look for error messages that contain:</p>
+                <ul class="list-disc ml-6 text-sm text-gray-700 space-y-1 mb-4">
+                  <li><strong>"Uncaught"</strong> - JavaScript errors</li>
+                  <li><strong>"Failed to fetch"</strong> - Network/API errors</li>
+                  <li><strong>"TypeError"</strong> - Data structure errors</li>
+                  <li><strong>"ReferenceError"</strong> - Missing variables/functions</li>
+                  <li><strong>Stack traces</strong> - Lines of code showing where error occurred</li>
+                </ul>
+
+                <h4 class="text-lg font-semibold mb-3">Step 5: Take Screenshots and Copy Error Details</h4>
+                <ol class="list-decimal ml-6 space-y-2 text-gray-700 mb-4">
+                  <li>Expand the error message (if collapsed) by clicking the triangle (▶)</li>
+                  <li>Take a screenshot of the error message and stack trace</li>
+                  <li>Right-click on the error message → "Copy message" or "Copy stack trace"</li>
+                  <li>Paste into a text file or email</li>
+                </ol>
+
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 rounded mb-4">
+                  <p class="text-sm font-semibold mb-2">Screenshot shortcuts:</p>
+                  <ul class="text-xs text-gray-700 space-y-1">
+                    <li>• <strong>Windows:</strong> Press <code class="bg-gray-100 px-1 rounded">Windows + Shift + S</code> (Windows 10 v1703+ or Windows 11) → select area → paste in email
+                      <br/><span class="text-xs text-gray-500 ml-4">Older Windows: Use Snipping Tool from Start menu</span>
+                    </li>
+                    <li>• <strong>Mac:</strong> Press <code class="bg-gray-100 px-1 rounded">Command + Shift + 4</code> → drag to select → file saves to desktop</li>
+                  </ul>
+                </div>
+
+                <h4 class="text-lg font-semibold mb-3">Step 6: Report to Administrator</h4>
+                <div class="bg-blue-50 border rounded p-4">
+                  <p class="text-sm font-semibold mb-2">Include in your report:</p>
+                  <ol class="text-xs text-gray-700 space-y-1 ml-4">
+                    <li>1. <strong>What you were doing:</strong> Specific action that triggered the error</li>
+                    <li>2. <strong>When it happened:</strong> Date and time</li>
+                    <li>3. <strong>Browser information:</strong> Browser name and version (find in Help → About Chrome/Firefox/Edge)</li>
+                    <li>4. <strong>Console errors:</strong> Copied error messages and screenshots</li>
+                    <li>5. <strong>System state:</strong> Was cache recently synced? Any other errors on page?</li>
+                    <li>6. <strong>Reproducibility:</strong> Does it happen every time or randomly?</li>
+                  </ol>
+                </div>
+
+                <h4 class="text-lg font-semibold mb-3 mt-4">Common Error Messages</h4>
+                <table class="w-full text-sm border-collapse">
+                  <thead>
+                    <tr class="bg-gray-100">
+                      <th class="border border-gray-300 px-3 py-2 text-left">Error Message</th>
+                      <th class="border border-gray-300 px-3 py-2 text-left">Likely Cause</th>
+                      <th class="border border-gray-300 px-3 py-2 text-left">Quick Fix</th>
+                    </tr>
+                  </thead>
+                  <tbody class="text-xs">
+                    <tr>
+                      <td class="border border-gray-300 px-3 py-2">"Failed to fetch"</td>
+                      <td class="border border-gray-300 px-3 py-2">Network issue or API down</td>
+                      <td class="border border-gray-300 px-3 py-2">Check internet, try again in 5 min</td>
+                    </tr>
+                    <tr>
+                      <td class="border border-gray-300 px-3 py-2">"QuotaExceededError"</td>
+                      <td class="border border-gray-300 px-3 py-2">Browser storage full</td>
+                      <td class="border border-gray-300 px-3 py-2">Clear cache, close other tabs</td>
+                    </tr>
+                    <tr>
+                      <td class="border border-gray-300 px-3 py-2">"401 Unauthorized"</td>
+                      <td class="border border-gray-300 px-3 py-2">Invalid credentials</td>
+                      <td class="border border-gray-300 px-3 py-2">Re-enter system password</td>
+                    </tr>
+                    <tr>
+                      <td class="border border-gray-300 px-3 py-2">"Cannot read property..."</td>
+                      <td class="border border-gray-300 px-3 py-2">Data missing or malformed</td>
+                      <td class="border border-gray-300 px-3 py-2">Refresh page, report if persists</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded mt-4">
+                  <p class="text-sm font-semibold mb-2">Privacy Note:</p>
+                  <p class="text-xs text-gray-700 mb-2">When taking screenshots and sharing console logs, protect sensitive information:</p>
+                  <ul class="text-xs text-gray-700 space-y-1 ml-4">
+                    <li>• Blur or crop any visible student names, IDs, or personal data</li>
+                    <li>• Never share system passwords or API keys</li>
+                    <li>• Avoid sharing session tokens or authentication credentials from logs</li>
+                    <li>• If error logs contain student IDs or personal data, redact them before sharing</li>
+                    <li>• When in doubt, ask before sharing any sensitive information</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
           </section>
 
           <!-- FAQs Section -->
@@ -1149,6 +1722,74 @@
                     <li>System calculation logic difference</li>
                   </ol>
                   <p class="text-gray-700 mt-3"><strong>Always manually verify when mismatch detected.</strong></p>
+                </div>
+              </div>
+
+              <div class="collapsible-section">
+                <div class="collapsible-header">
+                  <h3 class="text-lg font-semibold">How secure is the Checking System? What about data privacy?</h3>
+                  <span class="text-xl">▼</span>
+                </div>
+                <div class="collapsible-content">
+                  <p class="text-gray-700 mb-3">The Checking System is designed with multiple layers of security and privacy protection:</p>
+                  
+                  <div class="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4 rounded">
+                    <h4 class="font-semibold mb-2 text-gray-800">🔒 Data Encryption & Transmission</h4>
+                    <ul class="list-disc ml-6 space-y-1 text-sm text-gray-700">
+                      <li><strong>HTTPS encryption:</strong> All API calls to JotForm and Qualtrics use encrypted connections</li>
+                      <li><strong>Encrypted credentials:</strong> System password and API keys are encrypted at rest in <code class="bg-gray-200 px-1 rounded">assets/credentials.enc</code></li>
+                      <li><strong>No plaintext passwords:</strong> Credentials never stored in browser history or logs</li>
+                      <li><strong>Secure key derivation:</strong> Uses PBKDF2 with salt for password-based encryption</li>
+                    </ul>
+                  </div>
+
+                  <div class="bg-green-50 border-l-4 border-green-500 p-4 mb-4 rounded">
+                    <h4 class="font-semibold mb-2 text-gray-800">🔐 Access Control</h4>
+                    <ul class="list-disc ml-6 space-y-1 text-sm text-gray-700">
+                      <li><strong>Password required:</strong> System password needed to decrypt credentials and access data</li>
+                      <li><strong>Session timeout:</strong> Automatically locks after 30 minutes of inactivity</li>
+                      <li><strong>No persistent login:</strong> Password must be re-entered after browser close</li>
+                      <li><strong>Limited access:</strong> Only authorized project personnel should have the password</li>
+                    </ul>
+                  </div>
+
+                  <div class="bg-purple-50 border-l-4 border-purple-500 p-4 mb-4 rounded">
+                    <h4 class="font-semibold mb-2 text-gray-800">💾 Data Storage & Privacy</h4>
+                    <ul class="list-disc ml-6 space-y-1 text-sm text-gray-700">
+                      <li><strong>Local-only cache:</strong> Data cached in browser's IndexedDB, never sent to external servers</li>
+                      <li><strong>No cloud storage:</strong> System runs entirely client-side (in your browser)</li>
+                      <li><strong>No third-party tracking:</strong> No analytics, no cookies, no external tracking scripts</li>
+                      <li><strong>Data isolation:</strong> Each browser has its own isolated cache (no cross-browser sharing)</li>
+                      <li><strong>Automatic cleanup:</strong> Cache expires after 1 hour or can be manually cleared</li>
+                    </ul>
+                  </div>
+
+                  <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 mb-4 rounded">
+                    <h4 class="font-semibold mb-2 text-gray-800">🛡️ Student Data Protection</h4>
+                    <ul class="list-disc ml-6 space-y-1 text-sm text-gray-700">
+                      <li><strong>Read-only access:</strong> System cannot modify or delete student data</li>
+                      <li><strong>No data export to cloud:</strong> Exports saved locally to your computer only</li>
+                      <li><strong>Anonymized IDs:</strong> Students identified by Core IDs (e.g., C10207), not personal names in most views</li>
+                      <li><strong>Secure source:</strong> All data fetched directly from JotForm's secure API</li>
+                      <li><strong>Audit trail:</strong> Console logs can track who accessed what data (if enabled)</li>
+                    </ul>
+                  </div>
+
+                  <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                    <h4 class="font-semibold mb-2 text-gray-800">⚠️ Security Best Practices</h4>
+                    <ul class="list-disc ml-6 space-y-1 text-sm text-gray-700">
+                      <li><strong>Don't share the password:</strong> Limit access to authorized personnel only</li>
+                      <li><strong>Use trusted devices:</strong> Don't access from public or shared computers</li>
+                      <li><strong>Clear cache when done:</strong> Especially on shared devices, delete cache before closing</li>
+                      <li><strong>Lock your screen:</strong> Always lock your computer when stepping away</li>
+                      <li><strong>Use updated browsers:</strong> Keep browser up-to-date for latest security patches</li>
+                      <li><strong>Report security concerns:</strong> Contact project administrators immediately if you notice suspicious activity</li>
+                    </ul>
+                  </div>
+
+                  <p class="text-sm text-gray-600 mt-4 italic">
+                    <strong>Note:</strong> While the system implements strong security measures, ultimate data security also depends on user practices. Always follow institutional data protection policies and guidelines when handling student assessment data.
+                  </p>
                 </div>
               </div>
             </div>
