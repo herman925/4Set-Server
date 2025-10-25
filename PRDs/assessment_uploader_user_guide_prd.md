@@ -271,10 +271,10 @@ The browser writes TWO files:
 
 ```
 Phase 1: Filename validation
-  ✓ Format: xxxxx_YYYYMMDD_HH_MM.pdf
+  ✓ Format: coreID_YYYYMMDD_HH_MM.pdf (Core ID from AITable)
 
 Phase 2: Content validation
-  ✓ Student ID exists in database
+  ✓ Core ID exists in database
   ✓ School ID matches student record
   ✓ All required fields present
 
@@ -372,13 +372,14 @@ flowchart TD
 #### Validation Phases Explained
 
 **Phase 1: Filename Validation**
-- **Expected Format:** `xxxxx_YYYYMMDD_HH_MM.pdf`
+- **Expected Format:** `coreID_YYYYMMDD_HH_MM.pdf`
+- **Core ID:** 5-digit numeric identifier from AITable (e.g., 10001, 10523)
 - **Checks:**
-  - ✓ 5-digit student ID
-  - ✓ Valid date format
-  - ✓ Valid time format
+  - ✓ 5-digit Core ID (numeric only, starts with 1)
+  - ✓ Valid date format (YYYYMMDD)
+  - ✓ Valid time format (HH_MM)
   - ✓ Underscores in correct positions
-- **Example:** C1020_20251016_14_30.pdf ✅
+- **Example:** 10001_20251016_14_30.pdf ✅
 
 **Phase 2: PDF Content Validation**
 - **Checks:**
@@ -496,7 +497,7 @@ When the processor agent detects a data conflict and blocks an upload, the files
 **File Destination:**
 ```
 quarantine_folder/
-├── C10207_20251016_14_30.pdf
+├── 10523_20251016_14_30.pdf
 └── (Logged in CSV: YYYYMMDD_processing_agent.csv)
 ```
 *Note: Quarantine folder path is configurable (default: "unsorted")*
@@ -520,22 +521,31 @@ The processor agent maintains a detailed CSV log that helps administrators diagn
 **Daily Processing Log (CSV Format)**
 - **File:** `logs/YYYYMMDD_processing_agent.csv`
 - **Format:** Timestamp,Level,File,Message
-- **Log Levels:** SUCCESS, REJECT, ERROR, CONFLICT, WARN, FILED
 
-**What's Logged:**
-- Timestamp of each upload attempt
-- Student ID and filename
-- Log level indicating outcome
-- Detailed message with conflict reasons
-- Final disposition (filed to school folder vs quarantined)
+**📌 Configurable Log Levels**
 
-**Example CSV Log Entries:**
-```
-2025-10-25 14:30:15,REJECT,C10207_20251016_14_30.pdf,"Phase2 validation failed: Student C10207 not in mapping"
-2025-10-25 14:31:22,CONFLICT,C10208_20251016_14_35.pdf,"Field q37_englishReceptive[0]: Current '1' vs Attempted '0'"
-2025-10-25 14:32:10,SUCCESS,C10209_20251016_14_40.pdf,"Validation passed"
-2025-10-25 14:33:05,FILED,C10209_20251016_14_40.pdf,"C10209_20251016_14_40.pdf → S023/"
-```
+Edit `config/jotform_config.json` → "logging" section to enable/disable each level (set to `true` or `false`):
+
+- **REJECT:** Validation failures (sessionkey mismatch, Core ID errors, filename format)
+- **DATA_OVERWRITE_DIFF:** Data overwrite conflicts (field-level details)
+- **UPLOAD:** Jotform operations (created/updated submissions)
+- **FILED:** Successfully archived files with destination folder
+- **CLEANUP:** Maintenance operations (orphaned JSON cleanup)
+- **RENAME:** Filename normalization (original → canonical)
+- **WARN:** Non-critical issues (missing mappings, upload failures)
+- **ERROR:** Critical failures (parser errors, exceptions)
+- **INFO:** Verbose details (queued, parsing, validating, enriching)
+
+**Example CSV Log Entries (Excel/Spreadsheet View):**
+
+| Timestamp | Level | File | Message |
+|-----------|-------|------|---------|
+| 2025-10-25 14:30:15 | REJECT | 10523_20251016_14_30.pdf | Phase2 validation failed: Core ID 10523 not in mapping |
+| 2025-10-25 14:31:22 | DATA_OVERWRITE_DIFF | 10524_20251016_14_35.pdf | Field q37_englishReceptive[0]: Current '1' vs Attempted '0' |
+| 2025-10-25 14:32:10 | UPLOAD | 10525_20251016_14_40.pdf | Created submission 234567890123456789 (87 fields, 1 chunk) |
+| 2025-10-25 14:33:05 | FILED | 10525_20251016_14_40.pdf | 10525_20251016_14_40.pdf → S023/ |
+
+💡 **Tip:** Open CSV files in Excel, Google Sheets, or VS Code with Rainbow CSV extension for easier filtering and analysis
 
 **Using CSV Logs for Troubleshooting:**
 1. **Open today's CSV log:** Find YYYYMMDD_processing_agent.csv in the logs directory
@@ -954,7 +964,7 @@ A: Yes, but:
    - Prevents browser overload
 
 2. **File Naming**
-   - Use the standard format: `xxxxx_YYYYMMDD_HH_MM.pdf`
+   - Use the standard format: `coreID_YYYYMMDD_HH_MM.pdf` (Core ID from AITable)
    - Correct format = faster processing
    - Wrong format = rejected by agent
 

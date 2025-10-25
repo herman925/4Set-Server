@@ -462,15 +462,16 @@ flowchart TD
               <div class="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded shadow">
                 <h4 class="font-semibold mb-3 text-yellow-800">Phase 1: Filename Validation</h4>
                 <p class="text-sm text-gray-700 mb-2"><strong>Expected Format:</strong></p>
-                <code class="text-xs bg-white px-2 py-1 rounded">xxxxx_YYYYMMDD_HH_MM.pdf</code>
+                <code class="text-xs bg-white px-2 py-1 rounded">coreID_YYYYMMDD_HH_MM.pdf</code>
+                <p class="text-xs mt-2 text-gray-600 italic">Core ID: 5-digit numeric identifier from AITable</p>
                 <p class="text-sm text-gray-700 mt-3"><strong>Checks:</strong></p>
                 <ul class="text-xs space-y-1 mt-2">
-                  <li>✓ 5-digit student ID</li>
-                  <li>✓ Valid date format</li>
-                  <li>✓ Valid time format</li>
+                  <li>✓ 5-digit Core ID (numeric only, starts with 1)</li>
+                  <li>✓ Valid date format (YYYYMMDD)</li>
+                  <li>✓ Valid time format (HH_MM)</li>
                   <li>✓ Underscores in correct positions</li>
                 </ul>
-                <p class="text-xs mt-3 text-gray-600"><strong>Example:</strong> C1020_20251016_14_30.pdf ✅</p>
+                <p class="text-xs mt-3 text-gray-600"><strong>Example:</strong> 10001_20251016_14_30.pdf ✅</p>
               </div>
               
               <div class="bg-orange-50 border-l-4 border-orange-500 p-4 rounded shadow">
@@ -552,7 +553,7 @@ flowchart TD
     style AllowUpdate fill:#C8E6C9,stroke:#4CAF50,color:#1B5E20
     style AllowData fill:#C8E6C9,stroke:#4CAF50,color:#1B5E20
     style BlockData fill:#FFCDD2,stroke:#E57373,color:#C62828
-    style MoveUnsorted fill:#FFE0B2,stroke:#FF9800,color:#E65100
+    style MoveQuarantine fill:#FFE0B2,stroke:#FF9800,color:#E65100
     style LogConflict fill:#FFF9C4,stroke:#FDD835,color:#F57F17
     style LogSuccess fill:#E8F5E9,stroke:#66BB6A,color:#2E7D32
     style Search fill:#E1F5FE,stroke:#03A9F4,color:#01579B
@@ -631,7 +632,7 @@ flowchart TD
                   <p class="font-semibold mb-2">📁 File Destination:</p>
                   <div class="bg-gray-800 text-gray-100 p-3 rounded font-mono text-xs">
                     <div>quarantine_folder/</div>
-                    <div>├── C10207_20251016_14_30.pdf</div>
+                    <div>├── 10523_20251016_14_30.pdf</div>
                     <div>└── (Logged in CSV: YYYYMMDD_processing_agent.csv)</div>
                   </div>
                   <p class="text-xs text-gray-600 mt-2 italic">Note: Quarantine folder path is configurable (default: "unsorted")</p>
@@ -664,25 +665,70 @@ flowchart TD
                 <div class="bg-white p-4 rounded border-l-4 border-purple-500 mt-4">
                   <h5 class="font-semibold mb-2">Daily Processing Log (CSV Format)</h5>
                   <p class="text-xs mb-2"><code class="bg-gray-200 px-2 py-1 rounded">logs/YYYYMMDD_processing_agent.csv</code></p>
-                  <p class="text-xs mb-2">Single CSV file per day tracking all processing activity:</p>
-                  <ul class="text-xs space-y-1">
-                    <li>• Timestamp of each upload attempt</li>
-                    <li>• Student ID and filename</li>
-                    <li>• Log level (SUCCESS, REJECT, ERROR, CONFLICT, WARN, FILED)</li>
-                    <li>• Detailed message with conflict reasons</li>
-                    <li>• Final disposition (filed to school folder vs quarantined)</li>
-                  </ul>
-                  <p class="text-xs text-gray-600 mt-2 italic">Format: Timestamp,Level,File,Message</p>
+                  <p class="text-xs mb-2">Single CSV file per day tracking all processing activity</p>
+                  
+                  <div class="mt-3 p-2 bg-blue-50 border border-blue-200 rounded text-xs">
+                    <p class="font-semibold mb-1">📌 Configurable Log Levels:</p>
+                    <p class="mb-2">Edit <code class="bg-white px-1 rounded">config/jotform_config.json</code> → "logging" section to enable/disable each level:</p>
+                    <ul class="space-y-0.5 ml-4">
+                      <li>• <strong>REJECT:</strong> Validation failures (sessionkey mismatch, Core ID errors, filename format)</li>
+                      <li>• <strong>DATA_OVERWRITE_DIFF:</strong> Data overwrite conflicts (field-level details)</li>
+                      <li>• <strong>UPLOAD:</strong> Jotform operations (created/updated submissions)</li>
+                      <li>• <strong>FILED:</strong> Successfully archived files with destination folder</li>
+                      <li>• <strong>CLEANUP:</strong> Maintenance operations (orphaned JSON cleanup)</li>
+                      <li>• <strong>RENAME:</strong> Filename normalization (original → canonical)</li>
+                      <li>• <strong>WARN:</strong> Non-critical issues (missing mappings, upload failures)</li>
+                      <li>• <strong>ERROR:</strong> Critical failures (parser errors, exceptions)</li>
+                      <li>• <strong>INFO:</strong> Verbose details (queued, parsing, validating, enriching)</li>
+                    </ul>
+                    <p class="mt-2 text-gray-600 italic">Set each level to <code>true</code> (log) or <code>false</code> (skip) in config</p>
+                  </div>
                 </div>
 
                 <div class="bg-white p-4 rounded border border-purple-200 mt-4">
-                  <p class="font-semibold mb-2">Example CSV Log Entries:</p>
-                  <div class="bg-gray-800 text-gray-100 p-3 rounded overflow-x-auto font-mono text-xs">
-<div>2025-10-25 14:30:15,REJECT,C10207_20251016_14_30.pdf,"Phase2 validation failed: Student C10207 not in mapping"</div>
-<div>2025-10-25 14:31:22,CONFLICT,C10208_20251016_14_35.pdf,"Field q37_englishReceptive[0]: Current '1' vs Attempted '0'"</div>
-<div>2025-10-25 14:32:10,SUCCESS,C10209_20251016_14_40.pdf,"Validation passed"</div>
-<div>2025-10-25 14:33:05,FILED,C10209_20251016_14_40.pdf,"C10209_20251016_14_40.pdf → S023/"</div>
+                  <p class="font-semibold mb-3">Example CSV Log Entries (as viewed in Excel/CSV reader):</p>
+                  
+                  <!-- Excel-like table view -->
+                  <div class="overflow-x-auto">
+                    <table class="w-full text-xs border-collapse">
+                      <thead>
+                        <tr class="bg-gray-100 border-b-2 border-gray-300">
+                          <th class="border border-gray-300 px-3 py-2 text-left font-semibold">Timestamp</th>
+                          <th class="border border-gray-300 px-3 py-2 text-left font-semibold">Level</th>
+                          <th class="border border-gray-300 px-3 py-2 text-left font-semibold">File</th>
+                          <th class="border border-gray-300 px-3 py-2 text-left font-semibold">Message</th>
+                        </tr>
+                      </thead>
+                      <tbody class="font-mono">
+                        <tr class="bg-white hover:bg-gray-50">
+                          <td class="border border-gray-300 px-3 py-2">2025-10-25 14:30:15</td>
+                          <td class="border border-gray-300 px-3 py-2 text-red-600 font-semibold">REJECT</td>
+                          <td class="border border-gray-300 px-3 py-2">10523_20251016_14_30.pdf</td>
+                          <td class="border border-gray-300 px-3 py-2">Phase2 validation failed: Core ID 10523 not in mapping</td>
+                        </tr>
+                        <tr class="bg-gray-50 hover:bg-gray-100">
+                          <td class="border border-gray-300 px-3 py-2">2025-10-25 14:31:22</td>
+                          <td class="border border-gray-300 px-3 py-2 text-orange-600 font-semibold">DATA_OVERWRITE_DIFF</td>
+                          <td class="border border-gray-300 px-3 py-2">10524_20251016_14_35.pdf</td>
+                          <td class="border border-gray-300 px-3 py-2">Field q37_englishReceptive[0]: Current '1' vs Attempted '0'</td>
+                        </tr>
+                        <tr class="bg-white hover:bg-gray-50">
+                          <td class="border border-gray-300 px-3 py-2">2025-10-25 14:32:10</td>
+                          <td class="border border-gray-300 px-3 py-2 text-blue-600 font-semibold">UPLOAD</td>
+                          <td class="border border-gray-300 px-3 py-2">10525_20251016_14_40.pdf</td>
+                          <td class="border border-gray-300 px-3 py-2">Created submission 234567890123456789 (87 fields, 1 chunk)</td>
+                        </tr>
+                        <tr class="bg-gray-50 hover:bg-gray-100">
+                          <td class="border border-gray-300 px-3 py-2">2025-10-25 14:33:05</td>
+                          <td class="border border-gray-300 px-3 py-2 text-green-600 font-semibold">FILED</td>
+                          <td class="border border-gray-300 px-3 py-2">10525_20251016_14_40.pdf</td>
+                          <td class="border border-gray-300 px-3 py-2">10525_20251016_14_40.pdf → S023/</td>
+                        </tr>
+                      </tbody>
+                    </table>
                   </div>
+                  
+                  <p class="text-xs text-gray-600 mt-3 italic">💡 Tip: Open CSV files in Excel, Google Sheets, or VS Code with Rainbow CSV extension for easier filtering and analysis</p>
                 </div>
 
                 <div class="mt-4 p-3 bg-purple-100 border border-purple-300 rounded">
@@ -1034,7 +1080,7 @@ flowchart TD
               <div class="diagram-box bg-purple-50 border-purple-300">
                 <h3 class="text-lg font-semibold mb-3">📋 File Naming</h3>
                 <ul class="space-y-2 text-sm text-gray-700">
-                  <li>✓ Format: <code>xxxxx_YYYYMMDD_HH_MM.pdf</code></li>
+                  <li>✓ Format: <code>coreID_YYYYMMDD_HH_MM.pdf</code> (Core ID from AITable)</li>
                   <li>✓ Correct format = faster processing</li>
                   <li>✓ Wrong format = rejected by agent</li>
                 </ul>
