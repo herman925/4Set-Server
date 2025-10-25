@@ -88,8 +88,9 @@
                       hostname.startsWith('10.0.');
       
       if (isLocal) {
-        // Running locally - use Flask proxy server on port 3000
-        return 'http://localhost:3000/api/jotform';
+        // Running locally - use Flask proxy server on port 5000
+        // NOTE: Port 3000 is reserved by Windows Hyper-V, using 5000 instead
+        return 'http://localhost:5000/api/jotform';
       } else {
         // Running on GitHub Pages or production - use direct API
         return 'https://api.jotform.com';
