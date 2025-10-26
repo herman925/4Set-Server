@@ -1112,6 +1112,12 @@
                 const validationResults = data.validationResults[grade];
                 const gradeData = data.mergedData[grade];
                 
+                // Count records by source for this grade
+                const recordCount = gradeData.records ? gradeData.records.length : 0;
+                const sources = gradeData.records ? gradeData.records.map(r => r._sources).flat() : [];
+                const hasJotform = sources.includes('jotform');
+                const hasQualtrics = sources.includes('qualtrics');
+                
                 // Add grade section header
                 const gradeHeader = document.createElement('div');
                 gradeHeader.className = 'mb-4 mt-6';
@@ -1121,8 +1127,7 @@
                             ${grade}
                         </span>
                         <span class="text-sm font-normal text-gray-600">
-                            (${gradeData.qualtrics.length} Qualtrics records, 
-                            ${Object.keys(gradeData.jotform).length > 0 ? 'JotForm data present' : 'No JotForm data'})
+                            (${recordCount} record(s): ${hasJotform ? 'JotForm' : ''}${hasJotform && hasQualtrics ? ' + ' : ''}${hasQualtrics ? 'Qualtrics' : ''})
                         </span>
                     </h3>
                 `;
@@ -1229,9 +1234,9 @@
             const firstGrade = sortedGrades[0];
             if (firstGrade && data.mergedData[firstGrade]) {
                 document.getElementById('debug-jotform').textContent = 
-                    JSON.stringify(data.jotformData.mergedAnswers, null, 2).substring(0, 5000) + '...';
+                    JSON.stringify(data.jotformData.jotformRecords, null, 2).substring(0, 5000) + '...';
                 document.getElementById('debug-qualtrics-raw').textContent = 
-                    JSON.stringify(data.qualtricsData.rawResponses, null, 2).substring(0, 5000) + '...';
+                    JSON.stringify(data.qualtricsData.responses, null, 2).substring(0, 5000) + '...';
                 document.getElementById('debug-qualtrics').textContent = 
                     JSON.stringify(data.transformedQualtrics, null, 2).substring(0, 5000) + '...';
                 document.getElementById('debug-merged').textContent = 
