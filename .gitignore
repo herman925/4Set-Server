@@ -1,4 +1,8 @@
 test_*.html
+classid.csv
+coreid.csv
+schoolid.csv
+credentials.json
 
 # Python virtual environment and cache (for local dev)
 __pycache__/
