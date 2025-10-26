@@ -1,7 +1,8 @@
 # 4Set System Calculation Bible
 
-**Version:** 1.0  
+**Version:** 1.1  
 **Created:** January 2025  
+**Last Updated:** October 2025 (Added Data Merging section)  
 **Purpose:** Complete technical reference for all calculation, validation, and termination rules in the 4Set assessment system  
 **Scope:** Based on actual implemented code, not design documents
 
@@ -10,16 +11,17 @@
 ## Table of Contents
 
 1. [Architecture Overview](#architecture-overview)
-2. [Question-Level Calculations](#question-level-calculations)
-3. [Task-Level Calculations](#task-level-calculations)
-4. [Termination Rules](#termination-rules)
-5. [Timeout Detection](#timeout-detection)
-6. [Set-Level Calculations](#set-level-calculations)
-7. [Status Color Mapping](#status-color-mapping)
-8. [Server-Side Processing](#server-side-processing)
-9. [Page-Specific Implementation](#page-specific-implementation)
-10. [Debugging Guide](#debugging-guide)
-11. [Points to Note](#points-to-note) ⚠️ **CRITICAL**
+2. [Data Merging](#data-merging) ⚠️ **NEW**
+3. [Question-Level Calculations](#question-level-calculations)
+4. [Task-Level Calculations](#task-level-calculations)
+5. [Termination Rules](#termination-rules)
+6. [Timeout Detection](#timeout-detection)
+7. [Set-Level Calculations](#set-level-calculations)
+8. [Status Color Mapping](#status-color-mapping)
+9. [Server-Side Processing](#server-side-processing)
+10. [Page-Specific Implementation](#page-specific-implementation)
+11. [Debugging Guide](#debugging-guide)
+12. [Points to Note](#points-to-note) ⚠️ **CRITICAL**
 
 ---
 
@@ -32,17 +34,21 @@
 The 4Set system uses a centralized validation architecture:
 
 ```
-TaskValidator.js (Single Source of Truth)
+DataMerger.js (Data Integration Layer)
+    ↓
+TaskValidator.js (Validation Engine)
     ↓
     ├─→ Student Page (Direct validation)
     ├─→ Class Page (Via JotFormCache)
     ├─→ School Page (Via JotFormCache)
     ├─→ District Page (Via JotFormCache)
-    └─→ Group Page (Via JotFormCache)
+    ├─→ Group Page (Via JotFormCache)
+    └─→ Test Pipeline (Uses same logic)
 ```
 
-**Critical Principle:**
-> When termination or timeout occurs, questions AFTER that point are **COMPLETELY EXCLUDED** from ALL calculations.
+**Critical Principles:**
+1. **Termination Exclusion**: When termination or timeout occurs, questions AFTER that point are **COMPLETELY EXCLUDED** from ALL calculations.
+2. **Grade-Based Grouping**: Data from different grades (K1/K2/K3) is **NEVER merged together**. Each grade level is processed separately.
 
 **Location:** `task-validator.js` Lines 16-21:
 ```javascript
@@ -55,10 +61,160 @@ TaskValidator.js (Single Source of Truth)
 
 ### Key Components
 
-1. **TaskValidator** - Core validation engine
-2. **JotFormCache** - Caching layer for bulk operations
-3. **Student UI Renderer** - Presentation layer
-4. **Processor Agent** - Server-side pipeline (PowerShell)
+1. **DataMerger** - Grade-aware data integration (JotForm + Qualtrics)
+2. **GradeDetector** - Grade level determination (K1/K2/K3)
+3. **TaskValidator** - Core validation engine
+4. **JotFormCache** - Caching layer for bulk operations
+5. **Student UI Renderer** - Presentation layer
+6. **Processor Agent** - Server-side pipeline (PowerShell)
+
+---
+
+## Data Merging
+
+### Universal Merge Logic
+
+**Location:** `assets/js/data-merger.js` Lines 21-330
+
+**CRITICAL:** Both production and test-pipeline use the **SAME** DataMerger for consistency.
+
+### Merge Flow (4 Steps)
+
+#### Step 1: JotForm Internal Merging
+**Location:** `jotform-cache.js` Lines 796-817
+
+For each student with multiple JotForm submissions:
+
+1. Sort submissions by `created_at` (earliest first)
+2. Convert from QID-keyed to field-name-keyed format
+3. Merge using "earliest non-empty wins"
+4. Result: Array of individual records (one per submission)
+
+**Note:** NO grade-based merging at this stage - each submission remains separate.
+
+#### Step 2: Qualtrics Internal Merging
+**Location:** `data-merger.js` Lines 218-243
+
+For each student with multiple Qualtrics responses:
+
+1. Sort by `_meta.startDate` or `recordedDate` (earliest first)
+2. Start with earliest response
+3. Merge subsequent responses: earliest non-empty wins
+4. Result: Array of individual records (one per response)
+
+**Note:** NO grade-based merging at this stage - each response remains separate.
+
+#### Step 3: Grade-Based Grouping ⚠️ **CRITICAL**
+**Location:** `data-merger.js` Lines 52-115
+
+**BEFORE merging JotForm + Qualtrics:**
+
+1. **Determine grade** for EACH record:
+   - Qualtrics: `GradeDetector.determineGradeFromRecordedDate(recordedDate)`
+   - JotForm: `GradeDetector.determineGradeFromSessionKey(sessionkey)`
+
+2. **Group** records by `(coreId, grade)` pair:
+   ```javascript
+   Map<coreId, Map<grade, {jotform: [], qualtrics: []}>>
+   ```
+
+3. **Warn** if student has data from multiple grades
+
+**Example:**
+```javascript
+// Student 10267 has data from both K2 and K3
+recordsByStudent.get("10267") = {
+  grades: Map {
+    "K2" => { jotform: [], qualtrics: [record1, record2] },
+    "K3" => { jotform: [record3], qualtrics: [] }
+  }
+}
+```
+
+#### Step 4: Cross-Source Merging
+**Location:** `data-merger.js` Lines 117-207
+
+For EACH `(coreId, grade)` combination separately:
+
+1. Merge multiple JotForm submissions for this grade (earliest wins)
+2. Merge multiple Qualtrics responses for this grade (earliest wins)
+3. Merge JotForm + Qualtrics using `mergeTGMDFields()`:
+   - Start with JotForm record as base
+   - For each Qualtrics field:
+     - If JotForm doesn't have it → use Qualtrics value
+     - If both have different values → compare timestamps, earliest wins
+   - Track conflicts with resolution metadata
+4. Set grade explicitly on merged record
+5. **Result**: Separate merged record for EACH grade
+
+### Key Principle: "Earliest Non-Empty Wins"
+
+Applied consistently across ALL merge levels:
+- ✅ JotForm multi-submission merge
+- ✅ Qualtrics multi-response merge  
+- ✅ JotForm + Qualtrics cross-source merge
+- ✅ **Only within same grade level**
+
+### Grade Detection Rules
+
+**School Year Mapping:**
+- K1: 2023/24 (Aug 2023 - Jul 2024)
+- K2: 2024/25 (Aug 2024 - Jul 2025)
+- K3: 2025/26 (Aug 2025 - Jul 2026)
+
+**JotForm:** Extract from sessionkey format `{coreId}_{YYYYMMDD}_{HH}_{MM}`
+```javascript
+// Example: "10267_20251020_09_54"
+// Date: Oct 20, 2025 → School Year 2025 → K3
+```
+
+**Qualtrics:** Extract from recordedDate (ISO 8601)
+```javascript
+// Example: "2024-10-16T09:40:57.149Z"
+// Date: Oct 16, 2024 → School Year 2024 → K2
+```
+
+### Critical: No Cross-Grade Merging
+
+**❌ WRONG (Old Behavior):**
+```javascript
+// Student with JotForm K3 + Qualtrics K2 → 1 merged record
+mergeDataSources([jotformK3], [qualtricsK2])
+// → [{ coreId: "10267", grade: "K2", ...mixedData }] ❌
+```
+
+**✅ CORRECT (New Behavior):**
+```javascript
+// Same student → 2 separate records
+mergeDataSources([jotformK3], [qualtricsK2])
+// → [
+//   { coreId: "10267", grade: "K3", _sources: ["jotform"], ...k3Data },
+//   { coreId: "10267", grade: "K2", _sources: ["qualtrics"], ...k2Data }
+// ] ✅
+```
+
+**Why This Matters:**
+- Prevents contamination of assessment data across academic years
+- Ensures accurate grade-level analysis
+- Maintains data integrity for longitudinal studies
+- Console warns when cross-grade data is detected
+
+### Test-Pipeline Alignment
+
+**Location:** `TEMP/test-pipeline-core-id.html` Lines 964-996
+
+The test-pipeline now uses the **production DataMerger** instead of custom merge logic:
+
+```javascript
+// OLD: Custom merge function (inconsistent with production)
+async function mergeData(jotformAnswers, qualtricsRecords, coreId) { ... }
+
+// NEW: Uses production DataMerger (consistent)
+async function mergeData(jotformRecords, qualtricsRecords, coreId) {
+  const merger = new window.DataMerger();
+  return merger.mergeDataSources(jotformRecords, qualtricsRecords);
+}
+```
 
 ---
 
