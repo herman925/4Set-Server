@@ -2281,6 +2281,21 @@ flowchart LR
       transform: translateY(-2px);
       box-shadow: 0 8px 24px rgba(0,0,0,0.2) !important;
     }
+    .interactive-btn-wrapper-student:hover > div:first-child,
+    .interactive-btn-wrapper-student:hover > button {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2) !important;
+    }
+    .interactive-btn-wrapper-class:hover > div:first-child,
+    .interactive-btn-wrapper-class:hover > button {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2) !important;
+    }
+    .interactive-btn-wrapper-school:hover > div:first-child,
+    .interactive-btn-wrapper-school:hover > button {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.2) !important;
+    }
     /* Spotlight system styles moved to assets/css/spotlight-system.css */
   </style>
 
@@ -2625,11 +2640,31 @@ flowchart LR
     }
     
     // Student View Modal Functions
+    let studentSpotlightSystem = null;
+    let studentTooltipPositioner = null;
+    
     function openStudentViewModal() {
       const modal = document.getElementById('studentViewModal');
       if (!modal) return;
-      modal.style.display = 'flex';
+      modal.style.display = 'block';
       document.body.style.overflow = 'hidden';
+      
+      if (!studentSpotlightSystem) {
+        studentSpotlightSystem = new SpotlightSystem({
+          overlaySelector: '#studentModalOverlay',
+          targets: '[data-spotlight-student="status"]',
+          closeButton: '[data-spotlight-student="close"]',
+          modalSelector: '#studentViewModal',
+          padding: 14,
+          dimOpacity: 0.55
+        });
+        studentTooltipPositioner = new TooltipPositioner({
+          tooltipSelector: '.feature-tooltip',
+          padding: 10,
+          arrowSize: 6
+        });
+      }
+      studentSpotlightSystem.enable();
     }
     
     function closeStudentViewModal() {
@@ -2637,14 +2672,67 @@ flowchart LR
       if (!modal) return;
       modal.style.display = 'none';
       document.body.style.overflow = '';
+      if (studentSpotlightSystem) studentSpotlightSystem.disable();
+      document.querySelectorAll('#studentViewModal .feature-tooltip').forEach(tooltip => {
+        tooltip.style.display = 'none';
+      });
+    }
+    
+    function toggleStudentTooltip(tooltipId) {
+      const tooltip = document.getElementById(tooltipId);
+      if (!tooltip) return;
+      const isVisible = tooltip.style.display === 'block';
+      document.querySelectorAll('#studentViewModal .feature-tooltip').forEach(t => {
+        if (t.id !== tooltipId) t.style.display = 'none';
+      });
+      tooltip.style.transform = 'none';
+      tooltip.style.animation = 'none';
+      if (!isVisible) {
+        tooltip.style.display = 'none';
+        const wrapper = tooltip.closest('.interactive-btn-wrapper-student');
+        if (wrapper) {
+          const trigger = wrapper.querySelector('[data-spotlight-student]');
+          if (trigger && studentTooltipPositioner) {
+            studentTooltipPositioner.positionTooltip(tooltip, trigger);
+            if (studentSpotlightSystem) studentSpotlightSystem.updateHoles();
+          }
+        }
+        setTimeout(() => {
+          tooltip.style.display = 'none';
+          if (studentSpotlightSystem) studentSpotlightSystem.updateHoles();
+        }, 5000);
+      } else {
+        tooltip.style.display = 'none';
+        if (studentSpotlightSystem) studentSpotlightSystem.updateHoles();
+      }
     }
     
     // Class View Modal Functions
+    let classSpotlightSystem = null;
+    let classTooltipPositioner = null;
+    
     function openClassViewModal() {
       const modal = document.getElementById('classViewModal');
       if (!modal) return;
-      modal.style.display = 'flex';
+      modal.style.display = 'block';
       document.body.style.overflow = 'hidden';
+      
+      if (!classSpotlightSystem) {
+        classSpotlightSystem = new SpotlightSystem({
+          overlaySelector: '#classModalOverlay',
+          targets: '[data-spotlight-class="progress"]',
+          closeButton: '[data-spotlight-class="close"]',
+          modalSelector: '#classViewModal',
+          padding: 14,
+          dimOpacity: 0.55
+        });
+        classTooltipPositioner = new TooltipPositioner({
+          tooltipSelector: '.feature-tooltip',
+          padding: 10,
+          arrowSize: 6
+        });
+      }
+      classSpotlightSystem.enable();
     }
     
     function closeClassViewModal() {
@@ -2652,14 +2740,67 @@ flowchart LR
       if (!modal) return;
       modal.style.display = 'none';
       document.body.style.overflow = '';
+      if (classSpotlightSystem) classSpotlightSystem.disable();
+      document.querySelectorAll('#classViewModal .feature-tooltip').forEach(tooltip => {
+        tooltip.style.display = 'none';
+      });
+    }
+    
+    function toggleClassTooltip(tooltipId) {
+      const tooltip = document.getElementById(tooltipId);
+      if (!tooltip) return;
+      const isVisible = tooltip.style.display === 'block';
+      document.querySelectorAll('#classViewModal .feature-tooltip').forEach(t => {
+        if (t.id !== tooltipId) t.style.display = 'none';
+      });
+      tooltip.style.transform = 'none';
+      tooltip.style.animation = 'none';
+      if (!isVisible) {
+        tooltip.style.display = 'none';
+        const wrapper = tooltip.closest('.interactive-btn-wrapper-class');
+        if (wrapper) {
+          const trigger = wrapper.querySelector('[data-spotlight-class]');
+          if (trigger && classTooltipPositioner) {
+            classTooltipPositioner.positionTooltip(tooltip, trigger);
+            if (classSpotlightSystem) classSpotlightSystem.updateHoles();
+          }
+        }
+        setTimeout(() => {
+          tooltip.style.display = 'none';
+          if (classSpotlightSystem) classSpotlightSystem.updateHoles();
+        }, 5000);
+      } else {
+        tooltip.style.display = 'none';
+        if (classSpotlightSystem) classSpotlightSystem.updateHoles();
+      }
     }
     
     // School View Modal Functions
+    let schoolSpotlightSystem = null;
+    let schoolTooltipPositioner = null;
+    
     function openSchoolViewModal() {
       const modal = document.getElementById('schoolViewModal');
       if (!modal) return;
-      modal.style.display = 'flex';
+      modal.style.display = 'block';
       document.body.style.overflow = 'hidden';
+      
+      if (!schoolSpotlightSystem) {
+        schoolSpotlightSystem = new SpotlightSystem({
+          overlaySelector: '#schoolModalOverlay',
+          targets: '[data-spotlight-school="class"]',
+          closeButton: '[data-spotlight-school="close"]',
+          modalSelector: '#schoolViewModal',
+          padding: 14,
+          dimOpacity: 0.55
+        });
+        schoolTooltipPositioner = new TooltipPositioner({
+          tooltipSelector: '.feature-tooltip',
+          padding: 10,
+          arrowSize: 6
+        });
+      }
+      schoolSpotlightSystem.enable();
     }
     
     function closeSchoolViewModal() {
@@ -2667,6 +2808,39 @@ flowchart LR
       if (!modal) return;
       modal.style.display = 'none';
       document.body.style.overflow = '';
+      if (schoolSpotlightSystem) schoolSpotlightSystem.disable();
+      document.querySelectorAll('#schoolViewModal .feature-tooltip').forEach(tooltip => {
+        tooltip.style.display = 'none';
+      });
+    }
+    
+    function toggleSchoolTooltip(tooltipId) {
+      const tooltip = document.getElementById(tooltipId);
+      if (!tooltip) return;
+      const isVisible = tooltip.style.display === 'block';
+      document.querySelectorAll('#schoolViewModal .feature-tooltip').forEach(t => {
+        if (t.id !== tooltipId) t.style.display = 'none';
+      });
+      tooltip.style.transform = 'none';
+      tooltip.style.animation = 'none';
+      if (!isVisible) {
+        tooltip.style.display = 'none';
+        const wrapper = tooltip.closest('.interactive-btn-wrapper-school');
+        if (wrapper) {
+          const trigger = wrapper.querySelector('[data-spotlight-school]');
+          if (trigger && schoolTooltipPositioner) {
+            schoolTooltipPositioner.positionTooltip(tooltip, trigger);
+            if (schoolSpotlightSystem) schoolSpotlightSystem.updateHoles();
+          }
+        }
+        setTimeout(() => {
+          tooltip.style.display = 'none';
+          if (schoolSpotlightSystem) schoolSpotlightSystem.updateHoles();
+        }, 5000);
+      } else {
+        tooltip.style.display = 'none';
+        if (schoolSpotlightSystem) schoolSpotlightSystem.updateHoles();
+      }
     }
     
     document.getElementById('uploadInterfaceModal')?.addEventListener('click', function(e) {
@@ -2896,68 +3070,180 @@ flowchart LR
   </div>
   
   <!-- Student View Modal for Step 4.2 (Brief summary) -->
-  <div id="studentViewModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-[9999]" style="display: none;">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-5xl w-full mx-4 relative overflow-hidden" style="max-height: 90vh; overflow-y: auto;">
-      <div class="sticky top-0 bg-gradient-to-r from-primary to-indigo-600 text-white px-8 py-6 rounded-t-2xl z-10">
-        <div class="flex items-center justify-between">
-          <h2 class="text-2xl font-bold">Student View Interface</h2>
-          <button onclick="closeStudentViewModal()" class="text-white hover:bg-white/20 rounded-full p-2 transition-all">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
-        </div>
-        <p class="text-sm opacity-90 mt-2">Check individual student assessment completion and data quality</p>
-      </div>
-      <div class="p-8">
-        <div class="bg-gray-50 border-2 border-gray-300 rounded-lg p-6 mb-6">
-          <h3 class="font-semibold text-gray-800 mb-4">Key Elements:</h3>
-          <div class="space-y-4">
-            <div class="flex items-start gap-3">
-              <div class="w-3 h-3 rounded-full bg-blue-500 mt-1"></div>
-              <div>
-                <strong>Breadcrumb Navigation:</strong> Shows path to student (District → Group → School → Class → Student)
+  <!-- Student View Modal for Step 4.2 - WITH SPOTLIGHT SYSTEM -->
+  <div id="studentViewModal" style="display: none; position: fixed; inset: 0; z-index: 9999; padding: 2rem; overflow-y: auto;">
+    <div style="max-width: 1100px; margin: 0 auto; position: relative; z-index: 2;">
+      <div id="studentModalOverlay" style="position: fixed; inset: 0; pointer-events: none; z-index: 10000;"></div>
+      <button data-spotlight-student="close" onclick="closeStudentViewModal()" style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-center; transition: all 0.2s; z-index: 10002;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+      <div style="background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); overflow: hidden; position: relative; z-index: 10;">
+        <div class="p-8">
+          <h2 class="text-2xl font-bold text-gray-800 mb-6">Student View: Individual Assessment Data</h2>
+          <!-- Task Status Circles - Interactive -->
+          <div class="mb-6">
+            <h3 class="font-semibold text-gray-800 mb-4">Task Status Overview:</h3>
+            <div class="flex gap-4 flex-wrap">
+              <div class="interactive-btn-wrapper-student" style="position: relative;">
+                <div data-spotlight-student="status" class="flex items-center gap-2 px-4 py-2 bg-green-50 border-2 border-green-300 rounded-lg cursor-pointer" onclick="toggleStudentTooltip('tooltip-complete')">
+                  <div class="w-4 h-4 rounded-full bg-green-500"></div>
+                  <span class="text-sm font-medium">Complete: 5</span>
+                </div>
+                <div id="tooltip-complete" class="feature-tooltip" style="display: none;">
+                  <div style="font-weight: 600; margin-bottom: 4px;">✅ Complete Tasks</div>
+                  <div style="font-size: 13px; opacity: 0.9;">All questions answered correctly. Assessment fully complete.</div>
+                  <div style="position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 6px solid #1f2937;"></div>
+                </div>
               </div>
-            </div>
-            <div class="flex items-start gap-3">
-              <div class="w-3 h-3 rounded-full bg-blue-500 mt-1"></div>
-              <div>
-                <strong>Student Profile Panel:</strong> Displays student ID, school, class, and personal details
+              <div class="interactive-btn-wrapper-student" style="position: relative;">
+                <div data-spotlight-student="status" class="flex items-center gap-2 px-4 py-2 bg-yellow-50 border-2 border-yellow-300 rounded-lg cursor-pointer" onclick="toggleStudentTooltip('tooltip-incomplete')">
+                  <div class="w-4 h-4 rounded-full bg-red-500"></div>
+                  <span class="text-sm font-medium">Incomplete: 2</span>
+                </div>
+                <div id="tooltip-incomplete" class="feature-tooltip" style="display: none;">
+                  <div style="font-weight: 600; margin-bottom: 4px;">⚠️ Incomplete Tasks</div>
+                  <div style="font-size: 13px; opacity: 0.9;">Missing data or questions not answered. Needs attention.</div>
+                  <div style="position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 6px solid #1f2937;"></div>
+                </div>
               </div>
-            </div>
-            <div class="flex items-start gap-3">
-              <div class="w-3 h-3 rounded-full bg-green-500 mt-1"></div>
-              <div>
-                <strong>Task Status Overview:</strong> Shows completion status (Complete, Post-term, Incomplete, Not started) for all assessments
-              </div>
-            </div>
-            <div class="flex items-start gap-3">
-              <div class="w-3 h-3 rounded-full bg-purple-500 mt-1"></div>
-              <div>
-                <strong>Task Progress Section:</strong> Lists all tasks (ERV, CM, CWR, TGMD) with completion scores
+              <div class="interactive-btn-wrapper-student" style="position: relative;">
+                <div data-spotlight-student="status" class="flex items-center gap-2 px-4 py-2 bg-gray-50 border-2 border-gray-300 rounded-lg cursor-pointer" onclick="toggleStudentTooltip('tooltip-notstarted')">
+                  <div class="w-4 h-4 rounded-full bg-gray-400"></div>
+                  <span class="text-sm font-medium">Not Started: 1</span>
+                </div>
+                <div id="tooltip-notstarted" class="feature-tooltip" style="display: none;">
+                  <div style="font-weight: 600; margin-bottom: 4px;">⚪ Not Started</div>
+                  <div style="font-size: 13px; opacity: 0.9;">No data submitted yet. Assessment pending.</div>
+                  <div style="position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 6px solid #1f2937;"></div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-        <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded">
-          <h4 class="font-semibold text-blue-900 mb-3">💡 Status Indicators</h4>
-          <ul class="space-y-2 text-sm text-gray-700">
-            <li>• <strong>🟢 Green circle:</strong> Task complete</li>
-            <li>• <strong>🟡 Yellow circle:</strong> Post-termination data</li>
-            <li>• <strong>🔴 Red circle:</strong> Incomplete assessment</li>
-            <li>• <strong>⚪ Grey circle:</strong> Not started</li>
-          </ul>
+          <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded">
+            <h4 class="font-semibold text-blue-900 mb-3">💡 Viewing Tips</h4>
+            <ul class="space-y-2 text-sm text-gray-700">
+              <li>• Click on status circles to understand what each color means</li>
+              <li>• View detailed task progress for each assessment type (ERV, CM, CWR, TGMD)</li>
+              <li>• Check breadcrumb navigation to see student's organizational path</li>
+            </ul>
+          </div>
         </div>
       </div>
     </div>
   </div>
   
-  <!-- Class View Modal for Step 4.3 (Brief summary) -->
-  <div id="classViewModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-[9999]" style="display: none;">
-    <div class="bg-white rounded-2xl shadow-2xl max-w-5xl w-full mx-4 relative overflow-hidden" style="max-height: 90vh; overflow-y: auto;">
-      <div class="sticky top-0 bg-gradient-to-r from-primary to-indigo-600 text-white px-8 py-6 rounded-t-2xl z-10">
-        <div class="flex items-center justify-between">
+  <!-- Class View Modal for Step 4.3 - WITH SPOTLIGHT SYSTEM -->
+  <div id="classViewModal" style="display: none; position: fixed; inset: 0; z-index: 9999; padding: 2rem; overflow-y: auto;">
+    <div style="max-width: 1100px; margin: 0 auto; position: relative; z-index: 2;">
+      <div id="classModalOverlay" style="position: fixed; inset: 0; pointer-events: none; z-index: 10000;"></div>
+      <button data-spotlight-class="close" onclick="closeClassViewModal()" style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-center; transition: all 0.2s; z-index: 10002;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+      <div style="background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); overflow: hidden; position: relative; z-index: 10;">
+        <div class="p-8">
+          <h2 class="text-2xl font-bold text-gray-800 mb-6">Class View: Student Completion Heatmap</h2>
+          <!-- Set Completion Badges - Interactive -->
+          <div class="mb-6">
+            <h3 class="font-semibold text-gray-800 mb-4">Set Completion Percentages:</h3>
+            <div class="flex gap-4 flex-wrap">
+              <div class="interactive-btn-wrapper-class" style="position: relative;">
+                <div data-spotlight-class="progress" class="px-4 py-3 bg-blue-50 border-2 border-blue-300 rounded-lg cursor-pointer" onclick="toggleClassTooltip('tooltip-set1')">
+                  <div class="text-xs text-gray-600">Set 1</div>
+                  <div class="text-2xl font-bold text-blue-600">88%</div>
+                  <div class="w-full bg-gray-200 rounded-full h-2 mt-2"><div class="bg-blue-600 h-2 rounded-full" style="width: 88%"></div></div>
+                </div>
+                <div id="tooltip-set1" class="feature-tooltip" style="display: none;">
+                  <div style="font-weight: 600; margin-bottom: 4px;">📊 Set 1 Completion</div>
+                  <div style="font-size: 13px; opacity: 0.9;">88% of students have completed all Set 1 tasks (ERV, CM).</div>
+                  <div style="position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 6px solid #1f2937;"></div>
+                </div>
+              </div>
+              <div class="interactive-btn-wrapper-class" style="position: relative;">
+                <div data-spotlight-class="progress" class="px-4 py-3 bg-green-50 border-2 border-green-300 rounded-lg cursor-pointer" onclick="toggleClassTooltip('tooltip-set2')">
+                  <div class="text-xs text-gray-600">Set 2</div>
+                  <div class="text-2xl font-bold text-green-600">92%</div>
+                  <div class="w-full bg-gray-200 rounded-full h-2 mt-2"><div class="bg-green-600 h-2 rounded-full" style="width: 92%"></div></div>
+                </div>
+                <div id="tooltip-set2" class="feature-tooltip" style="display: none;">
+                  <div style="font-weight: 600; margin-bottom: 4px;">📊 Set 2 Completion</div>
+                  <div style="font-size: 13px; opacity: 0.9;">92% of students have completed all Set 2 tasks (CWR, TGMD).</div>
+                  <div style="position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 6px solid #1f2937;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded">
+            <h4 class="font-semibold text-blue-900 mb-3">💡 Class Analysis Tips</h4>
+            <ul class="space-y-2 text-sm text-gray-700">
+              <li>• Click completion badges to see what each percentage represents</li>
+              <li>• Student heatmap shows color-coded completion status for easy identification</li>
+              <li>• Click any student name to drill down to individual details</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- School View Modal for Step 4.4 - WITH SPOTLIGHT SYSTEM -->
+  <div id="schoolViewModal" style="display: none; position: fixed; inset: 0; z-index: 9999; padding: 2rem; overflow-y: auto;">
+    <div style="max-width: 1100px; margin: 0 auto; position: relative; z-index: 2;">
+      <div id="schoolModalOverlay" style="position: fixed; inset: 0; pointer-events: none; z-index: 10000;"></div>
+      <button data-spotlight-school="close" onclick="closeSchoolViewModal()" style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-center; transition: all 0.2s; z-index: 10002;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+      </button>
+      <div style="background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); overflow: hidden; position: relative; z-index: 10;">
+        <div class="p-8">
+          <h2 class="text-2xl font-bold text-gray-800 mb-6">School View: Class Summary & Progress</h2>
+          <!-- Class Progress Badges - Interactive -->
+          <div class="mb-6">
+            <h3 class="font-semibold text-gray-800 mb-4">Class Completion Summary:</h3>
+            <div class="space-y-4">
+              <div class="interactive-btn-wrapper-school" style="position: relative;">
+                <div data-spotlight-school="class" class="flex items-center justify-between p-4 bg-gradient-to-r from-blue-50 to-blue-100 border-2 border-blue-300 rounded-lg cursor-pointer" onclick="toggleSchoolTooltip('tooltip-k2a')">
+                  <div>
+                    <div class="font-bold text-lg">K2A</div>
+                    <div class="text-sm text-gray-600">25 students</div>
+                  </div>
+                  <div class="text-3xl font-bold text-blue-600">80%</div>
+                  <div class="w-48"><div class="w-full bg-gray-200 rounded-full h-3"><div class="bg-blue-600 h-3 rounded-full" style="width: 80%"></div></div></div>
+                </div>
+                <div id="tooltip-k2a" class="feature-tooltip" style="display: none;">
+                  <div style="font-weight: 600; margin-bottom: 4px;">🏫 Class K2A</div>
+                  <div style="font-size: 13px; opacity: 0.9;">80% overall completion rate across all tasks. Click to view class details.</div>
+                  <div style="position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 6px solid #1f2937;"></div>
+                </div>
+              </div>
+              <div class="interactive-btn-wrapper-school" style="position: relative;">
+                <div data-spotlight-school="class" class="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-300 rounded-lg cursor-pointer" onclick="toggleSchoolTooltip('tooltip-k2b')">
+                  <div>
+                    <div class="font-bold text-lg">K2B</div>
+                    <div class="text-sm text-gray-600">23 students</div>
+                  </div>
+                  <div class="text-3xl font-bold text-green-600">88%</div>
+                  <div class="w-48"><div class="w-full bg-gray-200 rounded-full h-3"><div class="bg-green-600 h-3 rounded-full" style="width: 88%"></div></div></div>
+                </div>
+                <div id="tooltip-k2b" class="feature-tooltip" style="display: none;">
+                  <div style="font-weight: 600; margin-bottom: 4px;">🏫 Class K2B</div>
+                  <div style="font-size: 13px; opacity: 0.9;">88% overall completion rate across all tasks. Click to view class details.</div>
+                  <div style="position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 6px solid #1f2937;"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded">
+            <h4 class="font-semibold text-blue-900 mb-3">💡 School Overview Tips</h4>
+            <ul class="space-y-2 text-sm text-gray-700">
+              <li>• Click class progress bars to understand completion rates</li>
+              <li>• Compare classes to identify those needing more support</li>
+              <li>• Click class names to drill down to student-level data</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
           <h2 class="text-2xl font-bold">Class View Interface</h2>
           <button onclick="closeClassViewModal()" class="text-white hover:bg-white/20 rounded-full p-2 transition-all">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
