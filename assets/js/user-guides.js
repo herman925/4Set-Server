@@ -1,5 +1,9 @@
 // User Guide JavaScript - Shared across all guides
 
+// Constants
+const HEADER_OFFSET = 80; // Height of sticky header in pixels
+const SCROLL_OFFSET = 150; // Offset for scroll detection (header + buffer)
+
 document.addEventListener('DOMContentLoaded', () => {
   // Initialize collapsible sections
   initCollapsibles();
@@ -100,7 +104,7 @@ function initTOC() {
   // Update active link on scroll with better accuracy
   function updateActiveTOC() {
     // Get current scroll position
-    const scrollPosition = window.scrollY + 150; // Offset for header
+    const scrollPosition = window.scrollY + SCROLL_OFFSET; // Using constant for consistency
 
     let currentSection = '';
     
@@ -123,6 +127,7 @@ function initTOC() {
         
         // Scroll the sidebar to show the active link
         const sidebar = link.closest('.sidebar');
+        // Check if link is rendered (offsetParent is null if element or ancestors have display:none)
         if (sidebar && link.offsetParent) {
           const linkTop = link.offsetTop;
           const sidebarScroll = sidebar.scrollTop;
@@ -164,10 +169,9 @@ function initSmoothScroll() {
       e.preventDefault();
       const targetSection = document.querySelector(targetId);
       if (targetSection) {
-        // Calculate offset for sticky header
-        const headerOffset = 80; // Adjust based on your header height
+        // Calculate offset for sticky header using constant
         const elementPosition = targetSection.getBoundingClientRect().top;
-        const offsetPosition = elementPosition + window.pageYOffset - headerOffset;
+        const offsetPosition = elementPosition + window.pageYOffset - HEADER_OFFSET;
 
         window.scrollTo({
           top: offsetPosition,
