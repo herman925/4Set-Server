@@ -12,28 +12,27 @@
 .sidebar-toggle {
   display: none;
   position: fixed;
-  top: 5rem;
-  left: 1rem;
+  top: 1rem;
+  left: 1.5rem;
   z-index: 100;
-  background: var(--primary);
-  color: white;
+  background: transparent;
+  color: var(--primary);
   border: none;
-  border-radius: 0.5rem;
-  padding: 0.75rem;
+  padding: 0.5rem;
   cursor: pointer;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
 }
 
 .sidebar-toggle:hover {
-  transform: scale(1.05);
-  box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
+  transform: scale(1.1);
 }
 
 .sidebar-toggle svg {
   display: block;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
+  stroke: var(--primary);
+  stroke-width: 2.5;
 }
 
 @media (max-width: 1024px) {
