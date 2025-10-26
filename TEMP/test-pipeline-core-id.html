@@ -222,12 +222,12 @@
                 </div>
                 <div id="step2" class="flex items-center p-3 bg-gray-50 rounded-lg step-pending">
                     <span class="mr-3">2️⃣</span>
-                    <span class="flex-1">Fetch JotForm submissions (:matches filter on sessionkey)</span>
+                    <span class="flex-1">Fetch JotForm submissions (converted to records)</span>
                     <span id="step2-status">⏳</span>
                 </div>
                 <div id="step3" class="flex items-center p-3 bg-gray-50 rounded-lg step-pending">
                     <span class="mr-3">3️⃣</span>
-                    <span class="flex-1">Fetch Qualtrics TGMD responses (export-poll-download)</span>
+                    <span class="flex-1">Fetch Qualtrics TGMD responses (converted to records)</span>
                     <span id="step3-status">⏳</span>
                 </div>
                 <div id="step4" class="flex items-center p-3 bg-gray-50 rounded-lg step-pending">
@@ -237,7 +237,7 @@
                 </div>
                 <div id="step5" class="flex items-center p-3 bg-gray-50 rounded-lg step-pending">
                     <span class="mr-3">5️⃣</span>
-                    <span class="flex-1">Merge JotForm + Qualtrics by Core ID</span>
+                    <span class="flex-1">Merge data by (CoreID, Grade) - No cross-grade merging</span>
                     <span id="step5-status">⏳</span>
                 </div>
                 <div id="step6" class="flex items-center p-3 bg-gray-50 rounded-lg step-pending">
@@ -551,10 +551,11 @@
             const transformedQualtrics = await transformQualtricsData(qualtricsData.responses);
             updateStep(4, 'complete', `${transformedQualtrics.length} records transformed`);
 
-            // Step 5: Merge Data
+            // Step 5: Merge Data (Grade-Aware)
             updateStep(5, 'loading');
             const mergedData = await mergeData(jotformData.jotformRecords, transformedQualtrics, coreId);
-            updateStep(5, 'complete', 'Data merged successfully');
+            const gradeCount = Object.keys(mergedData).length;
+            updateStep(5, 'complete', `Data merged into ${gradeCount} grade level(s)`);
 
             // Step 6: Validate Tasks
             updateStep(6, 'loading');
@@ -595,10 +596,11 @@
             const transformedQualtrics = await transformQualtricsData(qualtricsData.responses);
             updateStep(4, 'complete', `${transformedQualtrics.length} records transformed`);
 
-            // Step 5: Merge Data
+            // Step 5: Merge Data (Grade-Aware)
             updateStep(5, 'loading');
             const mergedData = await mergeData(jotformData.jotformRecords, transformedQualtrics, coreId);
-            updateStep(5, 'complete', 'Data merged successfully');
+            const gradeCount = Object.keys(mergedData).length;
+            updateStep(5, 'complete', `Data merged into ${gradeCount} grade level(s)`);
 
             // Step 6: Validate Tasks
             updateStep(6, 'loading');
