@@ -2304,6 +2304,9 @@ flowchart LR
   <script src="assets/js/tooltip-positioner.js"></script>
 
   <script>
+    // Global tooltip auto-hide timer registry
+    const tooltipTimers = {};
+    
     // Initialize global spotlight system
     const spotlightSystem = new SpotlightSystem({
       overlaySelector: '#modalOverlay',
@@ -2440,7 +2443,7 @@ flowchart LR
     function openUploadInterfaceModal() {
       const modal = document.getElementById('uploadInterfaceModal');
       if (!modal) return;
-      modal.style.display = 'block';
+      modal.style.display = 'flex';
       document.body.style.overflow = 'hidden';
       
       // Initialize spotlight system if not already done
@@ -2476,9 +2479,13 @@ flowchart LR
         uploadSpotlightSystem.disable();
       }
       
-      // Hide all tooltips
+      // Hide all tooltips and clear timers
       document.querySelectorAll('#uploadInterfaceModal .feature-tooltip').forEach(tooltip => {
         tooltip.style.display = 'none';
+        if (tooltipTimers[tooltip.id]) {
+          clearTimeout(tooltipTimers[tooltip.id]);
+          delete tooltipTimers[tooltip.id];
+        }
       });
     }
     
@@ -2488,28 +2495,29 @@ flowchart LR
       
       const isVisible = tooltip.style.display === 'block';
       
+      // Clear any existing auto-hide timer for this tooltip
+      if (tooltipTimers[tooltipId]) {
+        clearTimeout(tooltipTimers[tooltipId]);
+        delete tooltipTimers[tooltipId];
+      }
+      
       // Hide all other tooltips in this modal
       document.querySelectorAll('#uploadInterfaceModal .feature-tooltip').forEach(t => {
         if (t.id !== tooltipId) {
           t.style.display = 'none';
+          if (tooltipTimers[t.id]) {
+            clearTimeout(tooltipTimers[t.id]);
+            delete tooltipTimers[t.id];
+          }
         }
       });
       
-      const newDisplay = isVisible ? 'none' : 'block';
       tooltip.style.transform = 'none';
       tooltip.style.animation = 'none';
       
       if (!isVisible) {
+        // Showing tooltip: keep hidden during positioning
         tooltip.style.display = 'none';
-      } else {
-        tooltip.style.display = 'none';
-        tooltip.style.visibility = 'hidden';
-        tooltip.style.opacity = '0';
-        tooltip.style.left = '';
-        tooltip.style.top = '';
-      }
-      
-      if (!isVisible) {
         const wrapper = tooltip.closest('.interactive-btn-wrapper-upload');
         if (wrapper) {
           const trigger = wrapper.querySelector('button') || wrapper.querySelector('[data-spotlight-upload]');
@@ -2520,19 +2528,24 @@ flowchart LR
             }
           }
         }
-      } else {
-        if (uploadSpotlightSystem) {
-          uploadSpotlightSystem.updateHoles();
-        }
-      }
-      
-      if (!isVisible) {
-        setTimeout(() => {
+        // Set auto-hide timer
+        tooltipTimers[tooltipId] = setTimeout(() => {
           tooltip.style.display = 'none';
           if (uploadSpotlightSystem) {
             uploadSpotlightSystem.updateHoles();
           }
+          delete tooltipTimers[tooltipId];
         }, 5000);
+      } else {
+        // Hiding tooltip: reset all state
+        tooltip.style.display = 'none';
+        tooltip.style.visibility = 'hidden';
+        tooltip.style.opacity = '0';
+        tooltip.style.left = '';
+        tooltip.style.top = '';
+        if (uploadSpotlightSystem) {
+          uploadSpotlightSystem.updateHoles();
+        }
       }
     }
     
@@ -2579,9 +2592,13 @@ flowchart LR
         checkingSpotlightSystem.disable();
       }
       
-      // Hide all tooltips
+      // Hide all tooltips and clear timers
       document.querySelectorAll('#checkingHomeModal .feature-tooltip').forEach(tooltip => {
         tooltip.style.display = 'none';
+        if (tooltipTimers[tooltip.id]) {
+          clearTimeout(tooltipTimers[tooltip.id]);
+          delete tooltipTimers[tooltip.id];
+        }
       });
     }
     
@@ -2591,28 +2608,28 @@ flowchart LR
       
       const isVisible = tooltip.style.display === 'block';
       
+      // Clear any existing auto-hide timer for this tooltip
+      if (tooltipTimers[tooltipId]) {
+        clearTimeout(tooltipTimers[tooltipId]);
+        delete tooltipTimers[tooltipId];
+      }
+      
       // Hide all other tooltips in this modal
       document.querySelectorAll('#checkingHomeModal .feature-tooltip').forEach(t => {
         if (t.id !== tooltipId) {
           t.style.display = 'none';
+          if (tooltipTimers[t.id]) {
+            clearTimeout(tooltipTimers[t.id]);
+            delete tooltipTimers[t.id];
+          }
         }
       });
       
-      const newDisplay = isVisible ? 'none' : 'block';
       tooltip.style.transform = 'none';
       tooltip.style.animation = 'none';
       
       if (!isVisible) {
         tooltip.style.display = 'none';
-      } else {
-        tooltip.style.display = 'none';
-        tooltip.style.visibility = 'hidden';
-        tooltip.style.opacity = '0';
-        tooltip.style.left = '';
-        tooltip.style.top = '';
-      }
-      
-      if (!isVisible) {
         const wrapper = tooltip.closest('.interactive-btn-wrapper-checking');
         if (wrapper) {
           const trigger = wrapper.querySelector('button') || wrapper.querySelector('[data-spotlight-checking]');
@@ -2623,19 +2640,22 @@ flowchart LR
             }
           }
         }
-      } else {
-        if (checkingSpotlightSystem) {
-          checkingSpotlightSystem.updateHoles();
-        }
-      }
-      
-      if (!isVisible) {
-        setTimeout(() => {
+        tooltipTimers[tooltipId] = setTimeout(() => {
           tooltip.style.display = 'none';
           if (checkingSpotlightSystem) {
             checkingSpotlightSystem.updateHoles();
           }
+          delete tooltipTimers[tooltipId];
         }, 5000);
+      } else {
+        tooltip.style.display = 'none';
+        tooltip.style.visibility = 'hidden';
+        tooltip.style.opacity = '0';
+        tooltip.style.left = '';
+        tooltip.style.top = '';
+        if (checkingSpotlightSystem) {
+          checkingSpotlightSystem.updateHoles();
+        }
       }
     }
     
@@ -2675,6 +2695,7 @@ flowchart LR
       if (studentSpotlightSystem) studentSpotlightSystem.disable();
       document.querySelectorAll('#studentViewModal .feature-tooltip').forEach(tooltip => {
         tooltip.style.display = 'none';
+        if (tooltipTimers[tooltip.id]) { clearTimeout(tooltipTimers[tooltip.id]); delete tooltipTimers[tooltip.id]; }
       });
     }
     
@@ -2682,8 +2703,15 @@ flowchart LR
       const tooltip = document.getElementById(tooltipId);
       if (!tooltip) return;
       const isVisible = tooltip.style.display === 'block';
+      if (tooltipTimers[tooltipId]) {
+        clearTimeout(tooltipTimers[tooltipId]);
+        delete tooltipTimers[tooltipId];
+      }
       document.querySelectorAll('#studentViewModal .feature-tooltip').forEach(t => {
-        if (t.id !== tooltipId) t.style.display = 'none';
+        if (t.id !== tooltipId) {
+          t.style.display = 'none';
+          if (tooltipTimers[t.id]) { clearTimeout(tooltipTimers[t.id]); delete tooltipTimers[t.id]; }
+        }
       });
       tooltip.style.transform = 'none';
       tooltip.style.animation = 'none';
@@ -2697,12 +2725,17 @@ flowchart LR
             if (studentSpotlightSystem) studentSpotlightSystem.updateHoles();
           }
         }
-        setTimeout(() => {
+        tooltipTimers[tooltipId] = setTimeout(() => {
           tooltip.style.display = 'none';
           if (studentSpotlightSystem) studentSpotlightSystem.updateHoles();
+          delete tooltipTimers[tooltipId];
         }, 5000);
       } else {
         tooltip.style.display = 'none';
+        tooltip.style.visibility = 'hidden';
+        tooltip.style.opacity = '0';
+        tooltip.style.left = '';
+        tooltip.style.top = '';
         if (studentSpotlightSystem) studentSpotlightSystem.updateHoles();
       }
     }
@@ -2743,6 +2776,7 @@ flowchart LR
       if (classSpotlightSystem) classSpotlightSystem.disable();
       document.querySelectorAll('#classViewModal .feature-tooltip').forEach(tooltip => {
         tooltip.style.display = 'none';
+        if (tooltipTimers[tooltip.id]) { clearTimeout(tooltipTimers[tooltip.id]); delete tooltipTimers[tooltip.id]; }
       });
     }
     
@@ -2750,8 +2784,15 @@ flowchart LR
       const tooltip = document.getElementById(tooltipId);
       if (!tooltip) return;
       const isVisible = tooltip.style.display === 'block';
+      if (tooltipTimers[tooltipId]) {
+        clearTimeout(tooltipTimers[tooltipId]);
+        delete tooltipTimers[tooltipId];
+      }
       document.querySelectorAll('#classViewModal .feature-tooltip').forEach(t => {
-        if (t.id !== tooltipId) t.style.display = 'none';
+        if (t.id !== tooltipId) {
+          t.style.display = 'none';
+          if (tooltipTimers[t.id]) { clearTimeout(tooltipTimers[t.id]); delete tooltipTimers[t.id]; }
+        }
       });
       tooltip.style.transform = 'none';
       tooltip.style.animation = 'none';
@@ -2765,12 +2806,17 @@ flowchart LR
             if (classSpotlightSystem) classSpotlightSystem.updateHoles();
           }
         }
-        setTimeout(() => {
+        tooltipTimers[tooltipId] = setTimeout(() => {
           tooltip.style.display = 'none';
           if (classSpotlightSystem) classSpotlightSystem.updateHoles();
+          delete tooltipTimers[tooltipId];
         }, 5000);
       } else {
         tooltip.style.display = 'none';
+        tooltip.style.visibility = 'hidden';
+        tooltip.style.opacity = '0';
+        tooltip.style.left = '';
+        tooltip.style.top = '';
         if (classSpotlightSystem) classSpotlightSystem.updateHoles();
       }
     }
@@ -2811,6 +2857,7 @@ flowchart LR
       if (schoolSpotlightSystem) schoolSpotlightSystem.disable();
       document.querySelectorAll('#schoolViewModal .feature-tooltip').forEach(tooltip => {
         tooltip.style.display = 'none';
+        if (tooltipTimers[tooltip.id]) { clearTimeout(tooltipTimers[tooltip.id]); delete tooltipTimers[tooltip.id]; }
       });
     }
     
@@ -2818,8 +2865,15 @@ flowchart LR
       const tooltip = document.getElementById(tooltipId);
       if (!tooltip) return;
       const isVisible = tooltip.style.display === 'block';
+      if (tooltipTimers[tooltipId]) {
+        clearTimeout(tooltipTimers[tooltipId]);
+        delete tooltipTimers[tooltipId];
+      }
       document.querySelectorAll('#schoolViewModal .feature-tooltip').forEach(t => {
-        if (t.id !== tooltipId) t.style.display = 'none';
+        if (t.id !== tooltipId) {
+          t.style.display = 'none';
+          if (tooltipTimers[t.id]) { clearTimeout(tooltipTimers[t.id]); delete tooltipTimers[t.id]; }
+        }
       });
       tooltip.style.transform = 'none';
       tooltip.style.animation = 'none';
@@ -2833,12 +2887,17 @@ flowchart LR
             if (schoolSpotlightSystem) schoolSpotlightSystem.updateHoles();
           }
         }
-        setTimeout(() => {
+        tooltipTimers[tooltipId] = setTimeout(() => {
           tooltip.style.display = 'none';
           if (schoolSpotlightSystem) schoolSpotlightSystem.updateHoles();
+          delete tooltipTimers[tooltipId];
         }, 5000);
       } else {
         tooltip.style.display = 'none';
+        tooltip.style.visibility = 'hidden';
+        tooltip.style.opacity = '0';
+        tooltip.style.left = '';
+        tooltip.style.top = '';
         if (schoolSpotlightSystem) schoolSpotlightSystem.updateHoles();
       }
     }
@@ -2865,9 +2924,9 @@ flowchart LR
   </script>
   
   <!-- Upload Interface Modal for Step 2.2 - WITH SPOTLIGHT SYSTEM -->
-  <div id="uploadInterfaceModal" style="display: none; position: fixed; inset: 0; z-index: 9999; padding: 2rem; overflow-y: auto;">
+  <div id="uploadInterfaceModal" style="display: none; position: fixed; inset: 0; z-index: 9999; align-items: center; justify-content: center;">
     
-    <div style="max-width: 1200px; margin: 0 auto; position: relative; z-index: 2;">
+    <div style="max-width: 1200px; width: 100%; max-height: 90vh; overflow-y: auto; position: relative; z-index: 2; margin: 2rem;">
       <!-- Dimming overlay -->
       <div id="uploadModalOverlay" style="position: fixed; inset: 0; pointer-events: none; z-index: 10000;"></div>
       
