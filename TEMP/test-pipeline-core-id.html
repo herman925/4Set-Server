@@ -281,6 +281,15 @@
                 </div>
             </div>
 
+            <!-- TGMD Qualtrics Data Section -->
+            <div class="glass-card p-6 mb-6" id="tgmdQualtricsSection" style="display: none;">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">🎯 TGMD Data from Qualtrics</h2>
+                <p class="text-sm text-gray-600 mb-4">Exclusive view of TGMD assessment data retrieved from Qualtrics, showing raw field values and validation results.</p>
+                <div id="tgmdQualtricsContent" class="space-y-4">
+                    <!-- TGMD Qualtrics data will be inserted here -->
+                </div>
+            </div>
+
             <!-- Summary Statistics -->
             <div class="glass-card p-6 mb-6">
                 <h2 class="text-xl font-semibold text-gray-800 mb-4">📈 Summary Statistics</h2>
@@ -986,6 +995,80 @@
         }
 
         // Display results - now shows separate results for each grade (K1/K2/K3)
+        // Display TGMD data from Qualtrics exclusively
+        function displayTGMDQualtricsData(data) {
+            console.log('[Test] Displaying TGMD Qualtrics data...');
+            
+            const section = document.getElementById('tgmdQualtricsSection');
+            const container = document.getElementById('tgmdQualtricsContent');
+            
+            let hasTGMDData = false;
+            container.innerHTML = '';
+            
+            // Check all Qualtrics records for TGMD fields
+            for (const response of data.transformedQualtrics) {
+                const tgmdFields = {};
+                
+                // Extract all TGMD fields from this record
+                for (const [key, value] of Object.entries(response)) {
+                    if (key.startsWith('TGMD_') && !key.startsWith('_')) {
+                        tgmdFields[key] = value;
+                    }
+                }
+                
+                // If this record has TGMD data, display it
+                if (Object.keys(tgmdFields).length > 0) {
+                    hasTGMDData = true;
+                    
+                    const recordDate = response.recordedDate || response._meta?.startDate || 'Unknown';
+                    const grade = response.grade || (window.GradeDetector?.determineGradeFromRecordedDate(recordDate)) || 'Unknown';
+                    
+                    const recordCard = document.createElement('div');
+                    recordCard.className = 'border border-gray-200 rounded-lg p-4 bg-gray-50';
+                    recordCard.innerHTML = `
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-1 rounded bg-purple-100 text-purple-800 text-xs font-semibold">
+                                    ${grade}
+                                </span>
+                                <span class="text-sm text-gray-600">
+                                    ${new Date(recordDate).toLocaleString()}
+                                </span>
+                            </div>
+                            <span class="text-xs text-gray-500">
+                                ${Object.keys(tgmdFields).length} TGMD fields
+                            </span>
+                        </div>
+                        
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3">
+                            ${Object.entries(tgmdFields).map(([field, value]) => `
+                                <div class="text-xs">
+                                    <div class="font-mono text-gray-500 truncate" title="${field}">${field}</div>
+                                    <div class="font-semibold text-gray-800">${value !== null && value !== undefined ? value : '—'}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+                        
+                        <details class="mt-3">
+                            <summary class="text-xs text-blue-600 cursor-pointer hover:text-blue-800">View Full JSON</summary>
+                            <pre class="mt-2 text-xs bg-white p-2 rounded border border-gray-200 overflow-x-auto">${JSON.stringify(tgmdFields, null, 2)}</pre>
+                        </details>
+                    `;
+                    
+                    container.appendChild(recordCard);
+                }
+            }
+            
+            // Show/hide section based on whether TGMD data exists
+            if (hasTGMDData) {
+                section.style.display = 'block';
+                console.log('[Test] ✅ TGMD Qualtrics data displayed');
+            } else {
+                section.style.display = 'none';
+                console.log('[Test] ℹ️  No TGMD data found in Qualtrics records');
+            }
+        }
+
         function displayResults(data) {
             console.log('[Test] ========== DISPLAYING RESULTS ==========');
             
@@ -1136,6 +1219,9 @@
             document.getElementById('summary-postterm').textContent = totalPostterm;
             document.getElementById('summary-incomplete').textContent = totalIncomplete;
             document.getElementById('summary-notstarted').textContent = totalNotstarted;
+
+            // TGMD Qualtrics Section - Display TGMD data from Qualtrics exclusively
+            displayTGMDQualtricsData(data);
 
             // Debug Data - show first grade's data as example
             const firstGrade = sortedGrades[0];
