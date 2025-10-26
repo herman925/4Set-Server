@@ -9,6 +9,8 @@
   <link rel="stylesheet" href="assets/css/theme_pantone_light_1.css">
   <link rel="stylesheet" href="assets/css/global.css">
   <link rel="stylesheet" href="assets/css/user-guides.css">
+  <link rel="stylesheet" href="assets/css/spotlight-system.css">
+  <link rel="stylesheet" href="assets/css/tooltip-styles.css">
   <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -56,11 +58,33 @@
           <span class="text-gray-400">|</span>
           <h1 class="text-xl font-semibold text-gray-700">User Guide: Checking System</h1>
         </div>
-        <div class="flex items-center gap-4">
-          <a href="quick_start_guide.html" class="text-sm font-semibold text-primary hover:underline transition">🚀 Quick Start</a>
-          <a href="user_guide_uploader.html" class="text-sm text-gray-600 hover:text-primary transition">Uploader Guide</a>
-          <a href="user_guide_qualtrics.html" class="text-sm text-gray-600 hover:text-primary transition">Qualtrics Guide</a>
-          <a href="user_guide_conflicts.html" class="text-sm text-gray-600 hover:text-primary transition">Conflicts Guide</a>
+        <div class="flex items-center gap-3">
+          <a href="quick_start_guide.html" class="text-gray-600 hover:text-primary transition p-2 rounded-lg hover:bg-gray-100" title="Quick Start Guide">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 20V10"></path>
+              <path d="M18 20V4"></path>
+              <path d="M6 20v-4"></path>
+            </svg>
+          </a>
+          <a href="user_guide_uploader.html" class="text-gray-600 hover:text-primary transition p-2 rounded-lg hover:bg-gray-100" title="Assessment Uploader Guide">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+          </a>
+          <a href="guide_homepage.html" class="text-gray-600 hover:text-primary transition p-2 rounded-lg hover:bg-gray-100" title="Back to Guide Homepage">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+          </a>
+          <a href="index.html" class="text-gray-600 hover:text-primary transition p-2 rounded-lg hover:bg-gray-100" title="Back to System Home">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+          </a>
         </div>
       </div>
     </div>
@@ -474,7 +498,20 @@
 
             <p class="text-gray-700 mb-4">The Checking System homepage provides <strong>four primary navigation options</strong> to access data from different starting points, plus additional features for system management and filtering:</p>
 
-            <div class="diagram-box">
+            <div class="diagram-box homepage-layout-preview-container" style="position: relative;">
+              <!-- "See More" button - shown on hover -->
+              <button 
+                class="homepage-layout-enlarge-btn" 
+                onclick="openHomepageLayoutModal()"
+                style="position: absolute; top: 12px; right: 12px; z-index: 50; background-color: rgba(43, 57, 144, 0.95); color: white; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.2s ease; cursor: pointer; border: none;"
+                title="See More"
+              >
+                <span style="display: flex; align-items: center; gap: 6px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+                  See More
+                </span>
+              </button>
+              
               <div class="border border-gray-300 rounded p-4">
                 <div class="bg-primary text-white p-3 rounded mb-4 text-center font-bold">
                   4Set Checking System
@@ -517,6 +554,17 @@
                 </p>
               </div>
             </div>
+            
+            <style>
+              .homepage-layout-preview-container:hover .homepage-layout-enlarge-btn {
+                opacity: 1 !important;
+              }
+              .homepage-layout-enlarge-btn:hover {
+                background-color: rgba(43, 57, 144, 1) !important;
+                transform: translateY(-2px);
+                box-shadow: 0 6px 16px rgba(0,0,0,0.3) !important;
+              }
+            </style>
 
             <h3 class="text-2xl font-semibold mb-4 mt-8">Navigation Breadcrumbs</h3>
 
@@ -1068,6 +1116,56 @@ flowchart TD
               The Checking System homepage features a powerful <strong>Filter Configuration Panel</strong> that allows you to narrow down data before viewing it. This advanced filtering system works independently from the navigation hierarchy.
             </p>
 
+            <!-- Interactive Screenshot: Filter Configuration Panel -->
+            <div class="border-2 border-gray-300 rounded-lg overflow-hidden my-6 shadow-lg filter-panel-preview-container" style="position: relative;">
+              <!-- "See More" button - shown on hover -->
+              <button 
+                class="filter-panel-enlarge-btn" 
+                onclick="openFilterPanelModal()"
+                style="position: absolute; top: 12px; right: 12px; z-index: 50; background-color: rgba(43, 57, 144, 0.95); color: white; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.2s ease; cursor: pointer; border: none;"
+                title="See More"
+              >
+                <span style="display: flex; align-items: center; gap: 6px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+                  See More
+                </span>
+              </button>
+              
+              <!-- Preview of filter panel -->
+              <div style="padding: 2rem; background: linear-gradient(135deg, #e0e7ff 0%, #f3f4f6 100%);">
+                <div class="space-y-4">
+                  <div class="font-semibold text-lg text-gray-800 text-center mb-3">Filter Configuration Panel</div>
+                  <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+                    <div class="flex flex-wrap gap-2 mb-3">
+                      <span class="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold border border-blue-300">
+                        District: Shatin <button class="ml-1 hover:text-blue-900">×</button>
+                      </span>
+                      <span class="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-semibold border border-green-300">
+                        Grade: K1 <button class="ml-1 hover:text-green-900">×</button>
+                      </span>
+                    </div>
+                    <div class="border-t pt-3">
+                      <button class="px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary/90 transition">
+                        + Add Filter
+                      </button>
+                    </div>
+                  </div>
+                  <div class="text-sm text-gray-600 italic text-center">Click to see interactive filter controls</div>
+                </div>
+              </div>
+            </div>
+            
+            <style>
+              .filter-panel-preview-container:hover .filter-panel-enlarge-btn {
+                opacity: 1 !important;
+              }
+              .filter-panel-enlarge-btn:hover {
+                background-color: rgba(43, 57, 144, 1) !important;
+                transform: translateY(-2px);
+                box-shadow: 0 6px 16px rgba(0,0,0,0.3) !important;
+              }
+            </style>
+
             <h3 class="text-2xl font-semibold mb-4">Homepage Filter Panel</h3>
 
             <div class="diagram-box bg-blue-50 border-blue-300">
@@ -1278,7 +1376,20 @@ flowchart TD
             <p class="text-gray-700 mb-4">The cache status pill button appears at the top of the homepage and changes color based on the current state:</p>
 
             <!-- Visual Demo of Cache Status Pills -->
-            <div class="bg-gray-50 p-6 rounded-lg border-2 border-gray-200 mb-6">
+            <div class="bg-gray-50 p-6 rounded-lg border-2 border-gray-200 mb-6 cache-status-preview-container" style="position: relative;">
+              <!-- "See More" button - shown on hover -->
+              <button 
+                class="cache-status-enlarge-btn" 
+                onclick="openCacheStatusModal()"
+                style="position: absolute; top: 12px; right: 12px; z-index: 50; background-color: rgba(43, 57, 144, 0.95); color: white; padding: 8px 16px; border-radius: 8px; font-size: 14px; font-weight: 600; box-shadow: 0 4px 12px rgba(0,0,0,0.2); opacity: 0; transition: opacity 0.2s ease; cursor: pointer; border: none;"
+                title="See More"
+              >
+                <span style="display: flex; align-items: center; gap: 6px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+                  See More
+                </span>
+              </button>
+              
               <h4 class="font-semibold mb-4 text-center">Visual Guide: Cache Status Pills</h4>
               
               <div class="space-y-4">
@@ -1325,6 +1436,17 @@ flowchart TD
                 </div>
               </div>
             </div>
+            
+            <style>
+              .cache-status-preview-container:hover .cache-status-enlarge-btn {
+                opacity: 1 !important;
+              }
+              .cache-status-enlarge-btn:hover {
+                background-color: rgba(43, 57, 144, 1) !important;
+                transform: translateY(-2px);
+                box-shadow: 0 6px 16px rgba(0,0,0,0.3) !important;
+              }
+            </style>
 
             <h3 class="text-2xl font-semibold mb-4 mt-8">How to Manage the Cache</h3>
             
@@ -1889,6 +2011,159 @@ flowchart TD
 
   <!-- JavaScript for collapsible sections and navigation -->
   <script src="assets/js/user-guides.js"></script>
+  <script src="assets/js/spotlight-system.js"></script>
+  <script src="assets/js/tooltip-positioner.js"></script>
+  
+  <!-- Filter Configuration Panel Modal -->
+  <div id="filterPanelModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-[9999]" style="display: none;">
+    <div id="filterModalOverlay" class="absolute inset-0"></div>
+    <div class="bg-white rounded-2xl shadow-2xl max-w-6xl w-full mx-4 relative z-[10002]" style="max-height: 90vh; overflow-y: auto;">
+      <!-- Modal Header -->
+      <div class="sticky top-0 bg-gradient-to-r from-primary to-indigo-600 text-white px-8 py-6 rounded-t-2xl z-10">
+        <div class="flex items-center justify-between">
+          <h2 class="text-2xl font-bold">Filter Configuration Panel</h2>
+          <button 
+            onclick="closeFilterPanelModal()" 
+            data-spotlight="close"
+            class="text-white hover:bg-white/20 rounded-full p-2 transition-all hover:rotate-90"
+            title="Close"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <p class="text-sm opacity-90 mt-2">Hover over filter elements to see explanations</p>
+      </div>
+      
+      <!-- Modal Body -->
+      <div class="p-8">
+        <!-- Simulated Filter Panel Interface -->
+        <div class="border-2 border-gray-300 rounded-lg p-8 bg-gradient-to-br from-blue-50 to-gray-50 mb-6">
+          <div class="space-y-6">
+            <h3 class="text-xl font-semibold text-gray-800 text-center mb-6">Configure Filters</h3>
+            
+            <!-- Active Filters Chips -->
+            <div class="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+              <p class="text-sm font-semibold text-gray-700 mb-3">Active Filters (2)</p>
+              <div class="flex flex-wrap gap-3">
+                <div 
+                  class="filter-chip px-4 py-2 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold border-2 border-blue-300 cursor-pointer hover:shadow-lg transition-all relative"
+                  data-spotlight="button"
+                  data-tooltip-title="Filter Chip: District"
+                  data-tooltip-description="Shows active filter. Click the × button to remove this filter. Each chip represents one filter criterion applied to your data."
+                >
+                  District: Shatin
+                  <button class="ml-2 hover:text-blue-900 font-bold">×</button>
+                </div>
+                <div 
+                  class="filter-chip px-4 py-2 bg-green-100 text-green-700 rounded-full text-sm font-semibold border-2 border-green-300 cursor-pointer hover:shadow-lg transition-all relative"
+                  data-spotlight="button"
+                  data-tooltip-title="Filter Chip: Grade"
+                  data-tooltip-description="Another active filter. You can combine multiple filters to narrow down results. Click × to remove."
+                >
+                  Grade: K1
+                  <button class="ml-2 hover:text-green-900 font-bold">×</button>
+                </div>
+              </div>
+              <div class="mt-3 flex gap-3">
+                <button 
+                  class="px-3 py-1 bg-red-100 text-red-700 rounded text-xs font-semibold hover:bg-red-200 transition relative"
+                  data-spotlight="button"
+                  data-tooltip-title="Clear All Button"
+                  data-tooltip-description="Removes all active filters at once. Useful when you want to start fresh with a new filter configuration."
+                >
+                  Clear All
+                </button>
+              </div>
+            </div>
+            
+            <!-- Add Filter Controls -->
+            <div class="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
+              <div class="flex gap-4 items-center flex-wrap">
+                <select 
+                  class="filter-type-select px-4 py-2 border-2 border-gray-300 rounded-lg text-sm font-semibold cursor-pointer hover:border-primary transition-all relative"
+                  data-spotlight="button"
+                  data-tooltip-title="Filter Type Selector"
+                  data-tooltip-description="Choose which type of filter to add: District, Group, School, Class, Student, or Grade. Different types allow filtering by different organizational levels."
+                >
+                  <option>Select filter type...</option>
+                  <option>District</option>
+                  <option>Group</option>
+                  <option>School</option>
+                  <option>Class</option>
+                  <option>Student</option>
+                  <option>Grade</option>
+                </select>
+                
+                <select 
+                  class="filter-value-select px-4 py-2 border-2 border-gray-300 rounded-lg text-sm font-semibold cursor-pointer hover:border-primary transition-all relative"
+                  data-spotlight="button"
+                  data-tooltip-title="Filter Value Selector"
+                  data-tooltip-description="After selecting a filter type, choose the specific value here. For example, if you chose 'District', you can select 'Shatin', 'Tuen Mun', etc."
+                >
+                  <option>Select value...</option>
+                  <option>Shatin</option>
+                  <option>Sham Shui Po</option>
+                  <option>Kowloon City</option>
+                </select>
+                
+                <button 
+                  class="add-filter-btn px-6 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary/90 transition-all shadow-md hover:shadow-lg relative"
+                  data-spotlight="button"
+                  data-tooltip-title="Add Filter Button"
+                  data-tooltip-description="Click to add the configured filter to your active filters list. The new filter chip will appear above."
+                >
+                  + Add Filter
+                </button>
+              </div>
+            </div>
+            
+            <!-- Start Checking Button -->
+            <div class="text-center pt-4">
+              <button 
+                class="start-checking-btn px-8 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl text-base font-bold hover:shadow-xl transition-all relative"
+                data-spotlight="button"
+                data-tooltip-title="Start Checking Button"
+                data-tooltip-description="After configuring your filters, click this button to apply them and view the filtered data. Results will show only records matching ALL active filters."
+              >
+                🚀 Start Checking
+              </button>
+            </div>
+            
+            <!-- Help Icon -->
+            <div class="flex justify-center mt-4">
+              <button 
+                class="help-icon p-3 rounded-full bg-gray-100 hover:bg-gray-200 transition-all relative"
+                data-spotlight="help"
+                data-tooltip-title="Help Icon"
+                data-tooltip-description="Click for filtering tips, examples, and troubleshooting"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <circle cx="12" cy="12" r="10"></circle>
+                  <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                  <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Instructions -->
+        <div class="bg-blue-50 border-l-4 border-blue-500 p-6 rounded">
+          <h4 class="font-semibold text-blue-900 mb-3">💡 Quick Filtering Tips</h4>
+          <ul class="list-disc ml-6 space-y-2 text-sm text-gray-700">
+            <li><strong>Multiple Filters:</strong> Add multiple filters to create complex queries (e.g., "K1 students in Shatin district")</li>
+            <li><strong>Filter Hierarchy:</strong> District and Group filters are independent; School/Class/Student are hierarchical</li>
+            <li><strong>Remove Filters:</strong> Click × on any filter chip to remove it, or use "Clear All" to start fresh</li>
+            <li><strong>Apply Filters:</strong> Click "Start Checking" to view filtered results</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  
   <script>
     // Guide-specific customizations can go here
     document.addEventListener('DOMContentLoaded', () => {
@@ -1901,6 +2176,496 @@ flowchart TD
         });
       }, 100);
     });
+    
+    // Filter Panel Modal Functions
+    let filterPanelSpotlight = null;
+    let filterPanelTooltipPositioner = null;
+    
+    function openFilterPanelModal() {
+      const modal = document.getElementById('filterPanelModal');
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+      
+      // Initialize spotlight system
+      setTimeout(() => {
+        filterPanelSpotlight = new SpotlightSystem({
+          overlaySelector: '#filterModalOverlay',
+          targets: '[data-spotlight="button"], [data-spotlight="help"]',
+          closeButton: '[data-spotlight="close"]',
+          modalSelector: '#filterPanelModal',
+          padding: 14,
+          dimOpacity: 0.55
+        });
+        filterPanelSpotlight.enable();
+        
+        // Initialize tooltip positioner
+        filterPanelTooltipPositioner = new TooltipPositioner({
+          tooltipSelector: '.feature-tooltip',
+          padding: 10
+        });
+        
+        // Add hover listeners for tooltips
+        const spotlightElements = document.querySelectorAll('#filterPanelModal [data-spotlight="button"], #filterPanelModal [data-spotlight="help"]');
+        spotlightElements.forEach(el => {
+          el.addEventListener('mouseenter', function() {
+            showFilterPanelTooltip(this);
+          });
+          el.addEventListener('mouseleave', function() {
+            hideFilterPanelTooltip(this);
+          });
+        });
+      }, 100);
+    }
+    
+    function closeFilterPanelModal() {
+      const modal = document.getElementById('filterPanelModal');
+      modal.style.display = 'none';
+      document.body.style.overflow = '';
+      
+      // Cleanup spotlight
+      if (filterPanelSpotlight) {
+        filterPanelSpotlight.disable();
+        filterPanelSpotlight = null;
+      }
+      
+      // Remove all tooltips
+      document.querySelectorAll('.feature-tooltip').forEach(tooltip => tooltip.remove());
+    }
+    
+    function showFilterPanelTooltip(element) {
+      const title = element.getAttribute('data-tooltip-title');
+      const description = element.getAttribute('data-tooltip-description');
+      
+      if (!title || !description) return;
+      
+      // Create tooltip
+      const tooltip = document.createElement('div');
+      tooltip.className = 'feature-tooltip';
+      tooltip.id = `tooltip-${Math.random().toString(36).substr(2, 9)}`;
+      tooltip.innerHTML = `
+        <div>${title}</div>
+        <div>${description}</div>
+      `;
+      tooltip.style.display = 'none';
+      
+      document.body.appendChild(tooltip);
+      
+      // Position tooltip
+      if (filterPanelTooltipPositioner) {
+        filterPanelTooltipPositioner.positionTooltip(tooltip, element);
+      }
+      
+      // Show tooltip with fade-in
+      setTimeout(() => {
+        tooltip.style.display = 'block';
+        tooltip.style.visibility = 'visible';
+        tooltip.style.opacity = '1';
+      }, 50);
+      
+      // Store tooltip reference
+      element._activeTooltip = tooltip;
+    }
+    
+    function hideFilterPanelTooltip(element) {
+      if (element._activeTooltip) {
+        element._activeTooltip.remove();
+        element._activeTooltip = null;
+      }
+    }
+    
+    // Close modal on escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.getElementById('filterPanelModal').style.display === 'flex') {
+        closeFilterPanelModal();
+      }
+    });
+    
+    // Close modal on overlay click
+    document.getElementById('filterModalOverlay')?.addEventListener('click', closeFilterPanelModal);
+    
+    // ========== Cache Status Modal Functions ==========
+    let cacheStatusSpotlight = null;
+    let cacheStatusTooltipPositioner = null;
+    
+    function openCacheStatusModal() {
+      // First, create the modal if it doesn't exist
+      if (!document.getElementById('cacheStatusModal')) {
+        const modalHTML = `
+          <div id="cacheStatusModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-[9999]" style="display: none;">
+            <div id="cacheModalOverlay" class="absolute inset-0"></div>
+            <div class="bg-white rounded-2xl shadow-2xl max-w-5xl w-full mx-4 relative z-[10002]" style="max-height: 90vh; overflow-y: auto;">
+              <!-- Modal Header -->
+              <div class="sticky top-0 bg-gradient-to-r from-primary to-indigo-600 text-white px-8 py-6 rounded-t-2xl z-10">
+                <div class="flex items-center justify-between">
+                  <h2 class="text-2xl font-bold">Cache Status & Management</h2>
+                  <button 
+                    onclick="closeCacheStatusModal()" 
+                    data-spotlight="close"
+                    class="text-white hover:bg-white/20 rounded-full p-2 transition-all hover:rotate-90"
+                    title="Close"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                </div>
+                <p class="text-sm opacity-90 mt-2">Click on status pills to see different cache management actions</p>
+              </div>
+              
+              <!-- Modal Body -->
+              <div class="p-8">
+                <!-- Simulated Cache Status Pills -->
+                <div class="border-2 border-gray-300 rounded-lg p-8 bg-gradient-to-br from-purple-50 to-gray-50 mb-6">
+                  <div class="space-y-8">
+                    <h3 class="text-xl font-semibold text-gray-800 text-center mb-6">Cache Status Pills</h3>
+                    
+                    <!-- Red Status Pill -->
+                    <div class="flex items-center gap-6 p-6 bg-white rounded-lg shadow-lg border-l-4 border-red-500">
+                      <div class="flex-shrink-0">
+                        <button 
+                          class="cache-pill-red px-8 py-4 rounded-full bg-red-100 text-red-700 font-bold text-lg border-3 border-red-300 cursor-pointer hover:shadow-xl transition-all relative"
+                          data-spotlight="button"
+                          data-tooltip-title="Red Pill: System Not Ready"
+                          data-tooltip-description="Click this pill to build the cache for the first time. Opens a modal with 'Sync Now' button to fetch data from JotForm."
+                        >
+                          🔴 System Not Ready
+                        </button>
+                      </div>
+                      <div class="flex-1">
+                        <div class="font-semibold text-gray-800 mb-1">No cache exists</div>
+                        <div class="text-sm text-gray-600">Click to build cache and sync data from JotForm</div>
+                      </div>
+                    </div>
+                    
+                    <!-- Orange Status Pill -->
+                    <div class="flex items-center gap-6 p-6 bg-white rounded-lg shadow-lg border-l-4 border-orange-500">
+                      <div class="flex-shrink-0">
+                        <div 
+                          class="cache-pill-orange px-8 py-4 rounded-full bg-orange-100 text-orange-700 font-bold text-lg border-3 border-orange-300 relative"
+                          data-spotlight="button"
+                          data-tooltip-title="Orange Pill: Syncing"
+                          data-tooltip-description="Shows real-time sync progress. The percentage updates as data is fetched from JotForm. Do not close the page during sync."
+                        >
+                          🟠 Syncing 45%
+                        </div>
+                      </div>
+                      <div class="flex-1">
+                        <div class="font-semibold text-gray-800 mb-1">Cache is being built</div>
+                        <div class="text-sm text-gray-600">Shows real-time progress (0-100%)</div>
+                      </div>
+                    </div>
+                    
+                    <!-- Green Status Pill -->
+                    <div class="flex items-center gap-6 p-6 bg-white rounded-lg shadow-lg border-l-4 border-green-500">
+                      <div class="flex-shrink-0">
+                        <button 
+                          class="cache-pill-green px-8 py-4 rounded-full bg-green-100 text-green-700 font-bold text-lg border-3 border-green-300 cursor-pointer hover:shadow-xl transition-all relative"
+                          data-spotlight="button"
+                          data-tooltip-title="Green Pill: System Ready"
+                          data-tooltip-description="Cache is built and ready. Click to access cache management options: Delete Cache (full re-sync) or Refresh with Qualtrics (quick TGMD update)."
+                        >
+                          🟢 System Ready
+                        </button>
+                      </div>
+                      <div class="flex-1">
+                        <div class="font-semibold text-gray-800 mb-1">Cache is valid and ready</div>
+                        <div class="text-sm text-gray-600">Click to refresh cache or delete cache</div>
+                      </div>
+                    </div>
+                    
+                    <!-- Help Icon -->
+                    <div class="flex justify-center mt-8">
+                      <button 
+                        class="help-icon p-4 rounded-full bg-gray-100 hover:bg-gray-200 transition-all relative"
+                        data-spotlight="help"
+                        data-tooltip-title="Help Icon"
+                        data-tooltip-description="Click for cache management help, troubleshooting tips, and expiration policy"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                          <circle cx="12" cy="12" r="10"></circle>
+                          <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Instructions -->
+                <div class="bg-purple-50 border-l-4 border-purple-500 p-6 rounded">
+                  <h4 class="font-semibold text-purple-900 mb-3">💡 Cache Management Tips</h4>
+                  <ul class="list-disc ml-6 space-y-2 text-sm text-gray-700">
+                    <li><strong>First-time setup:</strong> Click red pill → Sync Now → Wait for green (60-90 seconds)</li>
+                    <li><strong>Refresh data:</strong> Click green pill → Delete Cache → Re-sync for latest data</li>
+                    <li><strong>Quick TGMD update:</strong> Click green pill → Refresh with Qualtrics (20-30 seconds)</li>
+                    <li><strong>Cache expiration:</strong> Submissions cache expires after 1 hour automatically</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Add close handler for overlay
+        document.getElementById('cacheModalOverlay')?.addEventListener('click', closeCacheStatusModal);
+      }
+      
+      const modal = document.getElementById('cacheStatusModal');
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+      
+      // Initialize spotlight system
+      setTimeout(() => {
+        cacheStatusSpotlight = new SpotlightSystem({
+          overlaySelector: '#cacheModalOverlay',
+          targets: '[data-spotlight="button"], [data-spotlight="help"]',
+          closeButton: '[data-spotlight="close"]',
+          modalSelector: '#cacheStatusModal',
+          padding: 14,
+          dimOpacity: 0.55
+        });
+        cacheStatusSpotlight.enable();
+        
+        // Initialize tooltip positioner
+        cacheStatusTooltipPositioner = new TooltipPositioner({
+          tooltipSelector: '.feature-tooltip',
+          padding: 10
+        });
+        
+        // Add hover listeners for tooltips
+        const spotlightElements = document.querySelectorAll('#cacheStatusModal [data-spotlight="button"], #cacheStatusModal [data-spotlight="help"]');
+        spotlightElements.forEach(el => {
+          el.addEventListener('mouseenter', function() {
+            showCacheStatusTooltip(this);
+          });
+          el.addEventListener('mouseleave', function() {
+            hideCacheStatusTooltip(this);
+          });
+        });
+      }, 100);
+    }
+    
+    function closeCacheStatusModal() {
+      const modal = document.getElementById('cacheStatusModal');
+      if (!modal) return;
+      
+      modal.style.display = 'none';
+      document.body.style.overflow = '';
+      
+      // Cleanup spotlight
+      if (cacheStatusSpotlight) {
+        cacheStatusSpotlight.disable();
+        cacheStatusSpotlight = null;
+      }
+      
+      // Remove all tooltips
+      document.querySelectorAll('.feature-tooltip').forEach(tooltip => tooltip.remove());
+    }
+    
+    function showCacheStatusTooltip(element) {
+      const title = element.getAttribute('data-tooltip-title');
+      const description = element.getAttribute('data-tooltip-description');
+      
+      if (!title || !description) return;
+      
+      // Create tooltip
+      const tooltip = document.createElement('div');
+      tooltip.className = 'feature-tooltip';
+      tooltip.id = `tooltip-${Math.random().toString(36).substr(2, 9)}`;
+      tooltip.innerHTML = `
+        <div>${title}</div>
+        <div>${description}</div>
+      `;
+      tooltip.style.display = 'none';
+      
+      document.body.appendChild(tooltip);
+      
+      // Position tooltip
+      if (cacheStatusTooltipPositioner) {
+        cacheStatusTooltipPositioner.positionTooltip(tooltip, element);
+      }
+      
+      // Show tooltip with fade-in
+      setTimeout(() => {
+        tooltip.style.display = 'block';
+        tooltip.style.visibility = 'visible';
+        tooltip.style.opacity = '1';
+      }, 50);
+      
+      // Store tooltip reference
+      element._activeTooltip = tooltip;
+    }
+    
+    function hideCacheStatusTooltip(element) {
+      if (element._activeTooltip) {
+        element._activeTooltip.remove();
+        element._activeTooltip = null;
+      }
+    }
+    
+    // Handle escape key for cache status modal
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && document.getElementById('cacheStatusModal')?.style.display === 'flex') {
+        closeCacheStatusModal();
+      }
+      if (e.key === 'Escape' && document.getElementById('homepageLayoutModal')?.style.display === 'flex') {
+        closeHomepageLayoutModal();
+      }
+    });
+    
+    // Homepage Layout Modal Functions
+    function openHomepageLayoutModal() {
+      const modal = document.getElementById('homepageLayoutModal');
+      if (!modal) return;
+      modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+    }
+    
+    function closeHomepageLayoutModal() {
+      const modal = document.getElementById('homepageLayoutModal');
+      if (!modal) return;
+      modal.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+    
+    document.getElementById('homepageLayoutModal')?.addEventListener('click', function(e) {
+      if (e.target === this) closeHomepageLayoutModal();
+    });
   </script>
+  
+  <!-- Homepage Layout Modal - 1:1 Replica of Checking System Homepage -->
+  <div id="homepageLayoutModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-[9999]" style="display: none;">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-7xl w-full mx-4 relative overflow-hidden" style="max-height: 95vh; overflow-y: auto;">
+      <div class="sticky top-0 bg-gradient-to-r from-primary to-indigo-600 text-white px-8 py-6 rounded-t-2xl z-10">
+        <div class="flex items-center justify-between">
+          <h2 class="text-2xl font-bold">Checking System Homepage - Full Interface</h2>
+          <button onclick="closeHomepageLayoutModal()" class="text-white hover:bg-white/20 rounded-full p-2 transition-all">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="18" y1="6" x2="6" y2="18"></line>
+              <line x1="6" y1="6" x2="18" y2="18"></line>
+            </svg>
+          </button>
+        </div>
+        <p class="text-sm opacity-90 mt-2">Complete homepage layout showing all navigation options and filter controls</p>
+      </div>
+      <div class="p-8 bg-gray-50">
+        <!-- 1:1 Replica of Checking System Homepage -->
+        <div class="bg-white rounded-lg p-6 shadow-sm">
+          <!-- Header -->
+          <div class="mb-6">
+            <h1 class="text-3xl font-bold text-gray-800 mb-2 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#4A90E2" stroke-width="2">
+                <circle cx="11" cy="11" r="8"></circle>
+                <path d="m21 21-4.35-4.35"></path>
+                <path d="M9 11l2 2 4-4"></path>
+              </svg>
+              Checking System
+            </h1>
+            <p class="text-gray-600 text-lg">Search and analyse submitted data from every angle</p>
+          </div>
+          
+          <!-- System Status & Cache Management -->
+          <div class="bg-gray-50 rounded-lg p-4 mb-6 border border-gray-200">
+            <div class="text-sm font-semibold text-gray-600 mb-3">System Status & Cache Management</div>
+            <div class="flex gap-3 flex-wrap">
+              <div class="flex items-center gap-2 bg-green-100 text-green-700 px-4 py-2 rounded-full text-sm font-semibold border-2 border-green-300 cursor-pointer hover:bg-green-200">
+                <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+                <span>🟢 System Ready</span>
+              </div>
+              <span class="text-sm text-gray-500 flex items-center">Last Synced: <span class="font-mono ml-2">2 mins ago</span></span>
+            </div>
+          </div>
+          
+          <!-- Filter Configuration Panel -->
+          <div class="bg-blue-50 rounded-lg p-5 mb-6 border-2 border-blue-200">
+            <div class="text-base font-semibold text-gray-700 mb-3">Filter Configuration Panel</div>
+            <div class="bg-white rounded p-4 mb-4 border border-gray-300">
+              <div class="text-sm text-gray-500 mb-3">No filters applied</div>
+              <div class="space-y-2">
+                <div class="flex gap-3">
+                  <select class="flex-1 px-3 py-2 border border-gray-300 rounded text-sm">
+                    <option>Select filter type...</option>
+                    <option>District</option>
+                    <option>Group</option>
+                    <option>School</option>
+                    <option>Class</option>
+                    <option>Student</option>
+                    <option>Grade</option>
+                  </select>
+                  <select class="flex-1 px-3 py-2 border border-gray-300 rounded text-sm">
+                    <option>Select value...</option>
+                  </select>
+                </div>
+                <button class="text-sm font-medium text-blue-600 hover:text-blue-700 flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="16"></line>
+                    <line x1="8" y1="12" x2="16" y2="12"></line>
+                  </svg>
+                  Add filter
+                </button>
+              </div>
+            </div>
+            <div class="flex gap-3 justify-end">
+              <button class="bg-gray-200 text-gray-700 px-5 py-2 rounded-full text-sm font-semibold hover:bg-gray-300">Clear All</button>
+              <button class="bg-blue-600 text-white px-6 py-2 rounded-full text-sm font-semibold hover:bg-blue-700">Start Checking</button>
+            </div>
+          </div>
+          
+          <!-- Navigation Options -->
+          <div class="mb-6">
+            <div class="font-semibold text-gray-700 mb-3 text-lg">Navigation Options:</div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div class="border-2 border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition">
+                <div class="flex items-center gap-3">
+                  <div class="text-3xl">📊</div>
+                  <div>
+                    <div class="font-semibold text-gray-800">District View</div>
+                    <div class="text-sm text-gray-600">View by district (Shatin, etc.)</div>
+                  </div>
+                </div>
+              </div>
+              <div class="border-2 border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition">
+                <div class="flex items-center gap-3">
+                  <div class="text-3xl">👥</div>
+                  <div>
+                    <div class="font-semibold text-gray-800">Group View</div>
+                    <div class="text-sm text-gray-600">View by project group (1-5)</div>
+                  </div>
+                </div>
+              </div>
+              <div class="border-2 border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition">
+                <div class="flex items-center gap-3">
+                  <div class="text-3xl">🏫</div>
+                  <div>
+                    <div class="font-semibold text-gray-800">School View</div>
+                    <div class="text-sm text-gray-600">View individual schools</div>
+                  </div>
+                </div>
+              </div>
+              <div class="border-2 border-gray-200 rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition">
+                <div class="flex items-center gap-3">
+                  <div class="text-3xl">👨‍🎓</div>
+                  <div>
+                    <div class="font-semibold text-gray-800">Student Search</div>
+                    <div class="text-sm text-gray-600">Direct student lookup</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Recent Checks -->
+          <div class="bg-gray-50 rounded-lg p-5 border border-gray-200">
+            <div class="text-sm font-semibold text-gray-600 mb-2">Recent Checks</div>
+            <div class="text-sm text-gray-500">Quick access to previously viewed data</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 </html>
