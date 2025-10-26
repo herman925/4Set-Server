@@ -40,6 +40,11 @@
     display: block;
   }
 
+  /* Add left padding to header to prevent overlap with hamburger menu */
+  header .container {
+    padding-left: 5rem !important;
+  }
+
   .sidebar {
     position: fixed;
     left: -280px;
