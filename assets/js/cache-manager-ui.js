@@ -1158,20 +1158,7 @@
         // Force fetch (clear cache first)
         await window.JotFormCache.clearCache();
         
-        // Step 1: Fetch all submissions from JotForm API (0-50%)
-        console.log('[CacheUI] Calling getAllSubmissions...');
-        modalTitle.textContent = 'Syncing Database';
-        modalMessage.textContent = 'Fetching student data... (Status details shown below)';
-        // Progress bars will be updated by the callback
-        
-        // This waits for IndexedDB write to fully complete
-        const result = await window.JotFormCache.getAllSubmissions({
-          formId: credentials.jotformFormId || credentials.formId,
-          apiKey: credentials.jotformApiKey || credentials.apiKey
-        });
-        console.log('[CacheUI] getAllSubmissions returned:', result ? result.length : 0, 'submissions');
-        
-        // Step 1.5: Fetch and merge Qualtrics data if credentials available (50-70%)
+        // Check if Qualtrics credentials are available
         // Support both qualtricsApiToken and qualtricsApiKey for backwards compatibility
         const qualtricsApiToken = credentials.qualtricsApiToken || credentials.qualtricsApiKey;
         const hasQualtricsCredentials = qualtricsApiToken && 
@@ -1183,8 +1170,14 @@
           credentials.qualtricsApiToken = qualtricsApiToken;
         }
         
+        modalTitle.textContent = 'Syncing Database';
+        modalMessage.textContent = 'Fetching student data... (status details shown below)';
+        
+        // Step 1: Fetch data (0-70%)
+        // If Qualtrics credentials are available, use PARALLEL fetch (JotForm + Qualtrics simultaneously)
+        // Otherwise, fetch JotForm only
         if (hasQualtricsCredentials) {
-          console.log('[CacheUI] Qualtrics credentials found, fetching TGMD data...');
+          console.log('[CacheUI] Qualtrics credentials found, using PARALLEL fetch...');
           
           try {
             // Check if modules are loaded
@@ -1192,28 +1185,56 @@
                 typeof window.QualtricsTransformer !== 'undefined' && 
                 typeof window.DataMerger !== 'undefined') {
               
-              // refreshWithQualtrics will handle dual progress bars automatically
-              // through the callback set up above
+              // refreshWithQualtrics will handle PARALLEL fetch and dual progress bars
+              // JotForm and Qualtrics will fetch simultaneously using Promise.all
               const qualtricsResult = await window.JotFormCache.refreshWithQualtrics(credentials);
-              console.log('[CacheUI] Qualtrics data merged successfully');
+              console.log('[CacheUI] Parallel fetch and merge complete');
               
-              // Ensure we're at 70% after Qualtrics
+              // Ensure we're at 70% after parallel fetch
               if (maxProgress < 70) {
                 maxProgress = 70;
-                if (modalMessage) modalMessage.textContent = 'JotForm and Qualtrics data merged successfully!';
+                if (modalMessage) modalMessage.textContent = 'Parallel fetch complete - data merged successfully!';
               }
             } else {
-              console.warn('[CacheUI] Qualtrics modules not loaded, skipping Qualtrics sync');
+              console.warn('[CacheUI] Qualtrics modules not loaded, falling back to JotForm only');
+              
+              // Fallback to JotForm only
+              const result = await window.JotFormCache.getAllSubmissions({
+                formId: credentials.jotformFormId || credentials.formId,
+                apiKey: credentials.jotformApiKey || credentials.apiKey
+              });
+              console.log('[CacheUI] getAllSubmissions returned:', result ? result.length : 0, 'submissions');
+              
               maxProgress = 70;
               if (modalMessage) modalMessage.textContent = 'JotForm data cached (Qualtrics modules not loaded)';
             }
-          } catch (qualtricsError) {
-            console.error('[CacheUI] Qualtrics sync failed, continuing with JotForm data only:', qualtricsError);
-            maxProgress = 70;
-            if (modalMessage) modalMessage.textContent = 'JotForm data cached (Qualtrics sync failed)';
+          } catch (fetchError) {
+            console.error('[CacheUI] Parallel fetch failed, falling back to JotForm only:', fetchError);
+            
+            // Fallback to JotForm only
+            try {
+              const result = await window.JotFormCache.getAllSubmissions({
+                formId: credentials.jotformFormId || credentials.formId,
+                apiKey: credentials.jotformApiKey || credentials.apiKey
+              });
+              console.log('[CacheUI] getAllSubmissions returned:', result ? result.length : 0, 'submissions');
+              
+              maxProgress = 70;
+              if (modalMessage) modalMessage.textContent = 'JotForm data cached (Qualtrics sync failed)';
+            } catch (jotformError) {
+              throw jotformError; // Rethrow if even JotForm fails
+            }
           }
         } else {
-          console.log('[CacheUI] No Qualtrics credentials found, using JotForm data only');
+          console.log('[CacheUI] No Qualtrics credentials found, using JotForm only');
+          
+          // Fetch JotForm only (sequential, no parallel fetch needed)
+          const result = await window.JotFormCache.getAllSubmissions({
+            formId: credentials.jotformFormId || credentials.formId,
+            apiKey: credentials.jotformApiKey || credentials.apiKey
+          });
+          console.log('[CacheUI] getAllSubmissions returned:', result ? result.length : 0, 'submissions');
+          
           maxProgress = 70;
           if (modalMessage) modalMessage.textContent = 'JotForm data cached';
         }
