@@ -821,6 +821,19 @@
   function renderTGMDResults(tbody, tgmdScoring, taskElement) {
     console.log('[StudentPage] Rendering TGMD grouped results');
     
+    // Validate tgmdScoring object
+    if (!tgmdScoring || !tgmdScoring.byTask) {
+      console.error('[StudentPage] ❌ Invalid tgmdScoring object:', tgmdScoring);
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="4" class="py-4 px-2 text-center text-red-600">
+            Error: TGMD scoring data is invalid or missing
+          </td>
+        </tr>
+      `;
+      return;
+    }
+    
     // Update table headers for TGMD-specific columns
     const thead = taskElement.querySelector('table thead tr');
     if (thead) {
@@ -831,6 +844,22 @@
         <th class="text-left font-medium pb-2 px-2">Result</th>
       `;
     }
+    
+    // Check if we have any tasks to render
+    const taskCount = Object.keys(tgmdScoring.byTask).length;
+    if (taskCount === 0) {
+      console.warn('[StudentPage] ⚠️ No TGMD tasks found in scoring data');
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="4" class="py-4 px-2 text-center text-[color:var(--muted-foreground)]">
+            No TGMD task data available
+          </td>
+        </tr>
+      `;
+      return;
+    }
+    
+    console.log(`[StudentPage] Rendering ${taskCount} TGMD motor tasks`);
     
     // Iterate through each motor task (hop, long_jump, slide, etc.)
     for (const [taskName, taskData] of Object.entries(tgmdScoring.byTask)) {
@@ -999,7 +1028,26 @@
       tbody.innerHTML = '';
       
       // Check if this is TGMD task with special scoring
-      if (taskId === 'tgmd' && validation.tgmdScoring) {
+      if (taskId === 'tgmd') {
+        if (!validation.tgmdScoring) {
+          console.warn('[StudentPage] ⚠️ TGMD task found but tgmdScoring is missing!');
+          console.log('[StudentPage] Validation object:', validation);
+          // Show error message in table
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="4" class="py-8 px-4 text-center">
+                <i data-lucide="alert-triangle" class="w-12 h-12 mx-auto text-amber-500 mb-4"></i>
+                <p class="text-[color:var(--foreground)] font-semibold mb-2">TGMD Data Not Available</p>
+                <p class="text-[color:var(--muted-foreground)] text-sm">TGMD scoring data could not be loaded. Please check if the student has completed this assessment.</p>
+              </td>
+            </tr>
+          `;
+          if (typeof lucide !== 'undefined') lucide.createIcons();
+          continue;
+        }
+        
+        console.log('[StudentPage] ✅ TGMD scoring data found:', validation.tgmdScoring);
+        
         // Render TGMD with grouped task display
         renderTGMDResults(tbody, validation.tgmdScoring, taskElement);
         
