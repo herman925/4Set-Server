@@ -57,6 +57,13 @@
     // Filter students: Only those with Core IDs
     students = students.filter(s => s.coreId && s.coreId.trim() !== '');
 
+    // GRADE-AWARE FILTERING: Filter students by grade to match class grade
+    // Class has numeric grade (1=K1, 2=K2, 3=K3), students have year label (K1/K2/K3)
+    const classGradeLabel = getGradeLabel(classData.grade);
+    const studentsBeforeGradeFilter = students.length;
+    students = students.filter(s => s.year === classGradeLabel);
+    console.log(`[ClassPage] Grade filter: ${studentsBeforeGradeFilter} students → ${students.length} students (class grade: ${classGradeLabel})`);
+
     console.log(`[ClassPage] Found ${students.length} students with Core IDs`);
     console.log(`[ClassPage] First 5 students in this class:`, students.slice(0, 5).map(s => ({
       name: s.studentName,
