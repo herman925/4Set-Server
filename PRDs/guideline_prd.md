@@ -45,6 +45,33 @@ The 4Set user guide system provides an interactive learning experience through a
 
 ## Architecture
 
+### **⭐ Golden Rule: Use the Flat Hierarchy Pattern**
+
+**All modals MUST follow the pattern from `quick_start_guide.html` to avoid z-index issues.**
+
+This is the **single source of truth** for modal implementation. The pattern solves all common z-index stacking context problems by using a flat hierarchy where the close button, overlay, and content are siblings rather than nested.
+
+**Visual Hierarchy:**
+```
+Modal Backdrop (fixed fullscreen with padding)
+  └─ Content Wrapper (centered, provides positioning context)
+       ├─ Spotlight Overlay (fixed, fullscreen, pointer-events: none, z-index: 10000)
+       ├─ Close Button (absolute, top: -12px, right: -12px, z-index: 10002)
+       └─ Scrollable Content (relative, z-index: 10)
+```
+
+**Why This Pattern Works:**
+1. **No nesting conflicts** - Close button is sibling to content, not child
+2. **Simple z-index** - Linear hierarchy without stacking contexts
+3. **Always visible** - Button positioned outside content box, no scrolling needed
+4. **Spotlight compatible** - Overlay and targets are properly separated
+5. **Universal compatibility** - Works across all browsers and screen sizes
+
+**Reference Implementation:**  
+See `quick_start_guide.html` lines 2112-2125 for the canonical example.
+
+---
+
 ### File Structure
 
 ```
@@ -179,41 +206,63 @@ Modals display enlarged, interactive replicas of system interfaces with consiste
 
 ### Standard Modal Structure
 
+**BEST PRACTICE** (from `quick_start_guide.html`):
+
+The optimal modal structure uses a **flat hierarchy** to avoid z-index stacking context issues. Key points:
+
+1. **Modal backdrop** - Fixed fullscreen container with padding
+2. **Content wrapper** - Centered with relative positioning (NOT the backdrop itself)
+3. **Spotlight overlay** - Sibling to close button, inside content wrapper
+4. **Close button** - Positioned absolutely, OUTSIDE the scrollable content
+5. **Scrollable content** - Separate container with overflow handling
+
 ```html
-<div id="modalId" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-[9999]" style="display: none;">
-  <!-- Overlay for spotlight effect -->
-  <div id="modalOverlay" class="absolute inset-0"></div>
+<!-- Modal Backdrop - Fixed fullscreen with padding for centering -->
+<div id="homepageModal" style="display: none; position: fixed; inset: 0; z-index: 9999; padding: 2rem; overflow-y: auto;">
   
-  <!-- Modal content container -->
-  <div class="bg-white rounded-2xl shadow-2xl max-w-5xl w-full mx-4 relative z-[10002]" style="max-height: 90vh; overflow-y: auto;">
+  <!-- Content Wrapper - Centered, provides positioning context -->
+  <div style="max-width: 1400px; margin: 0 auto; position: relative; z-index: 2;">
     
-    <!-- Close button - MUST be positioned absolutely with high z-index -->
+    <!-- Spotlight Overlay - Fixed, covers entire screen, pointer-events disabled -->
+    <div id="modalOverlay" style="position: fixed; inset: 0; pointer-events: none; z-index: 10000;"></div>
+    
+    <!-- Close Button - OUTSIDE scrollable content, positioned absolutely -->
     <button 
-      onclick="closeModal()" 
-      data-spotlight="close"
-      class="absolute top-4 right-4 text-white hover:bg-white/20 rounded-full p-2 transition-all z-[10003]"
-      style="z-index: 10003;"
-      title="Close"
+      data-spotlight="close" 
+      onclick="closeHomepageModal()" 
+      style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10002;"
     >
-      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <line x1="18" y1="6" x2="6" y2="18"></line>
-        <line x1="6" y1="6" x2="18" y2="18"></line>
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
       </svg>
     </button>
     
-    <!-- Sticky header -->
-    <div class="sticky top-0 bg-gradient-to-r from-primary to-indigo-600 text-white px-8 py-6 rounded-t-2xl z-10">
-      <h2 class="text-2xl font-bold">Modal Title</h2>
-      <p class="text-sm opacity-90 mt-2">Modal description</p>
-    </div>
-    
-    <!-- Modal body -->
-    <div class="p-8">
-      <!-- Content here -->
+    <!-- Scrollable Content Container -->
+    <div style="background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); overflow: hidden; position: relative; z-index: 10;">
+      <!-- All modal content goes here -->
+      <!-- No sticky header needed - close button always visible -->
     </div>
   </div>
 </div>
 ```
+
+**Why This Works:**
+
+✅ **Close button positioning** - Positioned relative to content wrapper, appears OUTSIDE the scrollable area  
+✅ **No stacking context issues** - Close button is sibling to content, not nested inside it  
+✅ **Always visible** - No need for sticky positioning, button floats above content  
+✅ **Clean z-index hierarchy** - Simple layering without complex nesting  
+✅ **Spotlight compatible** - Overlay and close button are properly separated  
+
+**Key Differences from Problematic Patterns:**
+
+❌ **Old way** - Close button inside scrollable container → gets cut off  
+❌ **Old way** - Close button inside sticky header → z-index conflicts  
+❌ **Old way** - Modal uses flex centering → complicates positioning  
+
+✅ **New way** - Backdrop handles scrolling, content wrapper provides positioning context  
+✅ **New way** - Close button is absolutely positioned at `-12px, -12px` (outside content box)  
+✅ **New way** - Uses padding on backdrop for centering instead of flexbox
 
 ### Modal JavaScript Pattern
 
@@ -459,40 +508,107 @@ This ensures:
 
 ### **CRITICAL:** Close Button Positioning
 
-❌ **WRONG** - Close button inside sticky header (gets cut off):
+The close button must be positioned **outside and before** the scrollable content container to avoid z-index stacking context issues.
+
+✅ **CORRECT Pattern** (from `quick_start_guide.html`):
+
 ```html
-<div class="sticky top-0 ... z-10">
-  <button onclick="closeModal()">×</button> <!-- Low z-index! -->
+<div id="homepageModal" style="display: none; position: fixed; inset: 0; z-index: 9999; padding: 2rem; overflow-y: auto;">
+  <div style="max-width: 1400px; margin: 0 auto; position: relative; z-index: 2;">
+    
+    <!-- Spotlight overlay - sibling to close button -->
+    <div id="modalOverlay" style="position: fixed; inset: 0; pointer-events: none; z-index: 10000;"></div>
+    
+    <!-- Close button - OUTSIDE scrollable content, positioned absolutely at top-right -->
+    <button 
+      data-spotlight="close" 
+      onclick="closeModal()" 
+      style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10002;">
+      <svg>...</svg>
+    </button>
+    
+    <!-- Scrollable content - close button floats above this -->
+    <div style="background: ...; border-radius: 12px; box-shadow: ...; overflow: hidden; position: relative; z-index: 10;">
+      <!-- Modal content here -->
+    </div>
+  </div>
 </div>
 ```
 
-✅ **CORRECT** - Close button positioned absolutely with high z-index:
+**Key positioning details:**
+- `top: -12px; right: -12px` → Button appears **outside** the content box (12px above and to the right)
+- `position: absolute` → Positioned relative to content wrapper
+- `width: 48px; height: 48px` → Circular button with adequate touch target
+- `border-radius: 50%` → Perfect circle
+- `background-color: white` → Visible against any background
+- `z-index: 10002` → Above overlay (10000) and content (10)
+
+❌ **WRONG** - Close button inside sticky header (gets cut off by stacking context):
+
 ```html
 <div class="modal-content relative z-[10002]">
-  <!-- Close button OUTSIDE and BEFORE sticky header -->
-  <button 
-    onclick="closeModal()" 
-    class="absolute top-4 right-4 z-[10003]"
-    style="z-index: 10003;">
-    ×
-  </button>
-  
   <div class="sticky top-0 ... z-10">
-    <!-- Header content -->
+    <button onclick="closeModal()">×</button> <!-- WRONG! Hidden by parent z-index -->
+  </div>
+</div>
+```
+
+❌ **WRONG** - Close button inside scrollable container (gets scrolled away):
+
+```html
+<div class="overflow-y-auto">
+  <button class="absolute top-4 right-4">×</button> <!-- WRONG! Scrolls with content -->
+  <div>Long content...</div>
+</div>
+```
+
+❌ **WRONG** - Close button as child of flex-centered modal (positioning issues):
+
+```html
+<div class="flex items-center justify-center">
+  <div class="modal-content">
+    <button class="absolute top-4 right-4">×</button> <!-- WRONG! Positioning context unclear -->
   </div>
 </div>
 ```
 
 ### Verification Checklist
 
-For each modal, verify:
+For each modal, verify the **flat hierarchy pattern** (quick_start_guide.html style):
 
-- [ ] Close button has `z-index: 10003` (both class and inline style)
-- [ ] Close button uses `position: absolute` (not inside sticky header)
-- [ ] Close button positioned `top-4 right-4` relative to modal container
+**Structure:**
+- [ ] Modal backdrop uses `position: fixed; inset: 0; padding: 2rem; overflow-y: auto`
+- [ ] Content wrapper uses `max-width` with `margin: 0 auto` for centering
+- [ ] Content wrapper has `position: relative` for absolute positioning context
+- [ ] Spotlight overlay is sibling to close button (not parent/child)
+- [ ] Close button is sibling to scrollable content (not nested inside)
+
+**Close Button:**
+- [ ] Close button positioned `top: -12px; right: -12px` (outside content box)
+- [ ] Close button has `z-index: 10002` (inline style, no need for class)
+- [ ] Close button uses `position: absolute` relative to content wrapper
 - [ ] Close button has `data-spotlight="close"` attribute
-- [ ] Modal overlay has ID for spotlight targeting
-- [ ] Interactive elements have appropriate `data-spotlight` attributes
+- [ ] Close button is circular: `width: 48px; height: 48px; border-radius: 50%`
+- [ ] Close button has white background for visibility
+
+**Overlay:**
+- [ ] Overlay has unique ID for spotlight targeting (e.g., `#modalOverlay`)
+- [ ] Overlay uses `position: fixed; inset: 0` (fullscreen)
+- [ ] Overlay has `pointer-events: none` (allows clicks through to content)
+- [ ] Overlay has `z-index: 10000` (below close button, above content)
+
+**Content:**
+- [ ] Scrollable content has `overflow: hidden` (not `overflow-y: auto`)
+- [ ] Scrolling handled by backdrop container, not content
+- [ ] Interactive elements have `data-spotlight="button"` or `data-spotlight="help"`
+- [ ] No sticky headers needed (close button always visible)
+
+**Common Mistakes to Avoid:**
+- ❌ Using flexbox centering on backdrop (complicates positioning)
+- ❌ Putting close button inside scrollable content
+- ❌ Putting close button inside sticky header
+- ❌ Using `z-[10003]` class instead of inline `z-index: 10002`
+- ❌ Nesting overlay as parent of close button
 
 ---
 
@@ -628,20 +744,24 @@ window.uploadConfigSpotlight = new SpotlightSystem({
 ### 1. Modal Design
 
 ✅ **DO:**
-- Use consistent modal structure across all guide pages
-- Position close button absolutely with `z-index: 10003`
+- Use **flat hierarchy pattern** from `quick_start_guide.html`
+- Position close button OUTSIDE scrollable content at `top: -12px; right: -12px`
+- Make backdrop handle scrolling, not the content container
+- Use `padding: 2rem` on backdrop for centering instead of flexbox
+- Position overlay as sibling to close button (both children of content wrapper)
 - Include `data-spotlight="close"` on close button
-- Add ESC key handler
-- Add click-outside-to-close handler
-- Use sticky headers for long content
-- Set `max-height: 90vh` with `overflow-y: auto`
+- Add ESC key handler and click-outside-to-close
+- Use inline `z-index: 10002` on close button (no Tailwind class needed)
+- Make close button circular with white background for universal visibility
 
 ❌ **DON'T:**
+- Put close button inside scrollable content container
 - Put close button inside sticky header
-- Use low z-index on close button
-- Forget to cleanup spotlight on close
-- Make modals too wide (stick to `max-w-5xl` or smaller)
-- Use fixed heights (breaks responsive design)
+- Use flexbox centering on modal backdrop (use padding + margin: auto)
+- Nest overlay as parent/child of close button
+- Use `max-height` with `overflow-y: auto` on content (let backdrop scroll)
+- Forget `pointer-events: none` on overlay
+- Make close button too small (minimum 48x48px for touch targets)
 
 ### 2. Spotlight Usage
 
@@ -777,6 +897,7 @@ spotlight.updateHoles()
 
 | Version | Date | Changes |
 |---------|------|---------|
+| 1.1 | October 27, 2025 | **MAJOR UPDATE**: Documented flat hierarchy pattern as golden rule. Added comprehensive close button positioning guide based on `quick_start_guide.html`. Updated all modal examples to use correct pattern. Added detailed z-index stacking context explanation. |
 | 1.0 | October 27, 2025 | Initial documentation |
 
 ---
