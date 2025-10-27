@@ -12,7 +12,7 @@
   const PROGRESS_THRESHOLDS = {
     FETCH_START: 0,
     FETCH_COMPLETE: 100,
-    VALIDATION_START: 70,
+    VALIDATION_START: 75,
     VALIDATION_COMPLETE: 95
   };
   
@@ -72,7 +72,9 @@
    */
   async function loadConfig() {
     try {
-      const response = await fetch('config/checking_system_config.json');
+      const response = await fetch('config/checking_system_config.json', {
+        cache: 'no-cache'
+      });
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
@@ -1345,11 +1347,8 @@
         const validationCache = await window.JotFormCache.buildStudentValidationCache(
           cachedSystemData.students,
           surveyStructure,
-          {
-            formId: credentials.jotformFormId || credentials.formId,
-            apiKey: credentials.jotformApiKey || credentials.apiKey
-          },
-          true // Force rebuild
+          true, // Force rebuild
+          credentials // Pass credentials
         );
         console.log('[CacheUI] Validation cache built:', validationCache.size, 'students');
         
