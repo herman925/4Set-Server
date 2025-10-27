@@ -664,10 +664,10 @@
             
             console.log(`[Test] ✅ Filtered to ${submissions.length} submissions for Core ID ${coreId}`);
 
-            // Merge multiple submissions for the same student
-            const mergedAnswers = mergeJotFormSubmissions(submissions);
+            // Transform submissions to records with answer objects
+            const jotformRecords = transformJotFormSubmissions(submissions);
             
-            return { submissions, mergedAnswers };
+            return { submissions, jotformRecords };
         }
 
         // Fetch Qualtrics data from cache/API
