@@ -70,15 +70,12 @@
       }
 
       // Handle matrix sub-questions: "QID126166420#1_1"
+      // In Qualtrics, matrix sub-questions are stored as flat keys like "QID126166420#1_1"
+      // NOT as nested objects like values['QID126166420']['1_1']
       if (qidSpec.includes('#')) {
-        const [qid, subKey] = qidSpec.split('#');
-        const matrixData = values[qid];
-        
-        if (!matrixData || typeof matrixData !== 'object') {
-          return '';
-        }
-        
-        return matrixData[subKey] || '';
+        // Direct lookup using the full QID spec with # notation
+        const value = values[qidSpec];
+        return value !== undefined && value !== null ? String(value) : '';
       }
 
       // Handle text entry sub-fields: "QID125287935_TEXT"
@@ -160,7 +157,8 @@
         }
       };
 
-      // Transform all mapped fields
+      // Transform all mapped fields to answer objects (matches JotForm schema)
+      // This ensures DataMerger and TaskValidator can process both sources uniformly
       for (const [fieldName, qidSpec] of Object.entries(fieldMapping)) {
         // Skip fields we've already handled
         if (fieldName === 'sessionkey' || 
@@ -169,10 +167,16 @@
           continue;
         }
 
-        // Extract and set value
+        // Extract value
         const value = this.extractValue(response.values, qidSpec);
         if (value !== '') {
-          result[fieldName] = value;
+          // Create answer object to match JotForm schema
+          // This is what TaskValidator expects
+          result[fieldName] = {
+            answer: value,
+            text: value,
+            name: fieldName
+          };
         }
       }
 

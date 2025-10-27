@@ -100,15 +100,12 @@
       }
 
       // Handle matrix sub-questions: "QID126166420#1_1"
+      // In Qualtrics, matrix sub-questions are stored as flat keys like "QID126166420#1_1"
+      // NOT as nested objects like values['QID126166420']['1_1']
       if (qidSpec.includes('#')) {
-        const [qid, subKey] = qidSpec.split('#');
-        const matrixData = values[qid];
-        
-        if (!matrixData || typeof matrixData !== 'object') {
-          return '';
-        }
-        
-        return matrixData[subKey] || '';
+        // Direct lookup using the full QID spec with # notation
+        const value = values[qidSpec];
+        return value !== undefined && value !== null ? String(value) : '';
       }
 
       // Handle text entry sub-fields: "QID125287935_TEXT"
