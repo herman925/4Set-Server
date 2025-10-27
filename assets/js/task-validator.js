@@ -362,7 +362,7 @@ window.TaskValidator = (() => {
                 const textAnswer = mergedAnswers[option.textId]?.answer || 
                                   mergedAnswers[option.textId]?.text || 
                                   null;
-                if (textAnswer && textAnswer.trim() !== '') {
+                if (textAnswer && String(textAnswer).trim() !== '') {
                   hasTextData = true;
                   break;
                 }
@@ -427,7 +427,7 @@ window.TaskValidator = (() => {
             textFieldStatus = 'na';
           } else if (mappedRadioAnswer !== null) {
             // Radio answer exists (but is incorrect)
-            if (studentAnswer !== null && studentAnswer.trim() !== '') {
+            if (studentAnswer !== null && String(studentAnswer).trim() !== '') {
               // Text field has content
               textFieldStatus = 'answered';
             } else {
@@ -437,7 +437,7 @@ window.TaskValidator = (() => {
             }
           } else {
             // Radio has NO answer (blank/missing)
-            if (studentAnswer !== null && studentAnswer.trim() !== '') {
+            if (studentAnswer !== null && String(studentAnswer).trim() !== '') {
               // Student attempted to answer via text only (incorrect attempt)
               // Per user: if radio blank and text filled, it means incorrect answer was assumed
               // The _TEXT field should NOT be displayed to avoid revealing the incorrect attempt
@@ -448,7 +448,7 @@ window.TaskValidator = (() => {
               textFieldStatus = 'not-answered';
             }
           }
-        } else if (studentAnswer !== null && studentAnswer.trim() !== '') {
+        } else if (studentAnswer !== null && String(studentAnswer).trim() !== '') {
           // No associated radio question, just check if answered
           textFieldStatus = 'answered';
         }

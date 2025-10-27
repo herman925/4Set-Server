@@ -726,7 +726,7 @@
         if (sampleKey) {
           const sampleData = cacheEntry.validations[sampleKey];
           if (!sampleData.taskValidation || !sampleData.setStatus) {
-            console.warn('[JotFormCache] Validation cache has invalid structure (missing taskValidation or setStatus), will rebuild');
+            console.log('[JotFormCache] ℹ️  Validation cache has outdated structure (missing taskValidation or setStatus), rebuilding...');
             return null;
           }
           
