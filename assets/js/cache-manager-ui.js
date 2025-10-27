@@ -8,6 +8,56 @@
   let isSyncing = false;
   let currentSyncProgress = 0;
   
+  // Progress threshold constants
+  const PROGRESS_THRESHOLDS = {
+    FETCH_START: 0,
+    FETCH_COMPLETE: 100,
+    VALIDATION_START: 70,
+    VALIDATION_COMPLETE: 95
+  };
+  
+  /**
+   * Update status text element based on progress and operation type
+   * @param {HTMLElement} statusElement - The status text element to update
+   * @param {number} progress - Progress percentage (0-100)
+   * @param {string} operationType - 'jotform' or 'qualtrics'
+   */
+  function updateStatusText(statusElement, progress, operationType) {
+    if (!statusElement) return;
+    
+    const messages = {
+      jotform: {
+        waiting: 'Waiting to start...',
+        fetching: 'Fetching submissions...',
+        validating: 'Validating students...',
+        processing: 'Processing data...',
+        complete: 'Complete!'
+      },
+      qualtrics: {
+        waiting: 'Waiting to start...',
+        fetching: 'Fetching TGMD data...',
+        validating: 'Validating students...',
+        processing: 'Processing data...',
+        complete: 'Complete!'
+      }
+    };
+    
+    const msg = messages[operationType] || messages.jotform;
+    
+    if (progress === PROGRESS_THRESHOLDS.FETCH_START) {
+      statusElement.textContent = msg.waiting;
+    } else if (progress >= PROGRESS_THRESHOLDS.VALIDATION_COMPLETE) {
+      statusElement.textContent = msg.complete;
+    } else if (progress >= PROGRESS_THRESHOLDS.VALIDATION_START) {
+      statusElement.textContent = msg.validating;
+    } else if (progress >= PROGRESS_THRESHOLDS.FETCH_COMPLETE) {
+      statusElement.textContent = msg.complete;
+    } else if (progress > PROGRESS_THRESHOLDS.FETCH_START) {
+      // During fetch phase, determine if we're fetching or processing
+      statusElement.textContent = msg.fetching;
+    }
+  }
+  
   /**
    * Load configuration from JSON
    */
@@ -715,32 +765,12 @@
     // Update JotForm progress bar (blue)
     if (jotformBarEl) jotformBarEl.style.width = Math.round(jotformProgress) + '%';
     if (jotformPercentEl) jotformPercentEl.textContent = Math.round(jotformProgress) + '%';
-    
-    // Update JotForm status text based on progress
-    if (jotformStatusEl) {
-      if (jotformProgress === 0) {
-        jotformStatusEl.textContent = 'Waiting to start...';
-      } else if (jotformProgress < 100) {
-        jotformStatusEl.textContent = 'Fetching submissions...';
-      } else {
-        jotformStatusEl.textContent = 'Complete!';
-      }
-    }
+    updateStatusText(jotformStatusEl, jotformProgress, 'jotform');
     
     // Update Qualtrics progress bar (purple)
     if (qualtricsBarEl) qualtricsBarEl.style.width = Math.round(qualtricsProgress) + '%';
     if (qualtricsPercentEl) qualtricsPercentEl.textContent = Math.round(qualtricsProgress) + '%';
-    
-    // Update Qualtrics status text based on progress
-    if (qualtricsStatusEl) {
-      if (qualtricsProgress === 0) {
-        qualtricsStatusEl.textContent = 'Waiting to start...';
-      } else if (qualtricsProgress < 100) {
-        qualtricsStatusEl.textContent = 'Fetching TGMD data...';
-      } else {
-        qualtricsStatusEl.textContent = 'Complete!';
-      }
-    }
+    updateStatusText(qualtricsStatusEl, qualtricsProgress, 'qualtrics');
   }
 
   /**
@@ -1088,31 +1118,11 @@
         // Update modal progress bars (if still open)
         if (jotformBar) jotformBar.style.width = `${jotformProgress}%`;
         if (jotformPercent) jotformPercent.textContent = `${Math.round(jotformProgress)}%`;
-        
-        // Update JotForm status text based on progress
-        if (jotformStatus) {
-          if (jotformProgress === 0) {
-            jotformStatus.textContent = 'Waiting to start...';
-          } else if (jotformProgress < 100) {
-            jotformStatus.textContent = 'Fetching submissions...';
-          } else {
-            jotformStatus.textContent = 'Complete!';
-          }
-        }
+        updateStatusText(jotformStatus, jotformProgress, 'jotform');
         
         if (qualtricsBar) qualtricsBar.style.width = `${qualtricsProgress}%`;
         if (qualtricsPercent) qualtricsPercent.textContent = `${Math.round(qualtricsProgress)}%`;
-        
-        // Update Qualtrics status text based on progress
-        if (qualtricsStatus) {
-          if (qualtricsProgress === 0) {
-            qualtricsStatus.textContent = 'Waiting to start...';
-          } else if (qualtricsProgress < 100) {
-            qualtricsStatus.textContent = 'Fetching TGMD data...';
-          } else {
-            qualtricsStatus.textContent = 'Complete!';
-          }
-        }
+        updateStatusText(qualtricsStatus, qualtricsProgress, 'qualtrics');
         
         if (modalMessage) modalMessage.textContent = message;
         
@@ -1196,10 +1206,10 @@
         maxProgress = 75;
         if (jotformBar) jotformBar.style.width = '75%';
         if (jotformPercent) jotformPercent.textContent = '75%';
-        if (jotformStatus) jotformStatus.textContent = 'Processing data...';
+        updateStatusText(jotformStatus, 75, 'jotform');
         if (qualtricsBar) qualtricsBar.style.width = '75%';
         if (qualtricsPercent) qualtricsPercent.textContent = '75%';
-        if (qualtricsStatus) qualtricsStatus.textContent = 'Processing data...';
+        updateStatusText(qualtricsStatus, 75, 'qualtrics');
         if (modalMessage) modalMessage.textContent = 'Submissions cached, loading validation data...';
         
         // Get student data from CheckingSystemData
@@ -1215,10 +1225,10 @@
           // Still mark as complete - submissions are cached
           if (jotformBar) jotformBar.style.width = '100%';
           if (jotformPercent) jotformPercent.textContent = '100%';
-          if (jotformStatus) jotformStatus.textContent = 'Complete!';
+          updateStatusText(jotformStatus, 100, 'jotform');
           if (qualtricsBar) qualtricsBar.style.width = '100%';
           if (qualtricsPercent) qualtricsPercent.textContent = '100%';
-          if (qualtricsStatus) qualtricsStatus.textContent = 'Complete!';
+          updateStatusText(qualtricsStatus, 100, 'qualtrics');
           
           isSyncing = false;
           currentSyncProgress = 100;
@@ -1264,31 +1274,11 @@
           // Always update modal (no throttle)
           if (jotformBar) jotformBar.style.width = `${jProgress}%`;
           if (jotformPercent) jotformPercent.textContent = `${Math.round(jProgress)}%`;
-          
-          // Update JotForm status text for validation phase
-          if (jotformStatus) {
-            if (jProgress >= 95) {
-              jotformStatus.textContent = 'Complete!';
-            } else if (jProgress >= 70) {
-              jotformStatus.textContent = 'Validating students...';
-            } else {
-              jotformStatus.textContent = 'Processing data...';
-            }
-          }
+          updateStatusText(jotformStatus, jProgress, 'jotform');
           
           if (qualtricsBar) qualtricsBar.style.width = `${qProgress}%`;
           if (qualtricsPercent) qualtricsPercent.textContent = `${Math.round(qProgress)}%`;
-          
-          // Update Qualtrics status text for validation phase
-          if (qualtricsStatus) {
-            if (qProgress >= 95) {
-              qualtricsStatus.textContent = 'Complete!';
-            } else if (qProgress >= 70) {
-              qualtricsStatus.textContent = 'Validating students...';
-            } else {
-              qualtricsStatus.textContent = 'Processing data...';
-            }
-          }
+          updateStatusText(qualtricsStatus, qProgress, 'qualtrics');
           
           if (modalMessage) modalMessage.textContent = message;
           
@@ -1315,10 +1305,10 @@
         const progressBar100Time = Date.now();
         if (jotformBar) jotformBar.style.width = '100%';
         if (jotformPercent) jotformPercent.textContent = '100%';
-        if (jotformStatus) jotformStatus.textContent = 'Complete!';
+        updateStatusText(jotformStatus, 100, 'jotform');
         if (qualtricsBar) qualtricsBar.style.width = '100%';
         if (qualtricsPercent) qualtricsPercent.textContent = '100%';
-        if (qualtricsStatus) qualtricsStatus.textContent = 'Complete!';
+        updateStatusText(qualtricsStatus, 100, 'qualtrics');
         console.log(`[SYNC-TIMING] ⏱️ Progress bars set to 100% at: ${new Date(progressBar100Time).toISOString()}`);
         
         // Mark sync complete and update pill
