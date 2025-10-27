@@ -809,6 +809,22 @@
   }
 
   /**
+   * Helper function to display error message in table
+   */
+  function showTableError(tbody, message, iconName = 'alert-triangle', iconColor = 'amber-500') {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" class="py-8 px-4 text-center">
+          <i data-lucide="${iconName}" class="w-12 h-12 mx-auto text-${iconColor} mb-4"></i>
+          <p class="text-[color:var(--foreground)] font-semibold mb-2">${message.title || 'Error'}</p>
+          <p class="text-[color:var(--muted-foreground)] text-sm">${message.description || 'An error occurred while loading data.'}</p>
+        </td>
+      </tr>
+    `;
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+
+  /**
    * Render TGMD results with grouped task display and trial breakdown
    * 
    * Displays TGMD assessment results grouped by motor task (hop, jump, slide, etc.)
@@ -824,13 +840,10 @@
     // Validate tgmdScoring object
     if (!tgmdScoring || !tgmdScoring.byTask) {
       console.error('[StudentPage] ❌ Invalid tgmdScoring object:', tgmdScoring);
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="4" class="py-4 px-2 text-center text-red-600">
-            Error: TGMD scoring data is invalid or missing
-          </td>
-        </tr>
-      `;
+      showTableError(tbody, {
+        title: 'TGMD Data Error',
+        description: 'TGMD scoring data is invalid or missing. Please check the data source.'
+      }, 'alert-circle', 'red-500');
       return;
     }
     
@@ -849,13 +862,10 @@
     const taskCount = Object.keys(tgmdScoring.byTask).length;
     if (taskCount === 0) {
       console.warn('[StudentPage] ⚠️ No TGMD tasks found in scoring data');
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="4" class="py-4 px-2 text-center text-[color:var(--muted-foreground)]">
-            No TGMD task data available
-          </td>
-        </tr>
-      `;
+      showTableError(tbody, {
+        title: 'No TGMD Data',
+        description: 'No TGMD task data available for this student.'
+      }, 'info', 'blue-500');
       return;
     }
     
@@ -1032,17 +1042,11 @@
         if (!validation.tgmdScoring) {
           console.warn('[StudentPage] ⚠️ TGMD task found but tgmdScoring is missing!');
           console.log('[StudentPage] Validation object:', validation);
-          // Show error message in table
-          tbody.innerHTML = `
-            <tr>
-              <td colspan="4" class="py-8 px-4 text-center">
-                <i data-lucide="alert-triangle" class="w-12 h-12 mx-auto text-amber-500 mb-4"></i>
-                <p class="text-[color:var(--foreground)] font-semibold mb-2">TGMD Data Not Available</p>
-                <p class="text-[color:var(--muted-foreground)] text-sm">TGMD scoring data could not be loaded. Please check if the student has completed this assessment.</p>
-              </td>
-            </tr>
-          `;
-          if (typeof lucide !== 'undefined') lucide.createIcons();
+          // Show error message in table using helper
+          showTableError(tbody, {
+            title: 'TGMD Data Not Available',
+            description: 'TGMD scoring data could not be loaded. Please check if the student has completed this assessment.'
+          });
           continue;
         }
         
