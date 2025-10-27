@@ -21,10 +21,18 @@
    * @param {HTMLElement} statusElement - The status text element to update
    * @param {number} progress - Progress percentage (0-100)
    * @param {string} operationType - 'jotform' or 'qualtrics'
+   * @param {string} customMessage - Optional custom message to display (from emitProgress)
    */
-  function updateStatusText(statusElement, progress, operationType) {
+  function updateStatusText(statusElement, progress, operationType, customMessage = null) {
     if (!statusElement) return;
     
+    // If a custom message is provided, use it directly
+    if (customMessage) {
+      statusElement.textContent = customMessage;
+      return;
+    }
+    
+    // Otherwise, fall back to generic messages based on progress
     const messages = {
       jotform: {
         waiting: 'Waiting to start...',
@@ -654,6 +662,8 @@
       window.JotFormCache.setProgressCallback((message, progress, details = {}) => {
         let jotformProgress = details.jotformProgress || 0;
         let qualtricsProgress = details.qualtricsProgress || 0;
+        const jotformMessage = details.jotformMessage;
+        const qualtricsMessage = details.qualtricsMessage;
         
         // Apply non-regressive logic
         if (jotformProgress < maxJotformProgress) {
@@ -668,7 +678,7 @@
           maxQualtricsProgress = qualtricsProgress;
         }
         
-        updateQualtricsProgress(message, jotformProgress, qualtricsProgress);
+        updateQualtricsProgress(message, jotformProgress, qualtricsProgress, jotformMessage, qualtricsMessage);
       });
       
       // Perform refresh
@@ -751,8 +761,10 @@
    * @param {string} message - Overall progress message
    * @param {number} jotformProgress - JotForm progress (0-100)
    * @param {number} qualtricsProgress - Qualtrics progress (0-100)
+   * @param {string} jotformMessage - Optional detailed JotForm message
+   * @param {string} qualtricsMessage - Optional detailed Qualtrics message
    */
-  function updateQualtricsProgress(message, jotformProgress = 0, qualtricsProgress = 0) {
+  function updateQualtricsProgress(message, jotformProgress = 0, qualtricsProgress = 0, jotformMessage = null, qualtricsMessage = null) {
     const messageEl = document.getElementById('qualtrics-progress-message');
     const jotformBarEl = document.getElementById('jotform-progress-bar');
     const jotformPercentEl = document.getElementById('jotform-progress-percent');
@@ -766,12 +778,12 @@
     // Update JotForm progress bar (blue)
     if (jotformBarEl) jotformBarEl.style.width = Math.round(jotformProgress) + '%';
     if (jotformPercentEl) jotformPercentEl.textContent = Math.round(jotformProgress) + '%';
-    updateStatusText(jotformStatusEl, jotformProgress, 'jotform');
+    updateStatusText(jotformStatusEl, jotformProgress, 'jotform', jotformMessage);
     
     // Update Qualtrics progress bar (purple)
     if (qualtricsBarEl) qualtricsBarEl.style.width = Math.round(qualtricsProgress) + '%';
     if (qualtricsPercentEl) qualtricsPercentEl.textContent = Math.round(qualtricsProgress) + '%';
-    updateStatusText(qualtricsStatusEl, qualtricsProgress, 'qualtrics');
+    updateStatusText(qualtricsStatusEl, qualtricsProgress, 'qualtrics', qualtricsMessage);
   }
 
   /**
@@ -1119,11 +1131,13 @@
         // Update modal progress bars (if still open)
         if (jotformBar) jotformBar.style.width = `${jotformProgress}%`;
         if (jotformPercent) jotformPercent.textContent = `${Math.round(jotformProgress)}%`;
-        updateStatusText(jotformStatus, jotformProgress, 'jotform');
+        // Use detailed message from details object if available
+        updateStatusText(jotformStatus, jotformProgress, 'jotform', details.jotformMessage);
         
         if (qualtricsBar) qualtricsBar.style.width = `${qualtricsProgress}%`;
         if (qualtricsPercent) qualtricsPercent.textContent = `${Math.round(qualtricsProgress)}%`;
-        updateStatusText(qualtricsStatus, qualtricsProgress, 'qualtrics');
+        // Use detailed message from details object if available
+        updateStatusText(qualtricsStatus, qualtricsProgress, 'qualtrics', details.qualtricsMessage);
         
         if (modalMessage) modalMessage.textContent = message;
         
@@ -1271,15 +1285,19 @@
           // Extract individual progress (validation phase won't have jotform/qualtrics split)
           const jProgress = details.jotformProgress || progress;
           const qProgress = details.qualtricsProgress || progress;
+          const jMessage = details.jotformMessage;
+          const qMessage = details.qualtricsMessage;
           
           // Always update modal (no throttle)
           if (jotformBar) jotformBar.style.width = `${jProgress}%`;
           if (jotformPercent) jotformPercent.textContent = `${Math.round(jProgress)}%`;
-          updateStatusText(jotformStatus, jProgress, 'jotform');
+          // During validation, use the main message if no individual message
+          updateStatusText(jotformStatus, jProgress, 'jotform', jMessage || message);
           
           if (qualtricsBar) qualtricsBar.style.width = `${qProgress}%`;
           if (qualtricsPercent) qualtricsPercent.textContent = `${Math.round(qProgress)}%`;
-          updateStatusText(qualtricsStatus, qProgress, 'qualtrics');
+          // During validation, use the main message if no individual message
+          updateStatusText(qualtricsStatus, qProgress, 'qualtrics', qMessage || message);
           
           if (modalMessage) modalMessage.textContent = message;
           
