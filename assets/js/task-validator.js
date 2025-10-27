@@ -534,8 +534,15 @@ window.TaskValidator = (() => {
         
         const row = rowMap.get(rowId);
         
-        // Get trial value (convert to number, default to 0)
-        const trialValue = parseInt(q.studentAnswer, 10) || 0;
+        // Get trial value - keep null for unanswered, convert valid answers to number
+        let trialValue = null;
+        if (q.studentAnswer !== null && q.studentAnswer !== undefined && q.studentAnswer !== '') {
+          trialValue = parseInt(q.studentAnswer, 10);
+          // If parseInt fails, treat as 0 (answered but invalid)
+          if (isNaN(trialValue)) {
+            trialValue = 0;
+          }
+        }
         
         if (q.id.endsWith('_t1')) {
           row.t1 = trialValue;
@@ -565,15 +572,18 @@ window.TaskValidator = (() => {
     // Create aggregated TGMD questions with row scores
     const tgmdRows = [];
     for (const [rowId, row] of rowMap) {
-      const t1 = row.t1 !== null ? row.t1 : 0;
-      const t2 = row.t2 !== null ? row.t2 : 0;
-      const rowScore = t1 + t2;
+      // Keep trials as-is (null if unanswered, 0 or 1 if answered)
+      const t1 = row.t1;
+      const t2 = row.t2;
+      
+      // Calculate rowScore: only count answered trials (null contributes 0)
+      const rowScore = (t1 !== null ? t1 : 0) + (t2 !== null ? t2 : 0);
       
       tgmdRows.push({
         id: rowId,
         rowScore: rowScore,
         maxScore: 2,
-        trials: { t1: t1, t2: t2 },
+        trials: { t1: t1, t2: t2 }, // Preserve null for unanswered
         task: row.task,
         taskLabel: row.taskLabel,
         description: row.description || rowId,

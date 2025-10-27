@@ -913,18 +913,21 @@
         const row = document.createElement('tr');
         row.className = 'hover:bg-[color:var(--muted)]/30';
         
-        // Determine trial statuses
-        const t1Status = criterion.trials.t1 === 1 ? 'success' : 'fail';
-        const t2Status = criterion.trials.t2 === 1 ? 'success' : 'fail';
+        // Determine trial statuses and icons
+        // null = not answered (show question mark)
+        // 0 = answered incorrectly (show red X)
+        // 1 = answered correctly (show green check)
+        const t1Icon = criterion.trials.t1 === null
+          ? '<i data-lucide="circle-help" class="w-3 h-3 text-gray-400"></i>'
+          : criterion.trials.t1 === 1
+            ? '<i data-lucide="check" class="w-3 h-3 text-green-600"></i>'
+            : '<i data-lucide="x" class="w-3 h-3 text-red-600"></i>';
         
-        // Create compact trial indicators with checkmark or X
-        const t1Icon = criterion.trials.t1 === 1
-          ? '<i data-lucide="check" class="w-3 h-3 text-green-600"></i>'
-          : '<i data-lucide="x" class="w-3 h-3 text-red-600"></i>';
-        
-        const t2Icon = criterion.trials.t2 === 1
-          ? '<i data-lucide="check" class="w-3 h-3 text-green-600"></i>'
-          : '<i data-lucide="x" class="w-3 h-3 text-red-600"></i>';
+        const t2Icon = criterion.trials.t2 === null
+          ? '<i data-lucide="circle-help" class="w-3 h-3 text-gray-400"></i>'
+          : criterion.trials.t2 === 1
+            ? '<i data-lucide="check" class="w-3 h-3 text-green-600"></i>'
+            : '<i data-lucide="x" class="w-3 h-3 text-red-600"></i>';
         
         // Determine result status based on row score and whether trials were answered
         let resultStatus, resultClass, resultIcon;
