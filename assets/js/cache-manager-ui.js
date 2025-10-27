@@ -12,7 +12,7 @@
   const PROGRESS_THRESHOLDS = {
     FETCH_START: 0,
     FETCH_COMPLETE: 100,
-    VALIDATION_START: 70,
+    VALIDATION_START: 75,
     VALIDATION_COMPLETE: 95
   };
   
@@ -72,7 +72,9 @@
    */
   async function loadConfig() {
     try {
-      const response = await fetch('config/checking_system_config.json');
+      const response = await fetch('config/checking_system_config.json', {
+        cache: 'no-cache'
+      });
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
@@ -717,7 +719,7 @@
         </div>
         <div class="modal-body">
           <p id="qualtrics-progress-message" class="text-sm text-[color:var(--muted-foreground)] mb-4">
-            Starting parallel sync...
+            status updates will appear below each progress bar...
           </p>
           
           <!-- JotForm Progress Bar (Blue) -->
@@ -773,7 +775,7 @@
     const qualtricsPercentEl = document.getElementById('qualtrics-progress-percent');
     const qualtricsStatusEl = document.getElementById('qualtrics-status-text');
     
-    if (messageEl) messageEl.textContent = message;
+    // Don't update messageEl here - detailed status is shown under each progress bar
     
     // Update JotForm progress bar (blue)
     if (jotformBarEl) jotformBarEl.style.width = Math.round(jotformProgress) + '%';
@@ -990,7 +992,7 @@
         </div>
         <div class="modal-body">
           <p id="sync-modal-message" class="text-sm text-[color:var(--muted-foreground)] mb-4">
-            ${showProgressNow ? 'Fetching data from both sources...' : config.cache.modalText.syncMessage}
+            ${showProgressNow ? 'status updates will appear below each progress bar...' : config.cache.modalText.syncMessage}
           </p>
           
           <!-- Progress section with dual progress bars -->
@@ -1101,9 +1103,9 @@
 
       // Set up progress callback - updates BOTH modal AND pill
       window.JotFormCache.setProgressCallback((message, progress, details = {}) => {
-        // Prevent progress regression
+        // Prevent progress regression (silently - warnings would clutter console)
         if (progress < maxProgress) {
-          console.warn(`[CacheUI] Progress regression prevented: ${progress}% < ${maxProgress}%`);
+          // Don't regress, but don't warn - this can happen during parallel fetch coordination
           return;
         }
         maxProgress = progress;
@@ -1113,16 +1115,16 @@
         let jotformProgress = details.jotformProgress || 0;
         let qualtricsProgress = details.qualtricsProgress || 0;
         
-        // Apply non-regressive logic to individual bars
+        // Apply non-regressive logic to individual bars (silently)
         if (jotformProgress < maxJotformProgress) {
-          console.warn(`[CacheUI] JotForm progress regression prevented: ${jotformProgress}% < ${maxJotformProgress}%`);
+          // Keep at max, don't regress
           jotformProgress = maxJotformProgress;
         } else {
           maxJotformProgress = jotformProgress;
         }
         
         if (qualtricsProgress < maxQualtricsProgress) {
-          console.warn(`[CacheUI] Qualtrics progress regression prevented: ${qualtricsProgress}% < ${maxQualtricsProgress}%`);
+          // Keep at max, don't regress
           qualtricsProgress = maxQualtricsProgress;
         } else {
           maxQualtricsProgress = qualtricsProgress;
@@ -1139,7 +1141,8 @@
         // Use detailed message from details object if available
         updateStatusText(qualtricsStatus, qualtricsProgress, 'qualtrics', details.qualtricsMessage);
         
-        if (modalMessage) modalMessage.textContent = message;
+        // Don't update modalMessage here - it's redundant with the detailed status lines above
+        // Only update it for phase transitions (fetching -> validating -> complete)
         
         // Update pill progress (always, even if modal closed)
         updateStatusPill(progress);
@@ -1157,20 +1160,7 @@
         // Force fetch (clear cache first)
         await window.JotFormCache.clearCache();
         
-        // Step 1: Fetch all submissions from JotForm API (0-50%)
-        console.log('[CacheUI] Calling getAllSubmissions...');
-        modalTitle.textContent = 'Syncing Database';
-        modalMessage.textContent = 'Fetching data from JotForm and Qualtrics...';
-        // Progress bars will be updated by the callback
-        
-        // This waits for IndexedDB write to fully complete
-        const result = await window.JotFormCache.getAllSubmissions({
-          formId: credentials.jotformFormId || credentials.formId,
-          apiKey: credentials.jotformApiKey || credentials.apiKey
-        });
-        console.log('[CacheUI] getAllSubmissions returned:', result ? result.length : 0, 'submissions');
-        
-        // Step 1.5: Fetch and merge Qualtrics data if credentials available (50-70%)
+        // Check if Qualtrics credentials are available
         // Support both qualtricsApiToken and qualtricsApiKey for backwards compatibility
         const qualtricsApiToken = credentials.qualtricsApiToken || credentials.qualtricsApiKey;
         const hasQualtricsCredentials = qualtricsApiToken && 
@@ -1182,8 +1172,14 @@
           credentials.qualtricsApiToken = qualtricsApiToken;
         }
         
+        modalTitle.textContent = 'Syncing Database';
+        modalMessage.textContent = 'Fetching student data... (status details shown below)';
+        
+        // Step 1: Fetch data (0-70%)
+        // If Qualtrics credentials are available, use PARALLEL fetch (JotForm + Qualtrics simultaneously)
+        // Otherwise, fetch JotForm only
         if (hasQualtricsCredentials) {
-          console.log('[CacheUI] Qualtrics credentials found, fetching TGMD data...');
+          console.log('[CacheUI] Qualtrics credentials found, using PARALLEL fetch...');
           
           try {
             // Check if modules are loaded
@@ -1191,28 +1187,66 @@
                 typeof window.QualtricsTransformer !== 'undefined' && 
                 typeof window.DataMerger !== 'undefined') {
               
-              // refreshWithQualtrics will handle dual progress bars automatically
-              // through the callback set up above
+              // refreshWithQualtrics will handle PARALLEL fetch and dual progress bars
+              // JotForm and Qualtrics will fetch simultaneously using Promise.all
               const qualtricsResult = await window.JotFormCache.refreshWithQualtrics(credentials);
-              console.log('[CacheUI] Qualtrics data merged successfully');
+              console.log('[CacheUI] Parallel fetch and merge complete');
               
-              // Ensure we're at 70% after Qualtrics
+              // Ensure we're at 70% after parallel fetch
               if (maxProgress < 70) {
                 maxProgress = 70;
-                if (modalMessage) modalMessage.textContent = 'JotForm and Qualtrics data merged successfully!';
+                if (modalMessage) modalMessage.textContent = 'Parallel fetch complete - data merged successfully!';
               }
             } else {
-              console.warn('[CacheUI] Qualtrics modules not loaded, skipping Qualtrics sync');
+              console.warn('[CacheUI] Qualtrics modules not loaded, falling back to JotForm only');
+              
+              // Reset progress tracking for fallback
+              maxProgress = 0;
+              maxJotformProgress = 0;
+              maxQualtricsProgress = 0;
+              
+              // Fallback to JotForm only
+              const result = await window.JotFormCache.getAllSubmissions({
+                formId: credentials.jotformFormId || credentials.formId,
+                apiKey: credentials.jotformApiKey || credentials.apiKey
+              });
+              console.log('[CacheUI] getAllSubmissions returned:', result ? result.length : 0, 'submissions');
+              
               maxProgress = 70;
               if (modalMessage) modalMessage.textContent = 'JotForm data cached (Qualtrics modules not loaded)';
             }
-          } catch (qualtricsError) {
-            console.error('[CacheUI] Qualtrics sync failed, continuing with JotForm data only:', qualtricsError);
-            maxProgress = 70;
-            if (modalMessage) modalMessage.textContent = 'JotForm data cached (Qualtrics sync failed)';
+          } catch (fetchError) {
+            console.error('[CacheUI] Parallel fetch failed, falling back to JotForm only:', fetchError);
+            
+            // Reset progress tracking for fallback
+            maxProgress = 0;
+            maxJotformProgress = 0;
+            maxQualtricsProgress = 0;
+            
+            // Fallback to JotForm only
+            try {
+              const result = await window.JotFormCache.getAllSubmissions({
+                formId: credentials.jotformFormId || credentials.formId,
+                apiKey: credentials.jotformApiKey || credentials.apiKey
+              });
+              console.log('[CacheUI] getAllSubmissions returned:', result ? result.length : 0, 'submissions');
+              
+              maxProgress = 70;
+              if (modalMessage) modalMessage.textContent = 'JotForm data cached (Qualtrics sync failed)';
+            } catch (jotformError) {
+              throw jotformError; // Rethrow if even JotForm fails
+            }
           }
         } else {
-          console.log('[CacheUI] No Qualtrics credentials found, using JotForm data only');
+          console.log('[CacheUI] No Qualtrics credentials found, using JotForm only');
+          
+          // Fetch JotForm only (sequential, no parallel fetch needed)
+          const result = await window.JotFormCache.getAllSubmissions({
+            formId: credentials.jotformFormId || credentials.formId,
+            apiKey: credentials.jotformApiKey || credentials.apiKey
+          });
+          console.log('[CacheUI] getAllSubmissions returned:', result ? result.length : 0, 'submissions');
+          
           maxProgress = 70;
           if (modalMessage) modalMessage.textContent = 'JotForm data cached';
         }
@@ -1221,11 +1255,11 @@
         maxProgress = 75;
         if (jotformBar) jotformBar.style.width = '75%';
         if (jotformPercent) jotformPercent.textContent = '75%';
-        updateStatusText(jotformStatus, 75, 'jotform');
+        updateStatusText(jotformStatus, 75, 'jotform', 'Loading validation data...');
         if (qualtricsBar) qualtricsBar.style.width = '75%';
         if (qualtricsPercent) qualtricsPercent.textContent = '75%';
-        updateStatusText(qualtricsStatus, 75, 'qualtrics');
-        if (modalMessage) modalMessage.textContent = 'Submissions cached, loading validation data...';
+        updateStatusText(qualtricsStatus, 75, 'qualtrics', 'Loading validation data...');
+        if (modalMessage) modalMessage.textContent = 'Now validating student submissions...';
         
         // Get student data from CheckingSystemData
         const cachedSystemData = window.CheckingSystemData?.getCachedData();
@@ -1240,10 +1274,10 @@
           // Still mark as complete - submissions are cached
           if (jotformBar) jotformBar.style.width = '100%';
           if (jotformPercent) jotformPercent.textContent = '100%';
-          updateStatusText(jotformStatus, 100, 'jotform');
+          updateStatusText(jotformStatus, 100, 'jotform', 'Complete!');
           if (qualtricsBar) qualtricsBar.style.width = '100%';
           if (qualtricsPercent) qualtricsPercent.textContent = '100%';
-          updateStatusText(qualtricsStatus, 100, 'qualtrics');
+          updateStatusText(qualtricsStatus, 100, 'qualtrics', 'Complete!');
           
           isSyncing = false;
           currentSyncProgress = 100;
@@ -1268,7 +1302,7 @@
         const surveyStructure = await surveyResponse.json();
         console.log('[CacheUI] Survey structure loaded');
         
-        if (modalMessage) modalMessage.textContent = 'Submissions cached, validating students...';
+        if (modalMessage) modalMessage.textContent = 'Validating student task completion...';
         
         // Hook up progress callback for validation with throttled pill updates
         let lastPillUpdate = 0;
@@ -1299,7 +1333,7 @@
           // During validation, use the main message if no individual message
           updateStatusText(qualtricsStatus, qProgress, 'qualtrics', qMessage || message);
           
-          if (modalMessage) modalMessage.textContent = message;
+          // Don't update modalMessage here - detailed status shown under progress bars
           
           // Throttled pill updates to avoid excessive IndexedDB reads
           const now = Date.now();
@@ -1313,7 +1347,8 @@
         const validationCache = await window.JotFormCache.buildStudentValidationCache(
           cachedSystemData.students,
           surveyStructure,
-          true // Force rebuild
+          true, // Force rebuild
+          credentials // Pass credentials
         );
         console.log('[CacheUI] Validation cache built:', validationCache.size, 'students');
         
@@ -1324,10 +1359,10 @@
         const progressBar100Time = Date.now();
         if (jotformBar) jotformBar.style.width = '100%';
         if (jotformPercent) jotformPercent.textContent = '100%';
-        updateStatusText(jotformStatus, 100, 'jotform');
+        updateStatusText(jotformStatus, 100, 'jotform', 'Complete!');
         if (qualtricsBar) qualtricsBar.style.width = '100%';
         if (qualtricsPercent) qualtricsPercent.textContent = '100%';
-        updateStatusText(qualtricsStatus, 100, 'qualtrics');
+        updateStatusText(qualtricsStatus, 100, 'qualtrics', 'Complete!');
         console.log(`[SYNC-TIMING] ⏱️ Progress bars set to 100% at: ${new Date(progressBar100Time).toISOString()}`);
         
         // Mark sync complete and update pill

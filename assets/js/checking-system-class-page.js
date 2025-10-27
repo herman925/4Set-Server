@@ -166,7 +166,11 @@
       // using the exact same rules as the student drilldown page.
       const validationCache = await window.JotFormCache.buildStudentValidationCache(
         students,
-        surveyStructure
+        surveyStructure,
+        {
+          formId: cachedData.credentials?.jotformFormId,
+          apiKey: cachedData.credentials?.jotformApiKey
+        }
       );
       
       console.log(`[ClassPage] Validation cache built for ${validationCache.size} students`);

@@ -77,6 +77,26 @@
     }
     
     /**
+     * Normalize credential field names (supports legacy jotformApiKey/jotformFormId)
+     * @param {Object} credentials
+     * @returns {Object}
+     */
+    normalizeJotformCredentials(credentials) {
+      if (!credentials) {
+        return { formId: undefined, apiKey: undefined };
+      }
+
+      const formId = credentials.jotformFormId || credentials.formId;
+      const apiKey = credentials.jotformApiKey || credentials.apiKey;
+
+      return {
+        ...credentials,
+        formId,
+        apiKey
+      };
+    }
+
+    /**
      * Detect whether to use proxy server or direct API
      */
     detectApiBaseUrl() {
@@ -172,9 +192,11 @@
       }
 
       // Fetch fresh data
-      this.isLoading = true;
-      console.log('[JotFormCache] Starting fresh fetch...');
-      this.loadPromise = this.fetchAllSubmissions(credentials)
+  const normalizedCredentials = this.normalizeJotformCredentials(credentials);
+
+  this.isLoading = true;
+  console.log('[JotFormCache] Starting fresh fetch...');
+  this.loadPromise = this.fetchAllSubmissions(normalizedCredentials)
         .then(async submissions => {
           console.log('[JotFormCache] Fetch complete, saving', submissions.length, 'submissions');
           await this.saveToCache(submissions); // WAIT for IndexedDB write to complete
@@ -201,7 +223,14 @@
      */
     async fetchAllSubmissions(credentials) {
       console.log('[JotFormCache] ========== FETCHING ALL SUBMISSIONS ==========');
-      console.log('[JotFormCache] Form ID:', credentials.formId);
+      const formId = credentials?.formId;
+      const apiKey = credentials?.apiKey;
+
+      if (!formId || !apiKey) {
+        throw new Error('Missing JotForm credentials (formId/apiKey)');
+      }
+
+      console.log('[JotFormCache] Form ID:', formId);
 
       // Load configuration
       await this.loadConfig();
@@ -228,8 +257,8 @@
             console.log(`[JotFormCache] Using reduced batch size: ${currentBatchSize} (${Math.round(this.config.batchSizeReductions[this.reductionIndex] * 100)}% of ${baseBatchSize})`);
           }
           
-          const url = `${this.apiBaseUrl}/form/${credentials.formId}/submissions?` +
-                      `apiKey=${credentials.apiKey}` +
+          const url = `${this.apiBaseUrl}/form/${formId}/submissions?` +
+                      `apiKey=${apiKey}` +
                       `&limit=${currentBatchSize}` +
                       `&offset=${offset}` +
                       `&orderby=created_at` +
@@ -572,10 +601,11 @@
      * Checks IndexedDB first, validates if needed, then saves
      * @param {Array} students - Array of student objects from coreid.csv
      * @param {Object} surveyStructure - Survey structure for task-to-set mapping
+     * @param {Object} credentials - { formId, apiKey }
      * @param {boolean} forceRebuild - Force rebuild even if cache exists
      * @returns {Promise<Map>} - Map of coreId -> validation cache
      */
-    async buildStudentValidationCache(students, surveyStructure, forceRebuild = false) {
+    async buildStudentValidationCache(students, surveyStructure, credentials, forceRebuild = false) {
       console.log('[JotFormCache] Building student validation cache...');
       
       if (!window.TaskValidator) {
@@ -603,8 +633,8 @@
       }
       
       console.log('[JotFormCache] Building fresh validation cache...');
-      const validationCache = new Map();
-      const submissions = await this.getAllSubmissions();
+  const validationCache = new Map();
+  const submissions = await this.getAllSubmissions(credentials);
       
       if (!submissions || submissions.length === 0) {
         console.warn('[JotFormCache] No submissions to validate');

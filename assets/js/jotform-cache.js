@@ -41,6 +41,11 @@
     storeName: 'student_validation'
   }) : null;
 
+  // Progress allocation (phase 1: fetch, phase 2: validation)
+  const FETCH_PHASE_END_PERCENT = 75; // Phase 1 target (fetching JotForm submissions)
+  const VALIDATION_PHASE_START_PERCENT = FETCH_PHASE_END_PERCENT; // Phase 2 starts exactly where fetch ends
+  const VALIDATION_PHASE_RANGE = 100 - VALIDATION_PHASE_START_PERCENT;
+
   /**
    * Global JotForm Cache Manager
    */
@@ -65,6 +70,26 @@
       this.reductionIndex = 0; // Index into batchSizeReductions array
     }
     
+    /**
+     * Normalize credential field names (supports legacy jotformApiKey/jotformFormId)
+     * @param {Object} credentials
+     * @returns {Object}
+     */
+    normalizeJotformCredentials(credentials) {
+      if (!credentials) {
+        return { formId: undefined, apiKey: undefined };
+      }
+
+      const formId = credentials.jotformFormId || credentials.formId;
+      const apiKey = credentials.jotformApiKey || credentials.apiKey;
+
+      return {
+        ...credentials,
+        formId,
+        apiKey
+      };
+    }
+
     /**
      * Detect whether to use proxy server or direct API
      */
@@ -162,9 +187,11 @@
       }
 
       // Fetch fresh data
-      this.isLoading = true;
-      console.log('[JotFormCache] Starting fresh fetch...');
-      this.loadPromise = this.fetchAllSubmissions(credentials)
+  const normalizedCredentials = this.normalizeJotformCredentials(credentials);
+
+  this.isLoading = true;
+  console.log('[JotFormCache] Starting fresh fetch...');
+  this.loadPromise = this.fetchAllSubmissions(normalizedCredentials)
         .then(async submissions => {
           console.log('[JotFormCache] Fetch complete, saving', submissions.length, 'submissions');
           await this.saveToCache(submissions); // WAIT for IndexedDB write to complete
@@ -191,12 +218,22 @@
      */
     async fetchAllSubmissions(credentials) {
       console.log('[JotFormCache] ========== FETCHING ALL SUBMISSIONS ==========');
-      console.log('[JotFormCache] Form ID:', credentials.formId);
+      const formId = credentials?.formId;
+      const apiKey = credentials?.apiKey;
+
+      if (!formId || !apiKey) {
+        throw new Error('Missing JotForm credentials (formId/apiKey)');
+      }
+
+      console.log('[JotFormCache] Form ID:', formId);
 
       // Load configuration
       await this.loadConfig();
       
-      this.emitProgress('Connecting to Jotform API...', 5);
+      this.emitProgress('Connecting to Jotform API...', 5, {
+        jotformMessage: 'Connecting to Jotform API...',
+        qualtricsMessage: 'Waiting to start...'
+      });
 
       const allSubmissions = [];
       let offset = 0;
@@ -206,6 +243,15 @@
       // Adaptive batch sizing (like processor_agent.ps1)
       const baseBatchSize = this.config.initialBatchSize;
       let currentBatchSize = baseBatchSize;
+      
+  // Dynamic progress tracking
+  // Reserve 1-75% for fetching (74% range), 75-100% for post-processing
+    // Prefer precise progress using API-provided totals; fall back to
+    // adaptive estimation only if total count is unavailable.
+    let currentProgress = 1; // Start at 1%
+    const FETCH_END_PERCENT = FETCH_PHASE_END_PERCENT;
+  const FETCH_RANGE = FETCH_END_PERCENT - 1; // e.g. 74% when fetch cap is 75
+    let totalExpectedSubmissions = null;
 
       try {
         while (hasMore) {
@@ -218,26 +264,19 @@
             console.log(`[JotFormCache] Using reduced batch size: ${currentBatchSize} (${Math.round(this.config.batchSizeReductions[this.reductionIndex] * 100)}% of ${baseBatchSize})`);
           }
           
-          const url = `${this.apiBaseUrl}/form/${credentials.formId}/submissions?` +
-                      `apiKey=${credentials.apiKey}` +
+          const url = `${this.apiBaseUrl}/form/${formId}/submissions?` +
+                      `apiKey=${apiKey}` +
                       `&limit=${currentBatchSize}` +
                       `&offset=${offset}` +
                       `&orderby=created_at` +
                       `&direction=ASC`;
 
-          // Progress: 0-50% for fetching (phase 1) - leave 50-70% for Qualtrics if enabled
-          // Intelligent progress: estimate based on typical batch patterns
-          // Assume we're roughly halfway done if we're fetching full batches
-          // This provides better UX than fixed 2% per page
-          let fetchProgress;
-          if (pageNum === 1) {
-            fetchProgress = 5; // Starting
-          } else {
-            // Logarithmic curve: slower growth as we fetch more pages
-            // Cap at 48% to leave room for Qualtrics (50-70%)
-            fetchProgress = Math.min(48, 5 + Math.log(pageNum) * 12);
-          }
-          this.emitProgress(`Fetching page ${pageNum} (batch: ${currentBatchSize})...`, Math.round(fetchProgress));
+          // Progress BEFORE fetch: show what we're about to do
+          const fetchMessage = `Fetching page ${pageNum} (batch: ${currentBatchSize})...`;
+          this.emitProgress(fetchMessage, Math.round(currentProgress), {
+            jotformMessage: fetchMessage,
+            qualtricsMessage: 'Waiting to start...'
+          });
           
           let response;
           let result;
@@ -302,18 +341,40 @@
             }
 
             allSubmissions.push(...result.content);
-            
-            // Progress: 0-50% for fetching (phase 1) - leave 50-70% for Qualtrics if enabled
-            // Smart progress: if we got less than batch size, we're near the end!
-            let downloadProgress;
-            if (result.content.length < currentBatchSize) {
-              // Last page - cap at 50% to allow Qualtrics sync (50-70%)
-              downloadProgress = 50;
-            } else {
-              // Still fetching - use logarithmic curve, capped at 48%
-              downloadProgress = Math.min(48, 5 + Math.log(pageNum) * 12);
+
+            if (typeof result.total === 'number' && !Number.isNaN(result.total)) {
+              if (!totalExpectedSubmissions || result.total > totalExpectedSubmissions) {
+                totalExpectedSubmissions = result.total;
+              }
             }
-            this.emitProgress(`Downloaded ${allSubmissions.length} submissions...`, Math.round(downloadProgress));
+
+            // Progress AFTER successful fetch
+            const isLastPage = result.content.length < currentBatchSize;
+            let downloadProgress;
+
+            if (totalExpectedSubmissions && totalExpectedSubmissions > 0) {
+              const cappedTotal = Math.max(totalExpectedSubmissions, allSubmissions.length);
+              const completionRatio = Math.min(allSubmissions.length / cappedTotal, 1);
+              if (isLastPage || completionRatio >= 1) {
+                downloadProgress = FETCH_END_PERCENT;
+              } else {
+                downloadProgress = 1 + completionRatio * FETCH_RANGE;
+                downloadProgress = Math.min(downloadProgress, FETCH_END_PERCENT - 1);
+              }
+            } else {
+              // Fallback: adaptive increment based on page count when total is unknown
+              const remainingRange = FETCH_END_PERCENT - currentProgress;
+              const adaptiveIncrement = remainingRange / (pageNum * 0.5 + 2);
+              downloadProgress = Math.min(currentProgress + adaptiveIncrement, FETCH_END_PERCENT - 1);
+            }
+
+            currentProgress = Math.min(downloadProgress, FETCH_END_PERCENT);
+            
+            const downloadMessage = `Downloaded ${allSubmissions.length} submissions...`;
+            this.emitProgress(downloadMessage, Math.round(downloadProgress), {
+              jotformMessage: downloadMessage,
+              qualtricsMessage: 'Waiting to start...'
+            });
 
             // Gradually increase batch size if we're below baseline and have multiple consecutive successes
             if (this.reductionIndex > 0 && this.consecutiveSuccesses >= this.config.consecutiveSuccessesForIncrease) {
@@ -341,7 +402,11 @@
         }
 
         // Progress: Phase 1 complete, moving to phase 2
-        this.emitProgress('Saving to local cache...', 50);
+        currentProgress = FETCH_END_PERCENT;
+        this.emitProgress('Saving to local cache...', FETCH_END_PERCENT, {
+          jotformMessage: 'Saving to local cache...',
+          qualtricsMessage: 'Waiting to start...'
+        });
         console.log(`[JotFormCache] ========== FETCH COMPLETE ==========`);
         console.log(`[JotFormCache] Total submissions: ${allSubmissions.length}`);
         
@@ -558,10 +623,11 @@
      * Checks IndexedDB first, validates if needed, then saves
      * @param {Array} students - Array of student objects from coreid.csv
      * @param {Object} surveyStructure - Survey structure for task-to-set mapping
+     * @param {Object} credentials - { formId, apiKey } for JotForm API
      * @param {boolean} forceRebuild - Force rebuild even if cache exists
      * @returns {Promise<Map>} - Map of coreId -> validation cache
      */
-    async buildStudentValidationCache(students, surveyStructure, forceRebuild = false) {
+    async buildStudentValidationCache(students, surveyStructure, credentials, forceRebuild = false) {
       console.log('[JotFormCache] Building student validation cache...');
       
       if (!window.TaskValidator) {
@@ -588,9 +654,9 @@
         }
       }
       
-      console.log('[JotFormCache] Building fresh validation cache...');
-      const validationCache = new Map();
-      const submissions = await this.getAllSubmissions();
+  console.log('[JotFormCache] Building fresh validation cache...');
+  const validationCache = new Map();
+  const submissions = await this.getAllSubmissions(credentials);
       
       if (!submissions || submissions.length === 0) {
         console.warn('[JotFormCache] No submissions to validate');
@@ -634,9 +700,14 @@
           
           processed++;
           
-          // Report progress (70% to 100% = 30% range for validation, phase 2)
-          const validationProgress = 70 + Math.round((processed / totalStudents) * 30);
-          this.emitProgress(`Validating students (${processed}/${totalStudents})`, validationProgress);
+          // Report progress (phase 2 picks up exactly where fetch ended)
+          const validationProgress = VALIDATION_PHASE_START_PERCENT +
+            Math.round((processed / totalStudents) * VALIDATION_PHASE_RANGE);
+          const validationMessage = `Validating students (${processed}/${totalStudents})`;
+          this.emitProgress(validationMessage, validationProgress, {
+            jotformMessage: validationMessage,
+            qualtricsMessage: validationMessage
+          });
           
           if (processed % 10 === 0) {
             console.log(`[JotFormCache] Validated ${processed}/${totalStudents} students`);
@@ -1279,7 +1350,8 @@
         const merger = new window.DataMerger();
         
         // Set up progress tracking for parallel operations
-        // JotForm: 0-50%, Qualtrics: 0-50% (both contribute to combined progress)
+        // JotForm: 0-80%, Qualtrics: 0-60% (both contribute to combined progress)
+        // Reserve 80-100% for post-processing
         let jotformProgress = 0;
         let qualtricsProgress = 0;
         let jotformMessage = 'Waiting to start...';
@@ -1296,8 +1368,9 @@
           try {
             isUpdatingProgress = true;
             
-            // Combined progress is the average of both operations (0-50% range)
-            const combined = Math.round((jotformProgress + qualtricsProgress) / 2);
+            // Combined progress weighted average
+            // JotForm typically has more data, so weight it more heavily
+            const combined = Math.round((jotformProgress * 0.6 + qualtricsProgress * 0.4));
             
             // Call the original callback directly to avoid triggering our own callback
             if (originalJotformCallback) {
@@ -1305,8 +1378,10 @@
                 `Fetching data from both sources...`,
                 combined,
                 {
-                  jotformProgress: Math.round(jotformProgress * 2), // Scale back to 0-100%
-                  qualtricsProgress: Math.round(qualtricsProgress * 2), // Scale back to 0-100%
+                  // JotForm: scale 0-80 to 0-100
+                  jotformProgress: Math.round((jotformProgress / 80) * 100),
+                  // Qualtrics: scale 0-60 to 0-100  
+                  qualtricsProgress: Math.round((qualtricsProgress / 60) * 100),
                   jotformMessage: jotformMessage,
                   qualtricsMessage: qualtricsMessage
                 }
@@ -1323,15 +1398,15 @@
           // Ignore our own emitProgress calls by checking the details object
           if (!details || !details.jotformProgress) {
             // This is from JotForm's internal progress, update our tracking
-            jotformProgress = Math.min(progress, 50);
+            jotformProgress = Math.min(progress, 80);
             jotformMessage = msg; // Capture the detailed message
             updateCombinedProgress();
           }
         });
         
         qualtricsAPI.setProgressCallback((msg, progress) => {
-          // Qualtrics reports 0-100%, map to 0-50% of total
-          qualtricsProgress = Math.min(progress / 2, 50);
+          // Qualtrics reports 0-100%, map to 0-60% of total
+          qualtricsProgress = Math.min(progress * 0.6, 60);
           qualtricsMessage = msg; // Capture the detailed message
           updateCombinedProgress();
         });
@@ -1356,26 +1431,51 @@
           console.log(`[JotFormCache] JotForm: ${jotformSubmissions.length} submissions`);
           console.log(`[JotFormCache] Qualtrics: ${rawResponses.length} responses`);
           
-          // STEP 2: Transform both datasets (50-65%)
-          this.emitProgress('Transforming JotForm data...', 52);
+          // STEP 2: Transform both datasets (80-85%)
+          this.emitProgress('Transforming JotForm data...', 78, {
+            jotformProgress: 100,
+            qualtricsProgress: 5,
+            jotformMessage: 'Transforming data...',
+            qualtricsMessage: 'Transforming data...'
+          });
           const jotformData = this.transformSubmissionsToRecords(jotformSubmissions);
           console.log('[JotFormCache] JotForm data transformed:', jotformData.length, 'records');
 
-          this.emitProgress('Transforming Qualtrics data...', 60);
+          this.emitProgress('Transforming Qualtrics data...', 80, {
+            jotformProgress: 100,
+            qualtricsProgress: 15,
+            jotformMessage: 'Transforming data...',
+            qualtricsMessage: 'Transforming data...'
+          });
           const transformedData = transformer.transformBatch(rawResponses);
           console.log('[JotFormCache] Qualtrics data transformed:', transformedData.length, 'records');
 
-          // STEP 3: Merge datasets (65-70%)
-          this.emitProgress('Merging JotForm and Qualtrics data...', 65);
+          // STEP 3: Merge datasets (85-88%)
+          this.emitProgress('Merging JotForm and Qualtrics data...', 82, {
+            jotformProgress: 100,
+            qualtricsProgress: 25,
+            jotformMessage: 'Merging data...',
+            qualtricsMessage: 'Merging data...'
+          });
           const mergedData = merger.mergeDataSources(jotformData, transformedData);
           console.log('[JotFormCache] Data merged:', mergedData.length, 'records');
 
-          // STEP 4: Validate merge (70-75%)
-          this.emitProgress('Validating merged data...', 70);
+          // STEP 4: Validate merge (88-90%)
+          this.emitProgress('Validating merged data...', 85, {
+            jotformProgress: 100,
+            qualtricsProgress: 40,
+            jotformMessage: 'Validating data...',
+            qualtricsMessage: 'Validating data...'
+          });
           const validation = merger.validateMergedData(mergedData);
 
-          // STEP 5: Cache Qualtrics data separately (75-80%)
-          this.emitProgress('Caching Qualtrics responses...', 75);
+          // STEP 5: Cache Qualtrics data separately (90-92%)
+          this.emitProgress('Caching Qualtrics responses...', 87, {
+            jotformProgress: 100,
+            qualtricsProgress: 60,
+            jotformMessage: 'Caching data...',
+            qualtricsMessage: 'Caching data...'
+          });
           const qualtricsStorage = this.getQualtricsStorage();
           if (qualtricsStorage) {
             await qualtricsStorage.setItem('qualtrics_responses', {
@@ -1387,23 +1487,43 @@
             console.log('[JotFormCache] Qualtrics cache updated');
           }
 
-          // STEP 6: Convert merged records back to submission format (80-90%)
-          this.emitProgress('Converting merged data to cache format...', 80);
+          // STEP 6: Convert merged records back to submission format (92-95%)
+          this.emitProgress('Converting merged data to cache format...', 90, {
+            jotformProgress: 100,
+            qualtricsProgress: 75,
+            jotformMessage: 'Converting data...',
+            qualtricsMessage: 'Converting data...'
+          });
           const mergedSubmissions = this.transformRecordsToSubmissions(mergedData, jotformSubmissions);
           console.log('[JotFormCache] Converted', mergedSubmissions.length, 'records back to submission format');
 
-          // STEP 7: Update main cache with merged data (90-95%)
-          this.emitProgress('Updating main cache...', 90);
+          // STEP 7: Update main cache with merged data (95-98%)
+          this.emitProgress('Updating main cache...', 93, {
+            jotformProgress: 100,
+            qualtricsProgress: 90,
+            jotformMessage: 'Updating cache...',
+            qualtricsMessage: 'Updating cache...'
+          });
           await this.saveToCache(mergedSubmissions);
           this.cache = mergedSubmissions;
           console.log('[JotFormCache] Main cache updated with merged data');
 
-          // STEP 8: Clear validation cache (95-100%)
-          this.emitProgress('Clearing validation cache...', 95);
+          // STEP 8: Clear validation cache (98-100%)
+          this.emitProgress('Clearing validation cache...', 97, {
+            jotformProgress: 100,
+            qualtricsProgress: 96,
+            jotformMessage: 'Clearing validation cache...',
+            qualtricsMessage: 'Clearing validation cache...'
+          });
           await this.clearValidationCache();
           console.log('[JotFormCache] Validation cache cleared (will rebuild on demand)');
 
-          this.emitProgress('Qualtrics integration complete!', 100);
+          this.emitProgress('Qualtrics integration complete!', 100, {
+            jotformProgress: 100,
+            qualtricsProgress: 100,
+            jotformMessage: 'Complete!',
+            qualtricsMessage: 'Complete!'
+          });
           console.log('[JotFormCache] ========== QUALTRICS REFRESH COMPLETE ==========');
 
           return {
