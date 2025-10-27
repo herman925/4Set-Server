@@ -1294,99 +1294,102 @@
         // Set up progress callbacks for both operations
         const originalJotformCallback = this.progressCallback;
         this.setProgressCallback((msg, progress) => {
-          // JotForm reports 0-50%, map to 0-50% of total
-          jotformProgress = progress;
+          // JotForm's getAllSubmissions reports 0-50% already, use as-is
+          // Cap at 50 to prevent overflow in combined calculation
+          jotformProgress = Math.min(progress, 50);
           updateCombinedProgress();
         });
         
         qualtricsAPI.setProgressCallback((msg, progress) => {
           // Qualtrics reports 0-100%, map to 0-50% of total
-          qualtricsProgress = progress / 2;
+          qualtricsProgress = Math.min(progress / 2, 50);
           updateCombinedProgress();
         });
         
         this.emitProgress('Starting parallel fetch: JotForm + Qualtrics...', 0);
         console.log('[JotFormCache] ========== PARALLEL FETCH STARTED ==========');
         
-        // STEP 1: Fetch JotForm and Qualtrics data in PARALLEL
-        const [jotformSubmissions, rawResponses] = await Promise.all([
-          // Fetch JotForm submissions (0-50% progress)
-          this.getAllSubmissions(credentials),
+        try {
+          // STEP 1: Fetch JotForm and Qualtrics data in PARALLEL
+          const [jotformSubmissions, rawResponses] = await Promise.all([
+            // Fetch JotForm submissions (0-50% progress)
+            this.getAllSubmissions(credentials),
+            
+            // Fetch Qualtrics responses (0-50% progress)
+            (async () => {
+              await transformer.loadMapping();
+              return await qualtricsAPI.fetchAllResponses(credentials);
+            })()
+          ]);
           
-          // Fetch Qualtrics responses (0-50% progress)
-          (async () => {
-            await transformer.loadMapping();
-            return await qualtricsAPI.fetchAllResponses(credentials);
-          })()
-        ]);
-        
-        console.log('[JotFormCache] ========== PARALLEL FETCH COMPLETE ==========');
-        console.log(`[JotFormCache] JotForm: ${jotformSubmissions.length} submissions`);
-        console.log(`[JotFormCache] Qualtrics: ${rawResponses.length} responses`);
-        
-        // Restore original progress callback
-        this.setProgressCallback(originalJotformCallback);
-        
-        // STEP 2: Transform both datasets (50-65%)
-        this.emitProgress('Transforming JotForm data...', 52);
-        const jotformData = this.transformSubmissionsToRecords(jotformSubmissions);
-        console.log('[JotFormCache] JotForm data transformed:', jotformData.length, 'records');
+          console.log('[JotFormCache] ========== PARALLEL FETCH COMPLETE ==========');
+          console.log(`[JotFormCache] JotForm: ${jotformSubmissions.length} submissions`);
+          console.log(`[JotFormCache] Qualtrics: ${rawResponses.length} responses`);
+          
+          // STEP 2: Transform both datasets (50-65%)
+          this.emitProgress('Transforming JotForm data...', 52);
+          const jotformData = this.transformSubmissionsToRecords(jotformSubmissions);
+          console.log('[JotFormCache] JotForm data transformed:', jotformData.length, 'records');
 
-        this.emitProgress('Transforming Qualtrics data...', 60);
-        const transformedData = transformer.transformBatch(rawResponses);
-        console.log('[JotFormCache] Qualtrics data transformed:', transformedData.length, 'records');
+          this.emitProgress('Transforming Qualtrics data...', 60);
+          const transformedData = transformer.transformBatch(rawResponses);
+          console.log('[JotFormCache] Qualtrics data transformed:', transformedData.length, 'records');
 
-        // STEP 3: Merge datasets (65-70%)
-        this.emitProgress('Merging JotForm and Qualtrics data...', 65);
-        const mergedData = merger.mergeDataSources(jotformData, transformedData);
-        console.log('[JotFormCache] Data merged:', mergedData.length, 'records');
+          // STEP 3: Merge datasets (65-70%)
+          this.emitProgress('Merging JotForm and Qualtrics data...', 65);
+          const mergedData = merger.mergeDataSources(jotformData, transformedData);
+          console.log('[JotFormCache] Data merged:', mergedData.length, 'records');
 
-        // STEP 4: Validate merge (70-75%)
-        this.emitProgress('Validating merged data...', 70);
-        const validation = merger.validateMergedData(mergedData);
+          // STEP 4: Validate merge (70-75%)
+          this.emitProgress('Validating merged data...', 70);
+          const validation = merger.validateMergedData(mergedData);
 
-        // STEP 5: Cache Qualtrics data separately (75-80%)
-        this.emitProgress('Caching Qualtrics responses...', 75);
-        const qualtricsStorage = this.getQualtricsStorage();
-        if (qualtricsStorage) {
-          await qualtricsStorage.setItem('qualtrics_responses', {
-            timestamp: Date.now(),
-            responses: transformedData,
-            surveyId: credentials.qualtricsSurveyId,
-            count: transformedData.length
-          });
-          console.log('[JotFormCache] Qualtrics cache updated');
-        }
-
-        // STEP 6: Convert merged records back to submission format (80-90%)
-        this.emitProgress('Converting merged data to cache format...', 80);
-        const mergedSubmissions = this.transformRecordsToSubmissions(mergedData, jotformSubmissions);
-        console.log('[JotFormCache] Converted', mergedSubmissions.length, 'records back to submission format');
-
-        // STEP 7: Update main cache with merged data (90-95%)
-        this.emitProgress('Updating main cache...', 90);
-        await this.saveToCache(mergedSubmissions);
-        this.cache = mergedSubmissions;
-        console.log('[JotFormCache] Main cache updated with merged data');
-
-        // STEP 8: Clear validation cache (95-100%)
-        this.emitProgress('Clearing validation cache...', 95);
-        await this.clearValidationCache();
-        console.log('[JotFormCache] Validation cache cleared (will rebuild on demand)');
-
-        this.emitProgress('Qualtrics integration complete!', 100);
-        console.log('[JotFormCache] ========== QUALTRICS REFRESH COMPLETE ==========');
-
-        return {
-          success: true,
-          stats: {
-            ...validation,
-            jotformRecords: jotformData.length,
-            qualtricsResponses: rawResponses.length,
-            transformedRecords: transformedData.length,
-            mergedRecords: mergedData.length
+          // STEP 5: Cache Qualtrics data separately (75-80%)
+          this.emitProgress('Caching Qualtrics responses...', 75);
+          const qualtricsStorage = this.getQualtricsStorage();
+          if (qualtricsStorage) {
+            await qualtricsStorage.setItem('qualtrics_responses', {
+              timestamp: Date.now(),
+              responses: transformedData,
+              surveyId: credentials.qualtricsSurveyId,
+              count: transformedData.length
+            });
+            console.log('[JotFormCache] Qualtrics cache updated');
           }
-        };
+
+          // STEP 6: Convert merged records back to submission format (80-90%)
+          this.emitProgress('Converting merged data to cache format...', 80);
+          const mergedSubmissions = this.transformRecordsToSubmissions(mergedData, jotformSubmissions);
+          console.log('[JotFormCache] Converted', mergedSubmissions.length, 'records back to submission format');
+
+          // STEP 7: Update main cache with merged data (90-95%)
+          this.emitProgress('Updating main cache...', 90);
+          await this.saveToCache(mergedSubmissions);
+          this.cache = mergedSubmissions;
+          console.log('[JotFormCache] Main cache updated with merged data');
+
+          // STEP 8: Clear validation cache (95-100%)
+          this.emitProgress('Clearing validation cache...', 95);
+          await this.clearValidationCache();
+          console.log('[JotFormCache] Validation cache cleared (will rebuild on demand)');
+
+          this.emitProgress('Qualtrics integration complete!', 100);
+          console.log('[JotFormCache] ========== QUALTRICS REFRESH COMPLETE ==========');
+
+          return {
+            success: true,
+            stats: {
+              ...validation,
+              jotformRecords: jotformData.length,
+              qualtricsResponses: rawResponses.length,
+              transformedRecords: transformedData.length,
+              mergedRecords: mergedData.length
+            }
+          };
+        } finally {
+          // Always restore original progress callback, even on error
+          this.setProgressCallback(originalJotformCallback);
+        }
       } catch (error) {
         console.error('[JotFormCache] Qualtrics refresh failed:', error);
         this.emitProgress('Qualtrics refresh failed: ' + error.message, 0);
