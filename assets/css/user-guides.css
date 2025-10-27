@@ -8,9 +8,107 @@
   overflow-y: auto;
 }
 
-/* Content sections */
+/* Responsive sidebar - Hamburger menu on narrow viewports */
+.sidebar-toggle {
+  display: none;
+  position: fixed;
+  top: 1rem;
+  left: 1.5rem;
+  z-index: 98;
+  background: transparent;
+  color: var(--primary);
+  border: none;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sidebar-toggle:hover {
+  transform: scale(1.1);
+}
+
+.sidebar-toggle svg {
+  display: block;
+  width: 28px;
+  height: 28px;
+  stroke: var(--primary);
+  stroke-width: 2.5;
+}
+
+@media (max-width: 1024px) {
+  .sidebar-toggle {
+    display: block;
+  }
+
+  /* Add left padding to header to prevent overlap with hamburger menu */
+  header .container {
+    padding-left: 5rem !important;
+  }
+
+  .sidebar {
+    position: fixed;
+    left: -280px;
+    top: 0;
+    width: 280px;
+    height: 100vh;
+    max-height: 100vh;
+    background: white;
+    z-index: 100;
+    transition: left 0.3s ease;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+    padding: 6rem 1rem 2rem 1rem;
+    overflow-y: auto;
+  }
+
+  .sidebar.active {
+    left: 0;
+  }
+
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 99;
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .sidebar-overlay.active {
+    display: block;
+    opacity: 1;
+  }
+}
+
+/* Content sections - Enhanced visual separation */
 .content-section {
   scroll-margin-top: 2rem;
+  padding-top: 3rem;
+  padding-bottom: 3rem;
+  border-bottom: 2px solid #e2e8f0;
+  margin-bottom: 2rem;
+}
+
+.content-section:last-child {
+  border-bottom: none;
+}
+
+/* Section headers with better spacing */
+.content-section > h2 {
+  position: relative;
+  padding-bottom: 1rem;
+  margin-bottom: 2rem;
+}
+
+.content-section > h2::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 4rem;
+  height: 4px;
+  background: var(--primary);
+  border-radius: 2px;
 }
 
 /* Table of Contents Links */
