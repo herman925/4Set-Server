@@ -1038,6 +1038,13 @@
           total: validation.totalQuestions,
           answered: validation.answeredQuestions,
           correct: validation.tgmdScoring.totalScore,
+          scoredTotal: validation.tgmdScoring.maxScore,
+          answeredPercent: validation.totalQuestions > 0 
+            ? Math.round((validation.answeredQuestions / validation.totalQuestions) * 100) 
+            : 0,
+          correctPercent: validation.tgmdScoring.maxScore > 0
+            ? Math.round((validation.tgmdScoring.totalScore / validation.tgmdScoring.maxScore) * 100)
+            : 0,
           percentage: validation.completionPercentage
         });
         
