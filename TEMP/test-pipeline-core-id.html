@@ -754,7 +754,7 @@
         }
 
         // Transform JotForm submissions to records format for DataMerger
-        // This matches the production transformSubmissionsToRecords logic
+        // This EXACTLY matches the production transformSubmissionsToRecords logic
         function transformJotFormSubmissions(submissions) {
             console.log('[Test] Transforming JotForm submissions to records...');
             
@@ -762,58 +762,57 @@
                 return [];
             }
 
-            // Create reverse mapping: QID -> field name
-            const qidToFieldName = {};
-            if (jotformQuestionsData) {
-                for (const [fieldName, qid] of Object.entries(jotformQuestionsData)) {
-                    qidToFieldName[qid] = fieldName;
-                }
-            }
-
             const records = [];
+            const STUDENT_ID_QID = '20'; // QID for student-id field
             
             for (const submission of submissions) {
-                // Extract student ID from QID 20 (student-id field)
-                const studentIdAnswer = submission.answers?.['20'];
-                const studentId = studentIdAnswer?.answer || studentIdAnswer?.text;
-                
-                if (!studentId) {
-                    console.warn('[Test] Submission missing student ID (QID 20), skipping:', submission.id);
-                    continue;
-                }
-                
-                // Create coreId with "C" prefix to match Qualtrics format
-                const coreId = studentId.startsWith('C') ? studentId : `C${studentId}`;
-                
-                const record = {
-                    coreId: coreId,
-                    'student-id': studentId,
-                    sessionkey: submission.answers?.['3']?.answer || submission.answers?.['3']?.text,
-                    created_at: submission.created_at,
-                    _meta: {
-                        source: 'jotform',
-                        submissionId: submission.id
+                try {
+                    // Extract student ID from answers using configured QID
+                    const studentIdAnswer = submission.answers?.[STUDENT_ID_QID];
+                    const studentId = studentIdAnswer?.answer || studentIdAnswer?.text;
+                    
+                    if (!studentId) {
+                        console.warn('[Test] Submission missing student ID, skipping:', submission.id);
+                        continue;
                     }
-                };
-                
-                // Map all answers from QID to field names
-                const answers = submission.answers || {};
-                for (const [qid, answerObj] of Object.entries(answers)) {
-                    const fieldName = qidToFieldName[qid];
-                    if (fieldName) {
-                        const value = answerObj.answer || answerObj.text;
-                        // Allow all meaningful values including 0, false, empty strings
-                        // Only skip null/undefined
-                        if (value != null) {
-                            record[fieldName] = value;
+                    
+                    // Create coreId with "C" prefix
+                    const coreId = studentId.startsWith('C') ? studentId : `C${studentId}`;
+                    
+                    // Build flat record with all answer fields
+                    const record = {
+                        coreId: coreId,
+                        'student-id': studentId,
+                        _meta: {
+                            source: 'jotform',
+                            submissionId: submission.id,
+                            created_at: submission.created_at,
+                            updated_at: submission.updated_at
+                        }
+                    };
+                    
+                    // Flatten answers object to record fields
+                    // CRITICAL: Use answerObj.name from the JotForm response, NOT external mapping
+                    if (submission.answers) {
+                        for (const [qid, answerObj] of Object.entries(submission.answers)) {
+                            // Use the field name if available, otherwise use QID
+                            const fieldName = answerObj.name || `q${qid}`;
+                            const value = answerObj.answer || answerObj.text || '';
+                            
+                            // Skip empty values and the student-id we already processed
+                            if (value && qid !== STUDENT_ID_QID) {
+                                record[fieldName] = value;
+                            }
                         }
                     }
+                    
+                    records.push(record);
+                } catch (error) {
+                    console.error('[Test] Failed to transform submission:', submission.id, error);
                 }
-                
-                records.push(record);
             }
 
-            console.log(`[Test] Transformed ${records.length} submissions to records`);
+            console.log(`[Test] Transformed ${records.length} submissions to records (${submissions.length - records.length} skipped)`);
             return records;
         }
 
