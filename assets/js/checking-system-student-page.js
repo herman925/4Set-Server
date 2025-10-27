@@ -222,6 +222,14 @@
       updateTextContent('student-class-name', classData.actualClassName);
       updateTextContent('student-teacher', classData.teacherNames || 'N/A');
     }
+    
+    // Display the grade/year from student data
+    if (studentData.year) {
+      const yearLabel = studentData.year; // K1, K2, or K3
+      const yearMapping = { 'K1': '23/24', 'K2': '24/25', 'K3': '25/26' };
+      const academicYear = yearMapping[yearLabel] || yearLabel;
+      updateTextContent('student-class-label', `Class (${academicYear} - ${yearLabel})`);
+    }
 
     console.log('[StudentPage] Profile population complete');
     console.log('[StudentPage] ==========================================');
