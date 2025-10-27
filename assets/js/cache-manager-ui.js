@@ -44,17 +44,18 @@
     
     const msg = messages[operationType] || messages.jotform;
     
-    if (progress === PROGRESS_THRESHOLDS.FETCH_START) {
-      statusElement.textContent = msg.waiting;
-    } else if (progress >= PROGRESS_THRESHOLDS.VALIDATION_COMPLETE) {
+    // Use thresholds in descending order to avoid conflicts
+    if (progress >= PROGRESS_THRESHOLDS.FETCH_COMPLETE) {
       statusElement.textContent = msg.complete;
+    } else if (progress >= PROGRESS_THRESHOLDS.VALIDATION_COMPLETE) {
+      statusElement.textContent = msg.validating;
     } else if (progress >= PROGRESS_THRESHOLDS.VALIDATION_START) {
       statusElement.textContent = msg.validating;
-    } else if (progress >= PROGRESS_THRESHOLDS.FETCH_COMPLETE) {
-      statusElement.textContent = msg.complete;
     } else if (progress > PROGRESS_THRESHOLDS.FETCH_START) {
-      // During fetch phase, determine if we're fetching or processing
       statusElement.textContent = msg.fetching;
+    } else {
+      // progress <= 0
+      statusElement.textContent = msg.waiting;
     }
   }
   
