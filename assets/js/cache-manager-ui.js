@@ -595,10 +595,28 @@
     await showQualtricsProgressModal();
     
     try {
+      // Track max progress for non-regressive bars
+      let maxJotformProgress = 0;
+      let maxQualtricsProgress = 0;
+      
       // Set progress callback to update dual progress bars
       window.JotFormCache.setProgressCallback((message, progress, details = {}) => {
-        const jotformProgress = details.jotformProgress || 0;
-        const qualtricsProgress = details.qualtricsProgress || 0;
+        let jotformProgress = details.jotformProgress || 0;
+        let qualtricsProgress = details.qualtricsProgress || 0;
+        
+        // Apply non-regressive logic
+        if (jotformProgress < maxJotformProgress) {
+          jotformProgress = maxJotformProgress;
+        } else {
+          maxJotformProgress = jotformProgress;
+        }
+        
+        if (qualtricsProgress < maxQualtricsProgress) {
+          qualtricsProgress = maxQualtricsProgress;
+        } else {
+          maxQualtricsProgress = qualtricsProgress;
+        }
+        
         updateQualtricsProgress(message, jotformProgress, qualtricsProgress);
       });
       
@@ -1003,6 +1021,8 @@
       isSyncing = true;
       currentSyncProgress = 0;
       let maxProgress = 0; // Track maximum progress to prevent regression
+      let maxJotformProgress = 0; // Track max JotForm progress (non-regressive)
+      let maxQualtricsProgress = 0; // Track max Qualtrics progress (non-regressive)
 
       // Set up progress callback - updates BOTH modal AND pill
       window.JotFormCache.setProgressCallback((message, progress, details = {}) => {
@@ -1015,8 +1035,23 @@
         currentSyncProgress = progress;
         
         // Extract individual progress values from details
-        const jotformProgress = details.jotformProgress || 0;
-        const qualtricsProgress = details.qualtricsProgress || 0;
+        let jotformProgress = details.jotformProgress || 0;
+        let qualtricsProgress = details.qualtricsProgress || 0;
+        
+        // Apply non-regressive logic to individual bars
+        if (jotformProgress < maxJotformProgress) {
+          console.warn(`[CacheUI] JotForm progress regression prevented: ${jotformProgress}% < ${maxJotformProgress}%`);
+          jotformProgress = maxJotformProgress;
+        } else {
+          maxJotformProgress = jotformProgress;
+        }
+        
+        if (qualtricsProgress < maxQualtricsProgress) {
+          console.warn(`[CacheUI] Qualtrics progress regression prevented: ${qualtricsProgress}% < ${maxQualtricsProgress}%`);
+          qualtricsProgress = maxQualtricsProgress;
+        } else {
+          maxQualtricsProgress = qualtricsProgress;
+        }
         
         // Update modal progress bars (if still open)
         if (jotformBar) jotformBar.style.width = `${jotformProgress}%`;
@@ -1103,9 +1138,11 @@
         
         // Step 2: Build validation cache (70-95%)
         maxProgress = 75;
-        progressBar.style.width = '75%';
-        progressPercent.textContent = '75%';
-        progressText.textContent = 'Submissions cached, loading validation data...';
+        if (jotformBar) jotformBar.style.width = '75%';
+        if (jotformPercent) jotformPercent.textContent = '75%';
+        if (qualtricsBar) qualtricsBar.style.width = '75%';
+        if (qualtricsPercent) qualtricsPercent.textContent = '75%';
+        if (modalMessage) modalMessage.textContent = 'Submissions cached, loading validation data...';
         
         // Get student data from CheckingSystemData
         const cachedSystemData = window.CheckingSystemData?.getCachedData();
