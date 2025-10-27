@@ -32,9 +32,9 @@
     },
     "modalText": {
       "blockTitle": "Database Not Fetched",
-      "blockMessage": "Please fetch the database from JotForm first by clicking the status pill above.",
+      "blockMessage": "Please fetch the online database first by clicking the status pill above.",
       "syncTitle": "System Not Ready",
-      "syncMessage": "The system needs to fetch the database from JotForm to enable fast searching. This is a one-time process that takes about 30-60 seconds.",
+      "syncMessage": "The system needs to fetch data from JotForm & Qualtrics to enable fast searching. This is a one-time process that takes about a minute.",
       "syncButton": "Fetch Database",
       "syncCancel": "Cancel",
       "completeTitle": "System Ready",
