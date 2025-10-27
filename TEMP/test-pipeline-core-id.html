@@ -802,13 +802,14 @@
                     const fieldName = qidToFieldName[qid];
                     if (fieldName) {
                         const value = answerObj.answer || answerObj.text;
-                        if (value) {
+                        if (value !== null && value !== undefined && value !== '') {
                             record[fieldName] = value;
                         }
                     }
                 }
                 
                 records.push(record);
+                console.log(`[Test] Transformed JotForm submission: coreId=${coreId}, sessionkey=${record.sessionkey}`);
             }
 
             console.log(`[Test] Transformed ${records.length} submissions to records`);
