@@ -1279,17 +1279,17 @@
             // TGMD Qualtrics Section - Display TGMD data from Qualtrics exclusively
             displayTGMDQualtricsData(data);
 
-            // Debug Data - show first grade's data as example
+            // Debug Data - show complete data (no truncation)
             const firstGrade = sortedGrades[0];
             if (firstGrade && data.mergedData[firstGrade]) {
                 document.getElementById('debug-jotform').textContent = 
-                    JSON.stringify(data.jotformData.jotformRecords, null, 2).substring(0, 5000) + '...';
+                    JSON.stringify(data.jotformData.jotformRecords, null, 2);
                 document.getElementById('debug-qualtrics-raw').textContent = 
-                    JSON.stringify(data.qualtricsData.responses, null, 2).substring(0, 5000) + '...';
+                    JSON.stringify(data.qualtricsData.responses, null, 2);
                 document.getElementById('debug-qualtrics').textContent = 
-                    JSON.stringify(data.transformedQualtrics, null, 2).substring(0, 5000) + '...';
+                    JSON.stringify(data.transformedQualtrics, null, 2);
                 document.getElementById('debug-merged').textContent = 
-                    JSON.stringify(data.mergedData, null, 2).substring(0, 5000) + '...';
+                    JSON.stringify(data.mergedData, null, 2);
                 document.getElementById('debug-validation').textContent = 
                     JSON.stringify(data.validationResults, null, 2);
             }
