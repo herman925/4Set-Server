@@ -1101,9 +1101,9 @@
 
       // Set up progress callback - updates BOTH modal AND pill
       window.JotFormCache.setProgressCallback((message, progress, details = {}) => {
-        // Prevent progress regression
+        // Prevent progress regression (silently - warnings would clutter console)
         if (progress < maxProgress) {
-          console.warn(`[CacheUI] Progress regression prevented: ${progress}% < ${maxProgress}%`);
+          // Don't regress, but don't warn - this can happen during parallel fetch coordination
           return;
         }
         maxProgress = progress;
@@ -1113,16 +1113,16 @@
         let jotformProgress = details.jotformProgress || 0;
         let qualtricsProgress = details.qualtricsProgress || 0;
         
-        // Apply non-regressive logic to individual bars
+        // Apply non-regressive logic to individual bars (silently)
         if (jotformProgress < maxJotformProgress) {
-          console.warn(`[CacheUI] JotForm progress regression prevented: ${jotformProgress}% < ${maxJotformProgress}%`);
+          // Keep at max, don't regress
           jotformProgress = maxJotformProgress;
         } else {
           maxJotformProgress = jotformProgress;
         }
         
         if (qualtricsProgress < maxQualtricsProgress) {
-          console.warn(`[CacheUI] Qualtrics progress regression prevented: ${qualtricsProgress}% < ${maxQualtricsProgress}%`);
+          // Keep at max, don't regress
           qualtricsProgress = maxQualtricsProgress;
         } else {
           maxQualtricsProgress = qualtricsProgress;
@@ -1198,6 +1198,11 @@
             } else {
               console.warn('[CacheUI] Qualtrics modules not loaded, falling back to JotForm only');
               
+              // Reset progress tracking for fallback
+              maxProgress = 0;
+              maxJotformProgress = 0;
+              maxQualtricsProgress = 0;
+              
               // Fallback to JotForm only
               const result = await window.JotFormCache.getAllSubmissions({
                 formId: credentials.jotformFormId || credentials.formId,
@@ -1210,6 +1215,11 @@
             }
           } catch (fetchError) {
             console.error('[CacheUI] Parallel fetch failed, falling back to JotForm only:', fetchError);
+            
+            // Reset progress tracking for fallback
+            maxProgress = 0;
+            maxJotformProgress = 0;
+            maxQualtricsProgress = 0;
             
             // Fallback to JotForm only
             try {
