@@ -175,12 +175,13 @@
           if (jotform.length > 0) {
             // Sort by created_at (earliest first)
             jotform.sort((a, b) => {
-              const dateA = a.created_at ? new Date(a.created_at) : new Date(0);
-              const dateB = b.created_at ? new Date(b.created_at) : new Date(0);
+              const dateA = a._meta?.created_at ? new Date(a._meta.created_at) : new Date(0);
+              const dateB = b._meta?.created_at ? new Date(b._meta.created_at) : new Date(0);
               return dateA - dateB;
             });
             
-            mergedJotform = jotform[0]; // Take earliest submission for this grade
+            // Merge all JotForm submissions field-by-field (earliest non-empty wins)
+            mergedJotform = this.mergeMultipleJotFormRecords(jotform);
           }
           
           // Now merge JotForm + Qualtrics FOR THIS GRADE ONLY
@@ -261,6 +262,56 @@
         multipleResponses: true,
         mergedResponseCount: (merged._meta?.mergedResponseCount || 1) + 1
       };
+
+      return merged;
+    }
+
+    /**
+     * Merge multiple JotForm submissions for the same student
+     * Uses earliest non-empty value principle (matches production jotform-cache.js)
+     * This replicates the logic from jotform-cache.js lines 798-817
+     * @param {Array} jotformRecords - Array of JotForm records (already sorted by created_at)
+     * @returns {Object} Merged record with all fields combined
+     */
+    mergeMultipleJotFormRecords(jotformRecords) {
+      if (jotformRecords.length === 0) {
+        return null;
+      }
+      
+      if (jotformRecords.length === 1) {
+        return jotformRecords[0];
+      }
+
+      // Start with base structure from earliest record
+      const merged = {
+        coreId: jotformRecords[0].coreId,
+        'student-id': jotformRecords[0]['student-id'],
+        _meta: {
+          ...jotformRecords[0]._meta,
+          multipleSubmissions: true,
+          submissionCount: jotformRecords.length,
+          submissionIds: jotformRecords.map(r => r._meta.submissionId)
+        }
+      };
+
+      // Merge all fields from all submissions (earliest non-empty value wins)
+      for (const record of jotformRecords) {
+        for (const [key, answerObj] of Object.entries(record)) {
+          // Skip metadata and special fields
+          if (this.excludeFields.has(key) || key.startsWith('_') || 
+              key === 'coreId' || key === 'student-id') {
+            continue;
+          }
+          
+          // Extract value from answer object for checking
+          const value = this.extractAnswerValue(answerObj);
+          
+          // Only set if not already present and value is not empty (earliest wins)
+          if (value && !merged[key]) {
+            merged[key] = answerObj; // Store the full answer object
+          }
+        }
+      }
 
       return merged;
     }
