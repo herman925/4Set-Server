@@ -1282,28 +1282,46 @@
         // JotForm: 0-50%, Qualtrics: 0-50% (both contribute to combined progress)
         let jotformProgress = 0;
         let qualtricsProgress = 0;
+        let isUpdatingProgress = false; // Prevent recursive calls
         
         const updateCombinedProgress = () => {
-          // Combined progress is the average of both operations (0-50% range)
-          const combined = Math.round((jotformProgress + qualtricsProgress) / 2);
-          // Pass individual progress values for dual progress bar display
-          this.emitProgress(
-            `Fetching data from both sources...`,
-            combined,
-            {
-              jotformProgress: Math.round(jotformProgress * 2), // Scale back to 0-100%
-              qualtricsProgress: Math.round(qualtricsProgress * 2) // Scale back to 0-100%
+          // Prevent infinite recursion
+          if (isUpdatingProgress) return;
+          
+          try {
+            isUpdatingProgress = true;
+            
+            // Combined progress is the average of both operations (0-50% range)
+            const combined = Math.round((jotformProgress + qualtricsProgress) / 2);
+            
+            // Call the original callback directly to avoid triggering our own callback
+            if (originalJotformCallback) {
+              originalJotformCallback(
+                `Fetching data from both sources...`,
+                combined,
+                {
+                  jotformProgress: Math.round(jotformProgress * 2), // Scale back to 0-100%
+                  qualtricsProgress: Math.round(qualtricsProgress * 2) // Scale back to 0-100%
+                }
+              );
             }
-          );
+          } finally {
+            isUpdatingProgress = false;
+          }
         };
         
-        // Set up progress callbacks for both operations
+        // Save original callback before overriding
         const originalJotformCallback = this.progressCallback;
-        this.setProgressCallback((msg, progress) => {
-          // JotForm's getAllSubmissions reports 0-50% already, use as-is
-          // Cap at 50 to prevent overflow in combined calculation
-          jotformProgress = Math.min(progress, 50);
-          updateCombinedProgress();
+        
+        // Set up progress callbacks for both operations
+        this.setProgressCallback((msg, progress, details) => {
+          // Only handle progress from JotForm's getAllSubmissions
+          // Ignore our own emitProgress calls by checking the details object
+          if (!details || !details.jotformProgress) {
+            // This is from JotForm's internal progress, update our tracking
+            jotformProgress = Math.min(progress, 50);
+            updateCombinedProgress();
+          }
         });
         
         qualtricsAPI.setProgressCallback((msg, progress) => {
