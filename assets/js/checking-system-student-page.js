@@ -821,6 +821,17 @@
   function renderTGMDResults(tbody, tgmdScoring, taskElement) {
     console.log('[StudentPage] Rendering TGMD grouped results');
     
+    // Update table headers for TGMD-specific columns
+    const thead = taskElement.querySelector('table thead tr');
+    if (thead) {
+      thead.innerHTML = `
+        <th class="text-left font-medium pb-2 px-2">Question</th>
+        <th class="text-left font-medium pb-2 px-2">Student Answer</th>
+        <th class="text-left font-medium pb-2 px-2 text-center">Score</th>
+        <th class="text-left font-medium pb-2 px-2">Result</th>
+      `;
+    }
+    
     // Iterate through each motor task (hop, long_jump, slide, etc.)
     for (const [taskName, taskData] of Object.entries(tgmdScoring.byTask)) {
       // Add task header row
@@ -848,14 +859,23 @@
         const t1Status = criterion.trials.t1 === 1 ? 'success' : 'fail';
         const t2Status = criterion.trials.t2 === 1 ? 'success' : 'fail';
         
-        // Create trial pills with Success/Fail labels
-        const t1Pill = criterion.trials.t1 === 1
-          ? '<span class="trial-pill trial-success"><i data-lucide="check" class="w-3 h-3"></i>Success</span>'
-          : '<span class="trial-pill trial-fail"><i data-lucide="x" class="w-3 h-3"></i>Fail</span>';
+        // Create compact trial indicators with checkmark or X
+        const t1Icon = criterion.trials.t1 === 1
+          ? '<i data-lucide="check" class="w-3 h-3 text-green-600"></i>'
+          : '<i data-lucide="x" class="w-3 h-3 text-red-600"></i>';
         
-        const t2Pill = criterion.trials.t2 === 1
-          ? '<span class="trial-pill trial-success"><i data-lucide="check" class="w-3 h-3"></i>Success</span>'
-          : '<span class="trial-pill trial-fail"><i data-lucide="x" class="w-3 h-3"></i>Fail</span>';
+        const t2Icon = criterion.trials.t2 === 1
+          ? '<i data-lucide="check" class="w-3 h-3 text-green-600"></i>'
+          : '<i data-lucide="x" class="w-3 h-3 text-red-600"></i>';
+        
+        // Determine result status based on row score
+        const resultStatus = criterion.rowScore > 0 ? 'Observed' : 'Not-Observed';
+        const resultClass = criterion.rowScore > 0 
+          ? 'answer-pill' 
+          : 'answer-pill incorrect';
+        const resultIcon = criterion.rowScore > 0 
+          ? 'eye' 
+          : 'eye-off';
         
         row.innerHTML = `
           <td class="py-2 px-2 text-[color:var(--foreground)]">
@@ -863,15 +883,9 @@
             <div class="text-sm mt-1">${criterion.description}</div>
           </td>
           <td class="py-2 px-2">
-            <div class="flex flex-col gap-1">
-              <div class="flex items-center gap-2">
-                <span class="text-xs text-[color:var(--muted-foreground)] w-12">Trial 1:</span>
-                ${t1Pill}
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-xs text-[color:var(--muted-foreground)] w-12">Trial 2:</span>
-                ${t2Pill}
-              </div>
+            <div class="flex items-center gap-3 text-xs text-[color:var(--foreground)]">
+              <span class="inline-flex items-center gap-1">T1: ${t1Icon}</span>
+              <span class="inline-flex items-center gap-1">T2: ${t2Icon}</span>
             </div>
           </td>
           <td class="py-2 px-2 text-center">
@@ -880,8 +894,8 @@
             </div>
           </td>
           <td class="py-2 px-2">
-            <span class="answer-pill" style="background: #f0fdf4; color: #166534; border-color: #bbf7d0;">
-              <i data-lucide="hash" class="w-3 h-3"></i>Row Score
+            <span class="${resultClass}">
+              <i data-lucide="${resultIcon}" class="w-3 h-3"></i>${resultStatus}
             </span>
           </td>
         `;
