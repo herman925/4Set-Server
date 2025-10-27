@@ -114,9 +114,11 @@
         }
         
         // Determine grade from sessionkey
+        // Extract value from answer object if needed
         let grade = 'Unknown';
         if (window.GradeDetector && record.sessionkey) {
-          grade = window.GradeDetector.determineGradeFromSessionKey(record.sessionkey);
+          const sessionkeyValue = this.extractAnswerValue(record.sessionkey);
+          grade = window.GradeDetector.determineGradeFromSessionKey(sessionkeyValue);
         }
         
         // Initialize student entry if needed
