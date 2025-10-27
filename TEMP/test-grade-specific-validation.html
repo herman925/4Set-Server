@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Grade-Specific Validation Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1200px;
+      margin: 20px auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+    }
+    h1 { color: #333; }
+    .test-section {
+      background: white;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .pass { color: #28a745; font-weight: bold; }
+    .fail { color: #dc3545; font-weight: bold; }
+    .test-result {
+      padding: 10px;
+      margin: 10px 0;
+      border-left: 4px solid #ccc;
+    }
+    .test-result.pass { border-left-color: #28a745; background: #d4edda; }
+    .test-result.fail { border-left-color: #dc3545; background: #f8d7da; }
+    pre {
+      background: #f8f9fa;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Grade-Specific Task Validation Test</h1>
+  
+  <div class="test-section">
+    <h2>Test Setup</h2>
+    <p>This test validates that TaskValidator correctly loads grade-specific ERV task definitions based on student grade.</p>
+  </div>
+
+  <div class="test-section" id="results">
+    <h2>Test Results</h2>
+    <div id="test-output"></div>
+  </div>
+
+  <!-- Load dependencies -->
+  <script src="../assets/js/grade-detector.js"></script>
+  <script src="../assets/js/task-validator.js"></script>
+
+  <script>
+    // Test runner
+    async function runTests() {
+      const output = document.getElementById('test-output');
+      let passCount = 0;
+      let failCount = 0;
+
+      function logResult(testName, passed, message, details = null) {
+        const resultDiv = document.createElement('div');
+        resultDiv.className = `test-result ${passed ? 'pass' : 'fail'}`;
+        resultDiv.innerHTML = `
+          <strong>${passed ? '✓' : '✗'} ${testName}</strong><br>
+          ${message}
+          ${details ? `<pre>${JSON.stringify(details, null, 2)}</pre>` : ''}
+        `;
+        output.appendChild(resultDiv);
+        
+        if (passed) passCount++;
+        else failCount++;
+      }
+
+      // Test 1: Load K1 ERV task
+      try {
+        console.log('[Test] Loading ERV for K1...');
+        const k1Task = await TaskValidator.loadTaskDefinition('erv', 'K1');
+        const k1Questions = TaskValidator.extractQuestions(k1Task);
+        const hasOnlyStage1 = k1Questions.some(q => q.id === 'ERV_Q1') && 
+                             k1Questions.some(q => q.id === 'ERV_Q12') &&
+                             !k1Questions.some(q => q.id === 'ERV_Q13');
+        
+        logResult(
+          'K1 ERV Task Loading',
+          hasOnlyStage1,
+          hasOnlyStage1 ? 
+            `Successfully loaded K1 version with ${k1Questions.length} questions (stage 1 only)` :
+            'Failed to load correct K1 version',
+          { questionCount: k1Questions.length, hasQ12: k1Questions.some(q => q.id === 'ERV_Q12'), hasQ13: k1Questions.some(q => q.id === 'ERV_Q13') }
+        );
+      } catch (error) {
+        logResult('K1 ERV Task Loading', false, `Error: ${error.message}`);
+      }
+
+      // Test 2: Load K2 ERV task
+      try {
+        console.log('[Test] Loading ERV for K2...');
+        const k2Task = await TaskValidator.loadTaskDefinition('erv', 'K2');
+        const k2Questions = TaskValidator.extractQuestions(k2Task);
+        const hasStage1And2 = k2Questions.some(q => q.id === 'ERV_Q1') && 
+                             k2Questions.some(q => q.id === 'ERV_Q24') &&
+                             !k2Questions.some(q => q.id === 'ERV_Q25');
+        
+        logResult(
+          'K2 ERV Task Loading',
+          hasStage1And2,
+          hasStage1And2 ? 
+            `Successfully loaded K2 version with ${k2Questions.length} questions (stages 1-2)` :
+            'Failed to load correct K2 version',
+          { questionCount: k2Questions.length, hasQ24: k2Questions.some(q => q.id === 'ERV_Q24'), hasQ25: k2Questions.some(q => q.id === 'ERV_Q25') }
+        );
+      } catch (error) {
+        logResult('K2 ERV Task Loading', false, `Error: ${error.message}`);
+      }
+
+      // Test 3: Load K3 ERV task
+      try {
+        console.log('[Test] Loading ERV for K3...');
+        const k3Task = await TaskValidator.loadTaskDefinition('erv', 'K3');
+        const k3Questions = TaskValidator.extractQuestions(k3Task);
+        const hasAllStages = k3Questions.some(q => q.id === 'ERV_Q1') && 
+                            k3Questions.some(q => q.id === 'ERV_Q24') &&
+                            k3Questions.some(q => q.id === 'ERV_Q36');
+        
+        logResult(
+          'K3 ERV Task Loading',
+          hasAllStages,
+          hasAllStages ? 
+            `Successfully loaded K3 version with ${k3Questions.length} questions (stages 1-3)` :
+            'Failed to load correct K3 version',
+          { questionCount: k3Questions.length, hasQ24: k3Questions.some(q => q.id === 'ERV_Q24'), hasQ36: k3Questions.some(q => q.id === 'ERV_Q36') }
+        );
+      } catch (error) {
+        logResult('K3 ERV Task Loading', false, `Error: ${error.message}`);
+      }
+
+      // Test 4: Validate task with grade detection
+      try {
+        console.log('[Test] Validating with grade detection...');
+        const mockK1Student = {
+          recordedDate: '2024-03-15T10:00:00.000Z', // March 2024 = School year 2023 = K1
+          ERV_Q1: { answer: '2' }, // correct
+          ERV_Q2: { answer: '4' }, // correct
+          ERV_Q3: { answer: '2' }, // correct
+          ERV_Q4: { answer: '1' }, // correct
+          ERV_Q5: { answer: '1' }, // correct
+          ERV_Q6: { answer: '3' }  // correct
+        };
+
+        const allResults = await TaskValidator.validateAllTasks(mockK1Student);
+        const ervResult = allResults['erv'];
+        
+        const correctGrade = ervResult.grade === 'K1';
+        const correctQuestionCount = ervResult.totalQuestions === 12; // K1 should only have 12 questions
+        
+        logResult(
+          'Grade Detection in Validation',
+          correctGrade && correctQuestionCount,
+          correctGrade && correctQuestionCount ?
+            `Correctly validated as K1 with ${ervResult.totalQuestions} questions` :
+            `Failed - Grade: ${ervResult.grade}, Questions: ${ervResult.totalQuestions}`,
+          { grade: ervResult.grade, totalQuestions: ervResult.totalQuestions, answeredQuestions: ervResult.answeredQuestions }
+        );
+      } catch (error) {
+        logResult('Grade Detection in Validation', false, `Error: ${error.message}`);
+      }
+
+      // Summary
+      const summaryDiv = document.createElement('div');
+      summaryDiv.className = 'test-result';
+      summaryDiv.innerHTML = `
+        <h3>Test Summary</h3>
+        <p><span class="pass">${passCount} passed</span> | <span class="fail">${failCount} failed</span></p>
+      `;
+      output.appendChild(summaryDiv);
+
+      console.log(`[Test Summary] ${passCount} passed, ${failCount} failed`);
+    }
+
+    // Run tests when page loads
+    window.addEventListener('load', () => {
+      console.log('[Test] Starting grade-specific validation tests...');
+      runTests().catch(error => {
+        console.error('[Test] Fatal error:', error);
+        document.getElementById('test-output').innerHTML = `
+          <div class="test-result fail">
+            <strong>Fatal Error</strong><br>
+            ${error.message}
+          </div>
+        `;
+      });
+    });
+  </script>
+</body>
+</html>

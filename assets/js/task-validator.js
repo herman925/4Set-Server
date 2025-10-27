@@ -59,10 +59,18 @@ window.TaskValidator = (() => {
       taskMetadata = surveyStructure.taskMetadata || {};
       
       // Build taskFiles map from metadata
-      // Key: canonical ID, Value: file path
+      // Key: canonical ID (with grade suffix for grade-specific files), Value: file path
       for (const [filename, metadata] of Object.entries(taskMetadata)) {
-        const canonicalId = metadata.id;
-        taskFiles[canonicalId] = `assets/tasks/${filename}.json`;
+        // For grade-specific files, use a compound key: id_grade (e.g., "erv_k1")
+        if (metadata.grade) {
+          const gradeSpecificId = `${metadata.id}_${metadata.grade.toLowerCase()}`;
+          taskFiles[gradeSpecificId] = `assets/tasks/${filename}.json`;
+          console.log(`[TaskValidator] Registered grade-specific task: ${gradeSpecificId} -> ${filename}.json`);
+        } else {
+          // For regular files, use the canonical ID
+          const canonicalId = metadata.id;
+          taskFiles[canonicalId] = `assets/tasks/${filename}.json`;
+        }
         
         // Also map aliases to the same file
         if (metadata.aliases) {
@@ -73,6 +81,7 @@ window.TaskValidator = (() => {
       }
       
       console.log('[TaskValidator] Task metadata loaded:', Object.keys(taskMetadata).length, 'tasks');
+      console.log('[TaskValidator] Task files registered:', Object.keys(taskFiles));
       return taskMetadata;
     } catch (error) {
       console.error('[TaskValidator] Failed to load task metadata:', error);
