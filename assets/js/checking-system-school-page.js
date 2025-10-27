@@ -180,7 +180,11 @@
       // student validations, ensuring consistency across all hierarchical levels.
       const validationCache = await window.JotFormCache.buildStudentValidationCache(
         students,
-        surveyStructure
+        surveyStructure,
+        {
+          formId: cachedData.credentials?.jotformFormId,
+          apiKey: cachedData.credentials?.jotformApiKey
+        }
       );
       
       console.log(`[SchoolPage] Validation cache built for ${validationCache.size} students`);

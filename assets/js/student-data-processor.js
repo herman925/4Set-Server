@@ -186,9 +186,12 @@ class StudentDataProcessor {
 
             const credentials = cachedData.credentials;
 
+            const formId = credentials.jotformFormId || credentials.formId;
+            const apiKey = credentials.jotformApiKey || credentials.apiKey;
+
             console.log('[StudentData] ========== JOTFORM FETCH (GLOBAL CACHE) ==========');
             console.log('[StudentData] Core ID:', coreId);
-            console.log('[StudentData] Form ID:', credentials.formId);
+            console.log('[StudentData] Form ID:', formId);
 
             // Use global cache manager
             if (!window.JotFormCache) {
@@ -197,8 +200,8 @@ class StudentDataProcessor {
 
             // Get all submissions from cache or API
             const allSubmissions = await window.JotFormCache.getAllSubmissions({
-                formId: credentials.formId,
-                apiKey: credentials.apiKey
+                formId: formId,
+                apiKey: apiKey
             });
 
             console.log('[StudentData] Total submissions in cache:', allSubmissions.length);

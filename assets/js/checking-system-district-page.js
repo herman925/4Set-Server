@@ -119,7 +119,11 @@
       
       const validationCache = await window.JotFormCache.buildStudentValidationCache(
         students,
-        surveyStructure
+        surveyStructure,
+        {
+          formId: cachedData.credentials?.jotformFormId,
+          apiKey: cachedData.credentials?.jotformApiKey
+        }
       );
       
       console.log(`[DistrictPage] Validation cache built for ${validationCache.size} students`);
@@ -513,7 +517,11 @@
             // Return validation cache for all students in district
             return await window.JotFormCache.buildStudentValidationCache(
               students,
-              surveyStructure
+              surveyStructure,
+              {
+                formId: cachedData.credentials?.jotformFormId,
+                apiKey: cachedData.credentials?.jotformApiKey
+              }
             );
           }
         });

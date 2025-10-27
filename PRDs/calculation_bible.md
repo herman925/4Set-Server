@@ -1355,7 +1355,7 @@ validationCache = Map {
 **Cache Invalidation:**
 - Validation cache timestamp must be >= submissions cache timestamp
 - If submissions cache is newer, validation cache is rebuilt
-- Force rebuild: `buildStudentValidationCache(students, surveyStructure, forceRebuild=true)`
+- Force rebuild: `buildStudentValidationCache(students, surveyStructure, credentials, forceRebuild=true)`
 
 **Performance:**
 - Initial build: ~200ms per student (includes full TaskValidator run)
@@ -1894,8 +1894,15 @@ async function validateStudent(student, submissions, surveyStructure) {
 
 const validationCache = await window.JotFormCache.buildStudentValidationCache(
   students,
-  surveyStructure
+  surveyStructure,
+  {
+    formId: credentials.jotformFormId || credentials.formId,
+    apiKey: credentials.jotformApiKey || credentials.apiKey
+  }
 );
+
+// NOTE (Oct 2025): Third parameter enforces normalized JotForm credentials so
+// both legacy (jotformFormId/jotformApiKey) and new (formId/apiKey) fields work.
 
 // Location: jotform-cache.js Lines 627
 const taskValidation = await window.TaskValidator.validateAllTasks(mergedAnswers);
