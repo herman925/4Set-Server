@@ -66,6 +66,19 @@ Startup scripts for local development:
   - Troubleshooting guide
   - Technical implementation details
 
+- **`COMPARISON_SUMMARY.md`** - Quick reference for production vs test pipeline differences:
+  - Side-by-side comparison table
+  - Key findings and issues identified
+  - Recommendations by priority
+  - Testing checklist
+  - Links to full documentation
+
+- **`DATA_FLOW_DOCUMENTATION.md`** - Answer object schema alignment documentation:
+  - Unified data schema explanation
+  - Production vs test pipeline flow
+  - DataMerger and TaskValidator compatibility
+  - Verification checklist
+
 ### Assets
 
 - **`assets/`** - Test-specific assets (icons, images) separate from production assets
@@ -175,6 +188,12 @@ TEMP files should be periodically reviewed and cleaned:
 - `PRDs/checking_system_prd.md` - Main system architecture and implementation notes
 - `PRDs/jotform_qualtrics_integration_prd.md` - API integration and cache system
 - `PRDs/checking_system_pipeline_prd.md` - Data pipeline specifications
+- **`PRDs/production_vs_test_pipeline_comparison.md`** - ⭐ **NEW: Full 1-to-1 comparison of production and test systems** (45KB comprehensive analysis)
+
+**Test Documentation (in TEMP/):**
+- `COMPARISON_SUMMARY.md` - Quick reference summary (links to full PRD comparison)
+- `DATA_FLOW_DOCUMENTATION.md` - Answer object schema alignment
+- `README_PIPELINE_TEST.md` - Test pipeline user guide
 
 **User Guides:**
 - `USER_GUIDE_CHECKING_SYSTEM.md` - End-user documentation
@@ -187,6 +206,8 @@ TEMP files should be periodically reviewed and cleaned:
 
 ---
 
-**Last Updated**: 2025-10-25  
+**Last Updated**: 2025-10-27  
 **Maintainer**: 4Set Development Team  
 **Purpose**: Test workspace and development tools
+
+**New (2025-10-27):** Comprehensive production vs test pipeline comparison now available at `PRDs/production_vs_test_pipeline_comparison.md`
