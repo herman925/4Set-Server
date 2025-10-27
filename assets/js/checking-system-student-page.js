@@ -809,6 +809,22 @@
   }
 
   /**
+   * Helper function to display error message in table
+   */
+  function showTableError(tbody, message, iconName = 'alert-triangle', iconColor = 'amber-500') {
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4" class="py-8 px-4 text-center">
+          <i data-lucide="${iconName}" class="w-12 h-12 mx-auto text-${iconColor} mb-4"></i>
+          <p class="text-[color:var(--foreground)] font-semibold mb-2">${message.title || 'Error'}</p>
+          <p class="text-[color:var(--muted-foreground)] text-sm">${message.description || 'An error occurred while loading data.'}</p>
+        </td>
+      </tr>
+    `;
+    if (typeof lucide !== 'undefined') lucide.createIcons();
+  }
+
+  /**
    * Render TGMD results with grouped task display and trial breakdown
    * 
    * Displays TGMD assessment results grouped by motor task (hop, jump, slide, etc.)
@@ -818,8 +834,64 @@
    * @param {Object} tgmdScoring - TGMD scoring data from task validator
    * @param {HTMLElement} taskElement - Task details element for styling
    */
-  function renderTGMDResults(tbody, tgmdScoring, taskElement) {
+  function renderTGMDResults(tbody, tgmdScoring, taskElement, validation) {
     console.log('[StudentPage] Rendering TGMD grouped results');
+    
+    // Validate tgmdScoring object
+    if (!tgmdScoring || !tgmdScoring.byTask) {
+      console.error('[StudentPage] ❌ Invalid tgmdScoring object:', tgmdScoring);
+      showTableError(tbody, {
+        title: 'TGMD Data Error',
+        description: 'TGMD scoring data is invalid or missing. Please check the data source.'
+      }, 'alert-circle', 'red-500');
+      return;
+    }
+    
+    // Update table headers for TGMD-specific columns
+    const thead = taskElement.querySelector('table thead tr');
+    if (thead) {
+      thead.innerHTML = `
+        <th class="text-left font-medium pb-2 px-2">Question</th>
+        <th class="text-left font-medium pb-2 px-2">Student Answer</th>
+        <th class="text-left font-medium pb-2 px-2 text-center">Score</th>
+        <th class="text-left font-medium pb-2 px-2">Result</th>
+      `;
+    }
+    
+    // Check if we have any tasks to render
+    const taskCount = Object.keys(tgmdScoring.byTask).length;
+    if (taskCount === 0) {
+      console.warn('[StudentPage] ⚠️ No TGMD tasks found in scoring data');
+      showTableError(tbody, {
+        title: 'No TGMD Data',
+        description: 'No TGMD task data available for this student.'
+      }, 'info', 'blue-500');
+      return;
+    }
+    
+    console.log(`[StudentPage] Rendering ${taskCount} TGMD motor tasks`);
+    
+    // First, display TGMD_Leg (preferred foot/hand) if available
+    if (validation && validation.questions) {
+      const tgmdLeg = validation.questions.find(q => q.id === 'TGMD_Leg');
+      if (tgmdLeg) {
+        const legRow = document.createElement('tr');
+        legRow.className = 'bg-blue-50 border-b-2 border-blue-200';
+        const legAnswer = tgmdLeg.studentAnswer || '—';
+        const legAnswerDisplay = legAnswer === 'Left' ? '左腳' : 
+                                 legAnswer === 'Right' ? '右腳' : 
+                                 legAnswer === 'Undetermined' ? '未形成' : legAnswer;
+        legRow.innerHTML = `
+          <td colspan="4" class="py-3 px-2">
+            <div class="flex items-center gap-2">
+              <i data-lucide="footprints" class="w-4 h-4 text-blue-600"></i>
+              <span class="font-semibold text-blue-900">慣用腳: ${legAnswerDisplay}</span>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(legRow);
+      }
+    }
     
     // Iterate through each motor task (hop, long_jump, slide, etc.)
     for (const [taskName, taskData] of Object.entries(tgmdScoring.byTask)) {
@@ -831,9 +903,6 @@
           <div class="flex items-center gap-2">
             <i data-lucide="activity" class="w-4 h-4 text-[color:var(--primary)]"></i>
             <span>${taskData.taskLabel || taskName}</span>
-            <span class="ml-auto text-sm font-normal text-[color:var(--muted-foreground)]">
-              Task Score: ${taskData.taskScore}/${taskData.taskMaxScore}
-            </span>
           </div>
         </td>
       `;
@@ -848,14 +917,39 @@
         const t1Status = criterion.trials.t1 === 1 ? 'success' : 'fail';
         const t2Status = criterion.trials.t2 === 1 ? 'success' : 'fail';
         
-        // Create trial pills with Success/Fail labels
-        const t1Pill = criterion.trials.t1 === 1
-          ? '<span class="trial-pill trial-success"><i data-lucide="check" class="w-3 h-3"></i>Success</span>'
-          : '<span class="trial-pill trial-fail"><i data-lucide="x" class="w-3 h-3"></i>Fail</span>';
+        // Create compact trial indicators with checkmark or X
+        const t1Icon = criterion.trials.t1 === 1
+          ? '<i data-lucide="check" class="w-3 h-3 text-green-600"></i>'
+          : '<i data-lucide="x" class="w-3 h-3 text-red-600"></i>';
         
-        const t2Pill = criterion.trials.t2 === 1
-          ? '<span class="trial-pill trial-success"><i data-lucide="check" class="w-3 h-3"></i>Success</span>'
-          : '<span class="trial-pill trial-fail"><i data-lucide="x" class="w-3 h-3"></i>Fail</span>';
+        const t2Icon = criterion.trials.t2 === 1
+          ? '<i data-lucide="check" class="w-3 h-3 text-green-600"></i>'
+          : '<i data-lucide="x" class="w-3 h-3 text-red-600"></i>';
+        
+        // Determine result status based on row score and whether trials were answered
+        let resultStatus, resultClass, resultIcon;
+        
+        // Check if trials were actually answered (not null/blank)
+        const t1Answered = criterion.trials.t1 !== null && criterion.trials.t1 !== undefined;
+        const t2Answered = criterion.trials.t2 !== null && criterion.trials.t2 !== undefined;
+        const anyAnswered = t1Answered || t2Answered;
+        
+        if (!anyAnswered) {
+          // Not answered at all
+          resultStatus = 'Not Answered';
+          resultClass = 'answer-pill';
+          resultIcon = 'circle-help';
+        } else if (criterion.rowScore > 0) {
+          // Observed (at least one trial successful)
+          resultStatus = 'Observed';
+          resultClass = 'answer-pill correct';
+          resultIcon = 'eye';
+        } else {
+          // Not observed (answered but score is 0)
+          resultStatus = 'Not-Observed';
+          resultClass = 'answer-pill incorrect';
+          resultIcon = 'eye-off';
+        }
         
         row.innerHTML = `
           <td class="py-2 px-2 text-[color:var(--foreground)]">
@@ -863,15 +957,9 @@
             <div class="text-sm mt-1">${criterion.description}</div>
           </td>
           <td class="py-2 px-2">
-            <div class="flex flex-col gap-1">
-              <div class="flex items-center gap-2">
-                <span class="text-xs text-[color:var(--muted-foreground)] w-12">Trial 1:</span>
-                ${t1Pill}
-              </div>
-              <div class="flex items-center gap-2">
-                <span class="text-xs text-[color:var(--muted-foreground)] w-12">Trial 2:</span>
-                ${t2Pill}
-              </div>
+            <div class="flex items-center gap-3 text-xs text-[color:var(--foreground)]">
+              <span class="inline-flex items-center gap-1">T1: ${t1Icon}</span>
+              <span class="inline-flex items-center gap-1">T2: ${t2Icon}</span>
             </div>
           </td>
           <td class="py-2 px-2 text-center">
@@ -880,8 +968,8 @@
             </div>
           </td>
           <td class="py-2 px-2">
-            <span class="answer-pill" style="background: #f0fdf4; color: #166534; border-color: #bbf7d0;">
-              <i data-lucide="hash" class="w-3 h-3"></i>Row Score
+            <span class="${resultClass}">
+              <i data-lucide="${resultIcon}" class="w-3 h-3"></i>${resultStatus}
             </span>
           </td>
         `;
@@ -890,26 +978,7 @@
       }
     }
     
-    // Add overall summary row
-    const summaryRow = document.createElement('tr');
-    summaryRow.className = 'bg-[color:var(--accent)] font-bold border-t-2 border-[color:var(--border)]';
-    summaryRow.innerHTML = `
-      <td colspan="2" class="py-3 px-2">
-        <div class="flex items-center gap-2">
-          <i data-lucide="target" class="w-4 h-4 text-[color:var(--primary)]"></i>
-          <span>Overall TGMD Score</span>
-        </div>
-      </td>
-      <td class="py-3 px-2 text-center text-lg">
-        ${tgmdScoring.totalScore}/${tgmdScoring.maxScore}
-      </td>
-      <td class="py-3 px-2">
-        <span class="text-sm text-[color:var(--muted-foreground)]">
-          ${tgmdScoring.percentage}%
-        </span>
-      </td>
-    `;
-    tbody.appendChild(summaryRow);
+    // Note: Overall TGMD Score summary row removed per user request
   }
 
   /**
@@ -985,15 +1054,35 @@
       tbody.innerHTML = '';
       
       // Check if this is TGMD task with special scoring
-      if (taskId === 'tgmd' && validation.tgmdScoring) {
+      if (taskId === 'tgmd') {
+        if (!validation.tgmdScoring) {
+          console.warn('[StudentPage] ⚠️ TGMD task found but tgmdScoring is missing!');
+          console.log('[StudentPage] Validation object:', validation);
+          // Show error message in table using helper
+          showTableError(tbody, {
+            title: 'TGMD Data Not Available',
+            description: 'TGMD scoring data could not be loaded. Please check if the student has completed this assessment.'
+          });
+          continue;
+        }
+        
+        console.log('[StudentPage] ✅ TGMD scoring data found:', validation.tgmdScoring);
+        
         // Render TGMD with grouped task display
-        renderTGMDResults(tbody, validation.tgmdScoring, taskElement);
+        renderTGMDResults(tbody, validation.tgmdScoring, taskElement, validation);
         
         // Update task summary with TGMD-specific stats
         updateTaskSummary(taskElement, taskId, {
           total: validation.totalQuestions,
           answered: validation.answeredQuestions,
           correct: validation.tgmdScoring.totalScore,
+          scoredTotal: validation.tgmdScoring.maxScore,
+          answeredPercent: validation.totalQuestions > 0 
+            ? Math.round((validation.answeredQuestions / validation.totalQuestions) * 100) 
+            : 0,
+          correctPercent: validation.tgmdScoring.maxScore > 0
+            ? Math.round((validation.tgmdScoring.totalScore / validation.tgmdScoring.maxScore) * 100)
+            : 0,
           percentage: validation.completionPercentage
         });
         
