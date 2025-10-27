@@ -1284,6 +1284,9 @@
         let qualtricsProgress = 0;
         let isUpdatingProgress = false; // Prevent recursive calls
         
+        // Save original callback BEFORE defining the update function
+        const originalJotformCallback = this.progressCallback;
+        
         const updateCombinedProgress = () => {
           // Prevent infinite recursion
           if (isUpdatingProgress) return;
@@ -1309,9 +1312,6 @@
             isUpdatingProgress = false;
           }
         };
-        
-        // Save original callback before overriding
-        const originalJotformCallback = this.progressCallback;
         
         // Set up progress callbacks for both operations
         this.setProgressCallback((msg, progress, details) => {
