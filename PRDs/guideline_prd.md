@@ -56,7 +56,7 @@ This is the **single source of truth** for modal implementation. The pattern sol
 Modal Backdrop (fixed fullscreen with padding)
   └─ Content Wrapper (centered, provides positioning context)
        ├─ Spotlight Overlay (fixed, fullscreen, pointer-events: none, z-index: 10000)
-       ├─ Close Button (absolute, top: -12px, right: -12px, z-index: 10002)
+       ├─ Close Button (absolute, top: -12px, right: -12px, z-index: 10003)
        └─ Scrollable Content (relative, z-index: 10)
 ```
 
@@ -230,7 +230,7 @@ The optimal modal structure uses a **flat hierarchy** to avoid z-index stacking 
     <button 
       data-spotlight="close" 
       onclick="closeHomepageModal()" 
-      style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10002;"
+      style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10003;"
     >
       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
@@ -523,7 +523,7 @@ The close button must be positioned **outside and before** the scrollable conten
     <button 
       data-spotlight="close" 
       onclick="closeModal()" 
-      style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10002;">
+      style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10003;">
       <svg>...</svg>
     </button>
     
@@ -541,7 +541,7 @@ The close button must be positioned **outside and before** the scrollable conten
 - `width: 48px; height: 48px` → Circular button with adequate touch target
 - `border-radius: 50%` → Perfect circle
 - `background-color: white` → Visible against any background
-- `z-index: 10002` → Above overlay (10000) and content (10)
+- `z-index: 10003` → Above overlay (10000) and content (10)
 
 ❌ **WRONG** - Close button inside sticky header (gets cut off by stacking context):
 
@@ -585,7 +585,7 @@ For each modal, verify the **flat hierarchy pattern** (quick_start_guide.html st
 
 **Close Button:**
 - [ ] Close button positioned `top: -12px; right: -12px` (outside content box)
-- [ ] Close button has `z-index: 10002` (inline style, no need for class)
+- [ ] Close button has `z-index: 10003` (inline style, no need for class)
 - [ ] Close button uses `position: absolute` relative to content wrapper
 - [ ] Close button has `data-spotlight="close"` attribute
 - [ ] Close button is circular: `width: 48px; height: 48px; border-radius: 50%`
@@ -607,7 +607,7 @@ For each modal, verify the **flat hierarchy pattern** (quick_start_guide.html st
 - ❌ Using flexbox centering on backdrop (complicates positioning)
 - ❌ Putting close button inside scrollable content
 - ❌ Putting close button inside sticky header
-- ❌ Using `z-[10003]` class instead of inline `z-index: 10002`
+- ❌ Using `z-[10003]` class instead of inline `z-index: 10003`
 - ❌ Nesting overlay as parent of close button
 
 ---
@@ -751,7 +751,7 @@ window.uploadConfigSpotlight = new SpotlightSystem({
 - Position overlay as sibling to close button (both children of content wrapper)
 - Include `data-spotlight="close"` on close button
 - Add ESC key handler and click-outside-to-close
-- Use inline `z-index: 10002` on close button (no Tailwind class needed)
+- Use inline `z-index: 10003` on close button (no Tailwind class needed)
 - Make close button circular with white background for universal visibility
 
 ❌ **DON'T:**
