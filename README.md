@@ -1578,7 +1578,11 @@ type(scope): description
   - `user_guide_uploader.html` - Upload interface guide
   - `user_guide_qualtrics.html` - Qualtrics integration guide
   - `user_guide_conflicts.html` - Data conflict resolution guide
+  - **Guideline System**: Advanced interactive learning system with spotlight effects, modals, and tooltips
+    - Technical specification: `PRDs/guideline_prd.md`
+    - Implementation: `assets/js/spotlight-system.js` and `assets/css/spotlight-system.css`
 - **PRD User Guides**: Markdown versions in `/PRDs/` folder
+  - `PRDs/guideline_prd.md` - User guide system design specification (spotlight, modals, tooltips)
   - `PRDs/checking_system_user_guide_prd.md` - Checking system usage guide
   - `PRDs/assessment_uploader_user_guide_prd.md` - Upload interface guide
   - `PRDs/qualtrics_tgmd_user_guide_prd.md` - Qualtrics integration guide
