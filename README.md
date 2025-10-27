@@ -1113,8 +1113,9 @@ All tasks from qualtrics-mapping.json are extracted:
 ### Data Merge Strategy
 
 #### Precedence Rules
-- **Qualtrics data overwrites JotForm** for matching fields
-- **Earliest non-empty value wins** when multiple Qualtrics responses exist
+- **"Earliest non-empty wins"** - Timestamp-based merge strategy for JotForm vs Qualtrics data
+- **When both sources have a value**: Use the value from the earlier timestamp
+- **When only one source has a value**: Use that value regardless of source
 - **Conflict detection** logs all overwrites for audit trail
 
 #### Merge Process
@@ -1129,10 +1130,10 @@ All tasks from qualtrics-mapping.json are extracted:
   "coreId": "10261",
   "sessionkey": "10261_20240915_10_30",
   "grade": "K2",  // Auto-detected from assessment date
-  "ERV_Q1": "answer1",  // From JotForm
-  "TGMD_111_Hop_t1": 1,  // From Qualtrics (overwrites JotForm)
+  "ERV_Q1": "answer1",  // From earliest source (JotForm or Qualtrics)
+  "TGMD_111_Hop_t1": 1,  // From earliest source with non-empty value
   "_sources": ["jotform", "qualtrics"],
-  "_qualtricsConflicts": [...]  // List of overwrites
+  "_qualtricsConflicts": [...]  // List of conflicts resolved by timestamp
 }
 ```
 
