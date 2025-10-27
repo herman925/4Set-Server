@@ -1050,8 +1050,20 @@
                 const tgmdFields = {};
                 
                 // Extract ALL TGMD fields (show even if empty to give complete picture)
+                // Handle both answer objects and raw values for compatibility
                 for (const field of ALL_TGMD_FIELDS) {
-                    tgmdFields[field] = response[field] !== undefined ? response[field] : null;
+                    const rawValue = response[field];
+                    if (rawValue !== undefined) {
+                        // If it's an answer object (from Qualtrics transformer), extract the value
+                        if (typeof rawValue === 'object' && rawValue !== null && 'answer' in rawValue) {
+                            tgmdFields[field] = rawValue.answer || rawValue.text || null;
+                        } else {
+                            // Otherwise use the raw value (for backward compatibility)
+                            tgmdFields[field] = rawValue;
+                        }
+                    } else {
+                        tgmdFields[field] = null;
+                    }
                 }
                 
                 // Check if at least one TGMD field has a value
