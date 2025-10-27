@@ -593,6 +593,12 @@ These features exist ONLY in production and are not needed for testing:
 - **Calculation Bible:** `PRDs/calculation_bible.md`
 - **Test README:** `TEMP/README_PIPELINE_TEST.md`
 
+# 2025-10-28: Cached Data Scope Fixes for Drilldown Pages
+
+- **Decision**: Promote `cachedData` to module scope within `assets/js/checking-system-school-page.js`, `assets/js/checking-system-group-page.js`, `assets/js/checking-system-district-page.js`, and `assets/js/checking-system-class-page.js` so downstream aggregation utilities can reference the home-page dataset and credential bundle.
+- **Rationale**: `fetchAndAggregateData` on these drilldowns relied on `cachedData` for JotForm credentials and drilldown data indexes, but the variable was previously block-scoped to `init()`, causing `ReferenceError` crashes once validation caching began.
+- **Impact**: Restores the school, group, district, and class drilldown views by ensuring validation and aggregation reuse the already-fetched data without triggering additional requests or runtime errors.
+
 ---
 
 **Analysis Completed:** 2025-10-27  

@@ -4,6 +4,7 @@
  */
 
 (() => {
+  let cachedData = null;
   let group = null;
   let district = null;
   let schools = [];
@@ -33,7 +34,7 @@
     }
 
     // Load cached data
-    const cachedData = window.CheckingSystemData?.getCachedData();
+  cachedData = window.CheckingSystemData?.getCachedData();
     if (!cachedData) {
       alert('Please go through home page first');
       window.location.href = 'checking_system_home.html';

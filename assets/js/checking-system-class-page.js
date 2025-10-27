@@ -4,6 +4,7 @@
  */
 
 (() => {
+  let cachedData = null;
   let classData = null;
   let schoolData = null;
   let students = [];
@@ -33,7 +34,7 @@
     await loadSystemConfig();
     
     // Load cached data
-    const cachedData = window.CheckingSystemData?.getCachedData();
+  cachedData = window.CheckingSystemData?.getCachedData();
     if (!cachedData) {
       alert('Please go through home page first');
       window.location.href = 'checking_system_home.html';

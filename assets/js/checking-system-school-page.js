@@ -4,6 +4,7 @@
  */
 
 (() => {
+  let cachedData = null;
   let schoolData = null;
   let classes = [];
   let students = []; // Deduplicated unique students (for card count)
@@ -54,7 +55,7 @@
     await loadSystemConfig();
 
     // Load cached data
-    const cachedData = window.CheckingSystemData?.getCachedData();
+    cachedData = window.CheckingSystemData?.getCachedData();
     if (!cachedData) {
       alert('Please go through home page first');
       window.location.href = 'checking_system_home.html';
