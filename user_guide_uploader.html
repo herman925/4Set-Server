@@ -1282,21 +1282,24 @@ flowchart TD
   <div id="uploadConfigModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-[9999]" style="display: none;">
     <div id="modalOverlay" class="absolute inset-0"></div>
     <div class="bg-white rounded-2xl shadow-2xl max-w-5xl w-full mx-4 relative z-[10002]" style="max-height: 90vh; overflow-y: auto;">
+      <!-- Close Button - Positioned absolutely with high z-index -->
+      <button 
+        onclick="closeUploadConfigModal()" 
+        data-spotlight="close"
+        class="absolute top-4 right-4 text-white hover:bg-white/20 rounded-full p-2 transition-all hover:rotate-90 z-[10003]"
+        style="z-index: 10003;"
+        title="Close"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+      
       <!-- Modal Header -->
       <div class="sticky top-0 bg-gradient-to-r from-primary to-indigo-600 text-white px-8 py-6 rounded-t-2xl z-10">
         <div class="flex items-center justify-between">
           <h2 class="text-2xl font-bold">Upload Configuration: PC Number & Destination</h2>
-          <button 
-            onclick="closeUploadConfigModal()" 
-            data-spotlight="close"
-            class="text-white hover:bg-white/20 rounded-full p-2 transition-all hover:rotate-90"
-            title="Close"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
         </div>
         <p class="text-sm opacity-90 mt-2">Click on status badges to configure PC number and upload destination</p>
       </div>
