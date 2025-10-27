@@ -773,8 +773,21 @@
             const records = [];
             
             for (const submission of submissions) {
+                // Extract student ID from QID 20 (student-id field)
+                const studentIdAnswer = submission.answers?.['20'];
+                const studentId = studentIdAnswer?.answer || studentIdAnswer?.text;
+                
+                if (!studentId) {
+                    console.warn('[Test] Submission missing student ID (QID 20), skipping:', submission.id);
+                    continue;
+                }
+                
+                // Create coreId with "C" prefix to match Qualtrics format
+                const coreId = studentId.startsWith('C') ? studentId : `C${studentId}`;
+                
                 const record = {
-                    coreId: submission.answers?.['3']?.answer, // sessionkey contains coreId
+                    coreId: coreId,
+                    'student-id': studentId,
                     sessionkey: submission.answers?.['3']?.answer || submission.answers?.['3']?.text,
                     created_at: submission.created_at,
                     _meta: {
@@ -795,9 +808,7 @@
                     }
                 }
                 
-                if (record.coreId) {
-                    records.push(record);
-                }
+                records.push(record);
             }
 
             console.log(`[Test] Transformed ${records.length} submissions to records`);
@@ -1083,10 +1094,14 @@
             // Get student name from first available merged data
             let studentName = 'Unknown';
             for (const gradeData of Object.values(data.mergedData)) {
-                const childName = gradeData.merged['child-name'] || gradeData.merged['21'];
-                if (childName) {
-                    studentName = childName.answer || childName.text || 'Unknown';
-                    break;
+                if (gradeData.merged) {
+                    // Try child-name field (from either JotForm or Qualtrics)
+                    const childName = gradeData.merged['child-name'];
+                    if (childName) {
+                        // Handle both string values and object values
+                        studentName = typeof childName === 'string' ? childName : (childName.answer || childName.text || childName);
+                        break;
+                    }
                 }
             }
             document.getElementById('result-name').textContent = studentName + (data.method ? ` (${data.method})` : '');
