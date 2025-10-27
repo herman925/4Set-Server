@@ -595,9 +595,11 @@
     await showQualtricsProgressModal();
     
     try {
-      // Set progress callback
-      window.JotFormCache.setProgressCallback((message, progress) => {
-        updateQualtricsProgress(message, progress);
+      // Set progress callback to update dual progress bars
+      window.JotFormCache.setProgressCallback((message, progress, details = {}) => {
+        const jotformProgress = details.jotformProgress || 0;
+        const qualtricsProgress = details.qualtricsProgress || 0;
+        updateQualtricsProgress(message, jotformProgress, qualtricsProgress);
       });
       
       // Perform refresh
@@ -617,7 +619,7 @@
   }
 
   /**
-   * Show Qualtrics progress modal
+   * Show Qualtrics progress modal with dual progress bars
    */
   async function showQualtricsProgressModal() {
     ensureModalCSS();
@@ -631,17 +633,29 @@
         <div class="modal-header">
           <h3 class="text-lg font-semibold text-[color:var(--foreground)] flex items-center gap-2">
             <i data-lucide="refresh-cw" class="w-5 h-5 text-purple-600 animate-spin"></i>
-            <span>Syncing with Qualtrics</span>
+            <span>Syncing Database</span>
           </h3>
         </div>
         <div class="modal-body">
           <p id="qualtrics-progress-message" class="text-sm text-[color:var(--muted-foreground)] mb-4">
-            Starting Qualtrics integration...
+            Starting parallel sync...
           </p>
           
+          <!-- JotForm Progress Bar (Blue) -->
+          <div class="mb-3">
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-xs font-medium text-blue-600">JotForm</span>
+              <span id="jotform-progress-percent" class="text-xs font-mono font-semibold text-blue-600">0%</span>
+            </div>
+            <div class="w-full h-2 bg-[color:var(--muted)] rounded-full overflow-hidden">
+              <div id="jotform-progress-bar" class="h-full bg-blue-600 transition-all duration-300" style="width: 0%"></div>
+            </div>
+          </div>
+          
+          <!-- Qualtrics Progress Bar (Purple) -->
           <div class="mb-2">
             <div class="flex justify-between items-center mb-1">
-              <span id="qualtrics-progress-text" class="text-xs text-[color:var(--muted-foreground)]">Initializing...</span>
+              <span class="text-xs font-medium text-purple-600">Qualtrics</span>
               <span id="qualtrics-progress-percent" class="text-xs font-mono font-semibold text-purple-600">0%</span>
             </div>
             <div class="w-full h-2 bg-[color:var(--muted)] rounded-full overflow-hidden">
@@ -662,18 +676,27 @@
   }
 
   /**
-   * Update Qualtrics progress modal
+   * Update Qualtrics progress modal with dual progress bars
+   * @param {string} message - Overall progress message
+   * @param {number} jotformProgress - JotForm progress (0-100)
+   * @param {number} qualtricsProgress - Qualtrics progress (0-100)
    */
-  function updateQualtricsProgress(message, progress) {
+  function updateQualtricsProgress(message, jotformProgress = 0, qualtricsProgress = 0) {
     const messageEl = document.getElementById('qualtrics-progress-message');
-    const textEl = document.getElementById('qualtrics-progress-text');
-    const percentEl = document.getElementById('qualtrics-progress-percent');
-    const barEl = document.getElementById('qualtrics-progress-bar');
+    const jotformBarEl = document.getElementById('jotform-progress-bar');
+    const jotformPercentEl = document.getElementById('jotform-progress-percent');
+    const qualtricsBarEl = document.getElementById('qualtrics-progress-bar');
+    const qualtricsPercentEl = document.getElementById('qualtrics-progress-percent');
     
     if (messageEl) messageEl.textContent = message;
-    if (textEl) textEl.textContent = message;
-    if (percentEl) percentEl.textContent = Math.round(progress) + '%';
-    if (barEl) barEl.style.width = progress + '%';
+    
+    // Update JotForm progress bar (blue)
+    if (jotformBarEl) jotformBarEl.style.width = Math.round(jotformProgress) + '%';
+    if (jotformPercentEl) jotformPercentEl.textContent = Math.round(jotformProgress) + '%';
+    
+    // Update Qualtrics progress bar (purple)
+    if (qualtricsBarEl) qualtricsBarEl.style.width = Math.round(qualtricsProgress) + '%';
+    if (qualtricsPercentEl) qualtricsPercentEl.textContent = Math.round(qualtricsProgress) + '%';
   }
 
   /**

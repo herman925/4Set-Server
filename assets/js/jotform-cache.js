@@ -134,10 +134,11 @@
      * Emit progress update
      * @param {string} message - Progress message
      * @param {number} progress - Progress percentage (0-100)
+     * @param {Object} details - Optional details like individual progress values
      */
-    emitProgress(message, progress) {
+    emitProgress(message, progress, details = {}) {
       if (this.progressCallback) {
-        this.progressCallback(message, progress);
+        this.progressCallback(message, progress, details);
       }
     }
 
@@ -1285,9 +1286,14 @@
         const updateCombinedProgress = () => {
           // Combined progress is the average of both operations (0-50% range)
           const combined = Math.round((jotformProgress + qualtricsProgress) / 2);
+          // Pass individual progress values for dual progress bar display
           this.emitProgress(
-            `Syncing: JotForm ${Math.round(jotformProgress)}%, Qualtrics ${Math.round(qualtricsProgress)}%`,
-            combined
+            `Fetching data from both sources...`,
+            combined,
+            {
+              jotformProgress: Math.round(jotformProgress * 2), // Scale back to 0-100%
+              qualtricsProgress: Math.round(qualtricsProgress * 2) // Scale back to 0-100%
+            }
           );
         };
         
