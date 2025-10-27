@@ -280,24 +280,72 @@ const ExportUtils = (() => {
   
   /**
    * Build student page export
+   * Exports ALL available grades' data for the student
    */
   async function buildStudentReport(data, validationCache) {
-    const { studentData } = data;
+    const { studentData, allStudentRecords, availableGrades, selectedGrade } = data;
     const coreId = studentData.coreId;
-    const studentValidation = validationCache.get(coreId);
     
-    if (!studentValidation || !studentValidation.taskValidation) {
-      throw new Error('No validation data available for this student');
-    }
-    
-    // Header
-    let markdown = `# Student Validation Report\n\n`;
+    // Header with student info
+    let markdown = `# Student Validation Report (All Grades)\n\n`;
     markdown += `**Student:** ${studentData.studentName} (${studentData.studentId})  \n`;
     markdown += `**Core ID:** ${coreId}  \n`;
-    markdown += `**Class:** ${studentData.classId}  \n`;
-    markdown += `**School:** ${studentData.schoolId}  \n`;
+    markdown += `**Available Grades:** ${availableGrades?.join(', ') || 'N/A'}  \n`;
+    markdown += `**Currently Viewing:** ${selectedGrade || studentData.year || 'N/A'}  \n`;
     markdown += `**Export Time:** ${new Date().toLocaleString()}  \n\n`;
     markdown += `---\n\n`;
+    
+    // If we have multiple grade records, export each one
+    const studentRecords = allStudentRecords || [studentData];
+    const uniqueGrades = [...new Set(studentRecords.map(s => s.year))].filter(y => y).sort().reverse();
+    
+    if (uniqueGrades.length === 0) {
+      // Fallback to single record export (original behavior)
+      const studentValidation = validationCache.get(coreId);
+      
+      if (!studentValidation || !studentValidation.taskValidation) {
+        throw new Error('No validation data available for this student');
+      }
+      
+      markdown += await buildSingleGradeReport(studentData, studentValidation);
+    } else {
+      // Export data for each grade
+      for (const grade of uniqueGrades) {
+        const gradeRecord = studentRecords.find(s => s.year === grade);
+        if (!gradeRecord) continue;
+        
+        markdown += `# ${grade} Data\n\n`;
+        markdown += `**Class:** ${gradeRecord.classId}  \n`;
+        markdown += `**School:** ${gradeRecord.schoolId}  \n`;
+        markdown += `**Year:** ${grade}  \n\n`;
+        
+        // Get validation data for this student
+        // Note: The validation cache is keyed by coreId, and includes the merged data
+        // We need to check if there's grade-specific validation available
+        const studentValidation = validationCache.get(coreId);
+        
+        if (!studentValidation || !studentValidation.taskValidation) {
+          markdown += `⚠️ No validation data available for this grade  \n\n`;
+          markdown += `---\n\n`;
+          continue;
+        }
+        
+        // Add grade-specific validation report
+        markdown += await buildSingleGradeReport(gradeRecord, studentValidation);
+        markdown += `\n---\n\n`;
+      }
+    }
+    
+    const gradesSuffix = uniqueGrades.length > 1 ? `_${uniqueGrades.join('-')}` : `_${selectedGrade || studentData.year || ''}`;
+    const filename = `student-report_${coreId}${gradesSuffix}_${new Date().toISOString().slice(0, 10)}.md`;
+    return { markdown, filename };
+  }
+  
+  /**
+   * Build validation report for a single grade
+   */
+  async function buildSingleGradeReport(studentRecord, studentValidation) {
+    let markdown = '';
     
     // Set Status Summary
     markdown += generateSetStatusTable(studentValidation.setStatus);
@@ -378,8 +426,7 @@ const ExportUtils = (() => {
       markdown += `---\n\n`;
     }
     
-    const filename = `student-report_${coreId}_${new Date().toISOString().slice(0, 10)}.md`;
-    return { markdown, filename };
+    return markdown;
   }
   
   /**
@@ -392,9 +439,19 @@ const ExportUtils = (() => {
       throw new Error('No class data to export');
     }
     
+    // Helper function to get grade label
+    const getGradeLabel = (gradeNumber) => {
+      if (gradeNumber === 1) return 'K1';
+      if (gradeNumber === 2) return 'K2';
+      if (gradeNumber === 3) return 'K3';
+      if (gradeNumber === 0) return 'Other';
+      return 'N/A';
+    };
+    
     // Header
     let markdown = `# Class Validation Report\n\n`;
     markdown += `**Class:** ${classData.actualClassName} (${classData.classId})  \n`;
+    markdown += `**Grade:** ${getGradeLabel(classData.grade)}  \n`;
     markdown += `**School:** ${schoolData?.schoolNameChinese || classData.schoolId}  \n`;
     markdown += `**Teacher:** ${classData.teacherChinese || '—'}  \n`;
     markdown += `**Total Students:** ${students.length}  \n`;
@@ -409,6 +466,7 @@ const ExportUtils = (() => {
       
       markdown += `## ${student.studentName} (${student.studentId})\n\n`;
       markdown += `**Core ID:** ${student.coreId}  \n`;
+      markdown += `**Year:** ${student.year || 'N/A'}  \n`;
       
       if (!validation || !validation.taskValidation) {
         markdown += `**Status:** ⚠️ No validation data available  \n\n`;
@@ -425,7 +483,7 @@ const ExportUtils = (() => {
       markdown += `\n---\n\n`;
     }
     
-    const filename = `class-report_${classData.classId}_${new Date().toISOString().slice(0, 10)}.md`;
+    const filename = `class-report_${classData.classId}_${getGradeLabel(classData.grade)}_${new Date().toISOString().slice(0, 10)}.md`;
     return { markdown, filename };
   }
   

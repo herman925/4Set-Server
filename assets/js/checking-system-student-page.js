@@ -2926,6 +2926,7 @@
   
   /**
    * Export student-level validation report as Markdown
+   * Exports ALL available grades' data for this student
    * Uses centralized ExportUtils.exportReport orchestrator
    */
   async function exportStudentCache() {
@@ -2934,9 +2935,18 @@
       return;
     }
     
+    // Get all student records for this Core ID across all grades
+    const coreId = studentData.coreId;
+    const allStudentRecords = cachedDataGlobal?.students.filter(s => s.coreId === coreId) || [studentData];
+    
     await window.ExportUtils.exportReport({
       type: 'student',
-      data: { studentData },
+      data: { 
+        studentData,  // Current selected grade
+        allStudentRecords,  // All grades for this student
+        availableGrades,
+        selectedGrade
+      },
       loadValidationCache: () => window.JotFormCache.loadValidationCache()
     });
   }
