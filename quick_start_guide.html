@@ -3627,15 +3627,17 @@ flowchart LR
   <!-- School View Modal for Step 4.4 (Brief summary) -->
   <div id="schoolViewModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-[9999]" style="display: none;">
     <div class="bg-white rounded-2xl shadow-2xl max-w-5xl w-full mx-4 relative overflow-hidden" style="max-height: 90vh; overflow-y: auto;">
+      <!-- Close Button - Positioned absolutely with high z-index -->
+      <button onclick="closeSchoolViewModal()" class="absolute top-4 right-4 text-white hover:bg-white/20 rounded-full p-2 transition-all z-[10003]" style="z-index: 10003;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+      
       <div class="sticky top-0 bg-gradient-to-r from-primary to-indigo-600 text-white px-8 py-6 rounded-t-2xl z-10">
         <div class="flex items-center justify-between">
           <h2 class="text-2xl font-bold">School View Interface</h2>
-          <button onclick="closeSchoolViewModal()" class="text-white hover:bg-white/20 rounded-full p-2 transition-all">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
         </div>
         <p class="text-sm opacity-90 mt-2">Aggregated statistics for all classes in a school</p>
       </div>
