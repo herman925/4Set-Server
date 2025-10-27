@@ -1282,6 +1282,8 @@
         // JotForm: 0-50%, Qualtrics: 0-50% (both contribute to combined progress)
         let jotformProgress = 0;
         let qualtricsProgress = 0;
+        let jotformMessage = 'Waiting to start...';
+        let qualtricsMessage = 'Waiting to start...';
         let isUpdatingProgress = false; // Prevent recursive calls
         
         // Save original callback BEFORE defining the update function
@@ -1304,7 +1306,9 @@
                 combined,
                 {
                   jotformProgress: Math.round(jotformProgress * 2), // Scale back to 0-100%
-                  qualtricsProgress: Math.round(qualtricsProgress * 2) // Scale back to 0-100%
+                  qualtricsProgress: Math.round(qualtricsProgress * 2), // Scale back to 0-100%
+                  jotformMessage: jotformMessage,
+                  qualtricsMessage: qualtricsMessage
                 }
               );
             }
@@ -1320,6 +1324,7 @@
           if (!details || !details.jotformProgress) {
             // This is from JotForm's internal progress, update our tracking
             jotformProgress = Math.min(progress, 50);
+            jotformMessage = msg; // Capture the detailed message
             updateCombinedProgress();
           }
         });
@@ -1327,6 +1332,7 @@
         qualtricsAPI.setProgressCallback((msg, progress) => {
           // Qualtrics reports 0-100%, map to 0-50% of total
           qualtricsProgress = Math.min(progress / 2, 50);
+          qualtricsMessage = msg; // Capture the detailed message
           updateCombinedProgress();
         });
         

@@ -8,6 +8,65 @@
   let isSyncing = false;
   let currentSyncProgress = 0;
   
+  // Progress threshold constants
+  const PROGRESS_THRESHOLDS = {
+    FETCH_START: 0,
+    FETCH_COMPLETE: 100,
+    VALIDATION_START: 70,
+    VALIDATION_COMPLETE: 95
+  };
+  
+  /**
+   * Update status text element based on progress and operation type
+   * @param {HTMLElement} statusElement - The status text element to update
+   * @param {number} progress - Progress percentage (0-100)
+   * @param {string} operationType - 'jotform' or 'qualtrics'
+   * @param {string} customMessage - Optional custom message to display (from emitProgress)
+   */
+  function updateStatusText(statusElement, progress, operationType, customMessage = null) {
+    if (!statusElement) return;
+    
+    // If a custom message is provided, use it directly
+    if (customMessage) {
+      statusElement.textContent = customMessage;
+      return;
+    }
+    
+    // Otherwise, fall back to generic messages based on progress
+    const messages = {
+      jotform: {
+        waiting: 'Waiting to start...',
+        fetching: 'Fetching submissions...',
+        validating: 'Validating students...',
+        processing: 'Processing data...',
+        complete: 'Complete!'
+      },
+      qualtrics: {
+        waiting: 'Waiting to start...',
+        fetching: 'Fetching TGMD data...',
+        validating: 'Validating students...',
+        processing: 'Processing data...',
+        complete: 'Complete!'
+      }
+    };
+    
+    const msg = messages[operationType] || messages.jotform;
+    
+    // Use thresholds in descending order to avoid conflicts
+    if (progress >= PROGRESS_THRESHOLDS.FETCH_COMPLETE) {
+      statusElement.textContent = msg.complete;
+    } else if (progress >= PROGRESS_THRESHOLDS.VALIDATION_COMPLETE) {
+      statusElement.textContent = msg.validating;
+    } else if (progress >= PROGRESS_THRESHOLDS.VALIDATION_START) {
+      statusElement.textContent = msg.validating;
+    } else if (progress > PROGRESS_THRESHOLDS.FETCH_START) {
+      statusElement.textContent = msg.fetching;
+    } else {
+      // progress <= 0
+      statusElement.textContent = msg.waiting;
+    }
+  }
+  
   /**
    * Load configuration from JSON
    */
@@ -603,6 +662,8 @@
       window.JotFormCache.setProgressCallback((message, progress, details = {}) => {
         let jotformProgress = details.jotformProgress || 0;
         let qualtricsProgress = details.qualtricsProgress || 0;
+        const jotformMessage = details.jotformMessage;
+        const qualtricsMessage = details.qualtricsMessage;
         
         // Apply non-regressive logic
         if (jotformProgress < maxJotformProgress) {
@@ -617,7 +678,7 @@
           maxQualtricsProgress = qualtricsProgress;
         }
         
-        updateQualtricsProgress(message, jotformProgress, qualtricsProgress);
+        updateQualtricsProgress(message, jotformProgress, qualtricsProgress, jotformMessage, qualtricsMessage);
       });
       
       // Perform refresh
@@ -665,6 +726,7 @@
               <span class="text-xs font-medium text-blue-600">JotForm</span>
               <span id="jotform-progress-percent" class="text-xs font-mono font-semibold text-blue-600">0%</span>
             </div>
+            <p id="jotform-status-text" class="text-xs text-[color:var(--muted-foreground)] mb-1 min-h-[16px]">Waiting to start...</p>
             <div class="w-full h-2 bg-[color:var(--muted)] rounded-full overflow-hidden">
               <div id="jotform-progress-bar" class="h-full bg-blue-600 transition-all duration-300" style="width: 0%"></div>
             </div>
@@ -676,6 +738,7 @@
               <span class="text-xs font-medium text-purple-600">Qualtrics</span>
               <span id="qualtrics-progress-percent" class="text-xs font-mono font-semibold text-purple-600">0%</span>
             </div>
+            <p id="qualtrics-status-text" class="text-xs text-[color:var(--muted-foreground)] mb-1 min-h-[16px]">Waiting to start...</p>
             <div class="w-full h-2 bg-[color:var(--muted)] rounded-full overflow-hidden">
               <div id="qualtrics-progress-bar" class="h-full bg-purple-600 transition-all duration-300" style="width: 0%"></div>
             </div>
@@ -698,23 +761,29 @@
    * @param {string} message - Overall progress message
    * @param {number} jotformProgress - JotForm progress (0-100)
    * @param {number} qualtricsProgress - Qualtrics progress (0-100)
+   * @param {string} jotformMessage - Optional detailed JotForm message
+   * @param {string} qualtricsMessage - Optional detailed Qualtrics message
    */
-  function updateQualtricsProgress(message, jotformProgress = 0, qualtricsProgress = 0) {
+  function updateQualtricsProgress(message, jotformProgress = 0, qualtricsProgress = 0, jotformMessage = null, qualtricsMessage = null) {
     const messageEl = document.getElementById('qualtrics-progress-message');
     const jotformBarEl = document.getElementById('jotform-progress-bar');
     const jotformPercentEl = document.getElementById('jotform-progress-percent');
+    const jotformStatusEl = document.getElementById('jotform-status-text');
     const qualtricsBarEl = document.getElementById('qualtrics-progress-bar');
     const qualtricsPercentEl = document.getElementById('qualtrics-progress-percent');
+    const qualtricsStatusEl = document.getElementById('qualtrics-status-text');
     
     if (messageEl) messageEl.textContent = message;
     
     // Update JotForm progress bar (blue)
     if (jotformBarEl) jotformBarEl.style.width = Math.round(jotformProgress) + '%';
     if (jotformPercentEl) jotformPercentEl.textContent = Math.round(jotformProgress) + '%';
+    updateStatusText(jotformStatusEl, jotformProgress, 'jotform', jotformMessage);
     
     // Update Qualtrics progress bar (purple)
     if (qualtricsBarEl) qualtricsBarEl.style.width = Math.round(qualtricsProgress) + '%';
     if (qualtricsPercentEl) qualtricsPercentEl.textContent = Math.round(qualtricsProgress) + '%';
+    updateStatusText(qualtricsStatusEl, qualtricsProgress, 'qualtrics', qualtricsMessage);
   }
 
   /**
@@ -932,6 +1001,7 @@
                 <span class="text-xs font-medium text-blue-600">JotForm</span>
                 <span id="sync-jotform-percent" class="text-xs font-mono font-semibold text-blue-600">0%</span>
               </div>
+              <p id="sync-jotform-status" class="text-xs text-[color:var(--muted-foreground)] mb-1 min-h-[16px]">Waiting to start...</p>
               <div class="w-full h-2 bg-[color:var(--muted)] rounded-full overflow-hidden">
                 <div id="sync-jotform-bar" class="h-full bg-blue-600 transition-all duration-300" style="width: 0%"></div>
               </div>
@@ -943,6 +1013,7 @@
                 <span class="text-xs font-medium text-purple-600">Qualtrics</span>
                 <span id="sync-qualtrics-percent" class="text-xs font-mono font-semibold text-purple-600">0%</span>
               </div>
+              <p id="sync-qualtrics-status" class="text-xs text-[color:var(--muted-foreground)] mb-1 min-h-[16px]">Waiting to start...</p>
               <div class="w-full h-2 bg-[color:var(--muted)] rounded-full overflow-hidden">
                 <div id="sync-qualtrics-bar" class="h-full bg-purple-600 transition-all duration-300" style="width: 0%"></div>
               </div>
@@ -969,8 +1040,10 @@
     const progressSection = document.getElementById('sync-progress-section');
     const jotformBar = document.getElementById('sync-jotform-bar');
     const jotformPercent = document.getElementById('sync-jotform-percent');
+    const jotformStatus = document.getElementById('sync-jotform-status');
     const qualtricsBar = document.getElementById('sync-qualtrics-bar');
     const qualtricsPercent = document.getElementById('sync-qualtrics-percent');
+    const qualtricsStatus = document.getElementById('sync-qualtrics-status');
     const modalTitle = document.getElementById('sync-modal-title');
     const modalMessage = document.getElementById('sync-modal-message');
     
@@ -979,7 +1052,9 @@
       confirmBtn: !!confirmBtn,
       progressSection: !!progressSection,
       jotformBar: !!jotformBar,
+      jotformStatus: !!jotformStatus,
       qualtricsBar: !!qualtricsBar,
+      qualtricsStatus: !!qualtricsStatus,
       modalTitle: !!modalTitle
     });
 
@@ -1056,8 +1131,14 @@
         // Update modal progress bars (if still open)
         if (jotformBar) jotformBar.style.width = `${jotformProgress}%`;
         if (jotformPercent) jotformPercent.textContent = `${Math.round(jotformProgress)}%`;
+        // Use detailed message from details object if available
+        updateStatusText(jotformStatus, jotformProgress, 'jotform', details.jotformMessage);
+        
         if (qualtricsBar) qualtricsBar.style.width = `${qualtricsProgress}%`;
         if (qualtricsPercent) qualtricsPercent.textContent = `${Math.round(qualtricsProgress)}%`;
+        // Use detailed message from details object if available
+        updateStatusText(qualtricsStatus, qualtricsProgress, 'qualtrics', details.qualtricsMessage);
+        
         if (modalMessage) modalMessage.textContent = message;
         
         // Update pill progress (always, even if modal closed)
@@ -1140,8 +1221,10 @@
         maxProgress = 75;
         if (jotformBar) jotformBar.style.width = '75%';
         if (jotformPercent) jotformPercent.textContent = '75%';
+        updateStatusText(jotformStatus, 75, 'jotform');
         if (qualtricsBar) qualtricsBar.style.width = '75%';
         if (qualtricsPercent) qualtricsPercent.textContent = '75%';
+        updateStatusText(qualtricsStatus, 75, 'qualtrics');
         if (modalMessage) modalMessage.textContent = 'Submissions cached, loading validation data...';
         
         // Get student data from CheckingSystemData
@@ -1157,8 +1240,10 @@
           // Still mark as complete - submissions are cached
           if (jotformBar) jotformBar.style.width = '100%';
           if (jotformPercent) jotformPercent.textContent = '100%';
+          updateStatusText(jotformStatus, 100, 'jotform');
           if (qualtricsBar) qualtricsBar.style.width = '100%';
           if (qualtricsPercent) qualtricsPercent.textContent = '100%';
+          updateStatusText(qualtricsStatus, 100, 'qualtrics');
           
           isSyncing = false;
           currentSyncProgress = 100;
@@ -1200,12 +1285,20 @@
           // Extract individual progress (validation phase won't have jotform/qualtrics split)
           const jProgress = details.jotformProgress || progress;
           const qProgress = details.qualtricsProgress || progress;
+          const jMessage = details.jotformMessage;
+          const qMessage = details.qualtricsMessage;
           
           // Always update modal (no throttle)
           if (jotformBar) jotformBar.style.width = `${jProgress}%`;
           if (jotformPercent) jotformPercent.textContent = `${Math.round(jProgress)}%`;
+          // During validation, use the main message if no individual message
+          updateStatusText(jotformStatus, jProgress, 'jotform', jMessage || message);
+          
           if (qualtricsBar) qualtricsBar.style.width = `${qProgress}%`;
           if (qualtricsPercent) qualtricsPercent.textContent = `${Math.round(qProgress)}%`;
+          // During validation, use the main message if no individual message
+          updateStatusText(qualtricsStatus, qProgress, 'qualtrics', qMessage || message);
+          
           if (modalMessage) modalMessage.textContent = message;
           
           // Throttled pill updates to avoid excessive IndexedDB reads
@@ -1231,8 +1324,10 @@
         const progressBar100Time = Date.now();
         if (jotformBar) jotformBar.style.width = '100%';
         if (jotformPercent) jotformPercent.textContent = '100%';
+        updateStatusText(jotformStatus, 100, 'jotform');
         if (qualtricsBar) qualtricsBar.style.width = '100%';
         if (qualtricsPercent) qualtricsPercent.textContent = '100%';
+        updateStatusText(qualtricsStatus, 100, 'qualtrics');
         console.log(`[SYNC-TIMING] ⏱️ Progress bars set to 100% at: ${new Date(progressBar100Time).toISOString()}`);
         
         // Mark sync complete and update pill
