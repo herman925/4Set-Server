@@ -2096,21 +2096,24 @@ flowchart TD
   <div id="filterPanelModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-[9999]" style="display: none;">
     <div id="filterModalOverlay" class="absolute inset-0"></div>
     <div class="bg-white rounded-2xl shadow-2xl max-w-6xl w-full mx-4 relative z-[10002]" style="max-height: 90vh; overflow-y: auto;">
+      <!-- Close Button - Positioned absolutely with high z-index -->
+      <button 
+        onclick="closeFilterPanelModal()" 
+        data-spotlight="close"
+        class="absolute top-4 right-4 text-white hover:bg-white/20 rounded-full p-2 transition-all hover:rotate-90 z-[10003]"
+        style="z-index: 10003;"
+        title="Close"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+      
       <!-- Modal Header -->
       <div class="sticky top-0 bg-gradient-to-r from-primary to-indigo-600 text-white px-8 py-6 rounded-t-2xl z-10">
         <div class="flex items-center justify-between">
           <h2 class="text-2xl font-bold">Filter Configuration Panel</h2>
-          <button 
-            onclick="closeFilterPanelModal()" 
-            data-spotlight="close"
-            class="text-white hover:bg-white/20 rounded-full p-2 transition-all hover:rotate-90"
-            title="Close"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
         </div>
         <p class="text-sm opacity-90 mt-2">Hover over filter elements to see explanations</p>
       </div>
@@ -2372,21 +2375,24 @@ flowchart TD
           <div id="cacheStatusModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-[9999]" style="display: none;">
             <div id="cacheModalOverlay" class="absolute inset-0"></div>
             <div class="bg-white rounded-2xl shadow-2xl max-w-5xl w-full mx-4 relative z-[10002]" style="max-height: 90vh; overflow-y: auto;">
+              <!-- Close Button - Positioned absolutely with high z-index -->
+              <button 
+                onclick="closeCacheStatusModal()" 
+                data-spotlight="close"
+                class="absolute top-4 right-4 text-white hover:bg-white/20 rounded-full p-2 transition-all hover:rotate-90 z-[10003]"
+                style="z-index: 10003;"
+                title="Close"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+              
               <!-- Modal Header -->
               <div class="sticky top-0 bg-gradient-to-r from-primary to-indigo-600 text-white px-8 py-6 rounded-t-2xl z-10">
                 <div class="flex items-center justify-between">
                   <h2 class="text-2xl font-bold">Cache Status & Management</h2>
-                  <button 
-                    onclick="closeCacheStatusModal()" 
-                    data-spotlight="close"
-                    class="text-white hover:bg-white/20 rounded-full p-2 transition-all hover:rotate-90"
-                    title="Close"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <line x1="18" y1="6" x2="6" y2="18"></line>
-                      <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                  </button>
                 </div>
                 <p class="text-sm opacity-90 mt-2">Click on status pills to see different cache management actions</p>
               </div>
@@ -2617,15 +2623,17 @@ flowchart TD
   <!-- Homepage Layout Modal - 1:1 Replica of Checking System Homepage -->
   <div id="homepageLayoutModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-[9999]" style="display: none;">
     <div class="bg-white rounded-2xl shadow-2xl max-w-7xl w-full mx-4 relative overflow-hidden" style="max-height: 95vh; overflow-y: auto;">
+      <!-- Close Button - Positioned absolutely with high z-index -->
+      <button onclick="closeHomepageLayoutModal()" class="absolute top-4 right-4 text-white hover:bg-white/20 rounded-full p-2 transition-all z-[10002]" style="z-index: 10002;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+      
       <div class="sticky top-0 bg-gradient-to-r from-primary to-indigo-600 text-white px-8 py-6 rounded-t-2xl z-10">
         <div class="flex items-center justify-between">
           <h2 class="text-2xl font-bold">Checking System Homepage - Complete Interface</h2>
-          <button onclick="closeHomepageLayoutModal()" class="text-white hover:bg-white/20 rounded-full p-2 transition-all">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
         </div>
         <p class="text-sm opacity-90 mt-2">1:1 replica of the real checking system homepage showing filter-based navigation</p>
       </div>
