@@ -726,7 +726,7 @@
         if (sampleKey) {
           const sampleData = cacheEntry.validations[sampleKey];
           if (!sampleData.taskValidation || !sampleData.setStatus) {
-            console.warn('[JotFormCache] Validation cache has invalid structure (missing taskValidation or setStatus), will rebuild');
+            console.log('[JotFormCache] ℹ️  Validation cache has outdated structure (missing taskValidation or setStatus), rebuilding...');
             return null;
           }
           
@@ -1115,6 +1115,19 @@
      * IMPORTANT: This method assumes student ID is in answers[STUDENT_ID_QID].
      * If JotForm's question structure changes, the STUDENT_ID_QID constant must be updated.
      * 
+     * ORPHANED RECORDS BEHAVIOR:
+     * Records marked with _orphaned: true (Qualtrics-only data with no JotForm submission)
+     * will be skipped during this transformation. This is EXPECTED behavior when:
+     * 1. A student has completed the Qualtrics survey but hasn't done JotForm assessment yet
+     * 2. Cross-grade data exists (e.g., student has K2 data in Qualtrics, K3 in JotForm)
+     * 
+     * These records are preserved in the merged dataset for validation purposes but cannot
+     * be converted back to JotForm submission format since there's no original structure to clone.
+     * 
+     * Console messages will indicate:
+     * - ℹ️  Info level: Expected Qualtrics-only records (normal operation)
+     * - ⚠️  Warning level: Unexpected missing submissions (potential data issue)
+     * 
      * PERFORMANCE OPTIMIZATION:
      * This method uses a reverse lookup map (fieldName → qid) to avoid O(n²) complexity.
      * Without this optimization, updating each field would require searching through all answers,
@@ -1125,9 +1138,9 @@
      * - Without optimization: 100 × 50 × 100 = 500,000 operations
      * - With optimization: 100 × (100 + 50) = 15,000 operations (33x faster!)
      * 
-     * @param {Array} records - Merged records with flat structure
+     * @param {Array} records - Merged records with flat structure (may include orphaned records)
      * @param {Array} originalSubmissions - Original JotForm submissions for structure reference
-     * @returns {Array} Submissions in JotForm format
+     * @returns {Array} Submissions in JotForm format (orphaned records excluded)
      */
     transformRecordsToSubmissions(records, originalSubmissions) {
       console.log('[JotFormCache] Converting records back to submission format...');
@@ -1144,6 +1157,8 @@
       }
       
       const submissions = [];
+      let orphanedCount = 0;
+      let unexpectedMissingCount = 0;
       
       for (const record of records) {
         try {
@@ -1151,7 +1166,15 @@
           const originalSubmission = submissionMap.get(record.coreId);
           
           if (!originalSubmission) {
-            console.warn('[JotFormCache] No original submission found for coreId:', record.coreId);
+            // This is expected for Qualtrics-only records (orphaned data)
+            // It means the student has Qualtrics survey data but no JotForm submission yet
+            if (record._orphaned) {
+              console.log(`[JotFormCache] ℹ️  Skipping Qualtrics-only record for ${record.coreId} - no JotForm submission exists yet`);
+              orphanedCount++;
+            } else {
+              console.warn(`[JotFormCache] ⚠️  No original JotForm submission found for ${record.coreId} - this may indicate a data inconsistency`);
+              unexpectedMissingCount++;
+            }
             continue;
           }
           
@@ -1202,7 +1225,16 @@
         }
       }
       
-      console.log(`[JotFormCache] Converted ${submissions.length} records to submissions`);
+      console.log(`[JotFormCache] ========== TRANSFORMATION COMPLETE ==========`);
+      console.log(`[JotFormCache] Total input records: ${records.length}`);
+      console.log(`[JotFormCache] ✓ Successfully converted: ${submissions.length}`);
+      if (orphanedCount > 0) {
+        console.log(`[JotFormCache] ℹ️  Skipped (Qualtrics-only): ${orphanedCount}`);
+      }
+      if (unexpectedMissingCount > 0) {
+        console.warn(`[JotFormCache] ⚠️  Skipped (missing original): ${unexpectedMissingCount}`);
+      }
+      console.log(`[JotFormCache] ===============================================`);
       return submissions;
     }
 

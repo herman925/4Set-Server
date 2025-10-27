@@ -300,6 +300,26 @@
                   <p class="text-gray-700"><strong>Solution:</strong> Update <code>qualtricsDatacenter</code> in <code>credentials.enc</code> from <code>"au1"</code> to <code>"syd1"</code></p>
                 </div>
               </div>
+
+              <div class="collapsible-section">
+                <div class="collapsible-header">
+                  <h3 class="text-lg font-semibold">Console Messages: "Skipping Qualtrics-only record" (ℹ️ Info)</h3>
+                  <span class="text-xl">▼</span>
+                </div>
+                <div class="collapsible-content">
+                  <p class="mb-3"><strong>What it means:</strong> These blue/info messages indicate that some students have completed the Qualtrics survey but haven't submitted JotForm assessments yet.</p>
+                  <p class="mb-3 text-gray-700"><strong>This is normal when:</strong></p>
+                  <ul class="list-disc ml-6 space-y-1 text-gray-700 mb-3">
+                    <li>Students completed TGMD assessments (Qualtrics) but not the main form (JotForm)</li>
+                    <li>Cross-grade data exists (e.g., student has K2 Qualtrics data but K3 JotForm data)</li>
+                    <li>Assessment data is being collected in phases</li>
+                  </ul>
+                  <p class="text-gray-700"><strong>Action required:</strong> None. This is expected behavior. The Qualtrics data is preserved for validation but won't appear in the main cache until a matching JotForm submission exists.</p>
+                  <div class="alert-box alert-info mt-3">
+                    <p><strong>💡 Tip:</strong> These records are tracked separately and can be reviewed in the validation reports to identify students who need follow-up assessments.</p>
+                  </div>
+                </div>
+              </div>
             </div>
           </section>
 
