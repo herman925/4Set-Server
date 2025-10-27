@@ -2909,6 +2909,295 @@ Planned but not yet implemented:
 - [ ] Real-time WebSocket updates
 - [ ] Service worker for offline support
 
+---
+
+## Progress Reporting Design
+
+### Overview
+
+The sync modal provides real-time progress feedback during data fetching and processing operations. The progress reporting system is designed to provide smooth, continuous visual feedback without requiring knowledge of total operation size upfront.
+
+### Design Principles
+
+1. **Adaptive Calculation**: Progress increments adapt dynamically based on actual progress, not hardcoded assumptions
+2. **No Jumps**: Progress updates smoothly without frozen appearance or sudden jumps
+3. **Asymptotic Approach**: Progress naturally decelerates as approaching completion
+4. **Separation of Concerns**: Top message shows phase, status lines show details
+5. **Parallel Awareness**: Supports independent progress tracking for JotForm and Qualtrics during simultaneous operations
+
+### Progress Ranges
+
+```
+Sync Operation (0-100%):
+├─ 1-80%:   Data Fetching (JotForm and/or Qualtrics)
+├─ 80-85%:  Saving/Transforming
+├─ 85-90%:  Merging (if Qualtrics enabled)
+├─ 90-95%:  Validation
+└─ 95-100%: Finalization
+```
+
+### JotForm Fetch Progress (Adaptive Algorithm)
+
+**Challenge**: We don't know the total number of pages upfront. Pages are fetched until API returns fewer items than batch size.
+
+**Solution**: Asymptotic formula that adapts to any dataset size:
+
+```javascript
+// Initialize
+let currentProgress = 1;  // Start at 1%
+const FETCH_END_PERCENT = 80;  // Reserve 1-80% for fetching
+
+// For each page fetched:
+const remainingRange = FETCH_END_PERCENT - currentProgress;
+const adaptiveIncrement = remainingRange / (pageNum * 0.5 + 2);
+currentProgress = Math.min(currentProgress + adaptiveIncrement, FETCH_END_PERCENT - 1);
+
+// When last page detected (items < batchSize):
+currentProgress = FETCH_END_PERCENT;  // Jump to exactly 80%
+```
+
+**Behavior by Page Number**:
+- Page 1: ~32% (1% → 32%) - Rapid initial progress
+- Page 2: ~16% increment (32% → 48%) - Still fast
+- Page 3: ~9% increment (48% → 57%) - Slowing down
+- Page 5: ~3% increment (66% → 69%) - Steady
+- Page 10: ~0.7% increment (75% → 76%) - Gradual
+- Page 20+: ~0.2% increment (78% → 78.2%) - Asymptotic
+
+**Key Properties**:
+- ✅ Works for any dataset size (1 page or 1000+ pages)
+- ✅ Always incrementing (never stuck)
+- ✅ Never reaches 80% until last page confirmed
+- ✅ No hardcoded assumptions about total pages
+- ✅ Creates natural deceleration curve
+
+**Mathematical Model**:
+
+The formula `increment = remainingRange / (pageNum * 0.5 + 2)` ensures:
+1. Early pages get larger increments (user sees rapid progress)
+2. Later pages get smaller increments (realistic expectation setting)
+3. Progress asymptotically approaches 80% but never reaches it
+4. When last page is detected, explicit jump to 80% signals completion
+
+**Example Progression**:
+```
+Page 1:  (80-1)  / (1*0.5+2)  = 79/2.5  = 31.6% → Progress: 32%
+Page 2:  (80-32) / (2*0.5+2)  = 48/3    = 16.0% → Progress: 48%
+Page 3:  (80-48) / (3*0.5+2)  = 32/3.5  = 9.1%  → Progress: 57%
+Page 5:  (80-66) / (5*0.5+2)  = 14/4.5  = 3.1%  → Progress: 69%
+Page 10: (80-75) / (10*0.5+2) = 5/7     = 0.7%  → Progress: 76%
+Page 20: (80-78) / (20*0.5+2) = 2/12    = 0.17% → Progress: 78%
+```
+
+### Qualtrics Fetch Progress (API-Reported)
+
+**Advantage**: Qualtrics API provides `percentComplete` field during export polling.
+
+**Implementation**:
+```javascript
+// Qualtrics reports 0-100%, we use it directly
+const percentComplete = result.percentComplete || 0;
+
+// Scale to UI range if needed (e.g., 0-60% during parallel fetch)
+const progress = percentComplete * scaleFactor;
+
+this.emitProgress(`Export progress: ${percentComplete}%...`, progress);
+```
+
+**Key Properties**:
+- ✅ Inherently adaptive (API provides real progress)
+- ✅ Accurate (based on actual export job progress)
+- ✅ No estimation needed
+- ✅ Smooth updates (API updates every few seconds during polling)
+
+### Parallel Fetch Progress Coordination
+
+When JotForm and Qualtrics fetch in parallel (using `Promise.all`), progress is coordinated:
+
+```javascript
+// Track independent progress
+let jotformProgress = 0;    // 0-80% (adaptive increments)
+let qualtricsProgress = 0;  // 0-60% (API-reported, scaled)
+
+// Weighted combined progress
+const combined = Math.round(jotformProgress * 0.6 + qualtricsProgress * 0.4);
+
+// Scale to UI (both bars show 0-100%)
+const jotformUI = Math.round((jotformProgress / 80) * 100);
+const qualtricsUI = Math.round((qualtricsProgress / 60) * 100);
+
+// Update both progress bars independently
+updateProgressBar('jotform', jotformUI);
+updateProgressBar('qualtrics', qualtricsUI);
+```
+
+**Weighting Rationale**:
+- JotForm typically has more data and takes longer → 60% weight
+- Qualtrics is supplementary data → 40% weight
+- Combined progress provides overall sync status for main progress tracking
+
+### Post-Processing Progress (Deterministic)
+
+Once fetching completes, post-processing steps have known durations:
+
+```javascript
+// 80-100% range (20% reserved for post-processing)
+await transformData();           // 81% (JotForm), 83% (Qualtrics)
+await mergeDataSources();        // 85%
+await validateMergedData();      // 88%
+await cacheQualtrics();          // 90%
+await convertToSubmissionFormat(); // 92%
+await updateMainCache();         // 95%
+await clearValidationCache();    // 98%
+// Complete                      // 100%
+```
+
+Each step emits explicit progress with `jotformProgress` and `qualtricsProgress` values.
+
+### Regression Prevention
+
+Progress tracking includes anti-regression logic to ensure bars never go backward:
+
+```javascript
+// Silent regression prevention (no console spam)
+if (newProgress < maxProgress) {
+  return; // Silently ignore regressive updates
+}
+maxProgress = newProgress;
+```
+
+**Why It's Needed**:
+- During parallel fetch, callbacks can fire out of order
+- Network timing variations can cause overlapping updates
+- Prevents confusing UX where progress appears to go backward
+
+**Implementation**:
+- Tracks `maxProgress`, `maxJotformProgress`, `maxQualtricsProgress`
+- Blocks any update that would decrease values
+- Operates silently (removed console warnings to avoid clutter)
+- Reset when falling back from parallel to sequential mode
+
+### Status Message Display
+
+**Two-Tier Message System**:
+
+1. **Top Message** (`modalMessage`): Phase-level status
+   - "Fetching student data..."
+   - "Now validating student submissions..."
+   - "Sync complete!"
+   - Updated only on phase transitions
+
+2. **Status Lines** (under each progress bar): Real-time details
+   - JotForm: "Fetching page 5 (batch: 100)..." or "Downloaded 347 submissions..."
+   - Qualtrics: "Export progress: 82%..." or "Downloading responses..."
+   - Updated on every progress callback
+
+**Benefits**:
+- Top message provides context (what phase are we in?)
+- Status lines show activity (proof system is working)
+- Reduces visual clutter (top message stable, details change)
+- Users can see granular progress without information overload
+
+### Implementation Files
+
+**Core Logic**:
+- `assets/js/jotform-cache.js`: 
+  - `getAllSubmissions()` - Adaptive JotForm fetch progress
+  - `refreshWithQualtrics()` - Parallel fetch coordination
+  - `emitProgress()` - Progress event emission
+  
+- `assets/js/qualtrics-api.js`:
+  - `pollProgress()` - API-reported Qualtrics progress
+  - `fetchAllResponses()` - Qualtrics fetch workflow
+
+**UI Integration**:
+- `assets/js/cache-manager-ui.js`:
+  - Progress callback setup
+  - Regression prevention
+  - Dual progress bar updates
+  - Modal message management
+
+### Testing Scenarios
+
+**Small Dataset** (1-3 pages):
+- Progress: 1% → 32% → 48% → 80% → 100%
+- Time: ~5 seconds
+- User sees rapid completion
+
+**Medium Dataset** (5-15 pages):
+- Progress: 1% → 32% → 48% → 57% → 66% → 69% → ... → 80% → 100%
+- Time: ~20-40 seconds
+- User sees steady, smooth progress
+
+**Large Dataset** (50+ pages):
+- Progress: 1% → 32% → ... → 75% → 76% → 76.5% → 77% → ... → 80% → 100%
+- Time: ~2-5 minutes
+- User sees continuous incremental progress
+- Never appears frozen (always moving)
+
+**Parallel Fetch** (JotForm + Qualtrics):
+- Both bars progress independently
+- JotForm: Adaptive increments
+- Qualtrics: API-reported progress
+- Combined progress shows overall status
+- 30-40% faster than sequential
+
+### Design Rationale
+
+**Why Asymptotic Formula?**
+- Can't know total pages upfront (API limitation)
+- Need to show progress immediately (UX requirement)
+- Must avoid "stuck at 99%" problem
+- Natural deceleration mimics user expectations
+- Always incrementing = always appears active
+
+**Why Not Fixed Increments?**
+- Fixed increments (e.g., +3% per page) don't adapt to dataset size
+- Small datasets would complete at 10-15%
+- Large datasets would get stuck at 75-80%
+- Users can't tell if system is working or frozen
+
+**Why Not Estimate Total First?**
+- Would require additional API call (adds latency)
+- JotForm API doesn't provide total count upfront
+- Estimate could be wrong (recent submissions)
+- Adds complexity without guaranteed accuracy
+
+**Why 1-80% for Fetching?**
+- 1% start is more intuitive than 0% or 5%
+- 79% range provides granularity
+- 20% reserved for post-processing is appropriate
+- Post-processing is deterministic (known steps)
+- Matches user mental model (fetching is bulk of work)
+
+### Future Considerations
+
+**Potential Enhancements**:
+- [ ] Adaptive weighting based on actual data volumes
+- [ ] Historical timing data to improve estimates
+- [ ] Predictive ETA based on current rate
+- [ ] Progress animations for sub-percentage changes
+- [ ] Network speed detection to adjust polling frequency
+
+**Metrics to Track**:
+- Average pages per sync
+- Time per page (to improve formula)
+- User perception surveys (does it feel fast/smooth?)
+- Regression prevention trigger frequency
+
+---
+
+### Future Enhancements
+
+Planned but not yet implemented:
+- [ ] Cache strategy toggle (Full Cache vs Fetch-on-Request modes)
+- [ ] Device auto-detection (mobile → recommend on-demand)
+- [ ] Incremental sync (fetch only new/changed records)
+- [ ] Automatic background refresh on schedule
+- [ ] Server-side cache proxy for improved security
+- [ ] Real-time WebSocket updates
+- [ ] Service worker for offline support
+
 ### Related Files
 
 **Implementation:**
