@@ -754,7 +754,9 @@
         }
 
         // Transform JotForm submissions to records format for DataMerger
-        // This EXACTLY matches the production transformSubmissionsToRecords logic
+        // NOTE: DataMerger expects flat records with string/primitive values (not answer objects)
+        // This is different from jotform-cache.js which stores answer objects for TaskValidator
+        // The key difference is that DataMerger normalizes both JotForm and Qualtrics to the same format
         function transformJotFormSubmissions(submissions) {
             console.log('[Test] Transforming JotForm submissions to records...');
             
@@ -792,16 +794,21 @@
                     };
                     
                     // Flatten answers object to record fields
-                    // CRITICAL: Use answerObj.name from the JotForm response, NOT external mapping
+                    // For DataMerger: Store VALUES (strings/primitives), not answer objects
+                    // This aligns with Qualtrics transformer which also stores raw values
                     if (submission.answers) {
                         for (const [qid, answerObj] of Object.entries(submission.answers)) {
-                            // Use the field name if available, otherwise use QID
-                            const fieldName = answerObj.name || `q${qid}`;
-                            const value = answerObj.answer || answerObj.text || '';
+                            // Skip if no field name or no actual value
+                            if (!answerObj.name || !answerObj.answer) continue;
                             
-                            // Skip empty values and the student-id we already processed
-                            if (value && qid !== STUDENT_ID_QID) {
-                                record[fieldName] = value;
+                            // Skip the student-id we already processed
+                            if (qid === STUDENT_ID_QID) continue;
+                            
+                            // Store the raw value (not the full answer object)
+                            // This makes JotForm data compatible with Qualtrics data for merging
+                            const value = answerObj.answer || answerObj.text || '';
+                            if (value) {
+                                record[answerObj.name] = value;
                             }
                         }
                     }

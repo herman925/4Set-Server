@@ -199,6 +199,37 @@ window.TaskValidator = (() => {
   }
 
   /**
+   * Extract value from answer field (handles both answer objects and raw values)
+   * 
+   * COMPATIBILITY FIX: This function enables TaskValidator to work with both:
+   * 1. JotForm answer objects: { answer: "Yes", text: "Yes", name: "field" }
+   * 2. Raw string/primitive values: "Yes" (from Qualtrics or DataMerger)
+   * 
+   * This is critical for test-pipeline-core-id.html which uses DataMerger to combine
+   * JotForm + Qualtrics data into flat records with string values.
+   * 
+   * @param {Object} answers - The merged answers object
+   * @param {string} fieldId - The field ID to extract
+   * @returns {string|null} - The extracted value or null
+   */
+  function extractValue(answers, fieldId) {
+    const field = answers[fieldId];
+    
+    // If field doesn't exist, return null
+    if (field === null || field === undefined) {
+      return null;
+    }
+    
+    // If field is an object (answer object from JotForm), extract .answer or .text
+    if (typeof field === 'object' && field !== null) {
+      return field.answer || field.text || null;
+    }
+    
+    // If field is a primitive (string, number, boolean), return as-is
+    return field;
+  }
+
+  /**
    * Map answer value for option-based questions (image-choice, radio, radio_text)
    * @param {string} answer - The raw answer (might be an index like "1", "2")
    * @param {Object} question - The question definition with options
@@ -237,9 +268,7 @@ window.TaskValidator = (() => {
     for (const [questionId, expectedValue] of Object.entries(showIf)) {
       if (questionId === 'gender') continue;
       
-      let studentAnswer = answers[questionId]?.answer || 
-                          answers[questionId]?.text || 
-                          null;
+      let studentAnswer = extractValue(answers, questionId);
       
       if (studentAnswer === null) {
         return false; // No answer to the condition question = condition not met
@@ -334,10 +363,8 @@ window.TaskValidator = (() => {
       const questionId = question.id;
       const correctAnswer = question.scoring?.correctAnswer;
       
-      // Get student answer from merged Jotform data
-      let studentAnswer = mergedAnswers[questionId]?.answer || 
-                          mergedAnswers[questionId]?.text || 
-                          null;
+      // Get student answer from merged data (handles both answer objects and raw values)
+      let studentAnswer = extractValue(mergedAnswers, questionId);
       
       // Map JotForm option indices to actual values using helper function
       studentAnswer = mapAnswerValue(studentAnswer, question);
@@ -359,9 +386,7 @@ window.TaskValidator = (() => {
             for (const option of question.options) {
               if (option.textId) {
                 textFieldId = option.textId;
-                const textAnswer = mergedAnswers[option.textId]?.answer || 
-                                  mergedAnswers[option.textId]?.text || 
-                                  null;
+                const textAnswer = extractValue(mergedAnswers, option.textId);
                 if (textAnswer && textAnswer.trim() !== '') {
                   hasTextData = true;
                   break;
@@ -413,9 +438,7 @@ window.TaskValidator = (() => {
         
         if (radioQuestion && radioQuestion.type === 'radio_text') {
           // Check if the correct answer was selected on the radio question
-          const radioAnswer = mergedAnswers[radioQuestionId]?.answer || 
-                              mergedAnswers[radioQuestionId]?.text || 
-                              null;
+          const radioAnswer = extractValue(mergedAnswers, radioQuestionId);
           const mappedRadioAnswer = mapAnswerValue(radioAnswer, radioQuestion);
           const radioCorrectAnswer = radioQuestion.scoring?.correctAnswer;
           
