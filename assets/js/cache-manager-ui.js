@@ -717,7 +717,7 @@
         </div>
         <div class="modal-body">
           <p id="qualtrics-progress-message" class="text-sm text-[color:var(--muted-foreground)] mb-4">
-            Status updates will appear below each progress bar...
+            status updates will appear below each progress bar...
           </p>
           
           <!-- JotForm Progress Bar (Blue) -->
@@ -990,7 +990,7 @@
         </div>
         <div class="modal-body">
           <p id="sync-modal-message" class="text-sm text-[color:var(--muted-foreground)] mb-4">
-            ${showProgressNow ? 'Status updates will appear below each progress bar...' : config.cache.modalText.syncMessage}
+            ${showProgressNow ? 'status updates will appear below each progress bar...' : config.cache.modalText.syncMessage}
           </p>
           
           <!-- Progress section with dual progress bars -->
