@@ -190,7 +190,8 @@
         }
       };
 
-      // Transform all mapped fields
+      // Transform all mapped fields to answer objects (matches JotForm schema)
+      // This ensures DataMerger and TaskValidator can process both sources uniformly
       for (const [fieldName, qidSpec] of Object.entries(fieldMapping)) {
         // Skip fields we've already handled
         if (fieldName === 'sessionkey' || 
@@ -199,10 +200,16 @@
           continue;
         }
 
-        // Extract and set value
+        // Extract value
         const value = this.extractValue(response.values, qidSpec);
         if (value !== '') {
-          result[fieldName] = value;
+          // Create answer object to match JotForm schema
+          // This is what TaskValidator expects
+          result[fieldName] = {
+            answer: value,
+            text: value,
+            name: fieldName
+          };
         }
       }
 

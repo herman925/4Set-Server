@@ -1,66 +1,36 @@
 # Data Flow Documentation: JotForm Extraction & Merge Mechanisms
 
 ## Purpose
-This document clarifies the two different data flow mechanisms in the 4Set system and confirms their alignment per issue #121 investigation.
+This document clarifies the unified data flow mechanism in the 4Set system per issue #121 investigation.
 
-## Two Data Paths
+## Unified Data Schema: Answer Objects
 
-### Path 1: Production (JotForm-only) - checking_system_4_student.html
-**This is the "truth" mechanism currently in production**
+**Key Principle:** Both JotForm and Qualtrics data are transformed to use the **same answer object schema** that TaskValidator expects.
 
-```
-Flow:
-┌─────────────┐
-│ JotForm API │
-└──────┬──────┘
-       │
-       ▼
-┌────────────────────────────────┐
-│ jotform-cache.js               │
-│ - Fetches all submissions      │
-│ - Caches in IndexedDB          │
-│ - Stores ANSWER OBJECTS        │
-│   { name, answer, text, ... }  │
-└────────┬───────────────────────┘
-         │
-         ▼
-┌─────────────────────────────────┐
-│ checking-system-student-page.js │
-│ - Merges submissions            │
-│ - "Earliest non-empty wins"    │
-│ - Keeps answer objects          │
-└────────┬────────────────────────┘
-         │
-         ▼
-┌────────────────────┐
-│ TaskValidator      │
-│ - Validates tasks  │
-│ - Uses .answer     │
-│   or .text props   │
-└────────────────────┘
+```javascript
+// Answer Object Schema (used by both sources)
+{
+  fieldName: {
+    answer: "value",
+    text: "value", 
+    name: "fieldName"
+  }
+}
 ```
 
-**Key Characteristics:**
-- Stores full answer objects from JotForm API
-- Each answer has: `{ name: "fieldName", answer: "value", text: "value", type: "control_X", ... }`
-- Merge happens in `jotform-cache.js` lines 804-817 (earliest non-empty wins)
-- TaskValidator originally expected this format
+This ensures TaskValidator (the source of truth) can process both data sources without modification.
 
-### Path 2: Test Pipeline (JotForm + Qualtrics) - test-pipeline-core-id.html
-**This is the test mechanism that had alignment issues**
+## Production & Test Pipeline Flow (Now Aligned)
 
 ```
-Flow:
 ┌─────────────┐     ┌──────────────┐
 │ JotForm API │     │ Qualtrics API│
 └──────┬──────┘     └──────┬───────┘
        │                   │
        ▼                   ▼
-┌──────────────┐    ┌──────────────────┐
-│transformJotForm│   │QualtricsTransform│
-│ - Flattens to   │ │ - Extracts values│
-│   field: value  │ │ - Returns strings│
-└──────┬─────────┘  └─────┬────────────┘
+  Transform to         Transform to
+  answer objects       answer objects
+  { answer, text }     { answer, text }
        │                   │
        └───────┬───────────┘
                ▼
@@ -68,198 +38,158 @@ Flow:
       │  DataMerger    │
       │ - Grade-aware  │
       │ - Earliest wins│
-      │ - Flat records │
+      │ - Answer objs  │
       └────────┬───────┘
                │
                ▼
       ┌────────────────┐
       │ TaskValidator  │
-      │ - NOW handles  │
-      │   both formats │
+      │ - Expects      │
+      │   answer objs  │
       └────────────────┘
 ```
 
-**Key Characteristics:**
-- Converts to flat records: `{ "fieldName": "value" }` (strings/primitives)
-- Aligns JotForm and Qualtrics data format for consistent merging
-- DataMerger handles grade-based grouping (K1, K2, K3)
-- TaskValidator updated with `extractValue()` to handle both formats
+## Data Transformation
 
-## The Alignment Issue (Now Fixed)
+### JotForm Transformation
+**Location:** `TEMP/test-pipeline-core-id.html` (test) / `assets/js/jotform-cache.js` (production)
 
-### Problem
-**Before Fix:**
-- TaskValidator only worked with answer objects: `mergedAnswers[field]?.answer || mergedAnswers[field]?.text`
-- Test pipeline produced flat records: `mergedAnswers[field] = "value"`
-- Result: TaskValidator returned `null` for all answers from test pipeline ❌
+```javascript
+// Store FULL answer objects from JotForm API
+for (const [qid, answerObj] of Object.entries(submission.answers)) {
+  if (!answerObj.name || !answerObj.answer) continue;
+  
+  // answerObj already has the correct schema from JotForm API
+  record[answerObj.name] = answerObj; // { answer, text, name, type, ... }
+}
+```
 
-### Solution
-**After Fix (Current State):**
-- Added `extractValue(answers, fieldId)` helper function
-- Handles BOTH formats:
-  - Answer objects: Returns `field.answer || field.text`
-  - Raw values: Returns value directly
-- Both paths now work correctly ✅
+### Qualtrics Transformation  
+**Location:** `TEMP/qualtrics-transformer-test.js`
+
+```javascript
+// Create answer objects to match JotForm schema
+const value = this.extractValue(response.values, qidSpec);
+if (value !== '') {
+  result[fieldName] = {
+    answer: value,
+    text: value,
+    name: fieldName
+  };
+}
+```
+
+## DataMerger: Answer Object Aware
+
+**Location:** `assets/js/data-merger.js`
+
+The DataMerger now:
+1. **Extracts values** from answer objects for comparison
+2. **Stores answer objects** (not raw values) in merged results
+3. **Compares actual values** while preserving object structure
+
+```javascript
+// Extract value helper
+extractAnswerValue(answerObj) {
+  if (typeof answerObj === 'object' && answerObj !== null) {
+    return answerObj.answer || answerObj.text || null;
+  }
+  return answerObj; // fallback for primitives
+}
+
+// Merge logic
+const jotformValue = this.extractAnswerValue(jotformAnswerObj);
+const qualtricsValue = this.extractAnswerValue(qualtricsAnswerObj);
+
+// Compare values, but store answer objects
+if (qualtricsTimestamp < jotformTimestamp) {
+  merged[key] = qualtricsAnswerObj; // Store object, not value
+}
+```
 
 ## Merge Strategy: "Earliest Non-Empty Wins"
 
-Both paths use the same merge principle but at different stages:
+Both production and test use the same principle:
 
-### Production (jotform-cache.js lines 804-817):
+1. **Sort by timestamp** (earliest first)
+2. **Extract values** from answer objects for comparison
+3. **Keep earliest answer object** when conflicts occur
+4. **Preserve object structure** for TaskValidator
+
+## Grade-Based Grouping
+
+Data is grouped by (CoreID, Grade) to prevent cross-grade merging:
+- K1 data merges with K1 data only
+- K2 data merges with K2 data only  
+- K3 data merges with K3 data only
+
+## TaskValidator Compatibility
+
+TaskValidator expects answer objects and extracts values like:
 ```javascript
-// Sort by created_at (earliest first)
-const sortedSubmissions = submissions.sort((a, b) => 
-  new Date(a.created_at) - new Date(b.created_at)
-);
-
-// Merge answers by field name
-for (const submission of sortedSubmissions) {
-  for (const [qid, answerObj] of Object.entries(submission.answers)) {
-    if (!answerObj.name || !answerObj.answer) continue;
-    
-    // Only set if not already present (earliest non-empty value wins)
-    if (!mergedAnswers[answerObj.name]) {
-      mergedAnswers[answerObj.name] = answerObj; // FULL OBJECT
-    }
-  }
-}
+let studentAnswer = mergedAnswers[questionId]?.answer || 
+                    mergedAnswers[questionId]?.text || 
+                    null;
 ```
 
-### Test (data-merger.js lines 156-165, 252-300):
+Since both JotForm and Qualtrics now produce answer objects, TaskValidator works correctly with both sources **without modification**.
+
+## Changes Made (Revised Approach)
+
+### 1. Test Pipeline JotForm Transformation
+**File:** `TEMP/test-pipeline-core-id.html`
+
+**Changed:** Store full answer objects instead of raw values
 ```javascript
-// Sort JotForm records by created_at
-jotform.sort((a, b) => {
-  const dateA = a.created_at ? new Date(a.created_at) : new Date(0);
-  const dateB = b.created_at ? new Date(b.created_at) : new Date(0);
-  return dateA - dateB;
-});
-
-// Take earliest submission for this grade
-mergedJotform = jotform[0];
-
-// Merge with Qualtrics based on timestamps
-if (qualtricsTimestamp < jotformTimestamp) {
-  merged[key] = qualtricsValue; // Qualtrics earlier
-} else {
-  // Keep JotForm value (already in merged)
-}
+// Before: record[answerObj.name] = value;
+// After:  record[answerObj.name] = answerObj;
 ```
 
-Both implementations follow the **SAME PRINCIPLE**: earliest non-empty value wins.
+### 2. Qualtrics Transformer
+**File:** `TEMP/qualtrics-transformer-test.js`
 
-## Data Format Compatibility Matrix
+**Changed:** Create answer objects to match JotForm schema
+```javascript
+// Before: result[fieldName] = value;
+// After:  result[fieldName] = { answer: value, text: value, name: fieldName };
+```
 
-| Component              | Expects          | Produces         | Compatible? |
-|------------------------|------------------|------------------|-------------|
-| JotForm API            | -                | Answer objects   | ✅          |
-| jotform-cache.js       | Answer objects   | Answer objects   | ✅          |
-| transformJotForm (test)| Answer objects   | Flat records     | ✅          |
-| QualtricsTransformer   | Raw API response | Flat records     | ✅          |
-| DataMerger             | Flat records     | Flat records     | ✅          |
-| TaskValidator (NEW)    | **BOTH formats** | Validation       | ✅          |
+### 3. DataMerger Enhancement
+**File:** `assets/js/data-merger.js`
+
+**Added:** `extractAnswerValue()` helper method  
+**Updated:** Merge logic to handle answer objects instead of raw values
+
+### 4. TaskValidator
+**File:** `assets/js/task-validator.js`
+
+**Status:** **NO CHANGES** - Works as designed with answer objects
+
+## Why This Approach is Better
+
+✅ **TaskValidator unchanged** - It's the source of truth for validation  
+✅ **Data adapts to validator** - Not the other way around  
+✅ **Unified schema** - Both sources use answer objects  
+✅ **Production-aligned** - Test pipeline replicates production schema  
+✅ **Maintainable** - Single validation logic, no dual-format handling  
 
 ## Verification Checklist
 
-- [x] Production path uses answer objects throughout
-- [x] Test path uses flat records for merge compatibility
-- [x] TaskValidator now handles both formats via `extractValue()`
-- [x] Merge strategy is "earliest non-empty wins" in both paths
-- [x] Grade-based grouping prevents cross-grade merging (K1 ≠ K2 ≠ K3)
-- [x] Both paths produce valid TaskValidator input
-
-## Code Changes Summary
-
-### 1. TaskValidator Enhancement (assets/js/task-validator.js)
-
-**Added:**
-```javascript
-/**
- * Extract value from answer field (handles both answer objects and raw values)
- */
-function extractValue(answers, fieldId) {
-  const field = answers[fieldId];
-  
-  if (field === null || field === undefined) {
-    return null;
-  }
-  
-  // If field is an object (answer object from JotForm), extract .answer or .text
-  if (typeof field === 'object' && field !== null) {
-    return field.answer || field.text || null;
-  }
-  
-  // If field is a primitive (string, number, boolean), return as-is
-  return field;
-}
-```
-
-**Updated (4 locations):**
-- Main question answer extraction (line ~338)
-- Text field checks in radio_text questions (line ~391)
-- Radio answer extraction (line ~443)
-- ShowIf condition evaluation (line ~271)
-
-All changed from:
-```javascript
-mergedAnswers[questionId]?.answer || mergedAnswers[questionId]?.text || null
-```
-
-To:
-```javascript
-extractValue(mergedAnswers, questionId)
-```
-
-### 2. Test Pipeline Comment Clarification (TEMP/test-pipeline-core-id.html)
-
-**Clarified:**
-- JotForm transformation produces flat records (NOT answer objects)
-- This aligns with Qualtrics transformer output
-- DataMerger expects flat records from both sources
-- TaskValidator (post-fix) handles the flat records
-
-## Testing Recommendations
-
-To verify alignment:
-
-1. **Test Production Path:**
-   - Open `checking_system_4_student.html` with a Core ID
-   - Check browser console for merge logs
-   - Verify task validation shows correct completion status
-
-2. **Test Pipeline Path:**
-   - Open `TEMP/test-pipeline-core-id.html`
-   - Enter a Core ID with both JotForm and Qualtrics data
-   - Run pipeline test
-   - Verify:
-     - JotForm records transformed correctly
-     - Qualtrics records transformed correctly
-     - DataMerger groups by grade
-     - TaskValidator validates both sources
-     - Completion percentages match expected values
-
-3. **Compare Results:**
-   - Same student in both systems should show same validation results
-   - Task completion status should match
-   - Answered/correct counts should align
+- [x] JotForm transformation produces answer objects
+- [x] Qualtrics transformation produces answer objects
+- [x] DataMerger handles answer objects correctly
+- [x] TaskValidator unchanged (uses answer objects as designed)
+- [x] Merge strategy is "earliest non-empty wins"
+- [x] Grade-based grouping prevents cross-grade merging
 
 ## Conclusion
 
-The alignment issues between production and test mechanisms have been **RESOLVED**:
+The alignment issue has been **RESOLVED** by adapting the data to fit TaskValidator's schema, rather than modifying TaskValidator to handle multiple formats.
 
-✅ **Production mechanism** (checking_system_4_student.html) continues to work correctly with answer objects
-
-✅ **Test pipeline** (test-pipeline-core-id.html) now works correctly with flat records via DataMerger
-
-✅ **TaskValidator** acts as the common validator for BOTH paths, handling both data formats seamlessly
-
-The key insight: **Two valid data flows exist for different purposes**
-- Production: JotForm-only, optimized for caching
-- Test: JotForm + Qualtrics merge, uses DataMerger for grade-aware combination
-
-Both are now correctly aligned and validated! 🎉
+**Key Insight:** TaskValidator is the source of truth. The data transformation layer should produce what TaskValidator expects (answer objects), not the other way around.
 
 ---
 
-**Document Version:** 1.0  
+**Document Version:** 2.0  
 **Last Updated:** 2025-10-27  
-**Related Issue:** #121
+**Related Issue:** #121, #122

@@ -19,6 +19,26 @@
     }
 
     /**
+     * Extract actual value from answer object (handles both objects and primitives)
+     * This supports the JotForm answer object schema: { answer: "value", text: "value", name: "field" }
+     * @param {Object|string|number} answerObj - Answer object or primitive value
+     * @returns {string|null} - The extracted value or null
+     */
+    extractAnswerValue(answerObj) {
+      if (!answerObj) {
+        return null;
+      }
+      
+      // If it's an object (answer object from JotForm/Qualtrics), extract .answer or .text
+      if (typeof answerObj === 'object' && answerObj !== null) {
+        return answerObj.answer || answerObj.text || null;
+      }
+      
+      // If it's a primitive (legacy format or direct value), return as-is
+      return answerObj;
+    }
+
+    /**
      * Merge JotForm and Qualtrics datasets by coreId WITH GRADE-BASED GROUPING
      * 
      * CRITICAL FIX: Never merge data from different grades (K1/K2/K3)
@@ -219,16 +239,19 @@
       const merged = { ...record1 };
 
       // Merge ALL Qualtrics fields - ONLY fill in if not already present (earliest non-empty value wins)
-      // This matches JotForm's merge principle: line 779 in jotform-cache.js
-      for (const [key, value] of Object.entries(record2)) {
+      // Now handles answer objects instead of raw values
+      for (const [key, answerObj] of Object.entries(record2)) {
         // Skip metadata fields
         if (this.excludeFields.has(key) || key.startsWith('_')) {
           continue;
         }
         
+        // Extract value from answer object for checking
+        const value = this.extractAnswerValue(answerObj);
+        
         // Only set if not already present and value is not empty (earliest wins)
-        if (value !== null && value !== undefined && value !== '' && !merged[key]) {
-          merged[key] = value;
+        if (value && !merged[key]) {
+          merged[key] = answerObj; // Store the full answer object
         }
       }
 
@@ -266,21 +289,32 @@
           continue;
         }
 
-        const jotformValue = jotformRecord[key];
-        const qualtricsValue = value;
+        const jotformAnswerObj = jotformRecord[key];
+        const qualtricsAnswerObj = value;
 
+        // Extract actual values from answer objects for comparison
+        const qualtricsValue = this.extractAnswerValue(qualtricsAnswerObj);
+        
         // Skip if Qualtrics value is empty
-        if (qualtricsValue === null || qualtricsValue === undefined || qualtricsValue === '') {
+        if (!qualtricsValue || qualtricsValue === '') {
           continue;
         }
 
-        // If JotForm doesn't have this field, use Qualtrics value
+        // If JotForm doesn't have this field, use Qualtrics answer object
+        if (!jotformAnswerObj) {
+          merged[key] = qualtricsAnswerObj;
+          continue;
+        }
+        
+        const jotformValue = this.extractAnswerValue(jotformAnswerObj);
+        
+        // If JotForm has the field but no value, use Qualtrics
         if (!jotformValue || jotformValue === '') {
-          merged[key] = qualtricsValue;
+          merged[key] = qualtricsAnswerObj;
           continue;
         }
 
-        // Both have values - use earliest non-empty value
+        // Both have values - compare actual values and use earliest non-empty
         if (jotformValue !== qualtricsValue) {
           // Detect conflict
           conflicts.push({
@@ -292,11 +326,11 @@
             resolution: jotformTimestamp <= qualtricsTimestamp ? 'jotform' : 'qualtrics'
           });
 
-          // Keep earliest value based on timestamp
+          // Keep earliest answer object based on timestamp
           if (qualtricsTimestamp < jotformTimestamp) {
-            merged[key] = qualtricsValue;
+            merged[key] = qualtricsAnswerObj;
           }
-          // else: keep JotForm value (already in merged via spread)
+          // else: keep JotForm answer object (already in merged via spread)
         }
       }
 
