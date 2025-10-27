@@ -210,10 +210,13 @@
       const baseBatchSize = this.config.initialBatchSize;
       let currentBatchSize = baseBatchSize;
       
-      // Dynamic progress tracking
-      // We don't know total pages upfront, so we use a dynamic estimation
-      // Reserve 0-80% for fetching, 80-100% for post-processing
-      let lastProgress = 0;
+      // Dynamic progress tracking with adaptive estimation
+      // Reserve 1-80% for fetching (79% range), 80-100% for post-processing
+      // We don't know total pages upfront, so we use adaptive increments
+      // that get smaller as we fetch more pages (asymptotic to 80%)
+      let currentProgress = 1; // Start at 1%
+      const FETCH_END_PERCENT = 80;
+      const FETCH_RANGE = FETCH_END_PERCENT - 1; // 79%
 
       try {
         while (hasMore) {
@@ -233,14 +236,9 @@
                       `&orderby=created_at` +
                       `&direction=ASC`;
 
-          // Progress: Show incremental progress BEFORE each fetch
-          // Start at 5%, increment by smaller amounts as we go
-          // This provides smooth, visible progress without knowing total pages
-          const incrementalProgress = pageNum === 1 ? 5 : Math.min(lastProgress + 3, 75);
-          lastProgress = incrementalProgress;
-          
+          // Progress BEFORE fetch: show what we're about to do
           const fetchMessage = `Fetching page ${pageNum} (batch: ${currentBatchSize})...`;
-          this.emitProgress(fetchMessage, Math.round(incrementalProgress), {
+          this.emitProgress(fetchMessage, Math.round(currentProgress), {
             jotformMessage: fetchMessage,
             qualtricsMessage: 'Waiting to start...'
           });
@@ -309,17 +307,25 @@
 
             allSubmissions.push(...result.content);
             
-            // Progress: Show progress AFTER each successful fetch
-            // Use dynamic calculation based on whether we got a full batch
+            // Progress AFTER successful fetch: Adaptive increment based on progress so far
+            // The closer we get to 80%, the smaller the increments (asymptotic approach)
+            // This creates smooth progress without knowing total pages upfront
             let downloadProgress;
+            
             if (result.content.length < currentBatchSize) {
-              // Last page - we're done fetching, go to 80%
-              downloadProgress = 80;
+              // Last page detected - jump to 80%
+              downloadProgress = FETCH_END_PERCENT;
             } else {
-              // Still more pages - increment smoothly, cap at 75%
-              // Each successful fetch adds progress
-              downloadProgress = Math.min(lastProgress + 2, 75);
-              lastProgress = downloadProgress;
+              // Calculate adaptive increment:
+              // - Early pages (1-10): larger increments (~7-10% per page)
+              // - Middle pages (11-20): medium increments (~3-5% per page)
+              // - Later pages (20+): smaller increments (~1-2% per page)
+              // Formula: increment = (80 - currentProgress) / (pageNum * 0.5 + 2)
+              // This creates a natural deceleration as we approach 80%
+              const remainingRange = FETCH_END_PERCENT - currentProgress;
+              const adaptiveIncrement = remainingRange / (pageNum * 0.5 + 2);
+              downloadProgress = Math.min(currentProgress + adaptiveIncrement, FETCH_END_PERCENT - 1);
+              currentProgress = downloadProgress;
             }
             
             const downloadMessage = `Downloaded ${allSubmissions.length} submissions...`;
