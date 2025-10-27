@@ -119,7 +119,7 @@
                     
                     <p><strong>How to use:</strong></p>
                     <ol class="list-decimal ml-6 space-y-1">
-                        <li>Enter a numeric Core ID (e.g., <code>10261</code>) - do NOT include the "C" prefix</li>
+                        <li>Enter a numeric Core ID (e.g., <code>10267</code>) - do NOT include the "C" prefix</li>
                         <li>Select a test method:
                             <ul class="list-circle ml-6">
                                 <li><strong>Direct API</strong> - Slower, but works without cache</li>
@@ -159,9 +159,9 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Core ID (numeric only)</label>
-                    <input type="text" id="coreIdInput" placeholder="e.g., 10261" 
+                    <input type="text" id="coreIdInput" placeholder="e.g., 10267" 
                            class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                           value="10261">
+                           value="10267">
                     <p class="text-xs text-gray-500 mt-1">Enter numeric Core ID without 'C' prefix</p>
                 </div>
                 <div>
@@ -754,7 +754,7 @@
         }
 
         // Transform JotForm submissions to records format for DataMerger
-        // This matches the production transformSubmissionsToRecords logic
+        // This EXACTLY matches the production transformSubmissionsToRecords logic
         function transformJotFormSubmissions(submissions) {
             console.log('[Test] Transforming JotForm submissions to records...');
             
@@ -762,45 +762,57 @@
                 return [];
             }
 
-            // Create reverse mapping: QID -> field name
-            const qidToFieldName = {};
-            if (jotformQuestionsData) {
-                for (const [fieldName, qid] of Object.entries(jotformQuestionsData)) {
-                    qidToFieldName[qid] = fieldName;
-                }
-            }
-
             const records = [];
+            const STUDENT_ID_QID = '20'; // QID for student-id field
             
             for (const submission of submissions) {
-                const record = {
-                    coreId: submission.answers?.['3']?.answer, // sessionkey contains coreId
-                    sessionkey: submission.answers?.['3']?.answer || submission.answers?.['3']?.text,
-                    created_at: submission.created_at,
-                    _meta: {
-                        source: 'jotform',
-                        submissionId: submission.id
+                try {
+                    // Extract student ID from answers using configured QID
+                    const studentIdAnswer = submission.answers?.[STUDENT_ID_QID];
+                    const studentId = studentIdAnswer?.answer || studentIdAnswer?.text;
+                    
+                    if (!studentId) {
+                        console.warn('[Test] Submission missing student ID, skipping:', submission.id);
+                        continue;
                     }
-                };
-                
-                // Map all answers from QID to field names
-                const answers = submission.answers || {};
-                for (const [qid, answerObj] of Object.entries(answers)) {
-                    const fieldName = qidToFieldName[qid];
-                    if (fieldName) {
-                        const value = answerObj.answer || answerObj.text;
-                        if (value) {
-                            record[fieldName] = value;
+                    
+                    // Create coreId with "C" prefix
+                    const coreId = studentId.startsWith('C') ? studentId : `C${studentId}`;
+                    
+                    // Build flat record with all answer fields
+                    const record = {
+                        coreId: coreId,
+                        'student-id': studentId,
+                        _meta: {
+                            source: 'jotform',
+                            submissionId: submission.id,
+                            created_at: submission.created_at,
+                            updated_at: submission.updated_at
+                        }
+                    };
+                    
+                    // Flatten answers object to record fields
+                    // CRITICAL: Use answerObj.name from the JotForm response, NOT external mapping
+                    if (submission.answers) {
+                        for (const [qid, answerObj] of Object.entries(submission.answers)) {
+                            // Use the field name if available, otherwise use QID
+                            const fieldName = answerObj.name || `q${qid}`;
+                            const value = answerObj.answer || answerObj.text || '';
+                            
+                            // Skip empty values and the student-id we already processed
+                            if (value && qid !== STUDENT_ID_QID) {
+                                record[fieldName] = value;
+                            }
                         }
                     }
-                }
-                
-                if (record.coreId) {
+                    
                     records.push(record);
+                } catch (error) {
+                    console.error('[Test] Failed to transform submission:', submission.id, error);
                 }
             }
 
-            console.log(`[Test] Transformed ${records.length} submissions to records`);
+            console.log(`[Test] Transformed ${records.length} submissions to records (${submissions.length - records.length} skipped)`);
             return records;
         }
 
@@ -1004,6 +1016,30 @@
             const section = document.getElementById('tgmdQualtricsSection');
             const container = document.getElementById('tgmdQualtricsContent');
             
+            // Define ALL TGMD fields from qualtrics-mapping.json
+            const ALL_TGMD_FIELDS = [
+                'TGMD_Hand', 'TGMD_Leg',
+                // Hop (單腳跳)
+                'TGMD_111_Hop_t1', 'TGMD_112_Hop_t1', 'TGMD_113_Hop_t1', 'TGMD_114_Hop_t1',
+                'TGMD_111_Hop_t2', 'TGMD_112_Hop_t2', 'TGMD_113_Hop_t2', 'TGMD_114_Hop_t2',
+                // Jump (立定跳遠)
+                'TGMD_211_Jum_t1', 'TGMD_212_Jum_t1', 'TGMD_213_Jum_t1', 'TGMD_214_Jum_t1',
+                'TGMD_211_Jum_t2', 'TGMD_212_Jum_t2', 'TGMD_213_Jum_t2', 'TGMD_214_Jum_t2',
+                // Slide (側併步)
+                'TGMD_311_Sli_t1', 'TGMD_312_Sli_t1', 'TGMD_313_Sli_t1', 'TGMD_314_Sli_t1',
+                'TGMD_311_Sli_t2', 'TGMD_312_Sli_t2', 'TGMD_313_Sli_t2', 'TGMD_314_Sli_t2',
+                // Dribble (運球)
+                'TGMD_411_Dri_t1', 'TGMD_412_Dri_t1', 'TGMD_413_Dri_t1',
+                'TGMD_411_Dri_t2', 'TGMD_412_Dri_t2', 'TGMD_413_Dri_t2',
+                // Catch (接球)
+                'TGMD_511_Cat_t1', 'TGMD_512_Cat_t1', 'TGMD_513_Cat_t1',
+                'TGMD_511_Cat_t2', 'TGMD_512_Cat_t2', 'TGMD_513_Cat_t2',
+                // Throw (低手投擲)
+                'TGMD_611_Thr_t1', 'TGMD_612_Thr_t1', 'TGMD_613_Thr_t1', 'TGMD_614_Thr_t1',
+                'TGMD_611_Thr_t2', 'TGMD_612_Thr_t2', 'TGMD_613_Thr_t2', 'TGMD_614_Thr_t2',
+                'TGMD_Com'
+            ];
+            
             let hasTGMDData = false;
             container.innerHTML = '';
             
@@ -1011,19 +1047,23 @@
             for (const response of data.transformedQualtrics) {
                 const tgmdFields = {};
                 
-                // Extract all TGMD fields from this record
-                for (const [key, value] of Object.entries(response)) {
-                    if (key.startsWith('TGMD_') && !key.startsWith('_')) {
-                        tgmdFields[key] = value;
-                    }
+                // Extract ALL TGMD fields (show even if empty to give complete picture)
+                for (const field of ALL_TGMD_FIELDS) {
+                    tgmdFields[field] = response[field] !== undefined ? response[field] : null;
                 }
                 
-                // If this record has TGMD data, display it
-                if (Object.keys(tgmdFields).length > 0) {
+                // Check if at least one TGMD field has a value
+                const hasAnyValue = Object.values(tgmdFields).some(v => v !== null && v !== undefined);
+                
+                // Display the record if it has any TGMD data
+                if (hasAnyValue) {
                     hasTGMDData = true;
                     
                     const recordDate = response.recordedDate || response._meta?.startDate || 'Unknown';
                     const grade = response.grade || (window.GradeDetector?.determineGradeFromRecordedDate(recordDate)) || 'Unknown';
+                    
+                    // Count fields with actual values
+                    const fieldCount = Object.values(tgmdFields).filter(v => v !== null && v !== undefined).length;
                     
                     const recordCard = document.createElement('div');
                     recordCard.className = 'border border-gray-200 rounded-lg p-4 bg-gray-50';
@@ -1038,21 +1078,24 @@
                                 </span>
                             </div>
                             <span class="text-xs text-gray-500">
-                                ${Object.keys(tgmdFields).length} TGMD fields
+                                ${fieldCount} / ${ALL_TGMD_FIELDS.length} TGMD fields populated
                             </span>
                         </div>
                         
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3">
-                            ${Object.entries(tgmdFields).map(([field, value]) => `
-                                <div class="text-xs">
-                                    <div class="font-mono text-gray-500 truncate" title="${field}">${field}</div>
-                                    <div class="font-semibold text-gray-800">${value !== null && value !== undefined ? value : '—'}</div>
-                                </div>
-                            `).join('')}
+                        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 mt-3">
+                            ${Object.entries(tgmdFields).map(([field, value]) => {
+                                const hasValue = value !== null && value !== undefined;
+                                return `
+                                    <div class="text-xs ${hasValue ? '' : 'opacity-40'}">
+                                        <div class="font-mono text-gray-500 truncate text-[10px]" title="${field}">${field}</div>
+                                        <div class="font-semibold ${hasValue ? 'text-gray-800' : 'text-gray-400'}">${hasValue ? value : '—'}</div>
+                                    </div>
+                                `;
+                            }).join('')}
                         </div>
                         
                         <details class="mt-3">
-                            <summary class="text-xs text-blue-600 cursor-pointer hover:text-blue-800">View Full JSON</summary>
+                            <summary class="text-xs text-blue-600 cursor-pointer hover:text-blue-800">View Full JSON (All ${ALL_TGMD_FIELDS.length} TGMD fields)</summary>
                             <pre class="mt-2 text-xs bg-white p-2 rounded border border-gray-200 overflow-x-auto">${JSON.stringify(tgmdFields, null, 2)}</pre>
                         </details>
                     `;
@@ -1083,10 +1126,14 @@
             // Get student name from first available merged data
             let studentName = 'Unknown';
             for (const gradeData of Object.values(data.mergedData)) {
-                const childName = gradeData.merged['child-name'] || gradeData.merged['21'];
-                if (childName) {
-                    studentName = childName.answer || childName.text || 'Unknown';
-                    break;
+                if (gradeData.merged) {
+                    // Try child-name field (from either JotForm or Qualtrics)
+                    const childName = gradeData.merged['child-name'];
+                    if (childName) {
+                        // Handle both string values and object values
+                        studentName = typeof childName === 'string' ? childName : (childName.answer || childName.text || childName);
+                        break;
+                    }
                 }
             }
             document.getElementById('result-name').textContent = studentName + (data.method ? ` (${data.method})` : '');
