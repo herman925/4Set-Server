@@ -1016,6 +1016,30 @@
             const section = document.getElementById('tgmdQualtricsSection');
             const container = document.getElementById('tgmdQualtricsContent');
             
+            // Define ALL TGMD fields from qualtrics-mapping.json
+            const ALL_TGMD_FIELDS = [
+                'TGMD_Hand', 'TGMD_Leg',
+                // Hop (單腳跳)
+                'TGMD_111_Hop_t1', 'TGMD_112_Hop_t1', 'TGMD_113_Hop_t1', 'TGMD_114_Hop_t1',
+                'TGMD_111_Hop_t2', 'TGMD_112_Hop_t2', 'TGMD_113_Hop_t2', 'TGMD_114_Hop_t2',
+                // Jump (立定跳遠)
+                'TGMD_211_Jum_t1', 'TGMD_212_Jum_t1', 'TGMD_213_Jum_t1', 'TGMD_214_Jum_t1',
+                'TGMD_211_Jum_t2', 'TGMD_212_Jum_t2', 'TGMD_213_Jum_t2', 'TGMD_214_Jum_t2',
+                // Slide (側併步)
+                'TGMD_311_Sli_t1', 'TGMD_312_Sli_t1', 'TGMD_313_Sli_t1', 'TGMD_314_Sli_t1',
+                'TGMD_311_Sli_t2', 'TGMD_312_Sli_t2', 'TGMD_313_Sli_t2', 'TGMD_314_Sli_t2',
+                // Dribble (運球)
+                'TGMD_411_Dri_t1', 'TGMD_412_Dri_t1', 'TGMD_413_Dri_t1',
+                'TGMD_411_Dri_t2', 'TGMD_412_Dri_t2', 'TGMD_413_Dri_t2',
+                // Catch (接球)
+                'TGMD_511_Cat_t1', 'TGMD_512_Cat_t1', 'TGMD_513_Cat_t1',
+                'TGMD_511_Cat_t2', 'TGMD_512_Cat_t2', 'TGMD_513_Cat_t2',
+                // Throw (低手投擲)
+                'TGMD_611_Thr_t1', 'TGMD_612_Thr_t1', 'TGMD_613_Thr_t1', 'TGMD_614_Thr_t1',
+                'TGMD_611_Thr_t2', 'TGMD_612_Thr_t2', 'TGMD_613_Thr_t2', 'TGMD_614_Thr_t2',
+                'TGMD_Com'
+            ];
+            
             let hasTGMDData = false;
             container.innerHTML = '';
             
@@ -1023,19 +1047,23 @@
             for (const response of data.transformedQualtrics) {
                 const tgmdFields = {};
                 
-                // Extract all TGMD fields from this record
-                for (const [key, value] of Object.entries(response)) {
-                    if (key.startsWith('TGMD_') && !key.startsWith('_')) {
-                        tgmdFields[key] = value;
-                    }
+                // Extract ALL TGMD fields (show even if empty to give complete picture)
+                for (const field of ALL_TGMD_FIELDS) {
+                    tgmdFields[field] = response[field] !== undefined ? response[field] : null;
                 }
                 
-                // If this record has TGMD data, display it
-                if (Object.keys(tgmdFields).length > 0) {
+                // Check if at least one TGMD field has a value
+                const hasAnyValue = Object.values(tgmdFields).some(v => v !== null && v !== undefined);
+                
+                // Display the record if it has any TGMD data
+                if (hasAnyValue) {
                     hasTGMDData = true;
                     
                     const recordDate = response.recordedDate || response._meta?.startDate || 'Unknown';
                     const grade = response.grade || (window.GradeDetector?.determineGradeFromRecordedDate(recordDate)) || 'Unknown';
+                    
+                    // Count fields with actual values
+                    const fieldCount = Object.values(tgmdFields).filter(v => v !== null && v !== undefined).length;
                     
                     const recordCard = document.createElement('div');
                     recordCard.className = 'border border-gray-200 rounded-lg p-4 bg-gray-50';
@@ -1050,21 +1078,24 @@
                                 </span>
                             </div>
                             <span class="text-xs text-gray-500">
-                                ${Object.keys(tgmdFields).length} TGMD fields
+                                ${fieldCount} / ${ALL_TGMD_FIELDS.length} TGMD fields populated
                             </span>
                         </div>
                         
-                        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-3">
-                            ${Object.entries(tgmdFields).map(([field, value]) => `
-                                <div class="text-xs">
-                                    <div class="font-mono text-gray-500 truncate" title="${field}">${field}</div>
-                                    <div class="font-semibold text-gray-800">${value !== null && value !== undefined ? value : '—'}</div>
-                                </div>
-                            `).join('')}
+                        <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-2 mt-3">
+                            ${Object.entries(tgmdFields).map(([field, value]) => {
+                                const hasValue = value !== null && value !== undefined;
+                                return `
+                                    <div class="text-xs ${hasValue ? '' : 'opacity-40'}">
+                                        <div class="font-mono text-gray-500 truncate text-[10px]" title="${field}">${field}</div>
+                                        <div class="font-semibold ${hasValue ? 'text-gray-800' : 'text-gray-400'}">${hasValue ? value : '—'}</div>
+                                    </div>
+                                `;
+                            }).join('')}
                         </div>
                         
                         <details class="mt-3">
-                            <summary class="text-xs text-blue-600 cursor-pointer hover:text-blue-800">View Full JSON</summary>
+                            <summary class="text-xs text-blue-600 cursor-pointer hover:text-blue-800">View Full JSON (All ${ALL_TGMD_FIELDS.length} TGMD fields)</summary>
                             <pre class="mt-2 text-xs bg-white p-2 rounded border border-gray-200 overflow-x-auto">${JSON.stringify(tgmdFields, null, 2)}</pre>
                         </details>
                     `;
