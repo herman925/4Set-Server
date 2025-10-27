@@ -595,9 +595,29 @@
     await showQualtricsProgressModal();
     
     try {
-      // Set progress callback
-      window.JotFormCache.setProgressCallback((message, progress) => {
-        updateQualtricsProgress(message, progress);
+      // Track max progress for non-regressive bars
+      let maxJotformProgress = 0;
+      let maxQualtricsProgress = 0;
+      
+      // Set progress callback to update dual progress bars
+      window.JotFormCache.setProgressCallback((message, progress, details = {}) => {
+        let jotformProgress = details.jotformProgress || 0;
+        let qualtricsProgress = details.qualtricsProgress || 0;
+        
+        // Apply non-regressive logic
+        if (jotformProgress < maxJotformProgress) {
+          jotformProgress = maxJotformProgress;
+        } else {
+          maxJotformProgress = jotformProgress;
+        }
+        
+        if (qualtricsProgress < maxQualtricsProgress) {
+          qualtricsProgress = maxQualtricsProgress;
+        } else {
+          maxQualtricsProgress = qualtricsProgress;
+        }
+        
+        updateQualtricsProgress(message, jotformProgress, qualtricsProgress);
       });
       
       // Perform refresh
@@ -617,7 +637,7 @@
   }
 
   /**
-   * Show Qualtrics progress modal
+   * Show Qualtrics progress modal with dual progress bars
    */
   async function showQualtricsProgressModal() {
     ensureModalCSS();
@@ -631,17 +651,29 @@
         <div class="modal-header">
           <h3 class="text-lg font-semibold text-[color:var(--foreground)] flex items-center gap-2">
             <i data-lucide="refresh-cw" class="w-5 h-5 text-purple-600 animate-spin"></i>
-            <span>Syncing with Qualtrics</span>
+            <span>Syncing Database</span>
           </h3>
         </div>
         <div class="modal-body">
           <p id="qualtrics-progress-message" class="text-sm text-[color:var(--muted-foreground)] mb-4">
-            Starting Qualtrics integration...
+            Starting parallel sync...
           </p>
           
+          <!-- JotForm Progress Bar (Blue) -->
+          <div class="mb-3">
+            <div class="flex justify-between items-center mb-1">
+              <span class="text-xs font-medium text-blue-600">JotForm</span>
+              <span id="jotform-progress-percent" class="text-xs font-mono font-semibold text-blue-600">0%</span>
+            </div>
+            <div class="w-full h-2 bg-[color:var(--muted)] rounded-full overflow-hidden">
+              <div id="jotform-progress-bar" class="h-full bg-blue-600 transition-all duration-300" style="width: 0%"></div>
+            </div>
+          </div>
+          
+          <!-- Qualtrics Progress Bar (Purple) -->
           <div class="mb-2">
             <div class="flex justify-between items-center mb-1">
-              <span id="qualtrics-progress-text" class="text-xs text-[color:var(--muted-foreground)]">Initializing...</span>
+              <span class="text-xs font-medium text-purple-600">Qualtrics</span>
               <span id="qualtrics-progress-percent" class="text-xs font-mono font-semibold text-purple-600">0%</span>
             </div>
             <div class="w-full h-2 bg-[color:var(--muted)] rounded-full overflow-hidden">
@@ -662,18 +694,27 @@
   }
 
   /**
-   * Update Qualtrics progress modal
+   * Update Qualtrics progress modal with dual progress bars
+   * @param {string} message - Overall progress message
+   * @param {number} jotformProgress - JotForm progress (0-100)
+   * @param {number} qualtricsProgress - Qualtrics progress (0-100)
    */
-  function updateQualtricsProgress(message, progress) {
+  function updateQualtricsProgress(message, jotformProgress = 0, qualtricsProgress = 0) {
     const messageEl = document.getElementById('qualtrics-progress-message');
-    const textEl = document.getElementById('qualtrics-progress-text');
-    const percentEl = document.getElementById('qualtrics-progress-percent');
-    const barEl = document.getElementById('qualtrics-progress-bar');
+    const jotformBarEl = document.getElementById('jotform-progress-bar');
+    const jotformPercentEl = document.getElementById('jotform-progress-percent');
+    const qualtricsBarEl = document.getElementById('qualtrics-progress-bar');
+    const qualtricsPercentEl = document.getElementById('qualtrics-progress-percent');
     
     if (messageEl) messageEl.textContent = message;
-    if (textEl) textEl.textContent = message;
-    if (percentEl) percentEl.textContent = Math.round(progress) + '%';
-    if (barEl) barEl.style.width = progress + '%';
+    
+    // Update JotForm progress bar (blue)
+    if (jotformBarEl) jotformBarEl.style.width = Math.round(jotformProgress) + '%';
+    if (jotformPercentEl) jotformPercentEl.textContent = Math.round(jotformProgress) + '%';
+    
+    // Update Qualtrics progress bar (purple)
+    if (qualtricsBarEl) qualtricsBarEl.style.width = Math.round(qualtricsProgress) + '%';
+    if (qualtricsPercentEl) qualtricsPercentEl.textContent = Math.round(qualtricsProgress) + '%';
   }
 
   /**
@@ -875,23 +916,35 @@
         <div class="modal-header">
           <h3 class="text-lg font-semibold text-[color:var(--foreground)] flex items-center gap-2">
             <i data-lucide="database" class="w-5 h-5 text-blue-500"></i>
-            <span id="sync-modal-title">${showProgressNow ? 'Syncing...' : config.cache.modalText.syncTitle}</span>
+            <span id="sync-modal-title">${showProgressNow ? 'Syncing Database' : config.cache.modalText.syncTitle}</span>
           </h3>
         </div>
         <div class="modal-body">
           <p id="sync-modal-message" class="text-sm text-[color:var(--muted-foreground)] mb-4">
-            ${showProgressNow ? 'Building cache from Jotform...' : config.cache.modalText.syncMessage}
+            ${showProgressNow ? 'Fetching data from both sources...' : config.cache.modalText.syncMessage}
           </p>
           
-          <!-- Progress section (always visible) -->
+          <!-- Progress section with dual progress bars -->
           <div id="sync-progress-section">
-            <div class="mb-2">
+            <!-- JotForm Progress Bar (Blue) -->
+            <div class="mb-3">
               <div class="flex justify-between items-center mb-1">
-                <span id="sync-progress-text" class="text-xs text-[color:var(--muted-foreground)]">${showProgressNow ? 'Syncing...' : 'Ready to begin'}</span>
-                <span id="sync-progress-percent" class="text-xs font-mono font-semibold text-[color:var(--primary)]">${showProgressNow ? Math.round(currentSyncProgress) : 0}%</span>
+                <span class="text-xs font-medium text-blue-600">JotForm</span>
+                <span id="sync-jotform-percent" class="text-xs font-mono font-semibold text-blue-600">0%</span>
               </div>
               <div class="w-full h-2 bg-[color:var(--muted)] rounded-full overflow-hidden">
-                <div id="sync-progress-bar" class="h-full bg-[color:var(--primary)] transition-all duration-300" style="width: ${showProgressNow ? currentSyncProgress : 0}%"></div>
+                <div id="sync-jotform-bar" class="h-full bg-blue-600 transition-all duration-300" style="width: 0%"></div>
+              </div>
+            </div>
+            
+            <!-- Qualtrics Progress Bar (Purple) -->
+            <div class="mb-2">
+              <div class="flex justify-between items-center mb-1">
+                <span class="text-xs font-medium text-purple-600">Qualtrics</span>
+                <span id="sync-qualtrics-percent" class="text-xs font-mono font-semibold text-purple-600">0%</span>
+              </div>
+              <div class="w-full h-2 bg-[color:var(--muted)] rounded-full overflow-hidden">
+                <div id="sync-qualtrics-bar" class="h-full bg-purple-600 transition-all duration-300" style="width: 0%"></div>
               </div>
             </div>
           </div>
@@ -914,9 +967,10 @@
     const cancelBtn = document.getElementById('sync-modal-cancel');
     const confirmBtn = document.getElementById('sync-modal-confirm');
     const progressSection = document.getElementById('sync-progress-section');
-    const progressBar = document.getElementById('sync-progress-bar');
-    const progressText = document.getElementById('sync-progress-text');
-    const progressPercent = document.getElementById('sync-progress-percent');
+    const jotformBar = document.getElementById('sync-jotform-bar');
+    const jotformPercent = document.getElementById('sync-jotform-percent');
+    const qualtricsBar = document.getElementById('sync-qualtrics-bar');
+    const qualtricsPercent = document.getElementById('sync-qualtrics-percent');
     const modalTitle = document.getElementById('sync-modal-title');
     const modalMessage = document.getElementById('sync-modal-message');
     
@@ -924,6 +978,8 @@
       cancelBtn: !!cancelBtn,
       confirmBtn: !!confirmBtn,
       progressSection: !!progressSection,
+      jotformBar: !!jotformBar,
+      qualtricsBar: !!qualtricsBar,
       modalTitle: !!modalTitle
     });
 
@@ -965,9 +1021,11 @@
       isSyncing = true;
       currentSyncProgress = 0;
       let maxProgress = 0; // Track maximum progress to prevent regression
+      let maxJotformProgress = 0; // Track max JotForm progress (non-regressive)
+      let maxQualtricsProgress = 0; // Track max Qualtrics progress (non-regressive)
 
       // Set up progress callback - updates BOTH modal AND pill
-      window.JotFormCache.setProgressCallback((message, progress) => {
+      window.JotFormCache.setProgressCallback((message, progress, details = {}) => {
         // Prevent progress regression
         if (progress < maxProgress) {
           console.warn(`[CacheUI] Progress regression prevented: ${progress}% < ${maxProgress}%`);
@@ -976,10 +1034,31 @@
         maxProgress = progress;
         currentSyncProgress = progress;
         
-        // Update modal progress (if still open)
-        if (progressText) progressText.textContent = message;
-        if (progressPercent) progressPercent.textContent = `${Math.round(progress)}%`;
-        if (progressBar) progressBar.style.width = `${progress}%`;
+        // Extract individual progress values from details
+        let jotformProgress = details.jotformProgress || 0;
+        let qualtricsProgress = details.qualtricsProgress || 0;
+        
+        // Apply non-regressive logic to individual bars
+        if (jotformProgress < maxJotformProgress) {
+          console.warn(`[CacheUI] JotForm progress regression prevented: ${jotformProgress}% < ${maxJotformProgress}%`);
+          jotformProgress = maxJotformProgress;
+        } else {
+          maxJotformProgress = jotformProgress;
+        }
+        
+        if (qualtricsProgress < maxQualtricsProgress) {
+          console.warn(`[CacheUI] Qualtrics progress regression prevented: ${qualtricsProgress}% < ${maxQualtricsProgress}%`);
+          qualtricsProgress = maxQualtricsProgress;
+        } else {
+          maxQualtricsProgress = qualtricsProgress;
+        }
+        
+        // Update modal progress bars (if still open)
+        if (jotformBar) jotformBar.style.width = `${jotformProgress}%`;
+        if (jotformPercent) jotformPercent.textContent = `${Math.round(jotformProgress)}%`;
+        if (qualtricsBar) qualtricsBar.style.width = `${qualtricsProgress}%`;
+        if (qualtricsPercent) qualtricsPercent.textContent = `${Math.round(qualtricsProgress)}%`;
+        if (modalMessage) modalMessage.textContent = message;
         
         // Update pill progress (always, even if modal closed)
         updateStatusPill(progress);
@@ -1001,9 +1080,7 @@
         console.log('[CacheUI] Calling getAllSubmissions...');
         modalTitle.textContent = 'Syncing Database';
         modalMessage.textContent = 'Fetching data from JotForm and Qualtrics...';
-        progressBar.style.width = '5%';
-        progressPercent.textContent = '5%';
-        progressText.textContent = 'Fetching submissions from JotForm...';
+        // Progress bars will be updated by the callback
         
         // This waits for IndexedDB write to fully complete
         const result = await window.JotFormCache.getAllSubmissions({
@@ -1026,7 +1103,6 @@
         
         if (hasQualtricsCredentials) {
           console.log('[CacheUI] Qualtrics credentials found, fetching TGMD data...');
-          // Don't manually update progress here - let the callback handle it to prevent regression
           
           try {
             // Check if modules are loaded
@@ -1034,63 +1110,39 @@
                 typeof window.QualtricsTransformer !== 'undefined' && 
                 typeof window.DataMerger !== 'undefined') {
               
-              // Set up progress callback for Qualtrics sync (50-70%)
-              window.JotFormCache.setProgressCallback((message, progress) => {
-                // Map Qualtrics progress (0-100) to our range (50-70)
-                const mappedProgress = 50 + (progress * 0.2);
-                
-                // Prevent regression
-                if (mappedProgress < maxProgress) {
-                  console.warn(`[CacheUI] Qualtrics progress regression prevented: ${mappedProgress}% < ${maxProgress}%`);
-                  return;
-                }
-                maxProgress = mappedProgress;
-                
-                if (progressBar) progressBar.style.width = `${mappedProgress}%`;
-                if (progressPercent) progressPercent.textContent = `${Math.round(mappedProgress)}%`;
-                if (progressText) progressText.textContent = message;
-                
-                updateStatusPill(mappedProgress);
-              });
-              
-              // Perform Qualtrics refresh
+              // refreshWithQualtrics will handle dual progress bars automatically
+              // through the callback set up above
               const qualtricsResult = await window.JotFormCache.refreshWithQualtrics(credentials);
               console.log('[CacheUI] Qualtrics data merged successfully');
               
               // Ensure we're at 70% after Qualtrics
               if (maxProgress < 70) {
                 maxProgress = 70;
-                progressBar.style.width = '70%';
-                progressPercent.textContent = '70%';
-                progressText.textContent = 'JotForm and Qualtrics data merged successfully!';
+                if (modalMessage) modalMessage.textContent = 'JotForm and Qualtrics data merged successfully!';
               }
             } else {
               console.warn('[CacheUI] Qualtrics modules not loaded, skipping Qualtrics sync');
               maxProgress = 70;
-              progressBar.style.width = '70%';
-              progressPercent.textContent = '70%';
-              progressText.textContent = 'JotForm data cached (Qualtrics modules not loaded)';
+              if (modalMessage) modalMessage.textContent = 'JotForm data cached (Qualtrics modules not loaded)';
             }
           } catch (qualtricsError) {
             console.error('[CacheUI] Qualtrics sync failed, continuing with JotForm data only:', qualtricsError);
             maxProgress = 70;
-            progressBar.style.width = '70%';
-            progressPercent.textContent = '70%';
-            progressText.textContent = 'JotForm data cached (Qualtrics sync failed)';
+            if (modalMessage) modalMessage.textContent = 'JotForm data cached (Qualtrics sync failed)';
           }
         } else {
           console.log('[CacheUI] No Qualtrics credentials found, using JotForm data only');
           maxProgress = 70;
-          progressBar.style.width = '70%';
-          progressPercent.textContent = '70%';
-          progressText.textContent = 'JotForm data cached';
+          if (modalMessage) modalMessage.textContent = 'JotForm data cached';
         }
         
         // Step 2: Build validation cache (70-95%)
         maxProgress = 75;
-        progressBar.style.width = '75%';
-        progressPercent.textContent = '75%';
-        progressText.textContent = 'Submissions cached, loading validation data...';
+        if (jotformBar) jotformBar.style.width = '75%';
+        if (jotformPercent) jotformPercent.textContent = '75%';
+        if (qualtricsBar) qualtricsBar.style.width = '75%';
+        if (qualtricsPercent) qualtricsPercent.textContent = '75%';
+        if (modalMessage) modalMessage.textContent = 'Submissions cached, loading validation data...';
         
         // Get student data from CheckingSystemData
         const cachedSystemData = window.CheckingSystemData?.getCachedData();
@@ -1103,9 +1155,10 @@
           console.warn('[CacheUI] Validation cache will be built when class page loads');
           
           // Still mark as complete - submissions are cached
-          progressBar.style.width = '100%';
-          progressPercent.textContent = '100%';
-          progressText.textContent = 'Submissions cached! (Validation pending)';
+          if (jotformBar) jotformBar.style.width = '100%';
+          if (jotformPercent) jotformPercent.textContent = '100%';
+          if (qualtricsBar) qualtricsBar.style.width = '100%';
+          if (qualtricsPercent) qualtricsPercent.textContent = '100%';
           
           isSyncing = false;
           currentSyncProgress = 100;
@@ -1130,13 +1183,13 @@
         const surveyStructure = await surveyResponse.json();
         console.log('[CacheUI] Survey structure loaded');
         
-        progressText.textContent = 'Submissions cached, validating students...';
+        if (modalMessage) modalMessage.textContent = 'Submissions cached, validating students...';
         
         // Hook up progress callback for validation with throttled pill updates
         let lastPillUpdate = 0;
         const PILL_UPDATE_THROTTLE = 1000; // Update pill max once per second
         
-        window.JotFormCache.setProgressCallback((message, progress) => {
+        window.JotFormCache.setProgressCallback((message, progress, details = {}) => {
           // Prevent regression
           if (progress < maxProgress) {
             console.warn(`[CacheUI] Validation progress regression prevented: ${progress}% < ${maxProgress}%`);
@@ -1144,12 +1197,16 @@
           }
           maxProgress = progress;
           
+          // Extract individual progress (validation phase won't have jotform/qualtrics split)
+          const jProgress = details.jotformProgress || progress;
+          const qProgress = details.qualtricsProgress || progress;
+          
           // Always update modal (no throttle)
-          if (progressBar) {
-            progressBar.style.width = `${progress}%`;
-            progressPercent.textContent = `${progress}%`;
-            progressText.textContent = message;
-          }
+          if (jotformBar) jotformBar.style.width = `${jProgress}%`;
+          if (jotformPercent) jotformPercent.textContent = `${Math.round(jProgress)}%`;
+          if (qualtricsBar) qualtricsBar.style.width = `${qProgress}%`;
+          if (qualtricsPercent) qualtricsPercent.textContent = `${Math.round(qProgress)}%`;
+          if (modalMessage) modalMessage.textContent = message;
           
           // Throttled pill updates to avoid excessive IndexedDB reads
           const now = Date.now();
@@ -1172,10 +1229,11 @@
         
         // Step 3: All done (100%)
         const progressBar100Time = Date.now();
-        progressBar.style.width = '100%';
-        progressPercent.textContent = '100%';
-        progressText.textContent = 'All caches ready!';
-        console.log(`[SYNC-TIMING] ⏱️ Progress bar set to 100% at: ${new Date(progressBar100Time).toISOString()}`);
+        if (jotformBar) jotformBar.style.width = '100%';
+        if (jotformPercent) jotformPercent.textContent = '100%';
+        if (qualtricsBar) qualtricsBar.style.width = '100%';
+        if (qualtricsPercent) qualtricsPercent.textContent = '100%';
+        console.log(`[SYNC-TIMING] ⏱️ Progress bars set to 100% at: ${new Date(progressBar100Time).toISOString()}`);
         
         // Mark sync complete and update pill
         isSyncing = false;
@@ -1183,7 +1241,7 @@
         
         const pillUpdateStartTime = Date.now();
         console.log(`[SYNC-TIMING] ⏱️ Starting pill update at: ${new Date(pillUpdateStartTime).toISOString()}`);
-        console.log(`[SYNC-TIMING] ⏱️ Time between progress bar 100% and pill update start: ${pillUpdateStartTime - progressBar100Time}ms`);
+        console.log(`[SYNC-TIMING] ⏱️ Time between progress bars 100% and pill update start: ${pillUpdateStartTime - progressBar100Time}ms`);
         
         // Skip cache check - we KNOW it's ready (we just built it!)
         await updateStatusPill(null, true);
@@ -1195,7 +1253,7 @@
         console.log('[CacheUI] ✅ Both caches complete, pill updated to green');
         
         // NOW show success message (cache is confirmed saved)
-        progressText.textContent = 'Complete!';
+        if (modalMessage) modalMessage.textContent = 'Complete!';
         modalTitle.textContent = config.cache.modalText.completeTitle;
         
         // Build success message based on what was synced
