@@ -1,9 +1,6 @@
 {
   "taskMetadata": {
-    "ERV": { "id": "erv", "aliases": [], "hasTermination": true, "gradeSpecific": true },
-    "ERV_K1": { "id": "erv", "aliases": [], "hasTermination": true, "grade": "K1" },
-    "ERV_K2": { "id": "erv", "aliases": [], "hasTermination": true, "grade": "K2" },
-    "ERV_K3": { "id": "erv", "aliases": [], "hasTermination": true, "grade": "K3" },
+    "ERV": { "id": "erv", "aliases": [], "hasTermination": true },
     "SYM": { "id": "sym", "aliases": [] },
     "NONSYM": { "id": "nonsym", "aliases": [], "displayWith": "sym" },
     "TheoryofMind": { "id": "theoryofmind", "aliases": [] },

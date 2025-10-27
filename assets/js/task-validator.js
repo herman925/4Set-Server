@@ -59,17 +59,10 @@ window.TaskValidator = (() => {
       taskMetadata = surveyStructure.taskMetadata || {};
       
       // Build taskFiles map from metadata
-      // Key: canonical ID (with grade suffix for grade-specific files), Value: file path
+      // Key: canonical ID, Value: file path
       for (const [filename, metadata] of Object.entries(taskMetadata)) {
-        // For grade-specific files, use a compound key: id_grade (e.g., "erv_k1")
-        if (metadata.grade) {
-          const gradeSpecificId = `${metadata.id}_${metadata.grade.toLowerCase()}`;
-          taskFiles[gradeSpecificId] = `assets/tasks/${filename}.json`;
-        } else {
-          // For regular files, use the canonical ID
-          const canonicalId = metadata.id;
-          taskFiles[canonicalId] = `assets/tasks/${filename}.json`;
-        }
+        const canonicalId = metadata.id;
+        taskFiles[canonicalId] = `assets/tasks/${filename}.json`;
         
         // Also map aliases to the same file
         if (metadata.aliases) {
@@ -91,46 +84,20 @@ window.TaskValidator = (() => {
 
   /**
    * Load a task definition from JSON file
-   * @param {string} taskId - Base task ID (e.g., 'erv')
-   * @param {string} grade - Optional grade level ('K1', 'K2', 'K3')
-   * @returns {Object} Task definition object
    */
-  async function loadTaskDefinition(taskId, grade = null) {
+  async function loadTaskDefinition(taskId) {
     // Ensure metadata is loaded first
     await loadTaskMetadata();
     
     const normalizedTaskId = taskId.toLowerCase();
     
-    // Check if task has grade-specific versions
-    const baseMetadata = taskMetadata['ERV'] || taskMetadata[taskId.toUpperCase()];
-    const isGradeSpecific = baseMetadata && baseMetadata.gradeSpecific;
-    
-    // Determine which task ID to use (with or without grade suffix)
-    let actualTaskId = normalizedTaskId;
-    let cacheKey = normalizedTaskId;
-    
-    if (isGradeSpecific && grade) {
-      // Use grade-specific version (e.g., 'erv_k1')
-      const gradeSpecificId = `${normalizedTaskId}_${grade.toLowerCase()}`;
-      cacheKey = gradeSpecificId;
-      
-      // Check if grade-specific file exists in metadata
-      const gradeMetadataKey = `${taskId.toUpperCase()}_${grade.toUpperCase()}`;
-      if (taskFiles[gradeSpecificId] || taskMetadata[gradeMetadataKey]) {
-        actualTaskId = gradeSpecificId;
-        console.log(`[TaskValidator] Using grade-specific task: ${actualTaskId} for grade ${grade}`);
-      } else {
-        console.warn(`[TaskValidator] No grade-specific version for ${taskId} grade ${grade}, using base version`);
-      }
-    }
-    
-    if (taskCache[cacheKey]) {
-      return taskCache[cacheKey];
+    if (taskCache[normalizedTaskId]) {
+      return taskCache[normalizedTaskId];
     }
 
-    const filePath = taskFiles[actualTaskId];
+    const filePath = taskFiles[normalizedTaskId];
     if (!filePath) {
-      console.warn(`[TaskValidator] No task file found for: ${actualTaskId}`);
+      console.warn(`[TaskValidator] No task file found for: ${taskId}`);
       return null;
     }
 
@@ -141,18 +108,17 @@ window.TaskValidator = (() => {
       }
       
       const taskDef = await response.json();
-      taskCache[cacheKey] = taskDef;
+      taskCache[normalizedTaskId] = taskDef;
       
-      console.log(`[TaskValidator] Loaded task definition: ${actualTaskId}`, {
+      console.log(`[TaskValidator] Loaded task definition: ${taskId}`, {
         id: taskDef.id,
         title: taskDef.title,
-        questionCount: extractQuestions(taskDef).length,
-        grade: grade || 'all'
+        questionCount: extractQuestions(taskDef).length
       });
       
       return taskDef;
     } catch (error) {
-      console.error(`[TaskValidator] Failed to load task ${actualTaskId}:`, error);
+      console.error(`[TaskValidator] Failed to load task ${taskId}:`, error);
       return null;
     }
   }
@@ -346,19 +312,14 @@ window.TaskValidator = (() => {
 
   /**
    * Validate student answers for a task
-   * @param {string} taskId - Task ID
-   * @param {Object} mergedAnswers - Student answers
-   * @param {string} grade - Optional grade level ('K1', 'K2', 'K3') for grade-specific validation
-   * @returns {Object} Validation result
    */
-  async function validateTask(taskId, mergedAnswers, grade = null) {
-    const taskDef = await loadTaskDefinition(taskId, grade);
+  async function validateTask(taskId, mergedAnswers) {
+    const taskDef = await loadTaskDefinition(taskId);
     if (!taskDef) {
       return {
         taskId,
         error: 'Task definition not found',
-        questions: [],
-        grade: grade
+        questions: []
       };
     }
 
@@ -520,8 +481,7 @@ window.TaskValidator = (() => {
       answeredQuestions: answeredCount, // Only scored questions
       correctAnswers: correctCount,
       completionPercentage: totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0,
-      accuracyPercentage: answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0,
-      grade: grade // Include grade for tracking
+      accuracyPercentage: answeredCount > 0 ? Math.round((correctCount / answeredCount) * 100) : 0
     };
 
     // Post-process TGMD tasks for matrix-radio scoring with trial summation
@@ -945,16 +905,10 @@ window.TaskValidator = (() => {
 
   /**
    * Validate all tasks for a student
-   * @param {Object} mergedAnswers - Student's merged answer data
-   * @returns {Object} Validation results for all tasks
    */
   async function validateAllTasks(mergedAnswers) {
     // Ensure metadata is loaded first
     await loadTaskMetadata();
-    
-    // Detect student grade from merged answers
-    const studentGrade = window.GradeDetector ? window.GradeDetector.determineGrade(mergedAnswers) : null;
-    console.log(`[TaskValidator] Validating tasks for student with grade: ${studentGrade || 'Unknown'}`);
     
     const results = {};
     
@@ -964,10 +918,6 @@ window.TaskValidator = (() => {
       // Skip tasks that should be merged with others
       if (metadata.displayWith) {
         console.log(`[TaskValidator] Skipping ${metadata.id} - will be merged with ${metadata.displayWith}`);
-        continue;
-      }
-      // Skip grade-specific variants - they'll be loaded dynamically
-      if (metadata.grade) {
         continue;
       }
       taskIds.add(metadata.id);
@@ -984,8 +934,8 @@ window.TaskValidator = (() => {
         // - Proper timeout: Continuous progress then timer expired (green ✅)
         // - Missing data: Non-continuous gaps indicating data quality issue (red ❌)
         
-        const symResult = await validateTask('sym', mergedAnswers, studentGrade);
-        const nonsymResult = await validateTask('nonsym', mergedAnswers, studentGrade);
+        const symResult = await validateTask('sym', mergedAnswers);
+        const nonsymResult = await validateTask('nonsym', mergedAnswers);
         
         // Timeout detection: continuous sequence of answers then all empty
         // Missing data: non-continuous gaps (answered, gap, answered again)
@@ -1108,11 +1058,11 @@ window.TaskValidator = (() => {
         console.log(`[TaskValidator] NONSYM: timeout=${nonsymAnalysis.timedOut}, missingData=${nonsymAnalysis.hasMissingData}`);
       } else if (TERMINATION_RULES[taskId]) {
         // Apply centralized termination rules
-        const taskResult = await validateTask(taskId, mergedAnswers, studentGrade);
+        const taskResult = await validateTask(taskId, mergedAnswers);
         results[taskId] = applyTerminationRules(taskResult, TERMINATION_RULES[taskId]);
       } else {
         // No termination rules - standard validation
-        results[taskId] = await validateTask(taskId, mergedAnswers, studentGrade);
+        results[taskId] = await validateTask(taskId, mergedAnswers);
       }
     }
     
