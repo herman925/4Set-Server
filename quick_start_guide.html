@@ -2116,7 +2116,7 @@ flowchart LR
       <div id="modalOverlay" style="position: fixed; inset: 0; pointer-events: none; z-index: 10000;"></div>
       
       <!-- Close Button -->
-      <button data-spotlight="close" onclick="closeHomepageModal()" style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10002;">
+      <button data-spotlight="close" onclick="closeHomepageModal()" style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10003;">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
       </button>
       
@@ -2924,14 +2924,14 @@ flowchart LR
   </script>
   
   <!-- Upload Interface Modal for Step 2.2 - WITH SPOTLIGHT SYSTEM -->
-  <div id="uploadInterfaceModal" style="display: none; position: fixed; inset: 0; z-index: 9999; align-items: center; justify-content: center;">
+  <div id="uploadInterfaceModal" style="display: none; position: fixed; inset: 0; z-index: 9999; padding: 2rem; overflow-y: auto;">
     
-    <div style="max-width: 1200px; width: 100%; max-height: 90vh; overflow-y: auto; position: relative; z-index: 2; margin: 2rem;">
+    <div style="max-width: 1200px; margin: 0 auto; position: relative; z-index: 2;">
       <!-- Dimming overlay -->
       <div id="uploadModalOverlay" style="position: fixed; inset: 0; pointer-events: none; z-index: 10000;"></div>
       
       <!-- Close Button -->
-      <button data-spotlight-upload="close" onclick="closeUploadInterfaceModal()" style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10002;">
+      <button data-spotlight-upload="close" onclick="closeUploadInterfaceModal()" style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10003;">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
       </button>
       
@@ -3021,14 +3021,14 @@ flowchart LR
   
   <!-- Checking System Home Modal for Step 4.1 -->
   <!-- Checking System Home Modal for Step 4.1 - WITH SPOTLIGHT SYSTEM -->
-  <div id="checkingHomeModal" style="display: none; position: fixed; inset: 0; z-index: 9999; align-items: center; justify-content: center;">
+  <div id="checkingHomeModal" style="display: none; position: fixed; inset: 0; z-index: 9999; padding: 2rem; overflow-y: auto;">
     
-    <div style="max-width: 1200px; width: 100%; max-height: 90vh; overflow-y: auto; margin: 2rem; position: relative; z-index: 2;">
+    <div style="max-width: 1200px; margin: 0 auto; position: relative; z-index: 2;">
       <!-- Dimming overlay -->
       <div id="checkingModalOverlay" style="position: fixed; inset: 0; pointer-events: none; z-index: 10000;"></div>
       
       <!-- Close Button -->
-      <button data-spotlight-checking="close" onclick="closeCheckingHomeModal()" style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-center; transition: all 0.2s; z-index: 10002;">
+      <button data-spotlight-checking="close" onclick="closeCheckingHomeModal()" style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-center; transition: all 0.2s; z-index: 10003;">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
       </button>
       
@@ -3130,10 +3130,10 @@ flowchart LR
   
   <!-- Student View Modal for Step 4.2 (Brief summary) -->
   <!-- Student View Modal for Step 4.2 - WITH SPOTLIGHT SYSTEM -->
-  <div id="studentViewModal" style="display: none; position: fixed; inset: 0; z-index: 9999; align-items: center; justify-content: center;">
+  <div id="studentViewModal" style="display: none; position: fixed; inset: 0; z-index: 9999; padding: 2rem; overflow-y: auto;">
     <div style="max-width: 1100px; margin: 0 auto; position: relative; z-index: 2;">
       <div id="studentModalOverlay" style="position: fixed; inset: 0; pointer-events: none; z-index: 10000;"></div>
-      <button data-spotlight-student="close" onclick="closeStudentViewModal()" style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-center; transition: all 0.2s; z-index: 10002;">
+      <button data-spotlight-student="close" onclick="closeStudentViewModal()" style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-center; transition: all 0.2s; z-index: 10003;">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
       </button>
       <div style="background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); overflow: hidden; position: relative; z-index: 10; max-height: 90vh; overflow-y: auto;">
@@ -3265,10 +3265,10 @@ flowchart LR
   </div>
   
   <!-- Class View Modal for Step 4.3 - WITH SPOTLIGHT SYSTEM -->
-  <div id="classViewModal" style="display: none; position: fixed; inset: 0; z-index: 9999; align-items: center; justify-content: center;">
+  <div id="classViewModal" style="display: none; position: fixed; inset: 0; z-index: 9999; padding: 2rem; overflow-y: auto;">
     <div style="max-width: 1100px; margin: 0 auto; position: relative; z-index: 2;">
       <div id="classModalOverlay" style="position: fixed; inset: 0; pointer-events: none; z-index: 10000;"></div>
-      <button data-spotlight-class="close" onclick="closeClassViewModal()" style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-center; transition: all 0.2s; z-index: 10002;">
+      <button data-spotlight-class="close" onclick="closeClassViewModal()" style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-center; transition: all 0.2s; z-index: 10003;">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
       </button>
       <div style="background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); overflow: hidden; position: relative; z-index: 10; max-height: 90vh; overflow-y: auto;">
@@ -3423,10 +3423,10 @@ flowchart LR
   </div>
   
   <!-- School View Modal for Step 4.4 - WITH SPOTLIGHT SYSTEM -->
-  <div id="schoolViewModal" style="display: none; position: fixed; inset: 0; z-index: 9999; align-items: center; justify-content: center;">
+  <div id="schoolViewModal" style="display: none; position: fixed; inset: 0; z-index: 9999; padding: 2rem; overflow-y: auto;">
     <div style="max-width: 1100px; margin: 0 auto; position: relative; z-index: 2;">
       <div id="schoolModalOverlay" style="position: fixed; inset: 0; pointer-events: none; z-index: 10000;"></div>
-      <button data-spotlight-school="close" onclick="closeSchoolViewModal()" style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-center; transition: all 0.2s; z-index: 10002;">
+      <button data-spotlight-school="close" onclick="closeSchoolViewModal()" style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-center; transition: all 0.2s; z-index: 10003;">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
       </button>
       <div style="background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); overflow: hidden; position: relative; z-index: 10; max-height: 90vh; overflow-y: auto;">
@@ -3627,15 +3627,17 @@ flowchart LR
   <!-- School View Modal for Step 4.4 (Brief summary) -->
   <div id="schoolViewModal" class="fixed inset-0 bg-black bg-opacity-60 hidden items-center justify-center z-[9999]" style="display: none;">
     <div class="bg-white rounded-2xl shadow-2xl max-w-5xl w-full mx-4 relative overflow-hidden" style="max-height: 90vh; overflow-y: auto;">
+      <!-- Close Button - Positioned absolutely with high z-index -->
+      <button onclick="closeSchoolViewModal()" class="absolute top-4 right-4 text-white hover:bg-white/20 rounded-full p-2 transition-all z-[10003]" style="z-index: 10003;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+      
       <div class="sticky top-0 bg-gradient-to-r from-primary to-indigo-600 text-white px-8 py-6 rounded-t-2xl z-10">
         <div class="flex items-center justify-between">
           <h2 class="text-2xl font-bold">School View Interface</h2>
-          <button onclick="closeSchoolViewModal()" class="text-white hover:bg-white/20 rounded-full p-2 transition-all">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
         </div>
         <p class="text-sm opacity-90 mt-2">Aggregated statistics for all classes in a school</p>
       </div>

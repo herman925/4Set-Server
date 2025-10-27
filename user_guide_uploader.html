@@ -1279,24 +1279,29 @@ flowchart TD
   <script src="assets/js/tooltip-positioner.js"></script>
   
   <!-- Upload Configuration Modal -->
-  <div id="uploadConfigModal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-[9999]" style="display: none;">
-    <div id="modalOverlay" class="absolute inset-0"></div>
-    <div class="bg-white rounded-2xl shadow-2xl max-w-5xl w-full mx-4 relative z-[10002]" style="max-height: 90vh; overflow-y: auto;">
+  <div id="uploadConfigModal" class="fixed inset-0 bg-black bg-opacity-50 z-[9999]" style="display: none; padding: 2rem; overflow-y: auto;">
+    <div style="max-width: 1280px; margin: 0 auto; position: relative; z-index: 2;">
+      <div id="modalOverlay" style="position: fixed; inset: 0; pointer-events: none; z-index: 10000;"></div>
+      
+      <!-- Close Button - Positioned absolutely with high z-index -->
+      <button 
+        onclick="closeUploadConfigModal()" 
+        data-spotlight="close"
+        style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10003;"
+        title="Close"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+      
+      <div class="bg-white rounded-2xl shadow-2xl relative" style="position: relative; z-index: 10; overflow: hidden;">
+      
       <!-- Modal Header -->
       <div class="sticky top-0 bg-gradient-to-r from-primary to-indigo-600 text-white px-8 py-6 rounded-t-2xl z-10">
         <div class="flex items-center justify-between">
           <h2 class="text-2xl font-bold">Upload Configuration: PC Number & Destination</h2>
-          <button 
-            onclick="closeUploadConfigModal()" 
-            data-spotlight="close"
-            class="text-white hover:bg-white/20 rounded-full p-2 transition-all hover:rotate-90"
-            title="Close"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <line x1="18" y1="6" x2="6" y2="18"></line>
-              <line x1="6" y1="6" x2="18" y2="18"></line>
-            </svg>
-          </button>
         </div>
         <p class="text-sm opacity-90 mt-2">Click on status badges to configure PC number and upload destination</p>
       </div>
