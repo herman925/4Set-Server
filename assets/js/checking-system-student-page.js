@@ -834,7 +834,7 @@
    * @param {Object} tgmdScoring - TGMD scoring data from task validator
    * @param {HTMLElement} taskElement - Task details element for styling
    */
-  function renderTGMDResults(tbody, tgmdScoring, taskElement) {
+  function renderTGMDResults(tbody, tgmdScoring, taskElement, validation) {
     console.log('[StudentPage] Rendering TGMD grouped results');
     
     // Validate tgmdScoring object
@@ -871,6 +871,28 @@
     
     console.log(`[StudentPage] Rendering ${taskCount} TGMD motor tasks`);
     
+    // First, display TGMD_Leg (preferred foot/hand) if available
+    if (validation && validation.questions) {
+      const tgmdLeg = validation.questions.find(q => q.id === 'TGMD_Leg');
+      if (tgmdLeg) {
+        const legRow = document.createElement('tr');
+        legRow.className = 'bg-blue-50 border-b-2 border-blue-200';
+        const legAnswer = tgmdLeg.studentAnswer || '—';
+        const legAnswerDisplay = legAnswer === 'Left' ? '左腳' : 
+                                 legAnswer === 'Right' ? '右腳' : 
+                                 legAnswer === 'Undetermined' ? '未形成' : legAnswer;
+        legRow.innerHTML = `
+          <td colspan="4" class="py-3 px-2">
+            <div class="flex items-center gap-2">
+              <i data-lucide="footprints" class="w-4 h-4 text-blue-600"></i>
+              <span class="font-semibold text-blue-900">慣用腳: ${legAnswerDisplay}</span>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(legRow);
+      }
+    }
+    
     // Iterate through each motor task (hop, long_jump, slide, etc.)
     for (const [taskName, taskData] of Object.entries(tgmdScoring.byTask)) {
       // Add task header row
@@ -904,14 +926,30 @@
           ? '<i data-lucide="check" class="w-3 h-3 text-green-600"></i>'
           : '<i data-lucide="x" class="w-3 h-3 text-red-600"></i>';
         
-        // Determine result status based on row score
-        const resultStatus = criterion.rowScore > 0 ? 'Observed' : 'Not-Observed';
-        const resultClass = criterion.rowScore > 0 
-          ? 'answer-pill' 
-          : 'answer-pill incorrect';
-        const resultIcon = criterion.rowScore > 0 
-          ? 'eye' 
-          : 'eye-off';
+        // Determine result status based on row score and whether trials were answered
+        let resultStatus, resultClass, resultIcon;
+        
+        // Check if trials were actually answered (not null/blank)
+        const t1Answered = criterion.trials.t1 !== null && criterion.trials.t1 !== undefined;
+        const t2Answered = criterion.trials.t2 !== null && criterion.trials.t2 !== undefined;
+        const anyAnswered = t1Answered || t2Answered;
+        
+        if (!anyAnswered) {
+          // Not answered at all
+          resultStatus = 'Not Answered';
+          resultClass = 'answer-pill';
+          resultIcon = 'circle-help';
+        } else if (criterion.rowScore > 0) {
+          // Observed (at least one trial successful)
+          resultStatus = 'Observed';
+          resultClass = 'answer-pill correct';
+          resultIcon = 'eye';
+        } else {
+          // Not observed (answered but score is 0)
+          resultStatus = 'Not-Observed';
+          resultClass = 'answer-pill incorrect';
+          resultIcon = 'eye-off';
+        }
         
         row.innerHTML = `
           <td class="py-2 px-2 text-[color:var(--foreground)]">
@@ -1031,7 +1069,7 @@
         console.log('[StudentPage] ✅ TGMD scoring data found:', validation.tgmdScoring);
         
         // Render TGMD with grouped task display
-        renderTGMDResults(tbody, validation.tgmdScoring, taskElement);
+        renderTGMDResults(tbody, validation.tgmdScoring, taskElement, validation);
         
         // Update task summary with TGMD-specific stats
         updateTaskSummary(taskElement, taskId, {
