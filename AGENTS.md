@@ -150,6 +150,11 @@ The 4Set System is a comprehensive web-based assessment data processing pipeline
 - [x] **Gender branching verification across all pages (Oct 2025)**
 - [x] **Adaptive batch sizing documentation (Oct 2025)**
 - [x] **Comprehensive PRDs/calculation_bible.md updates (Oct 2025)**
+- [x] **Interactive user guide system with spotlight effects (Oct 2025)**
+  - Dynamic SVG-based masking for highlighting UI elements
+  - Modal system with expandable previews
+  - Tooltip system for contextual information
+  - Comprehensive guideline documentation (PRDs/guideline_prd.md)
 
 ### 🔄 Phase 4: Production Deployment (In Progress)
 - [x] Upload interface with drag-and-drop support
@@ -612,9 +617,11 @@ Documented in `PRDs/processor_agent_runbook_prd.md`:
 - `upload_monitoring_prd.md` - Upload failure detection and retry
 - `qualtrics_implementation_plan.md` - Qualtrics features implementation status
 - `calculation_bible.md` - Complete calculation and validation reference
+- `guideline_prd.md` - User guide system design specification (spotlight, modals, tooltips)
 
 ### User Guides (Consolidated October 2025)
 All user guides moved to PRDs folder for centralized documentation:
+- `guideline_prd.md` - User guide system design and implementation patterns
 - `checking_system_user_guide_prd.md` - Checking system operational guide
 - `assessment_uploader_user_guide_prd.md` - Upload interface usage
 - `qualtrics_tgmd_user_guide_prd.md` - Qualtrics integration guide
@@ -703,6 +710,24 @@ All user guides moved to PRDs folder for centralized documentation:
   - Created `TEMP/README.md` to document remaining test files and their purpose
   - Retained only essential test documentation (3 MD files vs 19 before)
   - Result: Cleaner TEMP folder with only active test files, improved documentation discoverability
+
+**Interactive User Guide System (October 27, 2025):**
+- ✅ **Guideline & Spotlight System**: Comprehensive interactive learning system for all user guide pages
+  - Dynamic SVG-based spotlight masking for highlighting UI elements
+  - Modal system with flat hierarchy pattern for z-index management
+  - Tooltip system with contextual information
+  - Comprehensive design specification: `PRDs/guideline_prd.md`
+  - Implementation files:
+    - `assets/js/spotlight-system.js` - Core spotlight functionality
+    - `assets/css/spotlight-system.css` - Spotlight styling
+    - `assets/js/spotlight-system-README.md` - Technical documentation
+  - Guide pages using the system:
+    - `quick_start_guide.html` - Interactive quick start with spotlight
+    - `user_guide_checking_system.html` - Checking system guide
+    - `user_guide_uploader.html` - Uploader interface guide
+    - `user_guide_qualtrics.html` - Qualtrics integration guide
+    - `user_guide_conflicts.html` - Data conflicts guide
+    - `guide_homepage.html` - Guide navigation hub
 
 ### Future Updates
 This section will track major system updates, feature additions, and architectural changes as they occur.
