@@ -1345,7 +1345,8 @@
         const validationCache = await window.JotFormCache.buildStudentValidationCache(
           cachedSystemData.students,
           surveyStructure,
-          true // Force rebuild
+          true, // Force rebuild
+          credentials // Pass credentials
         );
         console.log('[CacheUI] Validation cache built:', validationCache.size, 'students');
         

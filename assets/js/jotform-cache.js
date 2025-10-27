@@ -583,7 +583,7 @@
      * @param {boolean} forceRebuild - Force rebuild even if cache exists
      * @returns {Promise<Map>} - Map of coreId -> validation cache
      */
-    async buildStudentValidationCache(students, surveyStructure, forceRebuild = false) {
+    async buildStudentValidationCache(students, surveyStructure, forceRebuild = false, credentials = null) {
       console.log('[JotFormCache] Building student validation cache...');
       
       if (!window.TaskValidator) {
@@ -612,7 +612,7 @@
       
       console.log('[JotFormCache] Building fresh validation cache...');
       const validationCache = new Map();
-      const submissions = await this.getAllSubmissions();
+      const submissions = await this.getAllSubmissions(credentials);
       
       if (!submissions || submissions.length === 0) {
         console.warn('[JotFormCache] No submissions to validate');
