@@ -1375,25 +1375,50 @@
           console.log(`[JotFormCache] Qualtrics: ${rawResponses.length} responses`);
           
           // STEP 2: Transform both datasets (50-65%)
-          this.emitProgress('Transforming JotForm data...', 52);
+          this.emitProgress('Transforming JotForm data...', 52, {
+            jotformProgress: 100,
+            qualtricsProgress: 4,
+            jotformMessage: 'Transforming data...',
+            qualtricsMessage: 'Transforming data...'
+          });
           const jotformData = this.transformSubmissionsToRecords(jotformSubmissions);
           console.log('[JotFormCache] JotForm data transformed:', jotformData.length, 'records');
 
-          this.emitProgress('Transforming Qualtrics data...', 60);
+          this.emitProgress('Transforming Qualtrics data...', 60, {
+            jotformProgress: 100,
+            qualtricsProgress: 20,
+            jotformMessage: 'Transforming data...',
+            qualtricsMessage: 'Transforming data...'
+          });
           const transformedData = transformer.transformBatch(rawResponses);
           console.log('[JotFormCache] Qualtrics data transformed:', transformedData.length, 'records');
 
           // STEP 3: Merge datasets (65-70%)
-          this.emitProgress('Merging JotForm and Qualtrics data...', 65);
+          this.emitProgress('Merging JotForm and Qualtrics data...', 65, {
+            jotformProgress: 100,
+            qualtricsProgress: 30,
+            jotformMessage: 'Merging data...',
+            qualtricsMessage: 'Merging data...'
+          });
           const mergedData = merger.mergeDataSources(jotformData, transformedData);
           console.log('[JotFormCache] Data merged:', mergedData.length, 'records');
 
           // STEP 4: Validate merge (70-75%)
-          this.emitProgress('Validating merged data...', 70);
+          this.emitProgress('Validating merged data...', 70, {
+            jotformProgress: 100,
+            qualtricsProgress: 40,
+            jotformMessage: 'Validating data...',
+            qualtricsMessage: 'Validating data...'
+          });
           const validation = merger.validateMergedData(mergedData);
 
           // STEP 5: Cache Qualtrics data separately (75-80%)
-          this.emitProgress('Caching Qualtrics responses...', 75);
+          this.emitProgress('Caching Qualtrics responses...', 75, {
+            jotformProgress: 100,
+            qualtricsProgress: 50,
+            jotformMessage: 'Caching data...',
+            qualtricsMessage: 'Caching data...'
+          });
           const qualtricsStorage = this.getQualtricsStorage();
           if (qualtricsStorage) {
             await qualtricsStorage.setItem('qualtrics_responses', {
@@ -1406,22 +1431,42 @@
           }
 
           // STEP 6: Convert merged records back to submission format (80-90%)
-          this.emitProgress('Converting merged data to cache format...', 80);
+          this.emitProgress('Converting merged data to cache format...', 80, {
+            jotformProgress: 100,
+            qualtricsProgress: 60,
+            jotformMessage: 'Converting data...',
+            qualtricsMessage: 'Converting data...'
+          });
           const mergedSubmissions = this.transformRecordsToSubmissions(mergedData, jotformSubmissions);
           console.log('[JotFormCache] Converted', mergedSubmissions.length, 'records back to submission format');
 
           // STEP 7: Update main cache with merged data (90-95%)
-          this.emitProgress('Updating main cache...', 90);
+          this.emitProgress('Updating main cache...', 90, {
+            jotformProgress: 100,
+            qualtricsProgress: 80,
+            jotformMessage: 'Updating cache...',
+            qualtricsMessage: 'Updating cache...'
+          });
           await this.saveToCache(mergedSubmissions);
           this.cache = mergedSubmissions;
           console.log('[JotFormCache] Main cache updated with merged data');
 
           // STEP 8: Clear validation cache (95-100%)
-          this.emitProgress('Clearing validation cache...', 95);
+          this.emitProgress('Clearing validation cache...', 95, {
+            jotformProgress: 100,
+            qualtricsProgress: 90,
+            jotformMessage: 'Clearing validation cache...',
+            qualtricsMessage: 'Clearing validation cache...'
+          });
           await this.clearValidationCache();
           console.log('[JotFormCache] Validation cache cleared (will rebuild on demand)');
 
-          this.emitProgress('Qualtrics integration complete!', 100);
+          this.emitProgress('Qualtrics integration complete!', 100, {
+            jotformProgress: 100,
+            qualtricsProgress: 100,
+            jotformMessage: 'Complete!',
+            qualtricsMessage: 'Complete!'
+          });
           console.log('[JotFormCache] ========== QUALTRICS REFRESH COMPLETE ==========');
 
           return {
