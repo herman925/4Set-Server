@@ -881,9 +881,6 @@
           <div class="flex items-center gap-2">
             <i data-lucide="activity" class="w-4 h-4 text-[color:var(--primary)]"></i>
             <span>${taskData.taskLabel || taskName}</span>
-            <span class="ml-auto text-sm font-normal text-[color:var(--muted-foreground)]">
-              Task Score: ${taskData.taskScore}/${taskData.taskMaxScore}
-            </span>
           </div>
         </td>
       `;
@@ -943,26 +940,7 @@
       }
     }
     
-    // Add overall summary row
-    const summaryRow = document.createElement('tr');
-    summaryRow.className = 'bg-[color:var(--accent)] font-bold border-t-2 border-[color:var(--border)]';
-    summaryRow.innerHTML = `
-      <td colspan="2" class="py-3 px-2">
-        <div class="flex items-center gap-2">
-          <i data-lucide="target" class="w-4 h-4 text-[color:var(--primary)]"></i>
-          <span>Overall TGMD Score</span>
-        </div>
-      </td>
-      <td class="py-3 px-2 text-center text-lg">
-        ${tgmdScoring.totalScore}/${tgmdScoring.maxScore}
-      </td>
-      <td class="py-3 px-2">
-        <span class="text-sm text-[color:var(--muted-foreground)]">
-          ${tgmdScoring.percentage}%
-        </span>
-      </td>
-    `;
-    tbody.appendChild(summaryRow);
+    // Note: Overall TGMD Score summary row removed per user request
   }
 
   /**
