@@ -717,7 +717,7 @@
         </div>
         <div class="modal-body">
           <p id="qualtrics-progress-message" class="text-sm text-[color:var(--muted-foreground)] mb-4">
-            Starting parallel sync...
+            Status updates will appear below each progress bar...
           </p>
           
           <!-- JotForm Progress Bar (Blue) -->
@@ -773,7 +773,7 @@
     const qualtricsPercentEl = document.getElementById('qualtrics-progress-percent');
     const qualtricsStatusEl = document.getElementById('qualtrics-status-text');
     
-    if (messageEl) messageEl.textContent = message;
+    // Don't update messageEl here - detailed status is shown under each progress bar
     
     // Update JotForm progress bar (blue)
     if (jotformBarEl) jotformBarEl.style.width = Math.round(jotformProgress) + '%';
@@ -990,7 +990,7 @@
         </div>
         <div class="modal-body">
           <p id="sync-modal-message" class="text-sm text-[color:var(--muted-foreground)] mb-4">
-            ${showProgressNow ? 'Fetching data from both sources...' : config.cache.modalText.syncMessage}
+            ${showProgressNow ? 'Status updates will appear below each progress bar...' : config.cache.modalText.syncMessage}
           </p>
           
           <!-- Progress section with dual progress bars -->
@@ -1139,7 +1139,8 @@
         // Use detailed message from details object if available
         updateStatusText(qualtricsStatus, qualtricsProgress, 'qualtrics', details.qualtricsMessage);
         
-        if (modalMessage) modalMessage.textContent = message;
+        // Don't update modalMessage here - it's redundant with the detailed status lines above
+        // Only update it for phase transitions (fetching -> validating -> complete)
         
         // Update pill progress (always, even if modal closed)
         updateStatusPill(progress);
@@ -1160,7 +1161,7 @@
         // Step 1: Fetch all submissions from JotForm API (0-50%)
         console.log('[CacheUI] Calling getAllSubmissions...');
         modalTitle.textContent = 'Syncing Database';
-        modalMessage.textContent = 'Fetching data from JotForm and Qualtrics...';
+        modalMessage.textContent = 'Fetching student data... (Status details shown below)';
         // Progress bars will be updated by the callback
         
         // This waits for IndexedDB write to fully complete
@@ -1221,11 +1222,11 @@
         maxProgress = 75;
         if (jotformBar) jotformBar.style.width = '75%';
         if (jotformPercent) jotformPercent.textContent = '75%';
-        updateStatusText(jotformStatus, 75, 'jotform');
+        updateStatusText(jotformStatus, 75, 'jotform', 'Loading validation data...');
         if (qualtricsBar) qualtricsBar.style.width = '75%';
         if (qualtricsPercent) qualtricsPercent.textContent = '75%';
-        updateStatusText(qualtricsStatus, 75, 'qualtrics');
-        if (modalMessage) modalMessage.textContent = 'Submissions cached, loading validation data...';
+        updateStatusText(qualtricsStatus, 75, 'qualtrics', 'Loading validation data...');
+        if (modalMessage) modalMessage.textContent = 'Now validating student submissions...';
         
         // Get student data from CheckingSystemData
         const cachedSystemData = window.CheckingSystemData?.getCachedData();
@@ -1240,10 +1241,10 @@
           // Still mark as complete - submissions are cached
           if (jotformBar) jotformBar.style.width = '100%';
           if (jotformPercent) jotformPercent.textContent = '100%';
-          updateStatusText(jotformStatus, 100, 'jotform');
+          updateStatusText(jotformStatus, 100, 'jotform', 'Complete!');
           if (qualtricsBar) qualtricsBar.style.width = '100%';
           if (qualtricsPercent) qualtricsPercent.textContent = '100%';
-          updateStatusText(qualtricsStatus, 100, 'qualtrics');
+          updateStatusText(qualtricsStatus, 100, 'qualtrics', 'Complete!');
           
           isSyncing = false;
           currentSyncProgress = 100;
@@ -1268,7 +1269,7 @@
         const surveyStructure = await surveyResponse.json();
         console.log('[CacheUI] Survey structure loaded');
         
-        if (modalMessage) modalMessage.textContent = 'Submissions cached, validating students...';
+        if (modalMessage) modalMessage.textContent = 'Validating student task completion...';
         
         // Hook up progress callback for validation with throttled pill updates
         let lastPillUpdate = 0;
@@ -1299,7 +1300,7 @@
           // During validation, use the main message if no individual message
           updateStatusText(qualtricsStatus, qProgress, 'qualtrics', qMessage || message);
           
-          if (modalMessage) modalMessage.textContent = message;
+          // Don't update modalMessage here - detailed status shown under progress bars
           
           // Throttled pill updates to avoid excessive IndexedDB reads
           const now = Date.now();
@@ -1324,10 +1325,10 @@
         const progressBar100Time = Date.now();
         if (jotformBar) jotformBar.style.width = '100%';
         if (jotformPercent) jotformPercent.textContent = '100%';
-        updateStatusText(jotformStatus, 100, 'jotform');
+        updateStatusText(jotformStatus, 100, 'jotform', 'Complete!');
         if (qualtricsBar) qualtricsBar.style.width = '100%';
         if (qualtricsPercent) qualtricsPercent.textContent = '100%';
-        updateStatusText(qualtricsStatus, 100, 'qualtrics');
+        updateStatusText(qualtricsStatus, 100, 'qualtrics', 'Complete!');
         console.log(`[SYNC-TIMING] ⏱️ Progress bars set to 100% at: ${new Date(progressBar100Time).toISOString()}`);
         
         // Mark sync complete and update pill

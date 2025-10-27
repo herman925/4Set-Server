@@ -196,7 +196,10 @@
       // Load configuration
       await this.loadConfig();
       
-      this.emitProgress('Connecting to Jotform API...', 5);
+      this.emitProgress('Connecting to Jotform API...', 5, {
+        jotformMessage: 'Connecting to Jotform API...',
+        qualtricsMessage: 'Waiting to start...'
+      });
 
       const allSubmissions = [];
       let offset = 0;
@@ -237,7 +240,11 @@
             // Cap at 48% to leave room for Qualtrics (50-70%)
             fetchProgress = Math.min(48, 5 + Math.log(pageNum) * 12);
           }
-          this.emitProgress(`Fetching page ${pageNum} (batch: ${currentBatchSize})...`, Math.round(fetchProgress));
+          const fetchMessage = `Fetching page ${pageNum} (batch: ${currentBatchSize})...`;
+          this.emitProgress(fetchMessage, Math.round(fetchProgress), {
+            jotformMessage: fetchMessage,
+            qualtricsMessage: 'Waiting to start...'
+          });
           
           let response;
           let result;
@@ -313,7 +320,11 @@
               // Still fetching - use logarithmic curve, capped at 48%
               downloadProgress = Math.min(48, 5 + Math.log(pageNum) * 12);
             }
-            this.emitProgress(`Downloaded ${allSubmissions.length} submissions...`, Math.round(downloadProgress));
+            const downloadMessage = `Downloaded ${allSubmissions.length} submissions...`;
+            this.emitProgress(downloadMessage, Math.round(downloadProgress), {
+              jotformMessage: downloadMessage,
+              qualtricsMessage: 'Waiting to start...'
+            });
 
             // Gradually increase batch size if we're below baseline and have multiple consecutive successes
             if (this.reductionIndex > 0 && this.consecutiveSuccesses >= this.config.consecutiveSuccessesForIncrease) {
@@ -341,7 +352,10 @@
         }
 
         // Progress: Phase 1 complete, moving to phase 2
-        this.emitProgress('Saving to local cache...', 50);
+        this.emitProgress('Saving to local cache...', 50, {
+          jotformMessage: 'Saving to local cache...',
+          qualtricsMessage: 'Waiting to start...'
+        });
         console.log(`[JotFormCache] ========== FETCH COMPLETE ==========`);
         console.log(`[JotFormCache] Total submissions: ${allSubmissions.length}`);
         
@@ -636,7 +650,11 @@
           
           // Report progress (70% to 100% = 30% range for validation, phase 2)
           const validationProgress = 70 + Math.round((processed / totalStudents) * 30);
-          this.emitProgress(`Validating students (${processed}/${totalStudents})`, validationProgress);
+          const validationMessage = `Validating students (${processed}/${totalStudents})`;
+          this.emitProgress(validationMessage, validationProgress, {
+            jotformMessage: validationMessage,
+            qualtricsMessage: validationMessage
+          });
           
           if (processed % 10 === 0) {
             console.log(`[JotFormCache] Validated ${processed}/${totalStudents} students`);
