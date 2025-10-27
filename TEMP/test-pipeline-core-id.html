@@ -330,7 +330,7 @@
                 <h2 class="text-xl font-semibold text-gray-800 mb-4">🔍 Raw Data Inspector</h2>
                 <div class="space-y-4">
                     <details class="cursor-pointer">
-                        <summary class="font-semibold text-gray-700 p-3 bg-gray-50 rounded-lg hover:bg-gray-100">JotForm Merged Answers</summary>
+                        <summary class="font-semibold text-gray-700 p-3 bg-gray-50 rounded-lg hover:bg-gray-100">JotForm Records (Before Merge)</summary>
                         <pre id="debug-jotform" class="mt-2">-</pre>
                     </details>
                     <details class="cursor-pointer">
@@ -664,10 +664,10 @@
             
             console.log(`[Test] ✅ Filtered to ${submissions.length} submissions for Core ID ${coreId}`);
 
-            // Merge multiple submissions for the same student
-            const mergedAnswers = mergeJotFormSubmissions(submissions);
+            // Transform submissions to records with answer objects
+            const jotformRecords = transformJotFormSubmissions(submissions);
             
-            return { submissions, mergedAnswers };
+            return { submissions, jotformRecords };
         }
 
         // Fetch Qualtrics data from cache/API
@@ -754,7 +754,9 @@
         }
 
         // Transform JotForm submissions to records format for DataMerger
-        // This EXACTLY matches the production transformSubmissionsToRecords logic
+        // CRITICAL: Store ANSWER OBJECTS to match production jotform-cache.js (line 813)
+        // This ensures TaskValidator can process the data correctly
+        // Schema: { fieldName: { answer: "value", text: "value", name: "fieldName", ... } }
         function transformJotFormSubmissions(submissions) {
             console.log('[Test] Transforming JotForm submissions to records...');
             
@@ -779,7 +781,7 @@
                     // Create coreId with "C" prefix
                     const coreId = studentId.startsWith('C') ? studentId : `C${studentId}`;
                     
-                    // Build flat record with all answer fields
+                    // Build record with answer objects (matches production schema)
                     const record = {
                         coreId: coreId,
                         'student-id': studentId,
@@ -791,18 +793,18 @@
                         }
                     };
                     
-                    // Flatten answers object to record fields
-                    // CRITICAL: Use answerObj.name from the JotForm response, NOT external mapping
+                    // Store FULL answer objects (matches jotform-cache.js line 813)
+                    // This is what TaskValidator expects
                     if (submission.answers) {
                         for (const [qid, answerObj] of Object.entries(submission.answers)) {
-                            // Use the field name if available, otherwise use QID
-                            const fieldName = answerObj.name || `q${qid}`;
-                            const value = answerObj.answer || answerObj.text || '';
+                            // Skip if no field name or no actual value
+                            if (!answerObj.name || !answerObj.answer) continue;
                             
-                            // Skip empty values and the student-id we already processed
-                            if (value && qid !== STUDENT_ID_QID) {
-                                record[fieldName] = value;
-                            }
+                            // Skip the student-id we already processed
+                            if (qid === STUDENT_ID_QID) continue;
+                            
+                            // Store the FULL answer object (not just the value)
+                            record[answerObj.name] = answerObj;
                         }
                     }
                     
@@ -1277,17 +1279,17 @@
             // TGMD Qualtrics Section - Display TGMD data from Qualtrics exclusively
             displayTGMDQualtricsData(data);
 
-            // Debug Data - show first grade's data as example
+            // Debug Data - show complete data (no truncation)
             const firstGrade = sortedGrades[0];
             if (firstGrade && data.mergedData[firstGrade]) {
                 document.getElementById('debug-jotform').textContent = 
-                    JSON.stringify(data.jotformData.jotformRecords, null, 2).substring(0, 5000) + '...';
+                    JSON.stringify(data.jotformData.jotformRecords, null, 2);
                 document.getElementById('debug-qualtrics-raw').textContent = 
-                    JSON.stringify(data.qualtricsData.responses, null, 2).substring(0, 5000) + '...';
+                    JSON.stringify(data.qualtricsData.responses, null, 2);
                 document.getElementById('debug-qualtrics').textContent = 
-                    JSON.stringify(data.transformedQualtrics, null, 2).substring(0, 5000) + '...';
+                    JSON.stringify(data.transformedQualtrics, null, 2);
                 document.getElementById('debug-merged').textContent = 
-                    JSON.stringify(data.mergedData, null, 2).substring(0, 5000) + '...';
+                    JSON.stringify(data.mergedData, null, 2);
                 document.getElementById('debug-validation').textContent = 
                     JSON.stringify(data.validationResults, null, 2);
             }
