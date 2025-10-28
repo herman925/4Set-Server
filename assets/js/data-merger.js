@@ -85,9 +85,12 @@
         // Determine grade from recordedDate
         let grade = 'Unknown';
         if (window.GradeDetector) {
-          const recordedDate = record._meta?.startDate || record.recordedDate;
+          const recordedDate = record._meta?.recordedDate || record.recordedDate;
           if (recordedDate) {
             grade = window.GradeDetector.determineGradeFromRecordedDate(recordedDate);
+            console.log(`[DataMerger] Qualtrics record ${coreId}: recordedDate=${recordedDate}, grade=${grade}`);
+          } else {
+            console.warn(`[DataMerger] Qualtrics record ${coreId}: No recordedDate found in _meta or root`);
           }
         }
         
