@@ -133,13 +133,33 @@
     const studentRecords = cachedData.students.filter(s => s.coreId === coreId);
     
     if (studentRecords.length === 0) {
-      console.error('[StudentPage] ❌ Student NOT FOUND in cache');
+      console.error('[StudentPage] ❌ Student NOT FOUND in CSV cache');
+      console.log('[StudentPage] Checking if student exists in coreIdMap fallback...');
+      
+      // Fallback: Check coreIdMap which might have the student
+      const fallbackStudent = cachedData.coreIdMap?.get(coreId);
+      if (fallbackStudent) {
+        console.log('[StudentPage] ✅ Found student in coreIdMap fallback');
+        studentData = fallbackStudent;
+        availableGrades = fallbackStudent.year ? [fallbackStudent.year] : ['K3', 'K2', 'K1']; // Default to all if no year
+        selectedGrade = yearParam && availableGrades.includes(yearParam) ? yearParam : availableGrades[0];
+        updateGradeSelector();
+        return;
+      }
+      
       showError(`Student with Core ID ${coreId} not found in cached data`);
       return;
     }
 
     // Get available grades for this student
     availableGrades = [...new Set(studentRecords.map(s => s.year))].filter(y => y).sort().reverse(); // K3, K2, K1
+    
+    // If no years found in records, try all possible grades
+    if (availableGrades.length === 0) {
+      console.warn('[StudentPage] ⚠️  No year field found in student records, defaulting to all grades');
+      availableGrades = ['K3', 'K2', 'K1'];
+    }
+    
     console.log('[StudentPage] Available grades for this student:', availableGrades);
 
     // Determine which grade to display
@@ -158,6 +178,12 @@
 
     // Get the student record for the selected grade
     studentData = studentRecords.find(s => s.year === selectedGrade);
+    
+    // If no exact match, use first record or fallback
+    if (!studentData) {
+      console.warn('[StudentPage] ⚠️  No exact year match, using first available record');
+      studentData = studentRecords[0] || cachedData.coreIdMap?.get(coreId);
+    }
     
     if (!studentData) {
       console.error('[StudentPage] ❌ Student data NOT FOUND for selected grade');

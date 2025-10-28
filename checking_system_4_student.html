@@ -82,28 +82,6 @@
 
         <!-- Main Content -->
         <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-4">
-            <!-- Grade Selector -->
-            <div class="flex items-center gap-3 bg-white/80 backdrop-blur-sm rounded-lg p-3 border border-[color:var(--border)] shadow-sm">
-                <span class="text-sm font-medium text-[color:var(--muted-foreground)]">View Grade:</span>
-                <div class="flex gap-2" role="group">
-                    <button id="grade-btn-k1" class="grade-selector-btn px-4 py-2 text-sm font-medium rounded-md transition-all border-2"
-                            onclick="window.StudentPage?.selectGrade('K1')"
-                            data-grade="K1">
-                        K1 (23/24)
-                    </button>
-                    <button id="grade-btn-k2" class="grade-selector-btn px-4 py-2 text-sm font-medium rounded-md transition-all border-2"
-                            onclick="window.StudentPage?.selectGrade('K2')"
-                            data-grade="K2">
-                        K2 (24/25)
-                    </button>
-                    <button id="grade-btn-k3" class="grade-selector-btn px-4 py-2 text-sm font-medium rounded-md transition-all border-2"
-                            onclick="window.StudentPage?.selectGrade('K3')"
-                            data-grade="K3">
-                        K3 (25/26)
-                    </button>
-                </div>
-            </div>
-
             <!-- Student Profile Panel -->
             <details class="entry-card p-4 lg:p-6 border-l-4 border-l-[color:var(--primary)]">
                 <summary class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between cursor-pointer list-none">
@@ -219,7 +197,28 @@
                                 </button>
                             </div>
                         </div>
-                        <!-- Row 2: Status Legends (aligned with Task view label on desktop) -->
+                        <!-- Row 2: Grade Selector -->
+                        <div class="flex items-center gap-3 pt-2 border-t border-[color:var(--border)]">
+                            <span class="text-xs font-medium text-[color:var(--muted-foreground)]">View Grade:</span>
+                            <div class="flex gap-2" role="group">
+                                <button id="grade-btn-k1" class="grade-selector-btn px-3 py-1.5 text-xs font-medium rounded-md transition-all border-2"
+                                        onclick="window.StudentPage?.selectGrade('K1')"
+                                        data-grade="K1">
+                                    K1 (23/24)
+                                </button>
+                                <button id="grade-btn-k2" class="grade-selector-btn px-3 py-1.5 text-xs font-medium rounded-md transition-all border-2"
+                                        onclick="window.StudentPage?.selectGrade('K2')"
+                                        data-grade="K2">
+                                    K2 (24/25)
+                                </button>
+                                <button id="grade-btn-k3" class="grade-selector-btn px-3 py-1.5 text-xs font-medium rounded-md transition-all border-2"
+                                        onclick="window.StudentPage?.selectGrade('K3')"
+                                        data-grade="K3">
+                                    K3 (25/26)
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Row 3: Status Legends (aligned with Task view label on desktop) -->
                         <div class="flex items-center gap-2 text-xs text-[color:var(--muted-foreground)] pt-2 border-t border-[color:var(--border)]">
                             <span class="inline-flex items-center gap-1"><span class="status-circle status-green"></span>Complete</span>
                             <span class="inline-flex items-center gap-1"><span class="status-circle status-yellow"></span>Post-term</span>
