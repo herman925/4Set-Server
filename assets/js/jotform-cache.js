@@ -1674,14 +1674,29 @@
       // Extract numeric ID from core ID (e.g., "C10947" -> "10947")
       const numericId = coreId.replace(/^C/i, '');
       
-      // Filter submissions where sessionkey contains the student ID
+      // Filter submissions by sessionkey OR coreId (for Qualtrics-only records)
+      // Qualtrics-only records don't have sessionkey, so we need to check coreId field
       let studentSubmissions = cached.submissions.filter(submission => {
+        // First, try sessionkey (JotForm and merged records)
         const sessionkey = submission.sessionkey;
-        if (!sessionkey) return false;
+        if (sessionkey) {
+          // sessionkey format: "10947_YYYYMMDD_HH_MM" or contains the ID
+          if (sessionkey.startsWith(numericId + '_') || 
+              sessionkey.includes('_' + numericId + '_')) {
+            return true;
+          }
+        }
         
-        // sessionkey format: "10947_YYYYMMDD_HH_MM" or contains the ID
-        return sessionkey.startsWith(numericId + '_') || 
-               sessionkey.includes('_' + numericId + '_');
+        // Fallback: Check coreId field (Qualtrics-only records)
+        // coreId format: "C10947" or "10947"
+        if (submission.coreId) {
+          const submissionCoreId = submission.coreId.replace(/^C/i, '');
+          if (submissionCoreId === numericId) {
+            return true;
+          }
+        }
+        
+        return false;
       });
 
       // Apply grade filter if specified (CRITICAL for grade-aware data display)

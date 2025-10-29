@@ -202,6 +202,28 @@
               _orphaned: true,
               grade: grade
             };
+            
+            // Generate synthetic sessionkey for Qualtrics-only records
+            // This makes them discoverable by the same filter as JotForm records
+            // Format: studentId_YYYYMMDD_HH_MM (using recordedDate from Qualtrics)
+            if (!qualtricsOnly.sessionkey && mergedQualtrics._meta?.recordedDate) {
+              const numericId = coreId.replace(/^C/i, '');
+              const recordedDate = new Date(mergedQualtrics._meta.recordedDate);
+              
+              if (!isNaN(recordedDate.getTime())) {
+                const year = recordedDate.getFullYear();
+                const month = String(recordedDate.getMonth() + 1).padStart(2, '0');
+                const day = String(recordedDate.getDate()).padStart(2, '0');
+                const hour = String(recordedDate.getHours()).padStart(2, '0');
+                const minute = String(recordedDate.getMinutes()).padStart(2, '0');
+                
+                qualtricsOnly.sessionkey = `${numericId}_${year}${month}${day}_${hour}_${minute}`;
+                console.log(`[DataMerger] Generated synthetic sessionkey for Qualtrics-only record: ${qualtricsOnly.sessionkey}`);
+              } else {
+                console.warn(`[DataMerger] Could not generate sessionkey: invalid recordedDate for ${coreId}`);
+              }
+            }
+            
             mergedRecords.push(qualtricsOnly);
             qualtricsOnlyCount++;
             console.log(`[DataMerger] ℹ️  Qualtrics-only record for ${coreId} (${grade})`);
