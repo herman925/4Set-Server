@@ -621,6 +621,13 @@
     /**
      * Build student validation cache (Level 1)
      * Checks IndexedDB first, validates if needed, then saves
+     * 
+     * GRADE-AWARE FILTERING:
+     * This method now supports grade-based filtering to prevent cross-grade data contamination.
+     * If all students in the array have the same grade (year), only submissions matching that
+     * grade will be processed. This ensures class/school pages showing K3 students don't
+     * accidentally merge K1 or K2 submissions.
+     * 
      * @param {Array} students - Array of student objects from coreid.csv
      * @param {Object} surveyStructure - Survey structure for task-to-set mapping
      * @param {Object} credentials - { formId, apiKey } for JotForm API
@@ -632,6 +639,16 @@
       
       if (!window.TaskValidator) {
         throw new Error('TaskValidator not loaded');
+      }
+      
+      // Detect if all students have the same grade (for grade-aware filtering)
+      const studentGrades = new Set(students.map(s => s.year).filter(y => y));
+      const singleGrade = studentGrades.size === 1 ? Array.from(studentGrades)[0] : null;
+      
+      if (singleGrade) {
+        console.log(`[JotFormCache] Grade-aware mode: All students are ${singleGrade}, will filter submissions by grade`);
+      } else if (studentGrades.size > 1) {
+        console.log(`[JotFormCache] Multi-grade mode: Students span ${studentGrades.size} grades (${Array.from(studentGrades).join(', ')})`);
       }
       
       // Check if validation cache exists and is valid
@@ -656,11 +673,19 @@
       
   console.log('[JotFormCache] Building fresh validation cache...');
   const validationCache = new Map();
-  const submissions = await this.getAllSubmissions(credentials);
+  let submissions = await this.getAllSubmissions(credentials);
       
       if (!submissions || submissions.length === 0) {
         console.warn('[JotFormCache] No submissions to validate');
         return validationCache;
+      }
+      
+      // GRADE-AWARE FILTERING: If all students are same grade, filter submissions by that grade
+      // This prevents mixing K1+K2+K3 data when building cache for a single-grade class
+      if (singleGrade) {
+        const beforeFilter = submissions.length;
+        submissions = submissions.filter(s => s.grade === singleGrade);
+        console.log(`[JotFormCache] Grade filter (${singleGrade}): ${beforeFilter} → ${submissions.length} submissions`);
       }
       
       // Group submissions by student
@@ -670,10 +695,18 @@
         const studentId = studentIdAnswer?.answer || studentIdAnswer?.text;
         if (!studentId) continue;
         
-        // Find student by Core ID
+        // Find student by Core ID (and optionally verify grade match)
         const student = students.find(s => {
           const numericCoreId = s.coreId.startsWith('C') ? s.coreId.substring(1) : s.coreId;
-          return numericCoreId === studentId;
+          const coreIdMatches = numericCoreId === studentId;
+          
+          // If we're in single-grade mode, the submission grade should already match
+          // If multi-grade mode, match student by both coreId AND grade
+          if (studentGrades.size > 1 && submission.grade) {
+            return coreIdMatches && s.year === submission.grade;
+          }
+          
+          return coreIdMatches;
         });
         
         if (student) {
