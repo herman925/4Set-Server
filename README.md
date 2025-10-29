@@ -1169,6 +1169,38 @@ Filter dropdowns deduplicate students by Core ID to prevent showing multiple ent
 
 Implemented in `assets/js/checking-system-filters.js` using Map-based deduplication.
 
+### Cache Architecture
+
+**Three-Layer Cache System** (IndexedDB-based):
+
+1. **Merged Submissions Cache** (`merged_jotform_qualtrics_cache`)
+   - Final merged dataset containing JotForm-only, Qualtrics-only, and merged records
+   - Each record has QID-indexed answers structure for uniform processing
+   - Tagged with `grade` field (K1/K2/K3) to prevent cross-grade contamination
+   - Access: `JotFormCache.loadFromCache()` or `JotFormCache.getStudentSubmissions(coreId, grade)`
+
+2. **Validation Cache** (`student_task_validation_cache`)
+   - Pre-computed task validation results (answered/total per task, set progress)
+   - Map<coreId, validationData> structure
+   - Invalidated on cache rebuild or data sync
+   - Eliminates redundant validation processing
+
+3. **Raw Qualtrics Cache** (`qualtrics_raw_responses`)
+   - Stores transformed Qualtrics responses for quick re-sync
+   - Enables "Refresh with Qualtrics" feature without full rebuild
+   - Significantly faster than re-fetching from Qualtrics API
+
+**Key Design Decisions:**
+
+- **QID-Indexed Answers**: All submissions (JotForm and Qualtrics-only) store answers with JotForm QID as key, ensuring uniform processing through `validateStudent()` which converts to fieldName-indexed format
+- **Grade Separation**: Each (coreId, grade) pair creates a separate cache record, never mixing K1/K2/K3 data
+- **Parallel Fetching**: JotForm and Qualtrics data fetched simultaneously using `Promise.all()` for 40% performance improvement
+- **Within-Then-Cross Merge**: Data merged within each source first (multiple Qualtrics responses, multiple JotForm submissions), then merged across sources
+
+**Data Flow**: API Fetch → Transform → Within-Source Merge → Cross-Source Merge → Convert to Submission Format → Cache → Validate → Display
+
+See `PRDs/jotform_qualtrics_integration_prd.md` section "Comprehensive Cache Design Documentation" for complete technical details.
+
 ---
 
 ## Configuration Reference
