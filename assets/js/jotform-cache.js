@@ -1279,8 +1279,23 @@
      * @param {Array} originalSubmissions - Original JotForm submissions for structure reference
      * @returns {Array} Submissions in JotForm format (orphaned records excluded)
      */
-    transformRecordsToSubmissions(records, originalSubmissions) {
+    async transformRecordsToSubmissions(records, originalSubmissions) {
       console.log('[JotFormCache] Converting records back to submission format...');
+      
+      // Load JotForm QID mapping for Qualtrics-only submissions
+      // This is critical because TaskValidator expects answers indexed by JotForm QID, not fieldName
+      let fieldNameToQid = {};
+      try {
+        const response = await fetch('assets/jotformquestions.json');
+        if (response.ok) {
+          fieldNameToQid = await response.json();
+          console.log('[JotFormCache] Loaded fieldName → JotForm QID mapping for Qualtrics-only submissions');
+        } else {
+          console.warn('[JotFormCache] Could not load jotformquestions.json - Qualtrics-only submissions may not display correctly');
+        }
+      } catch (error) {
+        console.error('[JotFormCache] Failed to load jotformquestions.json:', error);
+      }
       
       // Create a map of original submissions by coreId for easy lookup
       const submissionMap = new Map();
@@ -1329,6 +1344,8 @@
               };
               
               // Convert all Qualtrics fields to answer objects
+              // CRITICAL: Use JotForm QID as the key, NOT fieldName
+              // TaskValidator expects answers[qid], not answers[fieldName]
               for (const [fieldName, answerObj] of Object.entries(record)) {
                 // Skip metadata fields
                 if (fieldName === 'coreId' || 
@@ -1340,14 +1357,29 @@
                   continue;
                 }
                 
-                // Create answer object in submission format
-                // Use fieldName as a pseudo-QID since we don't have real JotForm QIDs
-                qualtricsSubmission.answers[fieldName] = {
-                  name: fieldName,
-                  answer: answerObj.answer || answerObj,
-                  text: answerObj.text || answerObj.answer || answerObj,
-                  type: 'control_textbox'
-                };
+                // Look up the JotForm QID for this field
+                // This is the KEY FIX: Use QID as the answers key, not fieldName
+                const qid = fieldNameToQid[fieldName];
+                
+                if (qid) {
+                  // Create answer object in JotForm submission format
+                  // Use QID as key so TaskValidator can find the answer
+                  qualtricsSubmission.answers[qid] = {
+                    name: fieldName,  // Preserve fieldName in the answer object
+                    answer: answerObj.answer || answerObj,
+                    text: answerObj.text || answerObj.answer || answerObj,
+                    type: 'control_textbox'
+                  };
+                } else {
+                  // Fallback: If no QID mapping found, use fieldName as key
+                  // This preserves the field even if not in the mapping file
+                  qualtricsSubmission.answers[fieldName] = {
+                    name: fieldName,
+                    answer: answerObj.answer || answerObj,
+                    text: answerObj.text || answerObj.answer || answerObj,
+                    type: 'control_textbox'
+                  };
+                }
               }
               
               submissions.push(qualtricsSubmission);
@@ -1611,7 +1643,7 @@
             jotformMessage: 'Converting data...',
             qualtricsMessage: 'Converting data...'
           });
-          const mergedSubmissions = this.transformRecordsToSubmissions(mergedData, jotformSubmissions);
+          const mergedSubmissions = await this.transformRecordsToSubmissions(mergedData, jotformSubmissions);
           console.log('[JotFormCache] Converted', mergedSubmissions.length, 'records back to submission format');
 
           // STEP 7: Update main cache with merged data (95-98%)

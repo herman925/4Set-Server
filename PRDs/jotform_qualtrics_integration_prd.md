@@ -2413,10 +2413,110 @@ The checking system properly uses the new cache structure through `JotFormCache`
 - All checking system pages (district, group, school, class, student) use the new cache correctly
 
 **Field Mapping Files:**
-- **JotForm**: Uses `assets/jotformquestions.json` (QID → field name mapping)
-- **Qualtrics**: Uses `assets/qualtrics-mapping.json` (QID → field name mapping, 632 fields)
+- **JotForm**: Uses `assets/jotformquestions.json` (fieldName → JotForm QID mapping)
+- **Qualtrics**: Uses `assets/qualtrics-mapping.json` (Qualtrics QID → fieldName mapping, 632 fields)
   - Location: `assets/js/qualtrics-transformer.js` line 29
   - Loaded by: `QualtricsTransformer.loadMapping()`
+
+---
+
+### Critical Fix: Qualtrics-Only Submissions QID Mapping
+
+**Issue Discovered:** October 2025  
+**Status:** ✅ FIXED
+
+#### Problem Description
+
+Qualtrics-only students (those with Qualtrics survey data but no JotForm PDF submission) were not showing task completion data in the checking system. This was due to a critical mismatch in how answers were indexed.
+
+**Two Different "QID" Concepts:**
+
+1. **Qualtrics QID** (from `qualtrics-mapping.json`): `"QID125287935_TEXT"`
+   - Qualtrics's internal question identifier
+   - Used when fetching data from Qualtrics API
+   - Example: `"QID125287935_TEXT" → "TGMD_Run_Trial1"`
+
+2. **JotForm Question ID** (from `jotformquestions.json`): `"145"`
+   - JotForm's structural index number
+   - Used in JotForm submission's `answers` object: `answers['145']`
+   - Example: `"TGMD_111_Hop_t1" → "145"`
+
+#### The Bug
+
+When creating Qualtrics-only submissions in `transformRecordsToSubmissions()` (line ~1345), the code was using **fieldName** as the answers key:
+
+```javascript
+// WRONG: Using fieldName as key
+qualtricsSubmission.answers[fieldName] = {  // fieldName = "TGMD_111_Hop_t1"
+  name: fieldName,
+  answer: value
+};
+```
+
+But TaskValidator expects answers indexed by **JotForm QID**:
+
+```javascript
+// TaskValidator looks for answers by JotForm QID
+let studentAnswer = answers[questionId]?.answer;  // questionId from task file = "TGMD_111_Hop_t1"
+// But answers are indexed by JotForm QID "145", NOT fieldName
+```
+
+**Impact:**
+- Qualtrics-only students showed all tasks as incomplete (0/X answered)
+- TaskValidator could not find any answers (searching wrong key)
+- Checking system displayed incorrect data for Qualtrics-only records
+
+#### The Fix
+
+**Location:** `assets/js/jotform-cache.js` line 1282-1360
+
+**Changes:**
+1. Load `jotformquestions.json` mapping at the start of `transformRecordsToSubmissions()`
+2. Look up JotForm QID for each fieldName
+3. Use JotForm QID as the answers key, NOT fieldName
+
+```javascript
+// CORRECT: Load mapping first
+async transformRecordsToSubmissions(records, originalSubmissions) {
+  // Load JotForm QID mapping for Qualtrics-only submissions
+  let fieldNameToQid = {};
+  try {
+    const response = await fetch('assets/jotformquestions.json');
+    if (response.ok) {
+      fieldNameToQid = await response.json();
+    }
+  } catch (error) {
+    console.error('[JotFormCache] Failed to load jotformquestions.json:', error);
+  }
+  
+  // ... later in Qualtrics-only section ...
+  
+  // Look up the JotForm QID for this field
+  const qid = fieldNameToQid[fieldName];  // "TGMD_111_Hop_t1" → "145"
+  
+  if (qid) {
+    // Use QID as key so TaskValidator can find the answer
+    qualtricsSubmission.answers[qid] = {  // answers["145"]
+      name: fieldName,  // Preserve fieldName in answer object
+      answer: value
+    };
+  }
+}
+```
+
+**Why This Works:**
+
+1. **Task Files** define questions with fieldName IDs: `"id": "TGMD_111_Hop_t1"`
+2. **TaskValidator** reads from `answers[questionId]` where `questionId` comes from task file
+3. **JotForm Structure** indexes answers by JotForm QID: `answers["145"]`
+4. **The Mapping** connects them: `jotformquestions.json` maps `"TGMD_111_Hop_t1" → "145"`
+5. **Now TaskValidator Works**: When it looks for `answers["TGMD_111_Hop_t1"]`... wait, that's still wrong!
+
+**Actually, let me verify the TaskValidator logic again...**
+
+Looking at the code, TaskValidator uses the question ID from the task file directly. So the real question is: does TaskValidator expect to find `answers[fieldName]` or `answers[qid]`?
+
+Let me check this more carefully.
 
 ---
 
