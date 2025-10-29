@@ -1,23 +1,46 @@
 /**
- * Global JotForm Cache System (using IndexedDB via localForage)
+ * Global Data Merge & Cache System (using IndexedDB via localForage)
  * 
- * Purpose: Cache the ENTIRE JotForm submissions response to avoid redundant API calls
+ * PURPOSE: Merge JotForm + Qualtrics data by (coreId, grade) and cache final merged dataset
  * 
- * Why: JotForm's API returns the full dataset regardless of filter parameters.
- * Even with filter={"20:eq":"10001"}, the API downloads all submissions before filtering.
+ * DATA PIPELINE:
+ * 1. JotForm Internal Merge: Multiple PDF submissions → Merged by (coreId, sessionkey-derived-grade)
+ *    - sessionkey format: studentId_YYYYMMDD_HH_MM
+ *    - Grade derived from sessionkey date (Aug-Jul school year boundaries)
  * 
- * Solution: Fetch ALL submissions once, cache in IndexedDB, then filter client-side.
+ * 2. Qualtrics Internal Merge: Multiple survey responses → Merged by (coreId, recordedDate-derived-grade)
+ *    - recordedDate format: ISO 8601 timestamp
+ *    - Grade derived from recordedDate (Aug-Jul school year boundaries)
+ * 
+ * 3. Final Cross-Source Merge: JotForm + Qualtrics → Aligned by (coreId, grade) pairs
+ *    - Produces 3 record types:
+ *      a) JotForm-only (has sessionkey, _sources: ['jotform'])
+ *      b) Qualtrics-only (NO sessionkey, _sources: ['qualtrics'], _orphaned: true)
+ *      c) JotForm+Qualtrics merged (_sources: ['jotform', 'qualtrics'])
+ * 
+ * IMPORTANT: After merge, sessionkey and recordedDate are IRRELEVANT
+ * - They were ONLY used to derive grade during merge
+ * - Final cache searches by coreId (+ optional grade filter)
+ * - Never search by sessionkey or recordedDate after merge
+ * 
+ * CACHE STRUCTURE:
+ * - merged_jotform_qualtrics_cache: Final merged data (all 3 record types)
+ * - qualtrics_raw_responses: Raw Qualtrics responses (pre-merge, for debugging)
+ * - student_task_validation_cache: Pre-computed task validation results
  * 
  * Benefits:
- * - 1 API call instead of N calls (one per student)
- * - Instant filtering from cache
- * - Reduced rate limiting risk
- * - Faster user experience
- * - Large storage capacity (hundreds of MB vs localStorage's 5-10 MB)
+ * - 2 parallel API calls (JotForm + Qualtrics) instead of N sequential calls
+ * - Instant client-side filtering by coreId + grade
+ * - Grade-aware data display (K1/K2/K3 never mixed)
+ * - Large storage capacity (hundreds of MB via IndexedDB)
  */
 
 (() => {
-  const CACHE_KEY = 'jotform_global_cache';
+  // Cache key names (descriptive of the merge process)
+  const MERGED_DATA_CACHE_KEY = 'merged_jotform_qualtrics_cache'; // Final merged data (coreId+grade aligned)
+  const QUALTRICS_RAW_CACHE_KEY = 'qualtrics_raw_responses'; // Raw Qualtrics responses before merge
+  const VALIDATION_CACHE_KEY = 'student_task_validation_cache'; // Pre-computed task validation results
+  
   const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hour
   
   // JotForm question IDs - these are hardcoded based on current form structure
@@ -476,7 +499,7 @@
         const jsonString = JSON.stringify(cacheEntry);
         console.log('[JotFormCache] Cache data size:', Math.round(jsonString.length / 1024), 'KB');
         
-        await storage.setItem(CACHE_KEY, cacheEntry);
+        await storage.setItem(MERGED_DATA_CACHE_KEY, cacheEntry);
         console.log('[JotFormCache] ✅ Cached', submissions.length, 'submissions to IndexedDB');
       } catch (error) {
         console.error('[JotFormCache] Failed to save cache:', error);
@@ -494,7 +517,7 @@
       }
       
       try {
-        const cacheEntry = await storage.getItem(CACHE_KEY);
+        const cacheEntry = await storage.getItem(MERGED_DATA_CACHE_KEY);
         return cacheEntry;
       } catch (error) {
         console.error('[JotFormCache] Failed to load cache:', error);
@@ -529,7 +552,7 @@
      */
     async clearCache() {
       if (storage) {
-        await storage.removeItem(CACHE_KEY);
+        await storage.removeItem(MERGED_DATA_CACHE_KEY);
       }
       this.cache = null;
       console.log('[JotFormCache] Submissions cache cleared');
@@ -790,11 +813,11 @@
           version: "1.0"
         };
         
-        await validationStorage.setItem('validation_cache', cacheEntry);
+        await validationStorage.setItem(VALIDATION_CACHE_KEY, cacheEntry);
         console.log(`[JotFormCache] ✅ Saved validation cache: ${validationCache.size} students`);
         
         // Verify
-        const verification = await validationStorage.getItem('validation_cache');
+        const verification = await validationStorage.getItem(VALIDATION_CACHE_KEY);
         console.log('[JotFormCache] Validation cache verification:', verification ? 'SUCCESS' : 'FAILED');
       } catch (error) {
         console.error('[JotFormCache] Failed to save validation cache:', error);
@@ -812,7 +835,7 @@
       }
       
       try {
-        const cacheEntry = await validationStorage.getItem('validation_cache');
+        const cacheEntry = await validationStorage.getItem(VALIDATION_CACHE_KEY);
         
         if (!cacheEntry || !cacheEntry.validations) {
           console.log('[JotFormCache] No validation cache found');
@@ -866,7 +889,7 @@
      */
     async clearValidationCache() {
       if (validationStorage) {
-        await validationStorage.removeItem('validation_cache');
+        await validationStorage.removeItem(VALIDATION_CACHE_KEY);
         console.log('[JotFormCache] Validation cache cleared');
       }
     }
@@ -1572,7 +1595,7 @@
           });
           const qualtricsStorage = this.getQualtricsStorage();
           if (qualtricsStorage) {
-            await qualtricsStorage.setItem('qualtrics_responses', {
+            await qualtricsStorage.setItem(QUALTRICS_RAW_CACHE_KEY, {
               timestamp: Date.now(),
               responses: transformedData,
               surveyId: credentials.qualtricsSurveyId,
@@ -1652,7 +1675,7 @@
       }
 
       try {
-        const cached = await qualtricsStorage.getItem('qualtrics_responses');
+        const cached = await qualtricsStorage.getItem(QUALTRICS_RAW_CACHE_KEY);
         if (!cached) {
           return { cached: false };
         }
@@ -1685,7 +1708,7 @@
     async clearQualtricsCache() {
       const qualtricsStorage = this.getQualtricsStorage();
       if (qualtricsStorage) {
-        await qualtricsStorage.removeItem('qualtrics_responses');
+        await qualtricsStorage.removeItem(QUALTRICS_RAW_CACHE_KEY);
         console.log('[JotFormCache] Qualtrics cache cleared');
       }
     }
@@ -1698,11 +1721,15 @@
     /**
      * Get submissions for a specific student, optionally filtered by grade
      * 
-     * CRITICAL: The DataMerger creates separate merged records for each (coreId, grade) pair.
-     * This ensures JotForm K3 data is NEVER merged with Qualtrics K2 data.
+     * CRITICAL: After JotForm+Qualtrics merge, data is organized by (coreId, grade) pairs:
+     * - JotForm internal merge: Multiple PDFs → Single record per (coreId, sessionkey-derived-grade)
+     * - Qualtrics internal merge: Multiple responses → Single record per (coreId, recordedDate-derived-grade)  
+     * - Final merge: JotForm + Qualtrics → Final cache aligned by (coreId, grade)
      * 
-     * To display data correctly, the student page MUST pass the selected grade parameter.
-     * Without it, all grades will be returned, causing mixed-grade data display issues.
+     * sessionkey's role: ONLY used during JotForm merge to derive grade, then becomes irrelevant
+     * recordedDate's role: ONLY used during Qualtrics merge to derive grade, then becomes irrelevant
+     * 
+     * After merge, we search by coreId (+ optional grade filter), NOT by sessionkey or recordedDate
      * 
      * @param {string} coreId - Student Core ID (e.g., "C10947")
      * @param {string} [grade] - Optional grade filter (K1/K2/K3). If omitted, returns all grades.
@@ -1715,32 +1742,19 @@
         return [];
       }
 
-      // Extract numeric ID from core ID (e.g., "C10947" -> "10947")
-      const numericId = coreId.replace(/^C/i, '');
+      // Normalize coreId for comparison (remove "C" prefix if present)
+      const normalizedCoreId = coreId.replace(/^C/i, '');
       
-      // Filter submissions by sessionkey OR coreId (for Qualtrics-only records)
-      // Qualtrics-only records don't have sessionkey, so we need to check coreId field
+      // Filter submissions by coreId (the actual merge key)
+      // Works for: JotForm-only, Qualtrics-only, and JotForm+Qualtrics merged records
       let studentSubmissions = cached.submissions.filter(submission => {
-        // First, try sessionkey (JotForm and merged records)
-        const sessionkey = submission.sessionkey;
-        if (sessionkey) {
-          // sessionkey format: "10947_YYYYMMDD_HH_MM" or contains the ID
-          if (sessionkey.startsWith(numericId + '_') || 
-              sessionkey.includes('_' + numericId + '_')) {
-            return true;
-          }
+        if (!submission.coreId) {
+          return false;
         }
         
-        // Fallback: Check coreId field (Qualtrics-only records)
-        // coreId format: "C10947" or "10947"
-        if (submission.coreId) {
-          const submissionCoreId = submission.coreId.replace(/^C/i, '');
-          if (submissionCoreId === numericId) {
-            return true;
-          }
-        }
-        
-        return false;
+        // Normalize submission coreId for comparison
+        const submissionCoreId = submission.coreId.replace(/^C/i, '');
+        return submissionCoreId === normalizedCoreId;
       });
 
       // Apply grade filter if specified (CRITICAL for grade-aware data display)
@@ -1752,10 +1766,19 @@
 
       console.log(`[JotFormCache] Found ${studentSubmissions.length} submissions for ${coreId}${grade ? ` (grade ${grade})` : ''} in cache`);
       
-      // Log if any are Qualtrics-only records
+      // Log data sources for debugging
+      const jotformOnly = studentSubmissions.filter(s => s._sources && s._sources.length === 1 && s._sources[0] === 'jotform');
       const qualtricsOnly = studentSubmissions.filter(s => s._orphaned || (s._sources && s._sources.length === 1 && s._sources[0] === 'qualtrics'));
+      const merged = studentSubmissions.filter(s => s._sources && s._sources.length > 1);
+      
+      if (jotformOnly.length > 0) {
+        console.log(`[JotFormCache] - ${jotformOnly.length} JotForm-only record(s)`);
+      }
       if (qualtricsOnly.length > 0) {
-        console.log(`[JotFormCache] - ${qualtricsOnly.length} of these are Qualtrics-only records (no JotForm data)`);
+        console.log(`[JotFormCache] - ${qualtricsOnly.length} Qualtrics-only record(s)`);
+      }
+      if (merged.length > 0) {
+        console.log(`[JotFormCache] - ${merged.length} JotForm+Qualtrics merged record(s)`);
       }
       
       return studentSubmissions;
