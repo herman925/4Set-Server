@@ -1262,6 +1262,12 @@
           // Clone the original submission
           const submission = JSON.parse(JSON.stringify(originalSubmission));
           
+          // Preserve grade field from merged record at submission level
+          // This is critical for grade-based filtering in getStudentSubmissions()
+          if (record.grade) {
+            submission.grade = record.grade;
+          }
+          
           // Update answers with merged data
           // Merge TGMD fields and any other updated fields from Qualtrics
           if (submission.answers) {
@@ -1279,8 +1285,10 @@
             // Each field lookup is now O(1) instead of O(n) thanks to the reverse map above
             for (const [fieldName, value] of Object.entries(record)) {
               // Skip metadata and already-handled fields
+              // NOTE: grade is now preserved at submission level (see above), so skip it here
               if (fieldName === 'coreId' || 
                   fieldName === 'student-id' || 
+                  fieldName === 'grade' ||  // Skip grade field (preserved at submission level)
                   fieldName === '_meta' || 
                   fieldName === '_sources' ||
                   fieldName === '_orphaned') {
@@ -1610,7 +1618,20 @@
      * @param {string} coreId - Student core ID (e.g., "C10947")
      * @returns {Promise<Array>} Array of submissions matching the student
      */
-    async getStudentSubmissions(coreId) {
+    /**
+     * Get submissions for a specific student, optionally filtered by grade
+     * 
+     * CRITICAL: The DataMerger creates separate merged records for each (coreId, grade) pair.
+     * This ensures JotForm K3 data is NEVER merged with Qualtrics K2 data.
+     * 
+     * To display data correctly, the student page MUST pass the selected grade parameter.
+     * Without it, all grades will be returned, causing mixed-grade data display issues.
+     * 
+     * @param {string} coreId - Student Core ID (e.g., "C10947")
+     * @param {string} [grade] - Optional grade filter (K1/K2/K3). If omitted, returns all grades.
+     * @returns {Promise<Array>} Submissions for the student (filtered by grade if specified)
+     */
+    async getStudentSubmissions(coreId, grade = null) {
       const cached = await this.loadFromCache();
       if (!cached || !cached.submissions) {
         console.log('[JotFormCache] No cached data available for student lookup');
@@ -1621,7 +1642,7 @@
       const numericId = coreId.replace(/^C/i, '');
       
       // Filter submissions where sessionkey contains the student ID
-      const studentSubmissions = cached.submissions.filter(submission => {
+      let studentSubmissions = cached.submissions.filter(submission => {
         const sessionkey = submission.sessionkey;
         if (!sessionkey) return false;
         
@@ -1630,7 +1651,14 @@
                sessionkey.includes('_' + numericId + '_');
       });
 
-      console.log(`[JotFormCache] Found ${studentSubmissions.length} submissions for ${coreId} in cache`);
+      // Apply grade filter if specified (CRITICAL for grade-aware data display)
+      if (grade) {
+        const beforeGradeFilter = studentSubmissions.length;
+        studentSubmissions = studentSubmissions.filter(s => s.grade === grade);
+        console.log(`[JotFormCache] Grade filter (${grade}): ${beforeGradeFilter} → ${studentSubmissions.length} submissions`);
+      }
+
+      console.log(`[JotFormCache] Found ${studentSubmissions.length} submissions for ${coreId}${grade ? ` (grade ${grade})` : ''} in cache`);
       
       // Log if any are Qualtrics-only records
       const qualtricsOnly = studentSubmissions.filter(s => s._orphaned || (s._sources && s._sources.length === 1 && s._sources[0] === 'qualtrics'));

@@ -403,8 +403,9 @@
    */
   async function fetchAndPopulateJotformData(coreId) {
     try {
-      // Check cache first
-      const cacheKey = `student_jotform_${coreId}`;
+      // CRITICAL: Include grade in cache key to prevent mixing data from different grades
+      // This ensures K1, K2, K3 data is cached separately per student
+      const cacheKey = `student_jotform_${coreId}_${selectedGrade || 'unknown'}`;
       const cached = sessionStorage.getItem(cacheKey);
       
       if (cached) {
@@ -448,12 +449,17 @@
       // ✅ FIRST: Try to get data from global cache (includes merged Qualtrics data)
       console.log('[StudentPage] ========== CHECKING GLOBAL CACHE ==========');
       console.log('[StudentPage] Looking for Core ID:', coreId);
+      console.log('[StudentPage] Selected grade:', selectedGrade || 'none (will return all grades)');
       
       let submissions = [];
       
       if (window.JotFormCache && typeof window.JotFormCache.getStudentSubmissions === 'function') {
         try {
-          submissions = await window.JotFormCache.getStudentSubmissions(coreId);
+          // CRITICAL: Pass selectedGrade to filter merged data by grade
+          // This ensures we only get submissions for the selected grade (K1/K2/K3)
+          // DataMerger creates separate records per (coreId, grade) pair, so this filter
+          // is essential to avoid mixing JotForm K3 with Qualtrics K2 data
+          submissions = await window.JotFormCache.getStudentSubmissions(coreId, selectedGrade);
           
           if (submissions.length > 0) {
             console.log(`[StudentPage] ✅ Found ${submissions.length} submissions in global cache (includes Qualtrics data if merged)`);
