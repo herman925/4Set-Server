@@ -78,6 +78,214 @@ This approach provides a **holistic and accurate view** because:
 - Implement a status light engine (`/api/checking/status`) to expose task-level completion metrics and termination reasons.
 - Support demo coverage for the Checking System dashboard tab.
 
+## ⚠️ CRITICAL: Grade-Specific Data Filtering
+
+### Grade-Aware Display Requirements
+
+**The checking system MUST maintain strict grade-level separation at all display levels to preserve longitudinal study integrity.**
+
+#### Core Requirements
+
+1. **Grade Detection**: Every submission MUST have a grade field (K1/K2/K3) determined from its timestamp before display
+2. **Grade Filtering**: All pages MUST filter data by grade to prevent cross-grade contamination
+3. **Grade Preservation**: Cache keys MUST include grade to ensure separate storage per grade level
+
+#### Implementation by Page Level
+
+**1. Student Page (checking_system_4_student.html)**
+
+**Grade Selector UI:**
+- Display K1/K2/K3 buttons for grade selection
+- Active grade highlighted, disabled grades greyed out
+- Default to most recent grade with data
+
+**Data Fetching:**
+```javascript
+// MUST pass selectedGrade parameter
+const submissions = await JotFormCache.getStudentSubmissions(coreId, selectedGrade);
+// Returns ONLY submissions for selectedGrade (K1/K2/K3)
+```
+
+**Cache Strategy:**
+```javascript
+// Cache key MUST include grade
+const cacheKey = `student_jotform_${coreId}_${selectedGrade}`;
+// Ensures K1, K2, K3 data cached separately
+```
+
+**Validation:**
+- [ ] Grade switching updates data display
+- [ ] No K1 data appears when K2 selected
+- [ ] No K2 data appears when K3 selected
+- [ ] Each grade's assessment results remain separate
+
+**2. Class Page (checking_system_3_class.html)**
+
+**Pre-Filtering:**
+```javascript
+// Filter students by class grade BEFORE fetching data
+const classGrade = 'K3'; // From class metadata
+const students = allStudents.filter(s => s.year === classGrade);
+```
+
+**Auto-Detection:**
+```javascript
+// buildStudentValidationCache auto-detects single-grade mode
+const validationCache = await JotFormCache.buildStudentValidationCache(
+  students,        // Pre-filtered to K3 only
+  surveyStructure,
+  credentials
+);
+// Internally filters submissions to K3 only
+```
+
+**Behavior:**
+- Single-grade class (e.g., all K3): Only K3 submissions processed
+- Multi-grade class (mixed K1/K2/K3): Matches by (coreId, grade) tuple
+- **NEVER** shows K1/K2 data in K3 class view
+
+**3. School Page (checking_system_2_school.html)**
+
+**Grade Column Display:**
+- Show grade level (K1/K2/K3) for each student in table
+- Enable sorting/filtering by grade column
+- Support multi-grade view with proper grouping
+
+**Data Integrity:**
+```javascript
+// Each student row shows data for THEIR grade only
+Student C10001 - K1: Shows K1 metrics only
+Student C10001 - K2: Shows K2 metrics only (separate row if multi-year)
+Student C10001 - K3: Shows K3 metrics only (separate row if multi-year)
+```
+
+**4. District/Group Pages (checking_system_1_*.html)**
+
+**Aggregation Rules:**
+- Roll up metrics by grade level
+- Show separate statistics for K1/K2/K3
+- Support grade-level filtering in aggregated views
+- **NEVER** combine cross-grade metrics without explicit separation
+
+#### Data Merger Integration
+
+**Grade-Based Grouping (Pre-Display):**
+
+The checking system relies on DataMerger's grade-aware logic:
+
+```javascript
+// DataMerger groups by (coreId, grade) before merging
+const recordsByStudent = new Map(); // coreId → { grades: Map<grade, data> }
+
+// Step 1: Group by grade
+for (const record of allRecords) {
+  const grade = record.grade; // K1/K2/K3
+  // Add to appropriate grade bucket
+}
+
+// Step 2: Merge WITHIN each grade
+for (const [grade, gradeData] of studentGrades) {
+  mergeWithinGrade(gradeData.jotform, gradeData.qualtrics);
+  // NEVER mix K1 with K2 or K3
+}
+```
+
+**JotFormCache Grade Methods:**
+
+```javascript
+// Method 1: Student-specific with grade filter
+getStudentSubmissions(coreId, grade)
+  // Returns: Only submissions matching (coreId, grade)
+
+// Method 2: Batch processing with auto-detection  
+buildStudentValidationCache(students, surveyStructure, credentials)
+  // Auto-detects single-grade vs multi-grade mode
+  // Filters submissions by detected grade(s)
+  // Prevents cross-grade contamination
+```
+
+#### Grade Field Requirements
+
+**Submission Schema:**
+```javascript
+{
+  "id": "submission_12345",
+  "grade": "K2",                    // REQUIRED: Must be K1/K2/K3
+  "coreId": "C10001",
+  "sessionkey": "10001_20241015_10_30",
+  "answers": { /* ... */ },
+  "created_at": "2024-10-15T10:30:00Z"
+}
+```
+
+**Validation Rules:**
+- Grade field MUST NOT be null or empty
+- Grade value MUST be exactly "K1", "K2", or "K3"
+- Grade MUST match timestamp (verified via GradeDetector)
+
+#### Error Handling
+
+**Missing Grade Field:**
+```javascript
+if (!submission.grade) {
+  console.error('[CheckingSystem] Submission missing grade field:', submission.id);
+  // Attempt to determine grade from sessionkey/timestamp
+  submission.grade = GradeDetector.determineGrade({ 
+    sessionkey: submission.sessionkey 
+  });
+}
+```
+
+**Grade Mismatch:**
+```javascript
+// Validate grade matches timestamp
+const detectedGrade = GradeDetector.determineGrade({ 
+  sessionkey: submission.sessionkey 
+});
+if (submission.grade !== detectedGrade) {
+  console.warn(
+    `[CheckingSystem] Grade mismatch: recorded=${submission.grade}, ` +
+    `detected=${detectedGrade}, sessionkey=${submission.sessionkey}`
+  );
+  // Use detected grade as authoritative
+  submission.grade = detectedGrade;
+}
+```
+
+#### Testing & Verification
+
+**Test Scenario: Multi-Grade Student**
+```
+Student C10261:
+  K1: 2 submissions (Aug-Oct 2023)
+  K2: 3 submissions (Sep-Dec 2024)
+  K3: 1 submission (Sep 2025)
+
+Test Cases:
+1. Student page K1 button → Shows 2 K1 submissions only
+2. Student page K2 button → Shows 3 K2 submissions only
+3. Student page K3 button → Shows 1 K3 submission only
+4. Class page (K2 class) → Shows only K2 data for this student
+5. School page → Shows separate rows/metrics per grade
+```
+
+**Verification Checklist:**
+- [ ] All submissions have grade field populated
+- [ ] Grade values match timestamp-based detection
+- [ ] Student page filters by selectedGrade
+- [ ] Class page auto-detects and filters by grade
+- [ ] School/district pages show grade-separated data
+- [ ] Cache keys include grade for separation
+- [ ] No cross-grade data appears in any view
+- [ ] UI grade selector updates data correctly
+
+#### Related Documentation
+
+- **PRDs/jotform_qualtrics_integration_prd.md** - Detailed grade-specific model
+- **PRDs/data-pipeline.md** - Grade-aware pipeline flow
+- **TEMP/GRADE_AWARE_MERGING_IMPLEMENTATION.md** - Implementation details
+- **TEMP/PAGE_DATA_FETCHING_COMPARISON.md** - Before/after comparison
+
 ## ⚠️ CRITICAL: JotForm API Filter Implementation
 
 ### Mandatory Filter Usage

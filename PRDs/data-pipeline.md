@@ -117,6 +117,180 @@ flowchart TD
 ### Data Structure Notes
 - **classid.enc**: Contains class metadata including a `Grade` column (values: K1, K2, K3, or Others) that indicates the grade level of each class. This is used for filtering in the checking system's school drilldown page.
 
+### Grade-Specific Data Pipeline
+
+**CRITICAL: The 4Set system maintains strict grade-level separation throughout the entire data pipeline.**
+
+#### Pipeline Flow with Grade Awareness
+
+```
+1. DATA COLLECTION (PDF Upload/Processing)
+   ↓
+   Extract sessionkey: 10001_20241015_10_30
+   ↓
+2. GRADE DETECTION (Pre-Merge Stage)
+   ↓
+   Determine grade from timestamp: K2 (Oct 2024 → 2024/25 academic year)
+   ↓
+3. GRADE-BASED GROUPING (Merge Stage)
+   ↓
+   Group by (coreId, grade): C10001 + K2
+   ↓
+4. GRADE-FILTERED MERGING
+   ↓
+   Merge ONLY K2 JotForm + K2 Qualtrics
+   NEVER mix K1/K2/K3 data
+   ↓
+5. GRADE-AWARE STORAGE
+   ↓
+   Store with grade field preserved
+   Cache key includes grade: student_jotform_C10001_K2
+   ↓
+6. GRADE-FILTERED DISPLAY
+   ↓
+   UI filters by selectedGrade (K1/K2/K3 buttons)
+   Each grade's data remains separate
+```
+
+#### Academic Year Boundaries
+
+The system uses **August-July school year boundaries** for grade determination:
+
+| Grade | Academic Year | Date Range |
+|-------|--------------|------------|
+| K1 | 2023/24 | Aug 1, 2023 - Jul 31, 2024 |
+| K2 | 2024/25 | Aug 1, 2024 - Jul 31, 2025 |
+| K3 | 2025/26 | Aug 1, 2025 - Jul 31, 2026 |
+
+**Implementation:** `assets/js/grade-detector.js`
+
+#### Grade Detection Sources
+
+**From JotForm (sessionkey format):**
+```
+sessionkey: "10001_20241015_10_30"
+            └─────┬─────┘
+                  │
+            YYYYMMDD → Oct 15, 2024 → K2
+```
+
+**From Qualtrics (ISO 8601 timestamp):**
+```
+recordedDate: "2024-10-15T10:30:00Z"
+               └────┬────┘
+                    │
+              Oct 15, 2024 → K2
+```
+
+#### Merge Strategy: Within-Grade Only
+
+**Correct Merge Pattern:**
+```
+Student C10001:
+  K1 Records:
+    - JotForm K1 (Aug 2023): ERV=20, SYM=15
+    - Qualtrics K1 (Sep 2023): TEC=18
+    → Merged K1: ERV=20, SYM=15, TEC=18 ✅
+  
+  K2 Records:
+    - JotForm K2 (Oct 2024): ERV=28, SYM=22
+    - Qualtrics K2 (Nov 2024): TEC=24
+    → Merged K2: ERV=28, SYM=22, TEC=24 ✅
+  
+  K3 Records:
+    - JotForm K3 (Sep 2025): ERV=34, SYM=30
+    - Qualtrics K3 (Oct 2025): TEC=32
+    → Merged K3: ERV=34, SYM=30, TEC=32 ✅
+```
+
+**Prohibited Cross-Grade Merge:**
+```
+❌ NEVER: JotForm K3 + Qualtrics K2
+❌ NEVER: JotForm K1 + Qualtrics K3
+❌ NEVER: Mixed-grade data in same record
+```
+
+#### Data Structure Impact
+
+**Merged Record Schema (with grade):**
+```javascript
+{
+  "coreId": "C10001",
+  "grade": "K2",                    // REQUIRED: Grade field
+  "sessionkey": "10001_20241015_10_30",
+  "ERV_Q1": { answer: "3" },
+  "SYM_Q1": { answer: "2" },
+  "_sources": ["jotform", "qualtrics"],
+  "_meta": {
+    "jotformCreated": "2024-10-15T10:30:00Z",
+    "qualtricsRecorded": "2024-11-01T14:20:00Z"
+  }
+}
+```
+
+**Cache Key Structure (grade-aware):**
+```javascript
+// Student-level cache (includes grade)
+`student_jotform_${coreId}_${grade}`
+Examples:
+  - "student_jotform_C10001_K1"
+  - "student_jotform_C10001_K2"  
+  - "student_jotform_C10001_K3"
+
+// Global cache (grade preserved in records)
+`jotform_global_cache` → Contains all records with grade field
+```
+
+#### Display Layer Integration
+
+**Student Page (Grade Selector):**
+- UI shows K1/K2/K3 buttons for grade selection
+- Clicking grade button filters data: `getStudentSubmissions(coreId, selectedGrade)`
+- Each grade displays independently (no cross-contamination)
+
+**Class/School Pages (Auto-Detection):**
+- Pre-filter students by class grade: `students.filter(s => s.year === 'K3')`
+- Auto-detect single-grade mode (all students same grade)
+- Filter submissions by detected grade
+- Multi-grade classes: Match by (coreId, grade) tuple
+
+**Implementation Files:**
+- `assets/js/checking-system-student-page.js` - Grade-filtered student view
+- `assets/js/checking-system-class-page.js` - Auto-detection and filtering
+- `assets/js/jotform-cache.js` - Grade preservation and filtering methods
+
+#### CSV Export Considerations
+
+When exporting data for analysis:
+- **Include grade column** in CSV output for filtering
+- **Separate exports per grade** recommended for clarity
+- **Never combine grades** in statistical analyses without explicit intent
+- **Label columns** with grade level for multi-grade exports
+
+#### Validation & Testing
+
+**Pre-Merge Validation:**
+- [ ] Every JotForm record has grade field after transformation
+- [ ] Every Qualtrics record has grade field after transformation
+- [ ] Grade values are strictly K1/K2/K3 (no nulls or unknowns in production)
+
+**Merge Validation:**
+- [ ] DataMerger groups by (coreId, grade) before merging
+- [ ] Merge operations only occur within same grade
+- [ ] Output records preserve grade field
+- [ ] No cross-grade field mixing detected
+
+**Display Validation:**
+- [ ] Student page filters by selectedGrade
+- [ ] Class page auto-detects and filters by student grades
+- [ ] Cache keys include grade (no data leakage between grades)
+- [ ] Grade switching updates UI correctly
+
+**See Also:**
+- `PRDs/jotform_qualtrics_integration_prd.md` - Detailed grade-specific model documentation
+- `TEMP/GRADE_AWARE_MERGING_IMPLEMENTATION.md` - Implementation details
+- `TEMP/DATA_FLOW_DOCUMENTATION.md` - Production vs test-pipeline comparison
+
 ## Uploads
 
 Qualtrics

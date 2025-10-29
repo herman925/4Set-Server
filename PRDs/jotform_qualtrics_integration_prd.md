@@ -20,6 +20,197 @@ Single source for JotForm upload/upsert, Qualtrics data extraction, sessionkey h
 - Field naming: API calls use Jotform’s original field identifiers (numeric `qid`, `submissionId`). For debugging we label them `jotformqid` and `jotformsubmissionid` in data records.
 - Mapping: Numeric `qid` values are loaded from `assets/jotformquestions.json` or fetched live via `GET /form/{formId}/questions` when missing.
 
+## CRITICAL: Grade-Specific Data Model
+
+### Core Principle: Never Merge Data from Different Grades
+
+**The 4Set system enforces strict grade-based data separation to maintain data integrity across the longitudinal study (K1→K2→K3).**
+
+#### The Grade-Specific Model
+
+Students progress through three grade levels over the study period:
+- **K1** (2023/24 academic year): August 2023 - July 2024
+- **K2** (2024/25 academic year): August 2024 - July 2025  
+- **K3** (2025/26 academic year): August 2025 - July 2026
+
+Each student can have multiple assessment records (one per grade level), and **data from different grades MUST NEVER be mixed**.
+
+#### Why Grade Separation is Critical
+
+**Problem Scenario (WITHOUT grade-aware merging):**
+```
+Student C10001:
+  - K1 JotForm submission (2023): ERV=24, SYM=18
+  - K2 Qualtrics response (2024): ERV=32, SYM=22
+  - K3 JotForm submission (2025): ERV=36, SYM=28
+
+❌ WRONG: Naive merge by coreId only
+   → Result: ERV=24 (K1), SYM=22 (K2) - MIXED GRADES!
+   → Violates longitudinal study integrity
+```
+
+**Solution (WITH grade-aware merging):**
+```
+Student C10001:
+  - K1 merged record: ERV=24, SYM=18 (all from K1)
+  - K2 merged record: ERV=32, SYM=22 (all from K2)
+  - K3 merged record: ERV=36, SYM=28 (all from K3)
+
+✅ CORRECT: Three separate records, one per grade
+   → Each grade's data remains intact
+   → Longitudinal progression preserved
+```
+
+#### Implementation Requirements
+
+**1. Grade Detection (Pre-Merge)**
+
+Before merging any data, every record MUST have a grade field determined from its timestamp:
+
+```javascript
+// For JotForm submissions
+grade = GradeDetector.determineGrade({ 
+  sessionkey: "10001_20241015_10_30" // Format: {id}_{YYYYMMDD}_{HH}_{MM}
+});
+// Returns: "K2" (Oct 2024 falls in 2024/25 academic year)
+
+// For Qualtrics responses  
+grade = GradeDetector.determineGrade({
+  recordedDate: "2024-10-15T10:30:00Z" // ISO 8601 format
+});
+// Returns: "K2"
+```
+
+**School Year Boundaries:**
+- K1: August 1, 2023 - July 31, 2024
+- K2: August 1, 2024 - July 31, 2025
+- K3: August 1, 2025 - July 31, 2026
+
+**2. Grade-Based Grouping (During Merge)**
+
+Data merger MUST group records by `(coreId, grade)` tuple before merging:
+
+```javascript
+// Step 1: Determine grade for ALL records
+const recordsByStudent = new Map(); // coreId → { grades: Map<grade, {jotform:[], qualtrics:[]}> }
+
+// Step 2: Group JotForm and Qualtrics records by (coreId, grade)
+for (const record of jotformData) {
+  const coreId = record.coreId;
+  const grade = record.grade; // Already determined
+  
+  if (!recordsByStudent.has(coreId)) {
+    recordsByStudent.set(coreId, { grades: new Map() });
+  }
+  if (!recordsByStudent.get(coreId).grades.has(grade)) {
+    recordsByStudent.get(coreId).grades.set(grade, { jotform: [], qualtrics: [] });
+  }
+  recordsByStudent.get(coreId).grades.get(grade).jotform.push(record);
+}
+
+// Step 3: Merge WITHIN each grade separately
+for (const [coreId, student] of recordsByStudent) {
+  for (const [grade, gradeData] of student.grades) {
+    // Merge ONLY jotform[grade] with qualtrics[grade]
+    const merged = mergeWithinGrade(gradeData.jotform, gradeData.qualtrics);
+    merged.grade = grade; // Preserve grade in result
+    results.push(merged);
+  }
+}
+```
+
+**3. Grade Filtering (Display Layer)**
+
+All pages in the checking system MUST filter submissions by grade:
+
+```javascript
+// Student Page - Pass selectedGrade parameter
+const submissions = await JotFormCache.getStudentSubmissions(coreId, selectedGrade);
+// Returns: Only submissions matching selectedGrade (K1/K2/K3)
+
+// Class Page - Auto-detect single-grade vs multi-grade
+const validationCache = await JotFormCache.buildStudentValidationCache(
+  students.filter(s => s.year === 'K3'), // Pre-filtered by class grade
+  surveyStructure,
+  credentials
+);
+// Internally filters submissions to match student grades
+
+// Cache Key - Include grade for separation
+const cacheKey = `student_jotform_${coreId}_${selectedGrade}`;
+// K1, K2, K3 data cached separately per student
+```
+
+#### Validation Rules
+
+**Rule 1: Cross-Grade Merge Prohibited**
+```javascript
+// ❌ NEVER DO THIS
+mergeRecords(jotformK3Data, qualtricsK2Data); // WRONG!
+
+// ✅ ALWAYS DO THIS  
+mergeRecords(jotformK3Data, qualtricsK3Data); // CORRECT
+mergeRecords(jotformK2Data, qualtricsK2Data); // CORRECT
+```
+
+**Rule 2: Grade Field Required**
+```javascript
+// Every merged record MUST have grade field
+merged = {
+  coreId: "C10001",
+  grade: "K3", // REQUIRED
+  sessionkey: "10001_20251015_10_30",
+  // ... other fields
+};
+```
+
+**Rule 3: Grade-Aware Cache Keys**
+```javascript
+// Cache keys MUST include grade to prevent mixing
+`student_jotform_${coreId}_${grade}` // ✅ CORRECT
+`student_jotform_${coreId}` // ❌ WRONG - mixes all grades
+```
+
+#### Testing & Verification
+
+**Test Scenario: Student with Multi-Grade Data**
+```
+Student C10261:
+  - K1: 2 JotForm submissions (2023)
+  - K2: 1 JotForm + 1 Qualtrics (2024)
+  - K3: 3 JotForm submissions (2025)
+
+Expected Behavior:
+1. getStudentSubmissions('C10261', 'K1') → 2 submissions (K1 only)
+2. getStudentSubmissions('C10261', 'K2') → 2 submissions (K2 only)
+3. getStudentSubmissions('C10261', 'K3') → 3 submissions (K3 only)
+4. Switching grades in UI updates data correctly
+5. No K1/K2 data appears in K3 view (cross-grade contamination check)
+```
+
+**Verification Checklist:**
+- [ ] Grade detection produces K1/K2/K3 for all records
+- [ ] DataMerger creates separate records per (coreId, grade)
+- [ ] JotFormCache preserves grade at submission level
+- [ ] Student page filters by selectedGrade
+- [ ] Class/school pages auto-detect and filter by grade
+- [ ] Cache keys include grade for separation
+- [ ] No cross-grade data mixing in any view
+
+#### Reference Implementation
+
+**Files Implementing Grade-Specific Model:**
+- `assets/js/grade-detector.js` - Grade determination from timestamps
+- `assets/js/data-merger.js` - Grade-aware merging (lines 44-222)
+- `assets/js/jotform-cache.js` - Grade preservation and filtering
+- `assets/js/checking-system-student-page.js` - Grade-filtered display
+- `assets/js/checking-system-class-page.js` - Auto-detection and filtering
+
+**Documentation:**
+- `TEMP/GRADE_AWARE_MERGING_IMPLEMENTATION.md` - Complete implementation details
+- `TEMP/PAGE_DATA_FETCHING_COMPARISON.md` - Before/after comparison
+- `TEMP/DATA_FLOW_DOCUMENTATION.md` - Production vs test-pipeline comparison
+
 ## Complete API Call Process Documentation
 
 This section provides step-by-step documentation of how the upload and create submission process works across all system components.
