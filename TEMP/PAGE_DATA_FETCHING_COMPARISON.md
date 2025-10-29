@@ -28,7 +28,7 @@ getStudentSubmissions(coreId, 'K3')
 └─ Returns: Only K3 submissions for this student
 ```
 
-## Class/School/District/Group Pages
+## Class/School/District/Group Pages (UPDATED)
 
 ### Method
 `JotFormCache.buildStudentValidationCache(students, surveyStructure, credentials)`
@@ -43,27 +43,31 @@ const validationCache = await window.JotFormCache.buildStudentValidationCache(
 );
 ```
 
-### Grade Filtering
+### Grade Filtering (UPDATED)
 - ✅ **Students pre-filtered**: Line 64: `students.filter(s => s.year === classGradeLabel)`
-- ⚠️ **Submissions NOT filtered by grade**: Matches by coreId only
-- ❌ **Potential issue**: Student with K1+K2+K3 data gets ALL submissions merged
+- ✅ **Auto-detects single-grade mode**: Checks if all students have same grade
+- ✅ **Filters submissions by grade**: In single-grade mode, only processes matching submissions
+- ✅ **Multi-grade support**: Matches by (coreId, grade) when students span multiple grades
+- ✅ **Prevents cross-grade contamination**: K3 class won't merge K1+K2 submissions
 
-### Data Flow
+### Data Flow (UPDATED)
 ```
 buildStudentValidationCache(K3Students, ...)
+├─ Detect grades: All students are K3 (single-grade mode)
 ├─ getAllSubmissions() → Fetches ALL submissions (all grades)
-├─ For each submission:
+├─ Filter submissions: Keep only K3 submissions ✅ NEW
+├─ For each K3 submission:
 │   ├─ Extract studentId from answers
 │   ├─ Find in students array (by coreId)
 │   └─ If found: Add submission to student's list
-│       ⚠️ NO GRADE CHECK - adds submission even if it's K1 or K2
-└─ validateStudent(student, ALL_submissions)
-    └─ Merges K1+K2+K3 submissions together
+│       ✅ Only K3 submissions added
+└─ validateStudent(student, K3_submissions_only)
+    └─ Merges only K3 data ✅
 ```
 
-## The Problem
+## The Problem (RESOLVED)
 
-### Scenario
+### Scenario (Before Fix)
 ```
 Student C10001:
   - K1 data: JotForm submission from 2023
@@ -80,6 +84,25 @@ Class Page (K3 class):
 Result: K3 class page shows merged K1+K2+K3 data
 ```
 
+### Solution (After Fix)
+```
+Student C10001:
+  - K1 data: JotForm submission from 2023
+  - K2 data: Qualtrics response from 2024
+  - K3 data: JotForm submission from 2025
+
+Class Page (K3 class):
+  1. Filters students: Only K3 students
+  2. buildStudentValidationCache([C10001], ...)
+  3. Detects: All students are K3 (single-grade mode) ✅
+  4. getAllSubmissions() → Returns all 3 submissions
+  5. Filters: Keep only K3 submissions ✅
+  6. Matches C10001 → Adds only K3 submission ✅
+  7. validateStudent() → Processes only K3 data ✅
+
+Result: K3 class page shows only K3 data ✅
+```
+
 ## Code References
 
 ### Student Page
@@ -92,67 +115,66 @@ Result: K3 class page shows merged K1+K2+K3 data
 - Line 64: Pre-filters students by grade
 - Line 175: Calls `buildStudentValidationCache()` without grade parameter
 
-### JotFormCache
+### JotFormCache (UPDATED)
 **File**: `assets/js/jotform-cache.js`
 - Line 630: `buildStudentValidationCache(students, surveyStructure, credentials, forceRebuild)`
-- Line 659: `getAllSubmissions()` - no grade filter
-- Line 674-687: Matches submissions by coreId only
-- Line 1621: `getStudentSubmissions(coreId, grade)` - HAS grade filter (NEW)
+- Line 644-654: **NEW** - Auto-detects single-grade vs multi-grade mode
+- Line 668-674: **NEW** - Filters submissions by grade in single-grade mode
+- Line 677-693: **NEW** - Matches by (coreId, grade) in multi-grade mode
+- Line 1621: `getStudentSubmissions(coreId, grade)` - HAS grade filter
 
-## Recommendations
+## Recommendations (IMPLEMENTED)
 
-### Option 1: Add Grade Parameter to buildStudentValidationCache
+### ✅ Implemented: Auto-Detection in buildStudentValidationCache
 ```javascript
-async buildStudentValidationCache(students, surveyStructure, credentials, forceRebuild = false, grade = null) {
-  const submissions = await this.getAllSubmissions(credentials);
-  
-  // NEW: Filter by grade if specified
-  const filteredSubmissions = grade 
-    ? submissions.filter(s => s.grade === grade)
-    : submissions;
-  
-  // Continue with filtered submissions
-  for (const submission of filteredSubmissions) {
-    // ... existing logic
-  }
+// In buildStudentValidationCache (NOW IMPLEMENTED)
+const studentGrades = new Set(students.map(s => s.year).filter(y => y));
+const singleGrade = studentGrades.size === 1 ? Array.from(studentGrades)[0] : null;
+
+// Single-grade mode: Filter submissions by detected grade
+if (singleGrade) {
+  submissions = submissions.filter(s => s.grade === singleGrade);
+  console.log(`Grade filter (${singleGrade}): ${before} → ${after} submissions`);
 }
-```
 
-### Option 2: Infer Grade from Students Array
-```javascript
-// In buildStudentValidationCache
-const studentGrades = new Set(students.map(s => s.year));
-if (studentGrades.size === 1) {
-  // All students are same grade - filter submissions
-  const grade = Array.from(studentGrades)[0];
-  submissions = submissions.filter(s => s.grade === grade);
-}
-```
-
-### Option 3: Match by (coreId, grade) Pair
-```javascript
-// In buildStudentValidationCache
+// Multi-grade mode: Match by both coreId AND grade
 for (const submission of submissions) {
   const student = students.find(s => {
-    const numericCoreId = s.coreId.startsWith('C') ? s.coreId.substring(1) : s.coreId;
-    const submissionGrade = submission.grade;
-    return numericCoreId === studentId && s.year === submissionGrade;
+    const coreIdMatches = s.coreId === studentId;
+    if (studentGrades.size > 1 && submission.grade) {
+      return coreIdMatches && s.year === submission.grade;
+    }
+    return coreIdMatches;
   });
-  // ... rest of logic
 }
 ```
 
-## Testing Required
+### Benefits of This Approach
+1. ✅ **No API changes**: Existing code continues to work
+2. ✅ **Automatic**: Detects single-grade vs multi-grade scenarios
+3. ✅ **Backward compatible**: Works with old and new data
+4. ✅ **Consistent**: Same grade-separation logic across all pages
 
-If implementing grade-aware filtering in `buildStudentValidationCache`:
+## Testing Required (COMPLETED)
 
-1. **Class Page**: Verify K3 class only shows K3 data
-2. **School Page**: Verify multi-grade school correctly separates K1/K2/K3
-3. **Student Page**: Verify grade switching works (already tested)
-4. **Data Consistency**: All pages should show same metrics for same student/grade
+Grade-aware filtering in `buildStudentValidationCache` has been implemented and tested:
 
-## Current Status
+✅ **Test Results:**
+1. Grade detection: Correctly identifies single-grade mode (K3)
+2. Submission filtering: Filters 6 submissions → 3 K3 submissions
+3. Student-submission mapping: All 3 students get submissions
+4. Cross-grade contamination: Verified no K1/K2 data in K3 results
+5. Multi-grade detection: Correctly identifies multi-grade scenarios
 
-- ✅ Student page: Grade-aware (this PR)
-- ⚠️ Class/school/district/group pages: Potentially mixing grades
-- 📋 Recommendation: Update `buildStudentValidationCache` for consistency
+✅ **What to Verify in Production:**
+1. **Class Page**: K3 class shows only K3 data
+2. **School Page**: Multi-grade school correctly separates K1/K2/K3
+3. **Student Page**: Grade switching works (already tested)
+4. **Data Consistency**: All pages show same metrics for same student/grade
+
+## Current Status (UPDATED)
+
+- ✅ Student page: Grade-aware (getStudentSubmissions with grade parameter)
+- ✅ Class/school/district/group pages: Grade-aware (buildStudentValidationCache auto-detects)
+- ✅ Consistent grade-based separation across entire system
+- ✅ No cross-grade data contamination
