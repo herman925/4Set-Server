@@ -1116,6 +1116,8 @@ All tasks from qualtrics-mapping.json are extracted:
 
 ### Data Merge Strategy
 
+**Implementation Status:** ✅ All merge requirements from issues #149 and #151 are fully implemented. See `PRDs/jotform_qualtrics_integration_prd.md` section "Implementation Verification: Issues #149 and #151" for detailed verification.
+
 #### Precedence Rules
 - **"Earliest non-empty wins"** - Timestamp-based merge strategy for JotForm vs Qualtrics data
 - **When both sources have a value**: Use the value from the earlier timestamp
@@ -1123,10 +1125,14 @@ All tasks from qualtrics-mapping.json are extracted:
 - **Conflict detection** logs all overwrites for audit trail
 
 #### Merge Process
-1. Sort Qualtrics records by date (earliest first)
-2. Group multiple responses per student (same Core ID)
-3. Merge grouped Qualtrics data with JotForm base record
+**Critical:** Within-source merge happens BEFORE cross-source merge to ensure data integrity:
+
+1. **Within-Source Merge (Qualtrics)**: Sort Qualtrics records by date (earliest first), merge multiple responses per student
+2. **Within-Source Merge (JotForm)**: Sort JotForm submissions by created_at (earliest first), merge multiple submissions per student
+3. **Cross-Source Merge**: Merge grouped Qualtrics data with JotForm base record by (coreId, grade) pairs
 4. Add metadata: `_sources`, `_qualtricsConflicts`, `_orphaned`
+
+**Grade Grouping**: Final cache contains separate records for each (coreId, grade) combination. Never merges data across different grades (K1/K2/K3).
 
 ```javascript
 // Example merged record
