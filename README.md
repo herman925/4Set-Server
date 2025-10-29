@@ -1116,6 +1116,8 @@ All tasks from qualtrics-mapping.json are extracted:
 
 ### Data Merge Strategy
 
+**Implementation Status:** ✅ All merge requirements from issues #149 and #151 are fully implemented. See `PRDs/jotform_qualtrics_integration_prd.md` section "Implementation Verification: Issues #149 and #151" for detailed verification.
+
 #### Precedence Rules
 - **"Earliest non-empty wins"** - Timestamp-based merge strategy for JotForm vs Qualtrics data
 - **When both sources have a value**: Use the value from the earlier timestamp
@@ -1123,10 +1125,14 @@ All tasks from qualtrics-mapping.json are extracted:
 - **Conflict detection** logs all overwrites for audit trail
 
 #### Merge Process
-1. Sort Qualtrics records by date (earliest first)
-2. Group multiple responses per student (same Core ID)
-3. Merge grouped Qualtrics data with JotForm base record
+**Critical:** Within-source merge happens BEFORE cross-source merge to ensure data integrity:
+
+1. **Within-Source Merge (Qualtrics)**: Sort Qualtrics records by date (earliest first), merge multiple responses per student
+2. **Within-Source Merge (JotForm)**: Sort JotForm submissions by created_at (earliest first), merge multiple submissions per student
+3. **Cross-Source Merge**: Merge grouped Qualtrics data with JotForm base record by (coreId, grade) pairs
 4. Add metadata: `_sources`, `_qualtricsConflicts`, `_orphaned`
+
+**Grade Grouping**: Final cache contains separate records for each (coreId, grade) combination. Never merges data across different grades (K1/K2/K3).
 
 ```javascript
 // Example merged record
@@ -1162,6 +1168,38 @@ Implemented in `assets/js/grade-detector.js` and integrated into data merger.
 Filter dropdowns deduplicate students by Core ID to prevent showing multiple entries for students with records in different grades (K1, K2, K3). Each student appears once regardless of how many grade-level assessments they have completed.
 
 Implemented in `assets/js/checking-system-filters.js` using Map-based deduplication.
+
+### Cache Architecture
+
+**Three-Layer Cache System** (IndexedDB-based):
+
+1. **Merged Submissions Cache** (`merged_jotform_qualtrics_cache`)
+   - Final merged dataset containing JotForm-only, Qualtrics-only, and merged records
+   - Each record has QID-indexed answers structure for uniform processing
+   - Tagged with `grade` field (K1/K2/K3) to prevent cross-grade contamination
+   - Access: `JotFormCache.loadFromCache()` or `JotFormCache.getStudentSubmissions(coreId, grade)`
+
+2. **Validation Cache** (`student_task_validation_cache`)
+   - Pre-computed task validation results (answered/total per task, set progress)
+   - Map<coreId, validationData> structure
+   - Invalidated on cache rebuild or data sync
+   - Eliminates redundant validation processing
+
+3. **Raw Qualtrics Cache** (`qualtrics_raw_responses`)
+   - Stores transformed Qualtrics responses for quick re-sync
+   - Enables "Refresh with Qualtrics" feature without full rebuild
+   - Significantly faster than re-fetching from Qualtrics API
+
+**Key Design Decisions:**
+
+- **QID-Indexed Answers**: All submissions (JotForm and Qualtrics-only) store answers with JotForm QID as key, ensuring uniform processing through `validateStudent()` which converts to fieldName-indexed format
+- **Grade Separation**: Each (coreId, grade) pair creates a separate cache record, never mixing K1/K2/K3 data
+- **Parallel Fetching**: JotForm and Qualtrics data fetched simultaneously using `Promise.all()` for 40% performance improvement
+- **Within-Then-Cross Merge**: Data merged within each source first (multiple Qualtrics responses, multiple JotForm submissions), then merged across sources
+
+**Data Flow**: API Fetch → Transform → Within-Source Merge → Cross-Source Merge → Convert to Submission Format → Cache → Validate → Display
+
+See `PRDs/jotform_qualtrics_integration_prd.md` section "Comprehensive Cache Design Documentation" for complete technical details.
 
 ---
 
