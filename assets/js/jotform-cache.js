@@ -403,7 +403,38 @@
 
         // Progress: Phase 1 complete, moving to phase 2
         currentProgress = FETCH_END_PERCENT;
-        this.emitProgress('Saving to local cache...', FETCH_END_PERCENT, {
+        this.emitProgress('Detecting grades...', FETCH_END_PERCENT, {
+          jotformMessage: 'Detecting grades...',
+          qualtricsMessage: 'Waiting to start...'
+        });
+        
+        // Add grade field to all submissions based on sessionkey
+        // This ensures grade is available even without Qualtrics integration
+        if (typeof window.GradeDetector !== 'undefined') {
+          console.log('[JotFormCache] Adding grade fields to submissions...');
+          let gradesAdded = 0;
+          for (const submission of allSubmissions) {
+            if (submission.sessionkey) {
+              try {
+                submission.grade = window.GradeDetector.determineGradeFromSessionkey(submission.sessionkey);
+                gradesAdded++;
+              } catch (error) {
+                console.warn(`[JotFormCache] Failed to determine grade for submission ${submission.id}:`, error);
+                submission.grade = 'Unknown';
+              }
+            } else {
+              submission.grade = 'Unknown';
+            }
+          }
+          console.log(`[JotFormCache] Added grade field to ${gradesAdded}/${allSubmissions.length} submissions`);
+        } else {
+          console.warn('[JotFormCache] GradeDetector not available, grades will be "Unknown"');
+          for (const submission of allSubmissions) {
+            submission.grade = 'Unknown';
+          }
+        }
+        
+        this.emitProgress('Saving to local cache...', FETCH_END_PERCENT + 2, {
           jotformMessage: 'Saving to local cache...',
           qualtricsMessage: 'Waiting to start...'
         });
@@ -1093,6 +1124,10 @@
         overallStatus = 'incomplete';
       }
       
+      // Extract grade from submissions (should all be same grade in grade-aware mode)
+      const grades = new Set(submissions.map(s => s.grade).filter(g => g));
+      const grade = grades.size === 1 ? Array.from(grades)[0] : (student.year || 'Unknown');
+      
       return {
         coreId: student.coreId,
         studentId: student.studentId,
@@ -1102,6 +1137,7 @@
         group: student.group,
         district: student.district || 'Unknown',
         gender: student.gender,
+        grade: grade, // Add grade to validation cache
         
         submissions,
         mergedAnswers,
