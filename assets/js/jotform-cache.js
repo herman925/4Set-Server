@@ -1144,15 +1144,24 @@
           // Create coreId with "C" prefix
           const coreId = this.ensureCoreIdPrefix(studentId);
           
+          // Determine grade from sessionkey if available
+          let grade = 'Unknown';
+          if (submission.sessionkey && typeof window.GradeDetector !== 'undefined') {
+            grade = window.GradeDetector.determineGradeFromSessionkey(submission.sessionkey);
+            console.log(`[JotFormCache] Student ${coreId}: sessionkey=${submission.sessionkey} → grade=${grade}`);
+          }
+          
           // Build flat record with all answer fields
           const record = {
             coreId: coreId,
             'student-id': studentId,
+            grade: grade,  // Add grade at root level
             _meta: {
               source: 'jotform',
               submissionId: submission.id,
               created_at: submission.created_at,
-              updated_at: submission.updated_at
+              updated_at: submission.updated_at,
+              sessionkey: submission.sessionkey  // Store sessionkey in metadata
             }
           };
           

@@ -6,6 +6,9 @@
   let studentData = null;
   let schoolData = null;
   let classData = null;
+  let selectedGrade = null; // Currently selected grade (K1/K2/K3)
+  let availableGrades = []; // Grades available for this student
+  let cachedDataGlobal = null; // Store cached data for grade switching
   
   // System configuration (loaded from config/checking_system_config.json)
   let systemConfig = {
@@ -76,9 +79,10 @@
       // Load task registry
       await loadTaskRegistry();
       
-      // Parse URL parameters - only need coreId
+      // Parse URL parameters - coreId and optional year
       const urlParams = new URLSearchParams(window.location.search);
       const coreId = urlParams.get('coreId'); // Core ID (e.g., C10002)
+      const yearParam = urlParams.get('year'); // Optional year (K1/K2/K3)
 
       if (!coreId) {
         showError('No Core ID provided in URL');
@@ -87,10 +91,11 @@
 
       // Check if data is already decrypted and cached
       const cachedData = window.CheckingSystemData?.getCachedData();
+      cachedDataGlobal = cachedData; // Store for grade switching
       
       if (cachedData && cachedData.credentials) {
         // Use cached data (includes credentials from home page)
-        await loadStudentFromCache(coreId, cachedData);
+        await loadStudentFromCache(coreId, cachedData, yearParam);
       } else {
         // No cached data or missing credentials - redirect to home page
         showError('Please go through home page to load data first.');
@@ -114,19 +119,57 @@
 
   /**
    * Load student data from cached session data
+   * @param {string} coreId - Student's core ID
+   * @param {Object} cachedData - Cached data from home page
+   * @param {string} yearParam - Optional year parameter from URL (K1/K2/K3)
    */
-  async function loadStudentFromCache(coreId, cachedData) {
+  async function loadStudentFromCache(coreId, cachedData, yearParam = null) {
     console.log('[StudentPage] ========== LOADING FROM CACHE ==========');
     console.log('[StudentPage] Looking for Core ID:', coreId);
-    console.log('[StudentPage] Total students in cache:', cachedData.coreIdMap.size);
+    console.log('[StudentPage] Year parameter:', yearParam || 'none (will auto-select)');
+    console.log('[StudentPage] Total students in cache:', cachedData.students.length);
     
-    // Look up student in cached data
-    studentData = cachedData.coreIdMap.get(coreId);
+    // Find all student records with this Core ID (may have multiple grades)
+    const studentRecords = cachedData.students.filter(s => s.coreId === coreId);
+    
+    if (studentRecords.length === 0) {
+      console.error('[StudentPage] ❌ Student NOT FOUND in cache');
+      console.log('[StudentPage] Available Core IDs (first 10):', 
+        cachedData.students.slice(0, 10).map(s => s.coreId));
+      showError(`Student with Core ID ${coreId} not found in cached data`);
+      return;
+    }
+
+    // Get available grades for this student
+    availableGrades = [...new Set(studentRecords.map(s => s.year))].filter(y => y).sort().reverse(); // K3, K2, K1
+    console.log('[StudentPage] Available grades for this student:', availableGrades);
+    console.log('[StudentPage] Student records with grades:', studentRecords.map(s => ({ 
+      coreId: s.coreId, 
+      year: s.year, 
+      studentId: s.studentId 
+    })));
+
+    // Determine which grade to display
+    if (yearParam && availableGrades.includes(yearParam)) {
+      selectedGrade = yearParam;
+    } else if (availableGrades.length > 0) {
+      // Default to K3 if available, otherwise the highest grade
+      selectedGrade = availableGrades.includes('K3') ? 'K3' : availableGrades[0];
+    } else {
+      console.error('[StudentPage] ❌ No valid grade found for student');
+      console.error('[StudentPage] Student records:', studentRecords);
+      showError('No valid grade data found for this student. All records have undefined or empty year field.');
+      return;
+    }
+
+    console.log('[StudentPage] Selected grade:', selectedGrade);
+
+    // Get the student record for the selected grade
+    studentData = studentRecords.find(s => s.year === selectedGrade);
     
     if (!studentData) {
-      console.error('[StudentPage] ❌ Student NOT FOUND in cache');
-      console.log('[StudentPage] Available Core IDs (first 10):', Array.from(cachedData.coreIdMap.keys()).slice(0, 10));
-      showError(`Student with Core ID ${coreId} not found in cached data`);
+      console.error('[StudentPage] ❌ Student data NOT FOUND for selected grade');
+      showError(`Student data not found for grade ${selectedGrade}`);
       return;
     }
 
@@ -135,8 +178,12 @@
       studentId: studentData.studentId,
       studentName: studentData.studentName,
       schoolId: studentData.schoolId,
-      classId: studentData.classId
+      classId: studentData.classId,
+      year: studentData.year
     });
+
+    // Update grade selector UI
+    updateGradeSelector();
 
     // Look up related school and class
     if (studentData.schoolId) {
@@ -221,6 +268,14 @@
       updateTextContent('student-class-id', classData.classId);
       updateTextContent('student-class-name', classData.actualClassName);
       updateTextContent('student-teacher', classData.teacherNames || 'N/A');
+    }
+    
+    // Display the grade/year from student data
+    if (studentData.year) {
+      const yearLabel = studentData.year; // K1, K2, or K3
+      const yearMapping = { 'K1': '23/24', 'K2': '24/25', 'K3': '25/26' };
+      const academicYear = yearMapping[yearLabel] || yearLabel;
+      updateTextContent('student-class-label', `Class (${academicYear} - ${yearLabel})`);
     }
 
     console.log('[StudentPage] Profile population complete');
@@ -2879,6 +2934,7 @@
   
   /**
    * Export student-level validation report as Markdown
+   * Exports ALL available grades' data for this student
    * Uses centralized ExportUtils.exportReport orchestrator
    */
   async function exportStudentCache() {
@@ -2887,9 +2943,18 @@
       return;
     }
     
+    // Get all student records for this Core ID across all grades
+    const coreId = studentData.coreId;
+    const allStudentRecords = cachedDataGlobal?.students.filter(s => s.coreId === coreId) || [studentData];
+    
     await window.ExportUtils.exportReport({
       type: 'student',
-      data: { studentData },
+      data: { 
+        studentData,  // Current selected grade
+        allStudentRecords,  // All grades for this student
+        availableGrades,
+        selectedGrade
+      },
       loadValidationCache: () => window.JotFormCache.loadValidationCache()
     });
   }
@@ -2906,6 +2971,60 @@
    */
   function updateLoadingStatus(message) {
     console.log(`[Loading] (Disabled) ${message}`);
+  }
+
+  /**
+   * Update grade selector UI based on available and selected grades
+   */
+  function updateGradeSelector() {
+    const grades = ['K1', 'K2', 'K3'];
+    
+    grades.forEach(grade => {
+      const btn = document.getElementById(`grade-btn-${grade.toLowerCase()}`);
+      if (!btn) return;
+      
+      // Remove all classes first
+      btn.classList.remove('active', 'disabled');
+      
+      if (!availableGrades.includes(grade)) {
+        // Grade not available for this student
+        btn.classList.add('disabled');
+        btn.disabled = true;
+      } else {
+        btn.disabled = false;
+        if (grade === selectedGrade) {
+          btn.classList.add('active');
+        }
+      }
+    });
+  }
+
+  /**
+   * Select a different grade for viewing
+   * @param {string} grade - Grade to select (K1/K2/K3)
+   */
+  async function selectGrade(grade) {
+    if (!availableGrades.includes(grade) || grade === selectedGrade) {
+      return; // Grade not available or already selected
+    }
+
+    console.log(`[StudentPage] Switching to grade ${grade}`);
+    
+    // Update URL parameter without reload
+    const urlParams = new URLSearchParams(window.location.search);
+    const coreId = urlParams.get('coreId');
+    urlParams.set('year', grade);
+    window.history.replaceState({}, '', `${window.location.pathname}?${urlParams}`);
+    
+    // Reload student data for selected grade
+    await loadStudentFromCache(coreId, cachedDataGlobal, grade);
+    
+    // Update breadcrumbs and profile
+    updateBreadcrumbs();
+    populateStudentProfile();
+    
+    // Reload JotForm data for this grade
+    await fetchAndPopulateJotformData(coreId);
   }
 
   /**
@@ -2943,5 +3062,10 @@
     init,
     getStudentData,
     clearJotformCache
+  };
+  
+  // Export grade selector for button onclick handlers
+  window.StudentPage = {
+    selectGrade
   };
 })();

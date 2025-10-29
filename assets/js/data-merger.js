@@ -82,14 +82,9 @@
           continue;
         }
         
-        // Determine grade from recordedDate
-        let grade = 'Unknown';
-        if (window.GradeDetector) {
-          const recordedDate = record._meta?.startDate || record.recordedDate;
-          if (recordedDate) {
-            grade = window.GradeDetector.determineGradeFromRecordedDate(recordedDate);
-          }
-        }
+        // Use pre-determined grade from Qualtrics cache
+        const grade = record.grade || 'Unknown';
+        console.log(`[DataMerger] Qualtrics record ${coreId}: grade=${grade}`);
         
         // Initialize student entry if needed
         if (!recordsByStudent.has(coreId)) {
@@ -113,13 +108,9 @@
           continue;
         }
         
-        // Determine grade from sessionkey
-        // Extract value from answer object if needed
-        let grade = 'Unknown';
-        if (window.GradeDetector && record.sessionkey) {
-          const sessionkeyValue = this.extractAnswerValue(record.sessionkey);
-          grade = window.GradeDetector.determineGradeFromSessionKey(sessionkeyValue);
-        }
+        // Use pre-determined grade from JotForm cache
+        const grade = record.grade || 'Unknown';
+        console.log(`[DataMerger] JotForm record ${coreId}: grade=${grade}`);
         
         // Initialize student entry if needed
         if (!recordsByStudent.has(coreId)) {

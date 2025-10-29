@@ -156,6 +156,15 @@
           finished: response.values.finished
         }
       };
+      
+      // Determine grade from recordedDate
+      if (window.GradeDetector && response.values.recordedDate) {
+        result.grade = window.GradeDetector.determineGradeFromRecordedDate(response.values.recordedDate);
+        console.log(`[QualtricsTransformer] Student ${coreId}: recordedDate=${response.values.recordedDate}, grade=${result.grade}`);
+      } else {
+        result.grade = 'Unknown';
+        console.warn(`[QualtricsTransformer] Student ${coreId}: No recordedDate or GradeDetector not available`);
+      }
 
       // Transform all mapped fields to answer objects (matches JotForm schema)
       // This ensures DataMerger and TaskValidator can process both sources uniformly

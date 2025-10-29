@@ -14,6 +14,29 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet" />
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+        /* Grade Selector Button Styles */
+        .grade-selector-btn {
+            background: white;
+            border-color: #e2e8f0;
+            color: #64748b;
+        }
+        .grade-selector-btn:hover {
+            background: #f8fafc;
+            border-color: #cbd5e1;
+        }
+        .grade-selector-btn.active {
+            background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+            border-color: #2563eb;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.3);
+        }
+        .grade-selector-btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            background: #f1f5f9;
+        }
+    </style>
 </head>
 <body class="min-h-screen hero-background">
     <div class="relative overflow-hidden">
@@ -88,7 +111,7 @@
                             <p class="text-base font-semibold text-[color:var(--foreground)]" id="student-district">沙田區</p>
                         </div>
                         <div class="border border-[color:var(--border)] rounded-lg p-3 bg-gradient-to-br from-white to-[color:var(--muted)]/40">
-                            <p class="text-[10px] uppercase text-[color:var(--muted-foreground)] tracking-wide mb-1">Class (25/26)</p>
+                            <p class="text-[10px] uppercase text-[color:var(--muted-foreground)] tracking-wide mb-1" id="student-class-label">Class</p>
                             <p class="text-base font-semibold text-[color:var(--foreground)]" id="student-class-name">G3A · Starlight P3A</p>
                             <p class="text-[11px] text-[color:var(--muted-foreground)] mt-1">Class ID: <span id="student-class-id">C001</span></p>
                             <p class="text-[11px] text-[color:var(--muted-foreground)]" id="student-teacher">Teacher: Ms. Chan</p>
@@ -174,7 +197,28 @@
                                 </button>
                             </div>
                         </div>
-                        <!-- Row 2: Status Legends (aligned with Task view label on desktop) -->
+                        <!-- Row 2: Grade Selector -->
+                        <div class="flex items-center gap-3 pt-2 border-t border-[color:var(--border)]">
+                            <span class="text-xs font-medium text-[color:var(--muted-foreground)]">View Grade:</span>
+                            <div class="flex gap-2" role="group">
+                                <button id="grade-btn-k1" class="grade-selector-btn px-3 py-1.5 text-xs font-medium rounded-md transition-all border-2"
+                                        onclick="window.StudentPage?.selectGrade('K1')"
+                                        data-grade="K1">
+                                    K1 (23/24)
+                                </button>
+                                <button id="grade-btn-k2" class="grade-selector-btn px-3 py-1.5 text-xs font-medium rounded-md transition-all border-2"
+                                        onclick="window.StudentPage?.selectGrade('K2')"
+                                        data-grade="K2">
+                                    K2 (24/25)
+                                </button>
+                                <button id="grade-btn-k3" class="grade-selector-btn px-3 py-1.5 text-xs font-medium rounded-md transition-all border-2"
+                                        onclick="window.StudentPage?.selectGrade('K3')"
+                                        data-grade="K3">
+                                    K3 (25/26)
+                                </button>
+                            </div>
+                        </div>
+                        <!-- Row 3: Status Legends (aligned with Task view label on desktop) -->
                         <div class="flex items-center gap-2 text-xs text-[color:var(--muted-foreground)] pt-2 border-t border-[color:var(--border)]">
                             <span class="inline-flex items-center gap-1"><span class="status-circle status-green"></span>Complete</span>
                             <span class="inline-flex items-center gap-1"><span class="status-circle status-yellow"></span>Post-term</span>
