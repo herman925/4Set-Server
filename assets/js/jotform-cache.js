@@ -1283,13 +1283,57 @@
             // This is expected for Qualtrics-only records (orphaned data)
             // It means the student has Qualtrics survey data but no JotForm submission yet
             if (record._orphaned) {
-              console.log(`[JotFormCache] ℹ️  Skipping Qualtrics-only record for ${record.coreId} - no JotForm submission exists yet`);
+              console.log(`[JotFormCache] ℹ️  Creating submission structure for Qualtrics-only record: ${record.coreId}`);
               orphanedCount++;
+              
+              // Create a minimal submission structure for Qualtrics-only data
+              // This allows Qualtrics-only students to be displayed in the checking system
+              const qualtricsSubmission = {
+                id: `qualtrics_${record.coreId}_${record.grade || 'unknown'}`,
+                form_id: 'qualtrics',
+                ip: '',
+                created_at: record._meta?.recordedDate || record._meta?.startDate || new Date().toISOString(),
+                status: 'ACTIVE',
+                new: '0',
+                flag: '0',
+                notes: '',
+                updated_at: null,
+                coreId: record.coreId,
+                grade: record.grade,
+                _sources: ['qualtrics'],
+                _orphaned: true,
+                answers: {}
+              };
+              
+              // Convert all Qualtrics fields to answer objects
+              for (const [fieldName, answerObj] of Object.entries(record)) {
+                // Skip metadata fields
+                if (fieldName === 'coreId' || 
+                    fieldName === 'student-id' || 
+                    fieldName === 'grade' ||
+                    fieldName === '_meta' || 
+                    fieldName === '_sources' ||
+                    fieldName === '_orphaned') {
+                  continue;
+                }
+                
+                // Create answer object in submission format
+                // Use fieldName as a pseudo-QID since we don't have real JotForm QIDs
+                qualtricsSubmission.answers[fieldName] = {
+                  name: fieldName,
+                  answer: answerObj.answer || answerObj,
+                  text: answerObj.text || answerObj.answer || answerObj,
+                  type: 'control_textbox'
+                };
+              }
+              
+              submissions.push(qualtricsSubmission);
+              continue;
             } else {
               console.warn(`[JotFormCache] ⚠️  No original JotForm submission found for ${record.coreId} - this may indicate a data inconsistency`);
               unexpectedMissingCount++;
+              continue;
             }
-            continue;
           }
           
           // Clone the original submission
