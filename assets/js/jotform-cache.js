@@ -540,9 +540,9 @@
      * 
      * COMPREHENSIVE CACHE DELETION:
      * This method performs a complete purge of ALL cached data in IndexedDB:
-     * 1. Submissions cache (jotform_global_cache) - All JotForm form submissions
-     * 2. Validation cache (student_validation) - Pre-computed task validation results  
-     * 3. Qualtrics cache (qualtrics_responses) - TGMD survey data (via clearValidationCache)
+     * 1. Submissions cache (merged_jotform_qualtrics_cache) - All merged JotForm + Qualtrics data
+     * 2. Validation cache (student_task_validation_cache) - Pre-computed task validation results  
+     * 3. Qualtrics cache (qualtrics_raw_responses) - Raw Qualtrics survey data
      * 
      * After calling this method, the system requires a full re-sync (60-90 seconds)
      * before it can be used again. This is the recommended way to force a fresh

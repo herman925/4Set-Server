@@ -2397,6 +2397,29 @@ const recordsByStudent = new Map(); // coreId → { grades: Map<grade, {jotform[
 
 ---
 
+### Cache Structure Update (Post-#151)
+
+**Note:** The cache key names were updated in PR #151 to better reflect the merged data structure.
+
+**Current Cache Keys** (as of October 2025):
+- `merged_jotform_qualtrics_cache` - Final merged data (replaces old `jotform_global_cache`)
+- `qualtrics_raw_responses` - Raw Qualtrics data before merge
+- `student_task_validation_cache` - Pre-computed validation results
+
+**Checking System Integration:**
+The checking system properly uses the new cache structure through `JotFormCache` API:
+- `JotFormCache.loadFromCache()` - Retrieves from `merged_jotform_qualtrics_cache`
+- `JotFormCache.getStudentSubmissions(coreId, grade)` - Filters merged data by student and grade
+- All checking system pages (district, group, school, class, student) use the new cache correctly
+
+**Field Mapping Files:**
+- **JotForm**: Uses `assets/jotformquestions.json` (QID → field name mapping)
+- **Qualtrics**: Uses `assets/qualtrics-mapping.json` (QID → field name mapping, 632 fields)
+  - Location: `assets/js/qualtrics-transformer.js` line 29
+  - Loaded by: `QualtricsTransformer.loadMapping()`
+
+---
+
 ## IndexedDB Integration
 
 ### Cache Architecture
