@@ -820,20 +820,24 @@ window.TaskValidator = (() => {
     // Check if all are answered
     const allAnswered = targetQuestions.every(q => q.studentAnswer !== null);
     if (!allAnswered) {
+      console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()}: Not all threshold questions answered yet - no termination`);
       return { terminationIndex: -1 };
     }
     
     // Count correct (score > 0)
     const correctCount = targetQuestions.filter(q => q.isCorrect).length;
     
+    console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()} threshold check: ${correctCount} correct out of ${targetQuestions.length}, threshold=${config.threshold}`);
+    
     // If below threshold, terminate at last question in the set
     if (correctCount < config.threshold) {
       const lastQuestion = targetQuestions[targetQuestions.length - 1];
       const terminationIndex = taskResult.questions.findIndex(q => q.id === lastQuestion.id);
-      console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()} terminated: ${correctCount} correct in ${config.questionIds.join(', ')}, need ≥${config.threshold}`);
+      console.log(`[TaskValidator] ✂️ ${taskResult.taskId.toUpperCase()} TERMINATED: ${correctCount} < ${config.threshold} (need ≥${config.threshold})`);
       return { terminationIndex };
     }
     
+    console.log(`[TaskValidator] ✅ ${taskResult.taskId.toUpperCase()} PASSED: ${correctCount} ≥ ${config.threshold} - NO termination`);
     return { terminationIndex: -1 };
   }
 
@@ -876,18 +880,29 @@ window.TaskValidator = (() => {
     let adjustedAnswered = taskResult.answeredQuestions;
     let hasPostTerminationAnswers = false;
     
+    console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()} terminationIndex=${terminationIndex}`);
+    
     if (terminationIndex >= 0) {
       // Only count questions up to and including termination point
       adjustedTotal = terminationIndex + 1;
       adjustedAnswered = taskResult.questions.slice(0, terminationIndex + 1).filter(q => q.studentAnswer !== null).length;
       
+      console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()} checking post-termination answers (questions ${terminationIndex + 1} to ${taskResult.questions.length - 1})...`);
+      
       // Check for post-termination answers
       for (let i = terminationIndex + 1; i < taskResult.questions.length; i++) {
         if (taskResult.questions[i].studentAnswer !== null) {
           hasPostTerminationAnswers = true;
+          console.log(`[TaskValidator] ⚠️ ${taskResult.taskId.toUpperCase()} POST-TERMINATION ANSWER detected at question ${i}: ${taskResult.questions[i].id} = ${taskResult.questions[i].studentAnswer}`);
           break;
         }
       }
+      
+      if (!hasPostTerminationAnswers) {
+        console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()} no post-termination answers found`);
+      }
+    } else {
+      console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()} no termination - hasPostTerminationAnswers stays false`);
     }
     
     return {

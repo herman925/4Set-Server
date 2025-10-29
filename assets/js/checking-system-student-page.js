@@ -1153,7 +1153,17 @@
         updateTaskLightingStatus(taskElement, {
           total: validation.totalQuestions,
           answered: validation.answeredQuestions,
-          percentage: validation.completionPercentage
+          answeredPercent: validation.totalQuestions > 0 
+            ? Math.round((validation.answeredQuestions / validation.totalQuestions) * 100) 
+            : 0,
+          correctPercent: validation.tgmdScoring.maxScore > 0
+            ? Math.round((validation.tgmdScoring.totalScore / validation.tgmdScoring.maxScore) * 100)
+            : 0,
+          correct: validation.tgmdScoring.totalScore,
+          scoredTotal: validation.tgmdScoring.maxScore,
+          hasTerminated: false,
+          hasPostTerminationAnswers: false,
+          timedOut: false
         });
         
         console.log(`[StudentPage] ✅ Populated TGMD with grouped scoring: ${validation.tgmdScoring.totalScore}/${validation.tgmdScoring.maxScore}`);
@@ -1304,9 +1314,10 @@
 
   /**
    * Show "no data" message and hide task sections
+   * UPDATED: Keep grade selector visible to allow switching between grades
    */
   function showNoDataMessage() {
-    console.log('[StudentPage] No submissions - hiding task sections');
+    console.log('[StudentPage] No submissions - showing message but keeping grade selector visible');
     
     // Hide Task Status Overview section
     const taskOverview = Array.from(document.querySelectorAll('details')).find(el => 
@@ -1317,27 +1328,51 @@
       console.log('[StudentPage] Hidden: Task Status Overview');
     }
     
-    // Hide Task Progress section
+    // Find Task Progress section - but DON'T hide it entirely
     const taskProgress = Array.from(document.querySelectorAll('section')).find(el => 
       el.textContent.includes('Task Progress')
     );
-    if (taskProgress) {
-      taskProgress.style.display = 'none';
-      console.log('[StudentPage] Hidden: Task Progress');
-    }
     
-    // Show "No Submissions Found" message
-    const mainContent = document.querySelector('main');
-    if (mainContent) {
-      const notice = document.createElement('div');
-      notice.className = 'entry-card p-6 text-center';
-      notice.innerHTML = `
-        <i data-lucide="inbox" class="w-12 h-12 mx-auto text-[color:var(--muted-foreground)] mb-4"></i>
-        <h3 class="text-lg font-semibold mb-2">No Submissions Found</h3>
-        <p class="text-[color:var(--muted-foreground)]">This student hasn't submitted any assessment data yet.</p>
-      `;
-      mainContent.appendChild(notice);
-      if (typeof lucide !== 'undefined') lucide.createIcons();
+    if (taskProgress) {
+      // Hide task control buttons (Expand All, Collapse All, Task Config, filter dropdown)
+      const controlButtons = taskProgress.querySelectorAll('.hero-button, #task-filter');
+      controlButtons.forEach(btn => {
+        const parent = btn.closest('.flex');
+        if (parent && !parent.querySelector('[role="group"]')) {
+          // Only hide if not the grade selector container
+          btn.style.display = 'none';
+        }
+      });
+      
+      // Hide the filter dropdown's parent container (but not grade selector)
+      const taskFilterLabel = taskProgress.querySelector('label[for="task-filter"]');
+      if (taskFilterLabel) {
+        taskFilterLabel.closest('.flex.items-center.gap-2').style.display = 'none';
+      }
+      
+      // Hide all control buttons except grade selector
+      const buttons = taskProgress.querySelectorAll('button:not([id^="grade-btn"])');
+      buttons.forEach(btn => {
+        if (!btn.closest('[role="group"]')) {
+          btn.style.display = 'none';
+        }
+      });
+      
+      // Find the task list container (div with divide-y class) and replace content
+      const taskListContainer = taskProgress.querySelector('.divide-y');
+      if (taskListContainer) {
+        taskListContainer.innerHTML = `
+          <div class="p-8 text-center">
+            <i data-lucide="inbox" class="w-12 h-12 mx-auto text-[color:var(--muted-foreground)] mb-4"></i>
+            <h3 class="text-lg font-semibold mb-2">No Submissions Found</h3>
+            <p class="text-[color:var(--muted-foreground)]">This student hasn't submitted any assessment data for ${selectedGrade} yet. Try switching grades above.</p>
+          </div>
+        `;
+        if (typeof lucide !== 'undefined') lucide.createIcons();
+        console.log('[StudentPage] Replaced task list with "No Submissions" message');
+      }
+      
+      console.log('[StudentPage] Task Progress section modified - grade selector remains visible');
     }
   }
 
@@ -2037,25 +2072,11 @@
       rulesContainer.appendChild(ruleCard);
     }
     
-    // Check for post-termination answers (yellow flag for status light)
-    let hasPostTerminationAnswers = false;
-    if (earliestTerminationIndex !== null) {
-      // Get all questions that should be ignored after termination
-      const terminatedRule = rules[earliestTerminationIndex];
-      const lastQuestionInRange = terminatedRule.range[terminatedRule.range.length - 1];
-      
-      // Find questions answered AFTER termination point
-      let foundTerminationPoint = false;
-      for (const question of validation.questions) {
-        if (foundTerminationPoint && question.studentAnswer !== null) {
-          hasPostTerminationAnswers = true;
-          console.log(`[StudentPage] ⚠️ Post-termination answer detected: ${question.id}`);
-          break;
-        }
-        if (question.id === lastQuestionInRange) {
-          foundTerminationPoint = true;
-        }
-      }
+    // Use hasPostTerminationAnswers from validation (calculated by task-validator.js)
+    // This ensures consistency with class page and avoids redundant calculation
+    const hasPostTerminationAnswers = validation?.hasPostTerminationAnswers || false;
+    if (hasPostTerminationAnswers) {
+      console.log(`[StudentPage] ⚠️ Post-termination answers detected in ${taskId} (from task-validator.js)`);
     }
     
     // CASCADE RULE: If a termination triggered, mark ALL subsequent questions as ignored
@@ -2102,6 +2123,9 @@
    * @param {Object} validation - Task validation result from TaskValidator
    * @param {HTMLElement} taskElement - Task DOM element
    * @returns {Object} Statistics including total, answered, correct, hasTerminated, timedOut, etc.
+   * 
+   * CRITICAL: Uses hasPostTerminationAnswers from validation object (task-validator.js) to ensure
+   * consistency between student page and class page status indicators.
    */
   function calculateTaskStatistics(validation, taskElement) {
     const tbody = taskElement.querySelector('table tbody');
@@ -2113,7 +2137,6 @@
     let scoredTotal = 0; // Questions that have a correct answer
     let scoredAnswered = 0;
     let hasTerminated = false;
-    let hasPostTerminationAnswers = false; // NEW: Track answers after termination
     
     rows.forEach(row => {
       const isIgnored = row.getAttribute('data-ignored') === 'true';
@@ -2121,11 +2144,6 @@
       
       if (isIgnored) {
         hasTerminated = true;
-        // Check if this ignored question has an answer (post-termination data)
-        const isMissing = row.getAttribute('data-missing') === 'true';
-        if (!isMissing) {
-          hasPostTerminationAnswers = true;
-        }
         return; // Skip ignored questions from counting
       }
       
@@ -2156,6 +2174,10 @@
         }
       }
     });
+    
+    // CRITICAL: Use hasPostTerminationAnswers from validation object (calculated by task-validator.js)
+    // This ensures consistency with class page which also uses task-validator.js results
+    const hasPostTerminationAnswers = validation?.hasPostTerminationAnswers || false;
     
     return {
       total,
@@ -2259,10 +2281,23 @@
 
   /**
    * Update task lighting status (colored circle indicator)
+   * 
+   * NOTE: For TGMD matrix-radio questions, "0" (Not-Observed) is a COMPLETE answer.
+   * It means the assessor observed the student and marked that they DIDN'T demonstrate
+   * that specific criterion. This is different from null/empty which means "not assessed".
+   * 
+   * Status logic:
+   * - Green: 100% answered (including 0 values for TGMD "Not-Observed"), OR properly terminated/timed out
+   * - Yellow: Post-termination data detected
+   * - Red: Partially answered (some questions missing/unanswered)
+   * - Grey: Not started (no answers at all)
    */
   function updateTaskLightingStatus(taskElement, stats) {
     const statusCircle = taskElement.querySelector('.status-circle');
     if (!statusCircle) return;
+    
+    // Get task ID for logging
+    const taskId = taskElement.getAttribute('data-task-id');
     
     // Remove all status classes
     statusCircle.className = 'status-circle';
@@ -2282,16 +2317,20 @@
       statusCircle.title = stats.timedOut ? 'Timed out correctly' : 'Terminated correctly';
     } else if (stats.answeredPercent === 100 && !stats.hasTerminated && !stats.timedOut) {
       // Green: Complete - all questions answered, no termination/timeout
+      // For TGMD: This includes questions answered with "0" (Not-Observed) - these are complete assessments
       statusCircle.classList.add('status-green');
       statusCircle.title = 'Complete';
+      console.log(`[StudentPage] ✅ ${taskId} status: GREEN (Complete) - ${stats.answered}/${stats.total} (${stats.answeredPercent}%)`);
     } else if (stats.answered > 0) {
       // Red: Incomplete - has some answers but not complete
       statusCircle.classList.add('status-red');
       statusCircle.title = 'Incomplete';
+      console.log(`[StudentPage] ⚠️ ${taskId} status: RED (Incomplete) - ${stats.answered}/${stats.total} (${stats.answeredPercent}%)`);
     } else {
       // Grey: Not started
       statusCircle.classList.add('status-grey');
       statusCircle.title = 'Not started';
+      console.log(`[StudentPage] ℹ️ ${taskId} status: GREY (Not started)`);
     }
   }
 

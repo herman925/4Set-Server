@@ -256,6 +256,53 @@
     }
 
     /**
+     * Fix untransformed submissions in cache (missing coreId)
+     * This handles submissions that have answers object but no coreId field
+     * @param {Array} submissions - Submissions array
+     * @returns {Array} - Fixed submissions
+     */
+    fixUntransformedSubmissions(submissions) {
+      let fixedCount = 0;
+      
+      for (const submission of submissions) {
+        // Check if submission needs fixing (has answers but no coreId)
+        if (submission.answers && !submission.coreId) {
+          try {
+            // Try to extract student ID from QID 3 (sessionkey field) if malformed
+            const qid3Answer = submission.answers['3'];
+            const qid3Value = qid3Answer?.answer || qid3Answer?.text;
+            
+            if (qid3Value && qid3Value.includes('_')) {
+              // Extract student ID from sessionkey format
+              const match = qid3Value.match(/^(\d+)_/);
+              if (match) {
+                const studentId = match[1];
+                submission.coreId = `C${studentId}`;
+                submission['student-id'] = studentId;
+                submission._sources = ['jotform'];
+                
+                // Determine grade from sessionkey
+                if (typeof window.GradeDetector !== 'undefined') {
+                  submission.grade = window.GradeDetector.determineGradeFromSessionKey(qid3Value);
+                }
+                
+                fixedCount++;
+              }
+            }
+          } catch (error) {
+            console.warn('[JotFormCache] Failed to fix submission:', submission.id, error);
+          }
+        }
+      }
+      
+      if (fixedCount > 0) {
+        console.log(`[JotFormCache] ✅ Fixed ${fixedCount} untransformed submissions in cache`);
+      }
+      
+      return submissions;
+    }
+
+    /**
      * Get all submissions (from cache or API)
      * @param {Object} credentials - { formId, apiKey }
      * @returns {Promise<Array>} - All submissions
@@ -265,7 +312,16 @@
       const cached = await this.loadFromCache();
       if (cached && this.isCacheValid(cached)) {
         console.log('[JotFormCache] Using cached data (valid)');
-        return cached.submissions;
+        
+        // Fix any untransformed submissions before returning
+        const fixedSubmissions = this.fixUntransformedSubmissions(cached.submissions);
+        
+        // If we fixed any, save back to cache
+        if (fixedSubmissions !== cached.submissions) {
+          await this.saveToCache(fixedSubmissions);
+        }
+        
+        return fixedSubmissions;
       }
 
       // If already loading, wait for existing promise
@@ -778,15 +834,24 @@
       
       // Group submissions by student
       const studentSubmissions = new Map();
+      const unmatchedSubmissions = [];
+      
+      // Debug: Log class student Core IDs
+      console.log(`[JotFormCache] Class students expecting data:`, students.map(s => `${s.coreId} (${s.studentName || 'no name'})`).slice(0, 5));
+      
       for (const submission of submissions) {
         const studentIdAnswer = submission.answers?.[STUDENT_ID_QID];
         const studentId = studentIdAnswer?.answer || studentIdAnswer?.text;
-        if (!studentId) continue;
+        if (!studentId) {
+          unmatchedSubmissions.push({ reason: 'No student ID in submission', submissionId: submission.id });
+          continue;
+        }
         
         // Find student by Core ID (and optionally verify grade match)
         const student = students.find(s => {
           const numericCoreId = s.coreId.startsWith('C') ? s.coreId.substring(1) : s.coreId;
-          const coreIdMatches = numericCoreId === studentId;
+          const numericStudentId = studentId.startsWith('C') ? studentId.substring(1) : studentId;
+          const coreIdMatches = numericCoreId === numericStudentId;
           
           // If we're in single-grade mode, the submission grade should already match
           // If multi-grade mode, match student by both coreId AND grade
@@ -805,7 +870,22 @@
             });
           }
           studentSubmissions.get(student.coreId).submissions.push(submission);
+        } else {
+          unmatchedSubmissions.push({ 
+            studentId, 
+            grade: submission.grade, 
+            submissionId: submission.id,
+            created: submission.created_at 
+          });
         }
+      }
+      
+      console.log(`[JotFormCache] Matched ${studentSubmissions.size}/${students.length} students with submissions`);
+      console.log(`[JotFormCache] Matched students:`, Array.from(studentSubmissions.keys()));
+      
+      if (unmatchedSubmissions.length > 0) {
+        console.log(`[JotFormCache] ⚠️ ${unmatchedSubmissions.length} submissions couldn't be matched to students`);
+        console.log(`[JotFormCache] First 10 unmatched:`, unmatchedSubmissions.slice(0, 10));
       }
       
       console.log(`[JotFormCache] Validating ${studentSubmissions.size} students...`);
@@ -1254,8 +1334,24 @@
       for (const submission of submissions) {
         try {
           // Extract student ID from answers using configured QID
-          const studentIdAnswer = submission.answers?.[STUDENT_ID_QID];
-          const studentId = studentIdAnswer?.answer || studentIdAnswer?.text;
+          let studentIdAnswer = submission.answers?.[STUDENT_ID_QID];
+          let studentId = studentIdAnswer?.answer || studentIdAnswer?.text;
+          
+          // FALLBACK: If student-id is missing or looks like sessionkey format, try QID 3 (sessionkey field)
+          // This handles PDFs where field mappings are wrong (sessionkey value in student-id field)
+          if (!studentId || (studentId && studentId.includes('_'))) {
+            const qid3Answer = submission.answers?.['3'];
+            const qid3Value = qid3Answer?.answer || qid3Answer?.text;
+            
+            if (qid3Value && qid3Value.includes('_')) {
+              // Extract student ID from sessionkey format (e.g., "10034_20250916_10_45" → "10034")
+              const match = qid3Value.match(/^(\d+)_/);
+              if (match) {
+                studentId = match[1];
+                console.log(`[JotFormCache] ℹ️  Extracted student-id from sessionkey format: ${qid3Value} → ${studentId}`);
+              }
+            }
+          }
           
           if (!studentId) {
             console.warn('[JotFormCache] Submission missing student ID, skipping:', submission.id);
@@ -1458,6 +1554,15 @@
           
           // Clone the original submission
           const submission = JSON.parse(JSON.stringify(originalSubmission));
+          
+          // CRITICAL: Preserve coreId and _sources from merged record
+          // These fields are added during transformation and must be preserved
+          if (record.coreId) {
+            submission.coreId = record.coreId;
+          }
+          if (record._sources) {
+            submission._sources = record._sources;
+          }
           
           // Preserve grade field from merged record at submission level
           // This is critical for grade-based filtering in getStudentSubmissions()

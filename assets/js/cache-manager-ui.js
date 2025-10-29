@@ -533,7 +533,7 @@
         <div class="mt-4 pt-4 border-t border-[color:var(--border)]">
           <p class="text-sm text-[color:var(--muted-foreground)] mb-2">
             <i data-lucide="alert-circle" class="w-4 h-4 inline text-amber-600"></i>
-            Qualtrics TGMD data not synced yet. Click "Refresh with Qualtrics" to fetch TGMD assessments.
+            Qualtrics TGMD data not synced yet. Use "Fetch Database" button to sync both JotForm and Qualtrics data.
           </p>
         </div>
       `;
@@ -558,21 +558,17 @@
           
           <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-3">
             <p class="text-xs text-blue-800 dark:text-blue-200 mb-2">
-              <strong>💡 Options:</strong>
+              <strong>💡 Cache Management:</strong>
             </p>
             <ul class="text-xs text-blue-700 dark:text-blue-300 space-y-1 ml-4">
-              <li><strong>Refresh with Qualtrics:</strong> Re-syncs TGMD data only (~30 sec)</li>
-              <li><strong>Delete Cache:</strong> Purges ALL data - requires full re-sync (~90 sec)</li>
+              <li><strong>Delete Cache:</strong> Purges ALL data (JotForm + Qualtrics) - requires full re-sync (~90 sec)</li>
+              <li>To refresh data, delete cache and click "Fetch Database" from the "System Not Ready" screen</li>
             </ul>
           </div>
           
           ${qualtricsSection}
         </div>
         <div class="modal-footer flex gap-3">
-          <button id="qualtrics-sync-btn" class="px-4 py-2.5 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-lg transition-colors flex items-center gap-2">
-            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-            Refresh with Qualtrics
-          </button>
           <button id="cache-delete-btn" class="px-4 py-2.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors">
             Delete Cache
           </button>
@@ -586,19 +582,11 @@
     document.body.appendChild(modal);
     lucide.createIcons();
     
-    const qualtricsSyncBtn = document.getElementById('qualtrics-sync-btn');
     const deleteBtn = document.getElementById('cache-delete-btn');
     const closeBtn = document.getElementById('cache-close-btn');
     
-    // Qualtrics sync button
-    qualtricsSyncBtn.addEventListener('click', async () => {
-      modal.remove();
-      await refreshWithQualtrics();
-    });
-    
     // Delete button - Performs comprehensive cache purge
     // Deletes ALL three IndexedDB stores: submissions, validation, Qualtrics
-    // See CACHE_SYSTEM_STATUS.md for details
     deleteBtn.addEventListener('click', async () => {
       if (confirm('⚠️ DELETE ALL CACHED DATA?\n\nThis will purge:\n• JotForm submissions cache\n• Student validation cache\n• Qualtrics TGMD cache\n\nYou will need to re-sync (60-90 seconds) before using the system again.\n\nContinue?')) {
         console.log('[CacheUI] User confirmed comprehensive cache deletion');
@@ -621,83 +609,7 @@
     }
   }
 
-  /**
-   * Refresh with Qualtrics data
-   */
-  async function refreshWithQualtrics() {
-    console.log('[CacheUI] refreshWithQualtrics called');
-    
-    // Check if modules are loaded
-    if (typeof window.QualtricsAPI === 'undefined' || 
-        typeof window.QualtricsTransformer === 'undefined' || 
-        typeof window.DataMerger === 'undefined') {
-      alert('Qualtrics modules not loaded. Please refresh the page and try again.');
-      return;
-    }
-    
-    // Get credentials from session storage
-    const credentials = await getCredentials();
-    if (!credentials) {
-      alert('Credentials not available. Please decrypt credentials first.');
-      return;
-    }
-    
-    // Validate Qualtrics credentials (support both qualtricsApiToken and qualtricsApiKey)
-    const qualtricsApiToken = credentials.qualtricsApiToken || credentials.qualtricsApiKey;
-    if (!qualtricsApiToken || !credentials.qualtricsDatacenter || !credentials.qualtricsSurveyId) {
-      alert('Qualtrics credentials not found in credentials.enc. Please contact administrator.');
-      return;
-    }
-    
-    // Normalize credentials to use qualtricsApiToken
-    credentials.qualtricsApiToken = qualtricsApiToken;
-    
-    // Show progress modal
-    await showQualtricsProgressModal();
-    
-    try {
-      // Track max progress for non-regressive bars
-      let maxJotformProgress = 0;
-      let maxQualtricsProgress = 0;
-      
-      // Set progress callback to update dual progress bars
-      window.JotFormCache.setProgressCallback((message, progress, details = {}) => {
-        let jotformProgress = details.jotformProgress || 0;
-        let qualtricsProgress = details.qualtricsProgress || 0;
-        const jotformMessage = details.jotformMessage;
-        const qualtricsMessage = details.qualtricsMessage;
-        
-        // Apply non-regressive logic
-        if (jotformProgress < maxJotformProgress) {
-          jotformProgress = maxJotformProgress;
-        } else {
-          maxJotformProgress = jotformProgress;
-        }
-        
-        if (qualtricsProgress < maxQualtricsProgress) {
-          qualtricsProgress = maxQualtricsProgress;
-        } else {
-          maxQualtricsProgress = qualtricsProgress;
-        }
-        
-        updateQualtricsProgress(message, jotformProgress, qualtricsProgress, jotformMessage, qualtricsMessage);
-      });
-      
-      // Perform refresh
-      const result = await window.JotFormCache.refreshWithQualtrics(credentials);
-      
-      // Show completion modal with stats
-      await showQualtricsCompleteModal(result.stats);
-      
-      // Update status pill
-      await updateStatusPill();
-      await updateLastSyncedTimestamp();
-      
-    } catch (error) {
-      console.error('[CacheUI] Qualtrics refresh failed:', error);
-      showQualtricsErrorModal(error.message);
-    }
-  }
+
 
   /**
    * Show Qualtrics progress modal with dual progress bars
