@@ -16,7 +16,7 @@ The student page was not using the DataMerger's grade-aware merging capabilities
 ```
 CRITICAL FIX: Never merge data from different grades (K1/K2/K3)
 Per user requirement: "We should NEVER merge anything that is NOT from the same grade.
-You don't merge jotform K3 data with qualtrics K2 data."
+You don't merge JotForm K3 data with Qualtrics K2 data."
 
 Strategy:
 1. Determine grade for each JotForm and Qualtrics record BEFORE merging
@@ -90,7 +90,7 @@ const cacheKey = `student_jotform_${coreId}_${selectedGrade || 'unknown'}`;
 ### Complete Pipeline
 ```
 1. JotForm Submissions → transformSubmissionsToRecords() 
-   ├─ Determines grade from sessionkey
+   ├─ Determines grade from session key
    └─ Adds grade field to each record
 
 2. Qualtrics Responses → QualtricsTransformer.transformBatch()
@@ -169,7 +169,8 @@ All tests passed ✅
 3. `README.md` - Added "Grade-Aware Data Merging" feature
 
 ## References
-- Issue: "Student Page doesn't even use the merged data?"
+- Issue Title: "Student Page doesn't even use the merged data?"
+- Issue Description: The student page must be updated to use the DataMerger so it combines JotForm + Qualtrics data based on (coreId, grade). This is a larger change than just adding the grade field to the caches.
 - DataMerger: `assets/js/data-merger.js` (lines 44-61, 67-222)
 - JotFormCache: `assets/js/jotform-cache.js`
 - Student Page: `assets/js/checking-system-student-page.js`
