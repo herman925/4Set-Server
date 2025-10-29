@@ -19,6 +19,7 @@ The 4Set System is a comprehensive web-based assessment data processing pipeline
 ✅ **JotForm Integration** - Idempotent upsert workflow with retry mechanisms  
 ✅ **Qualtrics Integration** - Complete data extraction from Qualtrics surveys (all tasks)  
 ✅ **Grade Detection** - Automatic K1/K2/K3 classification based on assessment dates (Aug-Jul school year)  
+✅ **Grade-Aware Data Merging** - JotForm + Qualtrics data merged per (coreId, grade) pair to prevent cross-grade contamination  
 ✅ **Unique Student Filtering** - Deduplicated Core ID display in filter dropdowns  
 ✅ **Quality Monitoring** - Multi-level dashboards for data completeness verification  
 ✅ **Security First** - AES-256-GCM encryption for all sensitive assets  
