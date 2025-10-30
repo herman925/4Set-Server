@@ -39,7 +39,7 @@
       // Level 4: Student Drilldown (most specific)
       // Only pass coreId - page can derive all parent context from data
       level = 4;
-      url = `checking_system_4_student.html?coreId=${encodeURIComponent(student.coreId)}`;
+      url = `checking_system_4_student.html?coreId=${encodeURIComponent(student.coreId)}&year=${encodeURIComponent(student.year || student.grade || 'K3')}`;
       displayLabel = student.displayName;
 
     } else if (classData) {

@@ -533,6 +533,43 @@
         alert('Export failed: ' + error.message);
       }
     });
+    
+    // Setup validate button
+    const validateButton = document.getElementById('validate-button');
+    if (validateButton) {
+      validateButton.addEventListener('click', async () => {
+        console.log('[GroupPage] Running cache validation...');
+        
+        // Get group from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const groupParam = urlParams.get('group');
+        
+        if (!groupParam) {
+          alert('Missing group parameter in URL');
+          return;
+        }
+        
+        try {
+          validateButton.disabled = true;
+          validateButton.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 flex-shrink-0 animate-spin"></i><span>Validating...</span>';
+          lucide.createIcons();
+          
+          const validator = CacheValidator.create('group', {
+            group: parseInt(groupParam)
+          });
+          const results = await validator.validate();
+          CacheValidator.showResults(results);
+        } catch (error) {
+          console.error('[GroupPage] Validation error:', error);
+          alert('Validation failed: ' + error.message);
+        } finally {
+          validateButton.disabled = false;
+          validateButton.innerHTML = '<i data-lucide="shield-check" class="w-3.5 h-3.5 flex-shrink-0"></i><span>Validate</span>';
+          lucide.createIcons();
+        }
+      });
+      console.log('[GroupPage] Validate button handler attached');
+    }
   }
 
   /**

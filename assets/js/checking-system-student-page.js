@@ -2967,6 +2967,57 @@
         break;
       }
     }
+    
+    // Validate button - compare cache vs display
+    const validateBtn = document.getElementById('validate-button');
+    if (validateBtn) {
+      validateBtn.addEventListener('click', async () => {
+        console.log('[StudentPage] Running cache validation...');
+        const urlParams = new URLSearchParams(window.location.search);
+        let coreId = urlParams.get('coreId');
+        let grade = urlParams.get('year'); // Student page uses 'year' parameter
+        
+        // Try to get from page display if missing from URL
+        if (!coreId) {
+          coreId = document.getElementById('student-core-id')?.textContent.trim();
+        }
+        if (!grade) {
+          // Try to extract from breadcrumb or page title
+          const breadcrumb = document.querySelector('.breadcrumb-class')?.textContent.trim();
+          grade = breadcrumb?.match(/K[123]/)?.[0] || 'K3';
+        }
+        
+        if (!coreId) {
+          alert(`Missing coreId parameter.\n\nCurrent URL: ${window.location.href}\n\nExpected format: checking_system_4_student.html?coreId=C10993&year=K3`);
+          return;
+        }
+        
+        if (!grade) {
+          alert(`Missing year parameter.\n\nCurrent URL: ${window.location.href}\n\nExpected format: checking_system_4_student.html?coreId=C10993&year=K3`);
+          return;
+        }
+        
+        console.log(`[StudentPage] Validating: coreId=${coreId}, grade=${grade}`);
+        
+        try {
+          validateBtn.disabled = true;
+          validateBtn.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 flex-shrink-0 animate-spin"></i><span>Validating...</span>';
+          lucide.createIcons();
+          
+          const validator = CacheValidator.create('student', { coreId, grade });
+          const results = await validator.validate();
+          CacheValidator.showResults(results);
+        } catch (error) {
+          console.error('[StudentPage] Validation error:', error);
+          alert('Validation failed: ' + error.message);
+        } finally {
+          validateBtn.disabled = false;
+          validateBtn.innerHTML = '<i data-lucide="shield-check" class="w-3.5 h-3.5 flex-shrink-0"></i><span>Validate</span>';
+          lucide.createIcons();
+        }
+      });
+      console.log('[StudentPage] Validate button handler attached');
+    }
 
     // REMOVED: Refresh button no longer needed with IndexedDB cache system
     // To refresh data, users should:

@@ -613,7 +613,7 @@
         html += `
           <tr class="hover:bg-[color:var(--muted)]/20 transition-colors" data-student-row data-grade="${String(classInfo?.grade || 0)}" data-has-data="${data ? 'true' : 'false'}">
             <td class="px-4 py-3">
-              <a href="checking_system_4_student.html?coreId=${encodeURIComponent(student.coreId)}" 
+              <a href="checking_system_4_student.html?coreId=${encodeURIComponent(student.coreId)}&year=${encodeURIComponent(student.year || student.grade || 'K3')}" 
                  class="font-medium text-[color:var(--primary)] hover:underline font-noto">
                 ${student.studentName}
               </a>
@@ -770,7 +770,7 @@
         html += `
           <tr class="hover:bg-[color:var(--muted)]/20 transition-colors" data-student-row data-grade="${String(classInfo?.grade || 0)}" data-has-data="${data ? 'true' : 'false'}">
             <td class="px-4 py-3 sticky left-0 bg-white z-20">
-              <a href="checking_system_4_student.html?coreId=${encodeURIComponent(student.coreId)}" 
+              <a href="checking_system_4_student.html?coreId=${encodeURIComponent(student.coreId)}&year=${encodeURIComponent(student.year || student.grade || 'K3')}" 
                  class="font-medium text-[color:var(--primary)] hover:underline font-noto">
                 ${student.studentName}
               </a>
@@ -918,6 +918,49 @@
         loadValidationCache: () => window.JotFormCache.loadValidationCache()
       });
     });
+    
+    // Setup validate button
+    const validateButton = document.getElementById('validate-button');
+    if (validateButton) {
+      validateButton.addEventListener('click', async () => {
+        console.log('[SchoolPage] Running cache validation...');
+        
+        // Get schoolId from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const schoolId = urlParams.get('schoolId');
+        
+        if (!schoolId) {
+          alert('Missing schoolId parameter in URL');
+          return;
+        }
+        
+        // Determine current view mode
+        const viewByClassBtn = document.getElementById('view-by-class-btn');
+        const byClassActive = viewByClassBtn?.classList.contains('active');
+        const viewMode = byClassActive ? 'by-set' : 'by-task';
+        
+        try {
+          validateButton.disabled = true;
+          validateButton.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 flex-shrink-0 animate-spin"></i><span>Validating...</span>';
+          lucide.createIcons();
+          
+          const validator = CacheValidator.create('school', {
+            schoolId: schoolId,
+            viewMode
+          });
+          const results = await validator.validate();
+          CacheValidator.showResults(results);
+        } catch (error) {
+          console.error('[SchoolPage] Validation error:', error);
+          alert('Validation failed: ' + error.message);
+        } finally {
+          validateButton.disabled = false;
+          validateButton.innerHTML = '<i data-lucide="shield-check" class="w-3.5 h-3.5 flex-shrink-0"></i><span>Validate</span>';
+          lucide.createIcons();
+        }
+      });
+      console.log('[SchoolPage] Validate button handler attached');
+    }
   }
 
   /**
@@ -1338,7 +1381,7 @@
                 <p class="text-xs text-[color:var(--muted-foreground)]">Core ID: ${student.coreId}</p>
               </div>
             </div>
-            <a href="checking_system_4_student.html?coreId=${encodeURIComponent(student.coreId)}" 
+            <a href="checking_system_4_student.html?coreId=${encodeURIComponent(student.coreId)}&year=${encodeURIComponent(student.year || student.grade || 'K3')}" 
                class="text-xs text-[color:var(--primary)] hover:underline">
               View Details →
             </a>

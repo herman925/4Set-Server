@@ -528,9 +528,45 @@
         });
       } catch (error) {
         console.error('[DistrictPage] Export failed:', error);
-        alert('Export failed: ' + error.message);
       }
     });
+    
+    // Setup validate button
+    const validateButton = document.getElementById('validate-button');
+    if (validateButton) {
+      validateButton.addEventListener('click', async () => {
+        console.log('[DistrictPage] Running cache validation...');
+        
+        // Get district from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const districtParam = urlParams.get('district');
+        
+        if (!districtParam) {
+          alert('Missing district parameter in URL');
+          return;
+        }
+        
+        try {
+          validateButton.disabled = true;
+          validateButton.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 flex-shrink-0 animate-spin"></i><span>Validating...</span>';
+          lucide.createIcons();
+          
+          const validator = CacheValidator.create('district', {
+            district: districtParam
+          });
+          const results = await validator.validate();
+          CacheValidator.showResults(results);
+        } catch (error) {
+          console.error('[DistrictPage] Validation error:', error);
+          alert('Validation failed: ' + error.message);
+        } finally {
+          validateButton.disabled = false;
+          validateButton.innerHTML = '<i data-lucide="shield-check" class="w-3.5 h-3.5 flex-shrink-0"></i><span>Validate</span>';
+          lucide.createIcons();
+        }
+      });
+      console.log('[DistrictPage] Validate button handler attached');
+    }
   }
 
   /**

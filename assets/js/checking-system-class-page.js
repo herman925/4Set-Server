@@ -616,7 +616,7 @@
         html += `
           <tr class="hover:bg-[color:var(--muted)]/20 transition-colors">
             <td class="px-4 py-3">
-              <a href="checking_system_4_student.html?coreId=${encodeURIComponent(student.coreId)}" 
+              <a href="checking_system_4_student.html?coreId=${encodeURIComponent(student.coreId)}&year=${encodeURIComponent(student.year || student.grade || 'K3')}" 
                  class="font-medium text-[color:var(--primary)] hover:underline font-noto">
                 ${student.studentName}
               </a>
@@ -770,7 +770,7 @@
         html += `
           <tr class="hover:bg-[color:var(--muted)]/20 transition-colors">
             <td class="px-4 py-3 sticky left-0 bg-white z-20">
-              <a href="checking_system_4_student.html?coreId=${encodeURIComponent(student.coreId)}" 
+              <a href="checking_system_4_student.html?coreId=${encodeURIComponent(student.coreId)}&year=${encodeURIComponent(student.year || student.grade || 'K3')}" 
                  class="font-medium text-[color:var(--primary)] hover:underline font-noto">
                 ${student.studentName}
               </a>
@@ -904,6 +904,54 @@
     const exportButton = document.getElementById('export-button');
     if (exportButton) {
       exportButton.addEventListener('click', exportClassCache);
+    }
+    
+    // Setup validate button
+    const validateButton = document.getElementById('validate-button');
+    if (validateButton) {
+      validateButton.addEventListener('click', async () => {
+        console.log('[ClassPage] Running cache validation...');
+        
+        // Get parameters from URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const classId = urlParams.get('classId');
+        
+        if (!classId) {
+          alert('Missing classId parameter in URL');
+          return;
+        }
+        
+        // Determine current view mode
+        const bySetActive = document.getElementById('view-by-set')?.classList.contains('active');
+        const viewMode = bySetActive ? 'by-set' : 'by-task';
+        
+        // Get schoolId and grade from page data (they're loaded during init)
+        const schoolIdElement = document.getElementById('school-name');
+        const gradeElement = document.getElementById('class-grade');
+        
+        try {
+          validateButton.disabled = true;
+          validateButton.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 flex-shrink-0 animate-spin"></i><span>Validating...</span>';
+          lucide.createIcons();
+          
+          const validator = CacheValidator.create('class', {
+            classId: classId,
+            schoolId: schoolIdElement?.dataset?.schoolId || 'unknown',
+            grade: gradeElement?.textContent || 'K3',
+            viewMode
+          });
+          const results = await validator.validate();
+          CacheValidator.showResults(results);
+        } catch (error) {
+          console.error('[ClassPage] Validation error:', error);
+          alert('Validation failed: ' + error.message);
+        } finally {
+          validateButton.disabled = false;
+          validateButton.innerHTML = '<i data-lucide="shield-check" class="w-3.5 h-3.5 flex-shrink-0"></i><span>Validate</span>';
+          lucide.createIcons();
+        }
+      });
+      console.log('[ClassPage] Validate button handler attached');
     }
   }
 

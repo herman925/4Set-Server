@@ -1575,19 +1575,34 @@
                 if (qid) {
                   // Create answer object in JotForm submission format
                   // Use QID as key so TaskValidator can find the answer
+                  // CRITICAL: Extract plain value from answer object if nested
+                  const actualAnswer = (answerObj && typeof answerObj === 'object' && answerObj.answer !== undefined)
+                    ? answerObj.answer
+                    : answerObj;
+                  const actualText = (answerObj && typeof answerObj === 'object')
+                    ? (answerObj.text || answerObj.answer || answerObj)
+                    : answerObj;
+                  
                   qualtricsSubmission.answers[qid] = {
                     name: fieldName,  // Preserve fieldName in the answer object
-                    answer: answerObj.answer || answerObj,
-                    text: answerObj.text || answerObj.answer || answerObj,
+                    answer: actualAnswer,
+                    text: actualText,
                     type: 'control_textbox'
                   };
                 } else {
                   // Fallback: If no QID mapping found, use fieldName as key
                   // This preserves the field even if not in the mapping file
+                  const actualAnswer = (answerObj && typeof answerObj === 'object' && answerObj.answer !== undefined)
+                    ? answerObj.answer
+                    : answerObj;
+                  const actualText = (answerObj && typeof answerObj === 'object')
+                    ? (answerObj.text || answerObj.answer || answerObj)
+                    : answerObj;
+                  
                   qualtricsSubmission.answers[fieldName] = {
                     name: fieldName,
-                    answer: answerObj.answer || answerObj,
-                    text: answerObj.text || answerObj.answer || answerObj,
+                    answer: actualAnswer,
+                    text: actualText,
                     type: 'control_textbox'
                   };
                 }
@@ -1652,9 +1667,15 @@
               
               // Update the answer if we found the QID
               if (qidToUpdate && submission.answers[qidToUpdate]) {
-                submission.answers[qidToUpdate].answer = value;
+                // CRITICAL FIX: Extract the actual value from answer object
+                // Qualtrics data comes as {answer: "0", text: "0"}, not plain strings
+                const actualValue = (value && typeof value === 'object' && value.answer !== undefined)
+                  ? value.answer  // Extract from answer object
+                  : value;         // Use as-is if already a primitive
+                
+                submission.answers[qidToUpdate].answer = actualValue;
                 if (submission.answers[qidToUpdate].text !== undefined) {
-                  submission.answers[qidToUpdate].text = value;
+                  submission.answers[qidToUpdate].text = actualValue;
                 }
               }
             }
