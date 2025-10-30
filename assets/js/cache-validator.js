@@ -112,24 +112,28 @@ window.CacheValidator = (() => {
         return results;
       }
       
+      // Debug: Log submission structure
+      console.log('[StudentValidator] Submission structure:', {
+        coreId: submission.coreId,
+        studentId: submission.studentId,
+        studentName: submission.studentName,
+        hasAnswers: !!submission.answers,
+        answerCount: submission.answers ? Object.keys(submission.answers).length : 0,
+        sampleAnswerKeys: submission.answers ? Object.keys(submission.answers).slice(0, 5) : [],
+        topLevelKeys: Object.keys(submission).slice(0, 20)
+      });
+      
       const validationCache = await getValidationCache();
       const validationData = validationCache[this.coreId];
       
       // Section 1: Profile Fields
       results.sections.push(await this.validateProfileFields(submission));
       
-      // Section 2: Task Answers (from validation cache)
-      if (validationData) {
-        results.sections.push(await this.validateTaskAnswers(submission, validationData));
-      }
+      // Section 2: All Task Questions (validate raw answers for ALL questions across ALL tasks - includes TGMD)
+      results.sections.push(await this.validateAllTaskQuestions(submission));
       
-      // Section 3: COR Fields (from task tables)
-      results.sections.push(await this.validateCORFields(submission));
-      
-      // Section 4: TGMD Fields (if present)
-      if (submission.grade === 'K3') {
-        results.sections.push(await this.validateTGMDFields(submission));
-      }
+      // Section 3: Question Correctness (validate ✓/✗ calculations for all questions)
+      results.sections.push(await this.validateQuestionCorrectness(submission));
       
       return results;
     }
@@ -142,145 +146,109 @@ window.CacheValidator = (() => {
         failed: 0
       };
       
+      // Try multiple possible property names from cache
+      const getCacheValue = (obj, possibleNames) => {
+        for (const name of possibleNames) {
+          if (obj[name] !== undefined) return obj[name];
+        }
+        return undefined;
+      };
+      
       const fields = [
-        { cache: 'student-id', domId: 'student-student-id', label: 'Student ID' },
-        { cache: 'coreId', domId: 'student-core-id', label: 'Core ID' },
-        { cache: 'child-name', domId: 'student-name', label: 'Student Name' },
-        { cache: 'class-id', domId: 'student-class', label: 'Class' },
-        { cache: 'gender', domId: 'student-gender', label: 'Gender' },
-        { cache: 'computerno', domId: 'student-computer', label: 'Computer No' }
+        { cacheNames: ['studentId', 'student-id'], domId: 'student-student-id', label: 'Student ID' },
+        { cacheNames: ['coreId', 'core-id'], domId: 'student-core-id', label: 'Core ID' },
+        { cacheNames: ['studentName', 'student-name', 'child-name'], domId: 'student-name', label: 'Student Name' },
+        { cacheNames: ['classId', 'class-id'], domId: 'student-class-id', label: 'Class ID' },
+        { cacheNames: ['gender'], domId: 'student-gender', label: 'Gender', normalize: (v) => v === 'M' ? 'Male' : v === 'F' ? 'Female' : v },
+        { cacheNames: ['schoolId', 'school-id'], domId: 'student-school-id', label: 'School ID' }
       ];
       
       for (const field of fields) {
-        const cacheValue = submission.answers?.[this.getQIDForField(field.cache)]?.answer || submission[field.cache];
+        let cacheValue = getCacheValue(submission, field.cacheNames);
+        if (field.normalize && cacheValue) {
+          cacheValue = field.normalize(cacheValue);
+        }
+        
         const domElement = document.getElementById(field.domId);
         const domValue = domElement?.textContent.trim();
         
         section.validated++;
         
-        if (this.normalizeValue(cacheValue) !== this.normalizeValue(domValue)) {
+        const match = this.normalizeValue(cacheValue) === this.normalizeValue(domValue);
+        
+        section.mismatches.push({
+          field: field.label,
+          cacheRaw: cacheValue || 'undefined',
+          displayValue: domValue,
+          status: match ? '✅ Match' : '❌ Mismatch'
+        });
+        
+        if (!match) {
           section.failed++;
-          section.mismatches.push({
-            field: field.label,
-            cache: cacheValue,
-            display: domValue
-          });
         }
       }
       
       return section;
     }
     
-    async validateTaskAnswers(submission, validationData) {
+    async validateAllTaskQuestions(submission) {
       const section = {
-        name: 'Task Answers & Validation',
+        name: 'Task Questions - Raw Answers',
         mismatches: [],
         validated: 0,
         failed: 0
       };
       
-      // Validate each task's completion status
-      for (const [taskId, taskValidation] of Object.entries(validationData.tasks || {})) {
-        const taskCard = document.querySelector(`[data-task-id="${taskId}"]`);
-        if (!taskCard) continue;
-        
-        // Check completion percentage
-        const cacheCompletion = taskValidation.completionPercentage || 0;
-        const domCompletionText = taskCard.querySelector('.completion-percentage')?.textContent;
-        const domCompletion = extractCompletionPercentage(domCompletionText);
-        
-        section.validated++;
-        if (Math.abs(cacheCompletion - domCompletion) > 0.1) {
-          section.failed++;
-          section.mismatches.push({
-            field: `${taskId} Completion`,
-            cache: `${cacheCompletion.toFixed(1)}%`,
-            display: `${domCompletion.toFixed(1)}%`
-          });
-        }
-        
-        // Check termination status
-        const cacheTerminated = taskValidation.isTerminated || false;
-        const domTerminated = taskCard.querySelector('.termination-badge') !== null;
-        
-        section.validated++;
-        if (cacheTerminated !== domTerminated) {
-          section.failed++;
-          section.mismatches.push({
-            field: `${taskId} Termination`,
-            cache: cacheTerminated ? 'Terminated' : 'Not Terminated',
-            display: domTerminated ? 'Terminated' : 'Not Terminated'
-          });
-        }
-        
-        // Check answered/total counts
-        const cacheAnswered = taskValidation.answeredCount || 0;
-        const cacheTotal = taskValidation.totalQuestions || 0;
-        const domCountsText = taskCard.querySelector('.answer-counts')?.textContent;
-        const domCountsMatch = domCountsText?.match(/(\d+)\s*\/\s*(\d+)/);
-        
-        if (domCountsMatch) {
-          const domAnswered = parseInt(domCountsMatch[1]);
-          const domTotal = parseInt(domCountsMatch[2]);
-          
-          section.validated += 2;
-          
-          if (cacheAnswered !== domAnswered) {
-            section.failed++;
-            section.mismatches.push({
-              field: `${taskId} Answered Count`,
-              cache: cacheAnswered,
-              display: domAnswered
-            });
-          }
-          
-          if (cacheTotal !== domTotal) {
-            section.failed++;
-            section.mismatches.push({
-              field: `${taskId} Total Count`,
-              cache: cacheTotal,
-              display: domTotal
-            });
-          }
-        }
+      if (!submission.answers) {
+        console.warn('[StudentValidator] No answers object in submission');
+        return section;
       }
       
-      return section;
-    }
-    
-    async validateCORFields(submission) {
-      const section = {
-        name: 'COR Fields',
-        mismatches: [],
-        validated: 0,
-        failed: 0
-      };
+      // Find all task elements (under sets)
+      const taskElements = document.querySelectorAll('[data-task-id]');
       
-      // COR fields are displayed in tables, need to extract from DOM
-      const corTables = document.querySelectorAll('[data-cor-table]');
-      
-      for (const table of corTables) {
-        const rows = table.querySelectorAll('tbody tr');
+      for (const taskElement of taskElements) {
+        const taskId = taskElement.getAttribute('data-task-id');
+        const tbody = taskElement.querySelector('tbody');
+        if (!tbody) continue;
         
+        const rows = tbody.querySelectorAll('tr');
         for (const row of rows) {
-          const fieldName = row.querySelector('.field-name')?.textContent.trim();
-          const domValue = row.querySelector('.field-value')?.textContent.trim();
+          const cells = row.querySelectorAll('td');
+          if (cells.length < 4) continue;
           
-          // Find corresponding cache value
-          const qid = this.findQIDForCORField(submission, fieldName);
-          const cacheValue = submission.answers?.[qid]?.answer;
+          const questionId = cells[0]?.textContent.trim();
+          const displayAnswer = cells[1]?.textContent.trim();
           
-          if (cacheValue !== undefined) {
-            section.validated++;
-            
-            if (this.normalizeValue(cacheValue) !== this.normalizeValue(domValue)) {
-              section.failed++;
-              section.mismatches.push({
-                field: fieldName,
-                cache: cacheValue,
-                display: domValue
-              });
+          // Skip empty/not answered
+          if (!displayAnswer || displayAnswer === '—' || displayAnswer === 'Not answered') {
+            continue;
+          }
+          
+          // Find matching answer in cache by field name
+          let cacheAnswer = null;
+          let matchedFieldName = null;
+          
+          for (const [qid, answerObj] of Object.entries(submission.answers)) {
+            if (answerObj.name && questionId.includes(answerObj.name.replace(/_/g, ' '))) {
+              cacheAnswer = answerObj.answer;
+              matchedFieldName = answerObj.name;
+              break;
             }
+          }
+          
+          section.validated++;
+          const match = cacheAnswer !== null && this.normalizeValue(cacheAnswer) === this.normalizeValue(displayAnswer);
+          
+          section.mismatches.push({
+            field: matchedFieldName || questionId,
+            cacheRaw: cacheAnswer !== null ? cacheAnswer : 'Not found',
+            displayValue: displayAnswer,
+            status: match ? '✅ Match' : '❌ Mismatch'
+          });
+          
+          if (!match) {
+            section.failed++;
           }
         }
       }
@@ -288,61 +256,57 @@ window.CacheValidator = (() => {
       return section;
     }
     
-    async validateTGMDFields(submission) {
+    async validateQuestionCorrectness(submission) {
       const section = {
-        name: 'TGMD Fields',
+        name: 'Question Correctness - ✓/✗ Icons',
         mismatches: [],
         validated: 0,
         failed: 0
       };
       
-      // Extract TGMD trial fields from cache
-      const tgmdFields = {};
-      for (const [qid, answerObj] of Object.entries(submission.answers || {})) {
-        if (answerObj?.name?.match(/^TGMD_\d{3}_\w+_t[12]$/)) {
-          tgmdFields[answerObj.name] = answerObj.answer;
-        }
+      if (!submission.answers) {
+        console.warn('[StudentValidator] No answers object in submission');
+        return section;
       }
       
-      // Compare with DOM table
-      const tgmdTable = document.querySelector('[data-tgmd-table]');
-      if (tgmdTable) {
-        const rows = tgmdTable.querySelectorAll('tbody tr');
+      // Validate that the ✓/✗ icons match actual correctness
+      const taskElements = document.querySelectorAll('[data-task-id]');
+      
+      for (const taskElement of taskElements) {
+        const tbody = taskElement.querySelector('tbody');
+        if (!tbody) continue;
         
+        const rows = tbody.querySelectorAll('tr');
         for (const row of rows) {
-          const criterionName = row.querySelector('.criterion-name')?.textContent.trim();
-          const t1Icon = row.querySelector('.trial-1-icon')?.textContent.trim();
-          const t2Icon = row.querySelector('.trial-2-icon')?.textContent.trim();
+          const cells = row.querySelectorAll('td');
+          if (cells.length < 4) continue;
           
-          // Map criterion name back to field names
-          const fieldBase = this.mapCriterionToField(criterionName);
-          const t1Field = `${fieldBase}_t1`;
-          const t2Field = `${fieldBase}_t2`;
+          const questionId = cells[0]?.textContent.trim();
+          const displayAnswer = cells[1]?.textContent.trim();
+          const correctAnswer = cells[2]?.textContent.trim();
+          const displayResult = cells[3]?.textContent.trim();
           
-          if (tgmdFields[t1Field] !== undefined) {
-            section.validated++;
-            const cacheT1 = tgmdFields[t1Field] === '1' ? '✓' : '✗';
-            if (cacheT1 !== t1Icon) {
-              section.failed++;
-              section.mismatches.push({
-                field: `${t1Field}`,
-                cache: cacheT1,
-                display: t1Icon
-              });
-            }
+          // Skip if not answered
+          if (!displayAnswer || displayAnswer === '—' || displayAnswer === 'Not answered') {
+            continue;
           }
           
-          if (tgmdFields[t2Field] !== undefined) {
-            section.validated++;
-            const cacheT2 = tgmdFields[t2Field] === '1' ? '✓' : '✗';
-            if (cacheT2 !== t2Icon) {
-              section.failed++;
-              section.mismatches.push({
-                field: `${t2Field}`,
-                cache: cacheT2,
-                display: t2Icon
-              });
-            }
+          section.validated++;
+          
+          // Calculate expected result based on displayed values
+          const expectedIsCorrect = this.normalizeValue(displayAnswer) === this.normalizeValue(correctAnswer);
+          const displayIsCorrect = displayResult === '✓';
+          const match = expectedIsCorrect === displayIsCorrect;
+          
+          section.mismatches.push({
+            field: questionId,
+            cacheRaw: expectedIsCorrect ? '✓' : '✗',
+            displayValue: displayResult,
+            status: match ? '✅ Match' : '❌ Mismatch'
+          });
+          
+          if (!match) {
+            section.failed++;
           }
         }
       }
@@ -839,8 +803,27 @@ window.CacheValidator = (() => {
       if (section.mismatches && section.mismatches.length > 0) {
         const mismatchTable = document.createElement('div');
         mismatchTable.className = 'p-4 pt-0';
-        mismatchTable.innerHTML = `
-          <table class="w-full text-sm">
+        
+        // Determine columns based on data structure
+        const hasStatus = section.mismatches[0]?.status !== undefined;
+        const hasCacheRaw = section.mismatches[0]?.cacheRaw !== undefined;
+        
+        let headerHtml = '';
+        if (hasCacheRaw) {
+          // Profile fields format
+          headerHtml = `
+            <thead class="bg-gray-50 text-gray-700 uppercase text-xs">
+              <tr>
+                <th class="px-3 py-2 text-left">Field</th>
+                <th class="px-3 py-2 text-left">Cache Value</th>
+                <th class="px-3 py-2 text-left">Display Value</th>
+                <th class="px-3 py-2 text-left">Status</th>
+              </tr>
+            </thead>
+          `;
+        } else {
+          // Standard format
+          headerHtml = `
             <thead class="bg-gray-50 text-gray-700 uppercase text-xs">
               <tr>
                 <th class="px-3 py-2 text-left">Field</th>
@@ -848,14 +831,35 @@ window.CacheValidator = (() => {
                 <th class="px-3 py-2 text-left">Display Value</th>
               </tr>
             </thead>
+          `;
+        }
+        
+        const rowsHtml = section.mismatches.map(m => {
+          if (hasCacheRaw) {
+            return `
+              <tr class="hover:bg-gray-50">
+                <td class="px-3 py-2 font-medium text-gray-900">${m.field}</td>
+                <td class="px-3 py-2 text-blue-600 font-mono">${escapeHtml(String(m.cacheRaw))}</td>
+                <td class="px-3 py-2 text-purple-600 font-mono">${escapeHtml(String(m.displayValue))}</td>
+                <td class="px-3 py-2">${m.status}</td>
+              </tr>
+            `;
+          } else {
+            return `
+              <tr class="hover:bg-gray-50">
+                <td class="px-3 py-2 font-medium text-gray-900">${m.field}</td>
+                <td class="px-3 py-2 text-blue-600 font-mono">${escapeHtml(String(m.cache))}</td>
+                <td class="px-3 py-2 text-orange-600 font-mono">${escapeHtml(String(m.display))}</td>
+              </tr>
+            `;
+          }
+        }).join('');
+        
+        mismatchTable.innerHTML = `
+          <table class="w-full text-sm">
+            ${headerHtml}
             <tbody class="divide-y divide-gray-200">
-              ${section.mismatches.map(m => `
-                <tr class="hover:bg-gray-50">
-                  <td class="px-3 py-2 font-medium text-gray-900">${m.field}</td>
-                  <td class="px-3 py-2 text-blue-600 font-mono">${escapeHtml(String(m.cache))}</td>
-                  <td class="px-3 py-2 text-orange-600 font-mono">${escapeHtml(String(m.display))}</td>
-                </tr>
-              `).join('')}
+              ${rowsHtml}
             </tbody>
           </table>
         `;
