@@ -1420,6 +1420,8 @@ When a student has data in both JotForm and Qualtrics, the system merges them us
 **Merge Logic**:
 1. **Within-Source Merging** (if student has multiple submissions):
    - JotForm: Sort by `created_at`, earliest non-empty value wins per field
+     - **Important:** `created_at` = submission upload timestamp (when entered into JotForm), NOT assessment date
+     - This preserves data entry order, reflecting operator workflow
    - Qualtrics: Sort by `recordedDate`, earliest non-empty value wins per field
 
 2. **Cross-Source Merging** (JotForm vs Qualtrics):
@@ -2493,6 +2495,101 @@ const filter = { "q3:matches": studentIdNumeric };
 2. Transform to records → merge with Qualtrics → transform back to submissions
 3. Save to cache (submissions format preserved)
 4. Result: ✅ All 773 submissions preserved with TGMD data merged
+
+### Cross-Grade Data Contamination Fix (October 30, 2025)
+
+**Critical Bug Discovered**: Students with data from multiple grade levels (K2 Qualtrics + K3 JotForm) showed incorrect merged records with cross-grade contamination.
+
+**Symptoms**:
+- K2 Qualtrics-only records displayed K3 JotForm submission data
+- Wrong sessionkey (K3 dates: `10034_20250916_10_45` appearing in K2 records)
+- Incorrect timestamps (2025 K3 created dates for 2024 K2 records)
+- Sources array showed `["qualtrics"]` but record contained 633 JotForm answers
+
+**Root Cause Analysis**:
+
+In `jotform-cache.js`, the `transformRecordsToSubmissions()` function used a `submissionMap` indexed only by `coreId`:
+
+```javascript
+// BUG: Single-key map caused cross-grade contamination
+const submissionMap = new Map();
+for (const submission of originalSubmissions) {
+  const coreId = this.ensureCoreIdPrefix(studentId);
+  submissionMap.set(coreId, submission); // ❌ Only uses coreId!
+}
+```
+
+**Bug Mechanism**:
+1. Student C10034 has:
+   - 3 Qualtrics K2 responses (Sept 2024) → Creates 1 merged K2 record
+   - 1 JotForm K3 submission (Sept 2025) → Creates 1 K3 record
+2. When building `submissionMap`, both grades try to use key "C10034"
+3. K3 submission overwrites K2 entry (last write wins)
+4. Both K2 and K3 merged records look up `submissionMap.get('C10034')`
+5. Both get the K3 JotForm submission → K2 record incorrectly uses K3 data
+
+**Critical Insight**: "JotForm database was developed since Oct 2025 so everything in it can ONLY be K3" - proved that K2 records couldn't legitimately contain JotForm data.
+
+**Fix Applied** (`jotform-cache.js` lines 1485-1508):
+
+Changed `submissionMap` to use **composite key** `${coreId}_${grade}`:
+
+```javascript
+// FIXED: Composite key prevents cross-grade contamination
+const submissionMap = new Map();
+for (const submission of originalSubmissions) {
+  const coreId = this.ensureCoreIdPrefix(studentId);
+  
+  // Determine grade from this submission's sessionkey
+  const sessionkey = submission.answers?.['3']?.answer || submission.answers?.['3']?.text;
+  const grade = (sessionkey && window.GradeDetector) 
+    ? window.GradeDetector.determineGradeFromSessionKey(sessionkey)
+    : 'Unknown';
+  
+  // Use coreId+grade as composite key
+  const mapKey = `${coreId}_${grade}`;
+  submissionMap.set(mapKey, submission); // ✅ Each grade gets separate entry
+}
+
+// Later in the code...
+const mapKey = `${record.coreId}_${record.grade || 'Unknown'}`;
+const originalSubmission = submissionMap.get(mapKey); // ✅ Grade-specific lookup
+```
+
+**Validation Results** (Student C10034):
+
+Before Fix:
+- ❌ K2 record: 633 JotForm answers, sessionkey `10034_20250916_10_45` (K3 date!)
+- ❌ K3 record: 633 JotForm answers, correct sessionkey
+- ❌ Both records sharing same JotForm submission ID
+
+After Fix:
+- ✅ K2 record: 377 answers (101 Qualtrics fields: ERV_Q1, TEC_M_Q1, CM_Q1, etc.), no sessionkey, `_orphaned: true`
+- ✅ K3 record: 633 answers (JotForm data), sessionkey `10034_20250916_10_45`, `_sources: ['jotform']`
+- ✅ All 3 Qualtrics K2 responses properly merged within K2 record
+- ✅ No cross-grade data contamination
+
+**Verification Commands** (IndexedDB console):
+```javascript
+// Check merged cache structure
+const mainStorage = localforage.createInstance({ 
+  name: 'JotFormCacheDB', storeName: 'cache' 
+});
+const mergedCache = await mainStorage.getItem('merged_jotform_qualtrics_cache');
+const c10034Records = mergedCache.submissions.filter(s => s.coreId === 'C10034');
+
+// Verify proper separation
+c10034Records.forEach(r => {
+  console.log(`Grade: ${r.grade}, Sources: ${r._sources}, Answers: ${Object.keys(r.answers).length}`);
+});
+```
+
+**Impact**: 
+- Critical for longitudinal studies where students have K1/K2 Qualtrics baseline + K3 JotForm follow-up
+- Ensures grade-based filtering shows correct historical data per grade level
+- Prevents data corruption in multi-year assessment tracking
+
+**Related Documentation**: Full technical details in `jotform_qualtrics_integration_prd.md` § Bug Fixes and Resolutions
 
 ## Open Questions
 - Preferred schedule (hourly, daily, manual trigger) for production.

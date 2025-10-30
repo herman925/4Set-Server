@@ -157,7 +157,7 @@
         }
       };
       
-      // Determine grade from recordedDate
+      // Determine grade from recordedDate (Qualtrics doesn't have sessionkey in raw data)
       if (window.GradeDetector && response.values.recordedDate) {
         result.grade = window.GradeDetector.determineGradeFromRecordedDate(response.values.recordedDate);
         console.log(`[QualtricsTransformer] Student ${coreId}: recordedDate=${response.values.recordedDate}, grade=${result.grade}`);

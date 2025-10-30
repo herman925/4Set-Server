@@ -1857,6 +1857,8 @@ function transformQualtricsResponse(response, mapping) {
 **Merge Strategy:**
 - **Level 1 (Within-Source)**: When multiple submissions exist from the same source
   - JotForm: Sort by `created_at` (earliest first), first non-empty value wins
+    - **Note:** `created_at` = submission upload timestamp (when data entered into JotForm), NOT assessment date from sessionkey
+    - Example: Assessment on Sept 15 (`sessionkey: 10034_20250915_10_43`) uploaded Sept 17 (`created_at: "2025-09-17 04:58:21"`)
   - Qualtrics: Sort by `recordedDate` (earliest first), first non-empty value wins
   
 - **Level 2 (Cross-Source)**: When merging Qualtrics with JotForm
@@ -2210,6 +2212,11 @@ const [jotformSubmissions, rawResponses] = await Promise.all([
    // Merge multiple JotForm submissions for same student
    mergedJotform = this.mergeMultipleJotFormRecords(jotform);
    ```
+   
+   **Important:** `created_at` is the **submission upload timestamp** from JotForm API, NOT the assessment date from sessionkey.
+   - When multiple uploads exist for same student/grade, earliest submission timestamp wins
+   - This preserves data entry order, not assessment chronology
+   - Example: `sessionkey: 10034_20250915_10_43` (Sept 15 assessment) with `created_at: "2025-09-17 04:58:21"` (Sept 17 upload)
 
 3. **Cross-Source: JotForm + Qualtrics** (Lines 180-209)
    ```javascript
@@ -3808,6 +3815,66 @@ maxProgress = newProgress;
 - Time per page (to improve formula)
 - User perception surveys (does it feel fast/smooth?)
 - Regression prevention trigger frequency
+
+---
+
+### Bug Fixes and Resolutions
+
+#### Cross-Grade Data Contamination (October 30, 2025)
+
+**Issue Discovered**: Students with data from multiple grade levels (e.g., K2 Qualtrics + K3 JotForm) were showing incorrect merged records. Specifically:
+- K2 Qualtrics-only records were displaying K3 JotForm submission data
+- Records showed wrong sessionkey (K3 date instead of K2)
+- Created timestamps were incorrect (2025 K3 dates for 2024 K2 records)
+
+**Root Cause**: In `jotform-cache.js`, the `transformRecordsToSubmissions()` function used a `submissionMap` indexed only by `coreId`, not accounting for grade level:
+
+```javascript
+// BUG: Single key caused cross-grade contamination
+submissionMap.set(coreId, submission);
+```
+
+When converting merged records back to submission format:
+1. Multiple grades for same student would overwrite each other in the map
+2. Last JotForm submission (typically K3) would be used for ALL grades
+3. K2 merged records would incorrectly reuse K3 JotForm submission structure
+
+**Test Case**: Student C10034
+- **Qualtrics**: 3 K2 responses (Sept 2024) - ERV, TEC/MPT/FM, HTKS/EPN/CM data
+- **JotForm**: 1 K3 submission (Sept 2025) - sessionkey `10034_20250916_10_45`
+- **Bug Symptom**: K2 record showed sources `["qualtrics"]` but contained 633 JotForm answers with K3 sessionkey
+- **User Insight**: "JotForm database was developed since Oct 2025 so everything in it can ONLY be K3" - proved K2 couldn't have JotForm data
+
+**Fix Applied** (`jotform-cache.js` lines 1485-1508):
+
+Changed `submissionMap` to use composite key `${coreId}_${grade}`:
+
+```javascript
+// FIXED: Composite key prevents cross-grade contamination
+const sessionkey = submission.answers?.['3']?.answer || submission.answers?.['3']?.text;
+const grade = (sessionkey && window.GradeDetector) 
+  ? window.GradeDetector.determineGradeFromSessionKey(sessionkey)
+  : 'Unknown';
+const mapKey = `${coreId}_${grade}`;
+submissionMap.set(mapKey, submission);
+
+// ...later in the code...
+const mapKey = `${record.coreId}_${record.grade || 'Unknown'}`;
+const originalSubmission = submissionMap.get(mapKey);
+```
+
+**Validation Results**:
+- ✅ K3 record: JotForm-only, 633 answers, correct sessionkey `10034_20250916_10_45`
+- ✅ K2 record: Qualtrics-orphaned, 377 answers (101 Qualtrics fields), no sessionkey
+- ✅ All 3 Qualtrics K2 responses properly merged (ERV_Q1, TEC_M_Q1, CM_Q1, etc.)
+- ✅ No cross-grade data contamination
+
+**Impact**: 
+- Affects any student with data from multiple grades (K1/K2 Qualtrics + K3 JotForm)
+- Critical for longitudinal data tracking where students progress through grades
+- Ensures grade-based filtering displays correct data per grade level
+
+**Related Issues**: This bug was discovered while investigating why `created_at` timestamps didn't match assessment dates. The investigation revealed the deeper issue of cross-grade contamination in the submission mapping.
 
 ---
 

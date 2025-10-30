@@ -90,6 +90,11 @@ For each student with multiple JotForm submissions:
 3. Merge using "earliest non-empty wins"
 4. Result: Array of individual records (one per submission)
 
+**Important:** `created_at` is the **submission timestamp** (when uploaded to JotForm), NOT the assessment date from sessionkey.
+- Example: Sessionkey `10034_20250915_10_43` (Sept 15 assessment) uploaded on Sept 17 has `created_at: "2025-09-17 04:58:21"`
+- When multiple uploads exist for same student, earliest submission wins (not earliest assessment date)
+- This ensures data entry order is preserved, reflecting operator workflow
+
 **Note:** NO grade-based merging at this stage - each submission remains separate.
 
 #### Step 2: Qualtrics Internal Merging
@@ -150,10 +155,15 @@ For EACH `(coreId, grade)` combination separately:
 ### Key Principle: "Earliest Non-Empty Wins"
 
 Applied consistently across ALL merge levels:
-- ✅ JotForm multi-submission merge
-- ✅ Qualtrics multi-response merge  
+- ✅ JotForm multi-submission merge (sorted by `created_at` = submission timestamp)
+- ✅ Qualtrics multi-response merge (sorted by `startDate` or `recordedDate`)
 - ✅ JotForm + Qualtrics cross-source merge
 - ✅ **Only within same grade level**
+
+**Critical Distinction:** 
+- **`created_at`** (JotForm) = When submission was uploaded to JotForm API
+- **`sessionkey` date** = When assessment was actually performed (embedded in sessionkey: `10034_YYYYMMDD_HH_MM`)
+- **Merge uses `created_at`** to preserve data entry order, not assessment chronology
 
 ### Grade Detection Rules
 

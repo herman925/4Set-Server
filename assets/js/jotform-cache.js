@@ -554,6 +554,18 @@
         console.log(`[JotFormCache] ========== FETCH COMPLETE ==========`);
         console.log(`[JotFormCache] Total submissions: ${allSubmissions.length}`);
         
+        // DEBUG: Check C10034 submissions in raw fetch
+        const c10034Submissions = allSubmissions.filter(s => {
+          const sessionkey = s.answers?.['3']?.answer;
+          return sessionkey && sessionkey.startsWith('10034_');
+        });
+        if (c10034Submissions.length > 0) {
+          console.log(`[JotFormCache] 🔍 DEBUG: Found ${c10034Submissions.length} C10034 submission(s) in fetch:`);
+          c10034Submissions.forEach(s => {
+            console.log(`   ${s.answers['3'].answer} (ID: ${s.id}, created: ${s.created_at})`);
+          });
+        }
+        
         // Don't emit 100% yet - validation (phase 2) still needs to run
         return allSubmissions;
 
@@ -1363,9 +1375,11 @@
           
           // Determine grade from sessionkey if available
           let grade = 'Unknown';
-          if (submission.sessionkey && typeof window.GradeDetector !== 'undefined') {
-            grade = window.GradeDetector.determineGradeFromSessionkey(submission.sessionkey);
-            console.log(`[JotFormCache] Student ${coreId}: sessionkey=${submission.sessionkey} → grade=${grade}`);
+          // Extract sessionkey from answers (QID 3) or root level
+          const sessionkey = submission.sessionkey || submission.answers?.['3']?.answer || submission.answers?.['3']?.text;
+          if (sessionkey && typeof window.GradeDetector !== 'undefined') {
+            grade = window.GradeDetector.determineGradeFromSessionKey(sessionkey);
+            console.log(`[JotFormCache] Student ${coreId}: sessionkey=${sessionkey} → grade=${grade}`);
           }
           
           // Build flat record with all answer fields
@@ -1378,7 +1392,7 @@
               submissionId: submission.id,
               created_at: submission.created_at,
               updated_at: submission.updated_at,
-              sessionkey: submission.sessionkey  // Store sessionkey in metadata
+              sessionkey: sessionkey  // Store sessionkey from extracted value
             }
           };
           
@@ -1403,6 +1417,16 @@
       }
       
       console.log(`[JotFormCache] Transformed ${records.length} submissions to records (${submissions.length - records.length} skipped)`);
+      
+      // DEBUG: Check C10034 in transformed records
+      const c10034Records = records.filter(r => r.coreId === 'C10034');
+      if (c10034Records.length > 0) {
+        console.log(`[JotFormCache] 🔍 DEBUG: C10034 after transform: ${c10034Records.length} record(s)`);
+        c10034Records.forEach(r => {
+          console.log(`   Grade: ${r.grade}, SessionKey: ${r._meta?.sessionkey}, Created: ${r._meta?.created_at}`);
+        });
+      }
+      
       return records;
     }
 
@@ -1412,6 +1436,21 @@
      * 
      * IMPORTANT: This method assumes student ID is in answers[STUDENT_ID_QID].
      * If JotForm's question structure changes, the STUDENT_ID_QID constant must be updated.
+     * 
+     * CRITICAL FIX (October 30, 2025): COMPOSITE KEY FOR MULTI-GRADE STUDENTS
+     * Previously used submissionMap.set(coreId, submission), which caused cross-grade contamination
+     * when students had data from multiple grades (e.g., K2 Qualtrics + K3 JotForm).
+     * 
+     * Bug symptom: K2 Qualtrics-only records would incorrectly display K3 JotForm data because
+     * the map lookup only used coreId, causing all grades to share the last JotForm submission.
+     * 
+     * Now uses composite key: submissionMap.set(`${coreId}_${grade}`, submission)
+     * This ensures each grade gets its own original submission match, preventing cross-grade
+     * data contamination for longitudinal studies.
+     * 
+     * Test case: Student C10034
+     * - Before fix: K2 record showed K3 sessionkey (10034_20250916_10_45) with 633 JotForm answers
+     * - After fix: K2 record properly orphaned with 377 answers (101 Qualtrics fields), no sessionkey
      * 
      * ORPHANED RECORDS BEHAVIOR:
      * Records marked with _orphaned: true (Qualtrics-only data with no JotForm submission)
@@ -1458,14 +1497,24 @@
         console.error('[JotFormCache] Failed to load jotformquestions.json:', error);
       }
       
-      // Create a map of original submissions by coreId for easy lookup
+      // Create a map of original submissions by (coreId, grade) for easy lookup
+      // CRITICAL: Use coreId+grade as key to handle students with data from multiple grades
       const submissionMap = new Map();
       for (const submission of originalSubmissions) {
         const studentIdAnswer = submission.answers?.[STUDENT_ID_QID];
         const studentId = studentIdAnswer?.answer || studentIdAnswer?.text;
         if (studentId) {
           const coreId = this.ensureCoreIdPrefix(studentId);
-          submissionMap.set(coreId, submission);
+          
+          // Determine grade from this submission's sessionkey
+          const sessionkey = submission.answers?.['3']?.answer || submission.answers?.['3']?.text;
+          const grade = (sessionkey && window.GradeDetector) 
+            ? window.GradeDetector.determineGradeFromSessionKey(sessionkey)
+            : 'Unknown';
+          
+          // Use coreId+grade as composite key
+          const mapKey = `${coreId}_${grade}`;
+          submissionMap.set(mapKey, submission);
         }
       }
       
@@ -1475,8 +1524,9 @@
       
       for (const record of records) {
         try {
-          // Get original submission structure
-          const originalSubmission = submissionMap.get(record.coreId);
+          // Get original submission structure using coreId+grade composite key
+          const mapKey = `${record.coreId}_${record.grade || 'Unknown'}`;
+          const originalSubmission = submissionMap.get(mapKey);
           
           if (!originalSubmission) {
             // This is expected for Qualtrics-only records (orphaned data)
