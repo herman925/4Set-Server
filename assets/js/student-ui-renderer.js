@@ -329,7 +329,7 @@ class StudentUIRenderer {
         
         // Update set summary
         let summaryHTML = '';
-        if (yellowCount > 0) summaryHTML += `<span class="inline-flex items-center gap-1"><span class="status-circle status-yellow"></span>${yellowCount} post-term</span>`;
+        if (yellowCount > 0) summaryHTML += `<span class="inline-flex items-center gap-1"><span class="status-circle status-yellow"></span>${yellowCount} warning</span>`;
         if (redCount > 0) summaryHTML += `<span class="inline-flex items-center gap-1"><span class="status-circle status-red"></span>${redCount} incomplete</span>`;
         if (greenCount > 0) summaryHTML += `<span class="inline-flex items-center gap-1"><span class="status-circle status-green"></span>${greenCount} complete</span>`;
         if (greyCount > 0) summaryHTML += `<span class="inline-flex items-center gap-1"><span class="status-circle status-grey"></span>${greyCount} not started</span>`;

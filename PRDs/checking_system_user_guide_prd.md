@@ -1995,7 +1995,7 @@ For technical users, you can inspect the cache in browser DevTools:
 
 ```
 ✅ Green    = Complete & Verified
-⚠️ Yellow   = Post-Termination Activity (Needs Review)
+⚠️ Yellow   = Warning
 🔴 Red      = Incomplete (Missing Data)
 ⭕ Grey     = Not Started
 ```
