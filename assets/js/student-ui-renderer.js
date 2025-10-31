@@ -575,7 +575,8 @@ class StudentUIRenderer {
     getTaskStatus(taskValidation) {
         if (!taskValidation || taskValidation.answeredQuestions === 0) return 'grey';
         
-        // Post-term detection (yellow): Task has answers after termination
+        // Post-term detection or termination mismatch (yellow): Data quality issue
+        // Yellow indicates EITHER post-termination activity OR termination mismatch
         if (taskValidation.hasPostTerminationAnswers) return 'yellow';
         
         // Complete (green): All questions answered
@@ -603,7 +604,7 @@ class StudentUIRenderer {
     getStatusTitle(status) {
         const titles = {
             green: 'Complete',
-            yellow: 'Post-termination activity',
+            yellow: 'Post-termination activity or termination mismatch',
             red: 'Incomplete',
             grey: 'Not started'
         };

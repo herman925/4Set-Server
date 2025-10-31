@@ -1421,12 +1421,12 @@ getTaskStatus(taskValidation) {
 | 🟢 Green | `status-green` | `answeredPercent === 100` | Task complete (all questions answered) | Highest |
 | 🟢 Green | `status-green` | `hasTerminated && answered > 0` | Properly terminated (no post-term answers) | Highest |
 | 🟢 Green | `status-green` | `timedOut && answered > 0` | Properly timed out (no gaps after timeout) | Highest |
-| 🟡 Yellow | `status-yellow` | `hasPostTerminationAnswers` | Post-termination data issue | Medium-High |
+| 🟡 Yellow | `status-yellow` | `hasPostTerminationAnswers` OR termination mismatch | Post-termination data OR termination mismatch | Medium-High |
 | 🔴 Red | `status-red` | `answered > 0 && answeredPercent < 100` | Incomplete (some progress) | Medium |
 | ⚪ Grey | `status-grey` | `total === 0 || answered === 0` | Not started | Lowest |
 
 **Priority Logic:**
-1. Yellow trumps all (data quality issue)
+1. Yellow trumps all (data quality issue: post-termination activity OR termination mismatch)
 2. Green applies when properly complete/terminated
 3. Red indicates incomplete work
 4. Grey indicates no work started

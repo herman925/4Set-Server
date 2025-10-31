@@ -796,9 +796,9 @@ flowchart TD
     Q1 -->|YES| Q2{All required<br/>questions<br/>answered?}
     
     Q2 -->|NO| Red[🔴 RED<br/>Incomplete]
-    Q2 -->|YES| Q3{Post-termination<br/>answers<br/>detected?}
+    Q2 -->|YES| Q3{Post-termination<br/>answers OR<br/>termination<br/>mismatch?}
     
-    Q3 -->|YES| Yellow[⚠️ YELLOW<br/>Post-termination<br/>Activity]
+    Q3 -->|YES| Yellow[⚠️ YELLOW<br/>Post-term Activity<br/>or Mismatch]
     Q3 -->|NO| Green[✅ GREEN<br/>Complete]
     
     style Start fill:#4A90E2,stroke:#2E5C8A,color:#fff
@@ -815,8 +815,8 @@ flowchart TD
 
 1. **Grey (⭕):** Zero questions answered → Task not started
 2. **Red (🔴):** Some but not all required questions answered → Incomplete
-3. **Yellow (⚠️):** All required questions answered BUT answers exist after termination point → Post-termination activity (data quality issue)
-4. **Green (✅):** All required questions answered AND no post-termination answers → Complete and verified
+3. **Yellow (⚠️):** Post-termination activity OR termination mismatch detected → Needs review (data quality issue)
+4. **Green (✅):** All required questions answered, no post-termination answers, termination values match → Complete and verified
 
 ### Task Status Colors
 
@@ -832,30 +832,47 @@ The Checking System uses a color-coded status system:
 
 **What to do:** Nothing - task is complete and accurate
 
-#### ⚠️ Yellow - Complete but Needs Review (Post-Termination Activity)
+#### ⚠️ Yellow - Post-Termination Activity OR Termination Mismatch (Needs Review)
 
-**Meaning:**
-- All required questions answered BUT
+**Meaning (Two Scenarios):**
+
+**Scenario 1: Post-Termination Activity**
 - Answers were recorded AFTER termination point
-- Post-termination data detected (data quality issue)
 - Administrator continued testing beyond where termination should have occurred
+- Post-termination data detected (data quality issue)
+
+**Scenario 2: Termination Mismatch**
+- Recorded termination value doesn't match calculated value
+- Administrator marked termination incorrectly
+- Counting error or recording mistake
 
 **What to do:**
 1. Expand task details
 2. Review termination point and post-termination answers
-3. Verify if termination rules were correctly applied
-4. Document the issue - post-termination data indicates:
+3. Check recorded vs. calculated termination values
+4. Verify if termination rules were correctly applied
+5. Document the issue - yellow status indicates:
    - Administrator may not have recognized termination trigger
    - Testing protocol not followed correctly
+   - Counting or recording error in termination field
    - Possible need for administrator retraining
 
-**Example:**
+**Example 1 (Post-Termination):**
 ```
 Task: CWR (Chinese Word Reading)
 Termination: Triggered at Q24 (10 consecutive incorrect)
 But student has answers for Q25-Q30 (post-termination)
 Status: Yellow ⚠️ - Review needed
 Action: Verify termination was correct, document protocol deviation
+```
+
+**Example 2 (Termination Mismatch):**
+```
+Task: ERV (English Receptive Vocabulary), Stage 2
+Recorded: "Terminated" (ERV_Ter2 = 1)
+Calculated: "Should Pass" (6 correct out of 12)
+Status: Yellow ⚠️ - Mismatch detected
+Action: Verify recorded value, check for counting error
 ```
 
 #### 🔴 Red - Incomplete
@@ -1777,7 +1794,8 @@ A: Forever (in Jotform). Local cache cleared after 30 days or when manually clea
 ### Data Quality
 
 1. **Validation Procedures**
-   - Always check termination mismatches
+   - Always check yellow lights (termination mismatches & post-termination activity)
+   - Review post-termination answers for data quality issues
    - Manually verify ambiguous cases
    - Document all discrepancies
    - Follow correction procedures
