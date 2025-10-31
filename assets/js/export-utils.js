@@ -113,9 +113,9 @@ const ExportUtils = (() => {
       return '⚪ Not Started';
     }
     
-    // Post-termination data detected (yellow)
-    if (taskData.hasPostTerminationAnswers) {
-      return '🟡 Post-Term';
+    // Warning: Post-termination data OR termination mismatch detected (yellow)
+    if (taskData.hasPostTerminationAnswers || taskData.hasTerminationMismatch) {
+      return '🟡 Warning';
     }
     
     // Properly terminated/timed out (green)
@@ -396,7 +396,9 @@ const ExportUtils = (() => {
           taskData.questions.forEach((q, idx) => {
             const qNum = idx + 1;
             const studentAns = q.studentAnswer !== null ? q.studentAnswer : '—';
-            const correctAns = q.correctAnswer !== undefined ? q.correctAnswer : (q.isYNQuestion ? 'Y/N' : '—');
+            const correctAns = q.isTextDisplay
+              ? '—'
+              : (q.displayCorrectAnswer ?? q.correctAnswer ?? (q.isYNQuestion ? 'Y/N' : '—'));
             const result = q.studentAnswer === null ? '⚪ Unanswered' : (q.isCorrect ? '✅ Correct' : '❌ Incorrect');
             
             // Mark ignored questions (after termination or timeout)

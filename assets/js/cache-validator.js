@@ -433,21 +433,38 @@ window.CacheValidator = (() => {
             let finalCacheRaw = cacheData?.raw;
             
             if (matchingCacheEntries.length > 0) {
-              // Process TGMD raw trial data into scores like the student page
-              const trialValues = matchingCacheEntries.map(entry => {
-                const value = entry.data.raw || '0';
-                // Convert to number, treating non-numeric values as 0
-                return parseInt(value, 10) || 0;
+              // CRITICAL: Check if ANY trial has actual data before processing
+              // Don't fabricate "0, 0" when TGMD fields are completely absent (Qualtrics-only records)
+              const hasAnyData = matchingCacheEntries.some(entry => {
+                const raw = entry.data.raw;
+                return raw !== null && raw !== undefined && raw !== '' && raw !== cleanQuestionId;
               });
               
-              // Calculate score: count of successful trials / total trials
-              const successfulTrials = trialValues.reduce((sum, val) => sum + val, 0);
-              const totalTrials = trialValues.length;
-              const score = `${successfulTrials}/${totalTrials}`;
-              
-              finalCacheRaw = trialValues.join(', ');
-              finalCacheAnswer = score;
-              console.log(`[CacheValidator] TGMD matrix: ${cleanQuestionId} trials [${trialValues.join(', ')}] -> score ${score}`);
+              if (hasAnyData) {
+                // Process TGMD raw trial data into scores like the student page
+                const trialValues = matchingCacheEntries.map(entry => {
+                  const value = entry.data.raw;
+                  // Convert to number, treating non-numeric/empty values as 0
+                  if (value === null || value === undefined || value === '' || value === cleanQuestionId) {
+                    return 0;
+                  }
+                  return parseInt(value, 10) || 0;
+                });
+                
+                // Calculate score: count of successful trials / total trials
+                const successfulTrials = trialValues.reduce((sum, val) => sum + val, 0);
+                const totalTrials = trialValues.length;
+                const score = `${successfulTrials}/${totalTrials}`;
+                
+                finalCacheRaw = trialValues.join(', ');
+                finalCacheAnswer = score;
+                console.log(`[CacheValidator] TGMD matrix: ${cleanQuestionId} trials [${trialValues.join(', ')}] -> score ${score}`);
+              } else {
+                // No actual TGMD data - don't fabricate "0, 0"
+                finalCacheRaw = null;
+                finalCacheAnswer = null;
+                console.log(`[CacheValidator] TGMD matrix: ${cleanQuestionId} has NO data (Qualtrics-only?) -> null`);
+              }
             }
             
             // CRITICAL: Filter Qualtrics placeholders (same logic as TaskValidator)
@@ -467,20 +484,33 @@ window.CacheValidator = (() => {
             if (cleanQuestionId && cleanQuestionId.startsWith('TGMD_')) {
               // Extract trial values from TGMD scoring data instead of display text
               // The display shows icons, but we need the actual trial values for comparison
-              const tgmdScoring = window.StudentPage?.currentValidation?.tgmdScoring?.byTask;
+              const validation = window.StudentPage?.currentValidation;
+              const tgmdScoring = validation?.tgmd?.tgmdScoring?.byTask;
               if (tgmdScoring) {
                 // Find the criterion in TGMD scoring data
                 for (const [taskName, taskData] of Object.entries(tgmdScoring)) {
                   const criterion = taskData.criteria?.find(c => c.id === cleanQuestionId);
                   if (criterion && criterion.trials) {
-                    // Create expected display from trial values (raw format like cache)
+                    // CRITICAL: Check if trials have actual data before formatting
+                    // If trials are undefined/null, this means no TGMD data exists (e.g., Qualtrics-only record)
+                    // Show "—" instead of fabricating "0, 0" from undefined values
                     const t1Val = criterion.trials.t1;
                     const t2Val = criterion.trials.t2;
-                    expectedDisplay = `${t1Val === 1 ? '1' : t1Val === 0 ? '0' : ''}, ${t2Val === 1 ? '1' : t2Val === 0 ? '0' : ''}`;
-                    console.log(`[CacheValidator] TGMD scoring for ${cleanQuestionId}: t1=${t1Val}, t2=${t2Val} -> "${expectedDisplay}"`);
+                    
+                    if (t1Val === undefined || t1Val === null) {
+                      // No TGMD data - show dash instead of "0, 0"
+                      expectedDisplay = '—';
+                      console.log(`[CacheValidator] TGMD ${cleanQuestionId}: No trial data (t1=${t1Val}, t2=${t2Val}) -> "—"`);
+                    } else {
+                      // Has trial data - format as "t1, t2"
+                      expectedDisplay = `${t1Val === 1 ? '1' : t1Val === 0 ? '0' : ''}, ${t2Val === 1 ? '1' : t2Val === 0 ? '0' : ''}`;
+                      console.log(`[CacheValidator] TGMD scoring for ${cleanQuestionId}: t1=${t1Val}, t2=${t2Val} -> "${expectedDisplay}"`);
+                    }
                     break;
                   }
                 }
+              } else {
+                console.log(`[CacheValidator] TGMD scoring data not found for ${cleanQuestionId}. Available validation:`, validation);
               }
             }
             
@@ -504,7 +534,7 @@ window.CacheValidator = (() => {
             questionMismatches.push({
               field: cleanQuestionId,
               cacheRaw: cacheValueForComparison, // Show raw trial data for TGMD, processed score for others
-              displayValue: displayAnswer,
+              displayValue: cleanQuestionId && cleanQuestionId.startsWith('TGMD_') ? expectedDisplay : displayAnswer,
               status: status
             });
           }
@@ -1233,26 +1263,14 @@ window.CacheValidator = (() => {
             const questionTable = document.createElement('div');
             questionTable.className = 'px-4 pb-4';
             
-            const rowsHtml = task.questions.map(q => {
-            // Debug: Log what data we actually have for each question
-            if (q.field && q.field.startsWith('TGMD_')) {
-              console.log(`[Modal Debug] TGMD Question: ${q.field}`);
-              console.log(`  cacheRaw: ${q.cacheRaw}`);
-              console.log(`  cachedValue: ${q.cachedValue}`);
-              console.log(`  displayValue: ${q.displayValue}`);
-              console.log(`  taskValidatorValue: ${q.taskValidatorValue}`);
-              console.log(`  All keys: ${Object.keys(q)}`);
-            }
-            
-            return `
+            const rowsHtml = task.questions.map(q => `
               <tr class="hover:bg-gray-50 ${q.status.includes('Mismatch') ? 'bg-red-50' : ''}">
                 <td class="px-3 py-2 font-medium text-gray-900">${q.field}</td>
                 <td class="px-3 py-2 text-blue-600 font-mono text-sm">${escapeHtml(String(q.cacheRaw || q.cachedValue || 'Not found'))}</td>
                 <td class="px-3 py-2 text-purple-600 font-mono text-sm">${escapeHtml(String(q.displayValue || q.taskValidatorValue || 'Not found'))}</td>
                 <td class="px-3 py-2 text-sm">${q.status}</td>
               </tr>
-            `;
-          }).join('');
+            `).join('');
             
             questionTable.innerHTML = `
               <table class="w-full text-sm mt-2">

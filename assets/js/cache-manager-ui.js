@@ -556,11 +556,11 @@
             Cache contains <strong>${stats.count}</strong> submissions, synced <strong>${stats.age}</strong> minutes ago.
           </p>
           
-          <div class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mb-3">
-            <p class="text-xs text-blue-800 dark:text-blue-200 mb-2">
+          <div class="cache-ready-info-box">
+            <p class="cache-ready-info-title text-xs mb-2">
               <strong>💡 Cache Management:</strong>
             </p>
-            <ul class="text-xs text-blue-700 dark:text-blue-300 space-y-1 ml-4">
+            <ul class="cache-ready-info-list text-xs space-y-1 ml-4">
               <li><strong>Delete Cache:</strong> Purges ALL data (JotForm + Qualtrics) - requires full re-sync (~90 sec)</li>
               <li>To refresh data, delete cache and click "Fetch Database" from the "System Not Ready" screen</li>
             </ul>
@@ -588,7 +588,7 @@
     // Delete button - Performs comprehensive cache purge
     // Deletes ALL three IndexedDB stores: submissions, validation, Qualtrics
     deleteBtn.addEventListener('click', async () => {
-      if (confirm('⚠️ DELETE ALL CACHED DATA?\n\nThis will purge:\n• JotForm submissions cache\n• Student validation cache\n• Qualtrics TGMD cache\n\nYou will need to re-sync (60-90 seconds) before using the system again.\n\nContinue?')) {
+      if (confirm('⚠️ DELETE ALL CACHED DATA?\n\nThis will remove the following IndexedDB stores:\n• Merged submissions cache (JotForm + Qualtrics)\n• Student validation cache (task results)\n• Qualtrics TGMD cache (raw responses)\n\nAfter deletion the system returns to "System Not Ready" and requires a full Fetch Database run (about 60-90 seconds).\n\nContinue?')) {
         console.log('[CacheUI] User confirmed comprehensive cache deletion');
         await window.JotFormCache.clearCache();
         console.log('[CacheUI] ✅ Comprehensive cache purge complete');

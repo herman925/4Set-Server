@@ -1259,7 +1259,31 @@
         const set = setStatus[setId];
         if (set.tasksTotal === 0) continue;
         
-        const completionRate = set.tasksComplete / set.tasksTotal;
+        // Special handling for Set 4: Exclude MF (Math Fluency) from completion criteria
+        // Set 4 can be green if FineMotor and TGMD satisfy green light criteria, regardless of MF status
+        let effectiveTasksTotal = set.tasksTotal;
+        let effectiveTasksComplete = set.tasksComplete;
+        
+        if (setId === 'set4') {
+          // Find MF task in set4
+          const mfTask = set.tasks.find(t => t.taskId === 'mf');
+          if (mfTask) {
+            // Exclude MF from both total and complete counts
+            effectiveTasksTotal--;
+            if (mfTask.complete) {
+              effectiveTasksComplete--;
+            }
+            console.log(`[JotFormCache] Set 4: Excluding MF from completion criteria (${effectiveTasksComplete}/${effectiveTasksTotal} required)`);
+          }
+        }
+        
+        // Avoid division by zero if all tasks were excluded
+        if (effectiveTasksTotal === 0) {
+          set.status = 'notstarted';
+          continue;
+        }
+        
+        const completionRate = effectiveTasksComplete / effectiveTasksTotal;
         if (completionRate === 1) {
           set.status = 'complete';
         } else if (set.tasksStarted > 0) {

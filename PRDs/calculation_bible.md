@@ -209,6 +209,109 @@ mergeDataSources([jotformK3], [qualtricsK2])
 - Maintains data integrity for longitudinal studies
 - Console warns when cross-grade data is detected
 
+### Empty Value Semantics ⚠️ **CRITICAL - October 2025 Fix**
+
+**Issue:** TGMD "0" (Not Observed) vs null (no answer) handling
+
+**Location:** `assets/js/data-merger.js` Lines 26-45
+
+#### The Problem
+
+TGMD assessments distinguish between:
+- **`"0"` or `0`** = Not Observed (valid answer, skill not demonstrated)
+- **`null`/`undefined`/`""`** = No answer (question not attempted)
+
+Old code used **falsy checks** that could lose numeric 0:
+
+```javascript
+// BEFORE (Bug)
+extractAnswerValue(answerObj) {
+  if (typeof answerObj === 'object' && answerObj !== null) {
+    return answerObj.answer || answerObj.text || null;  // ← Treats 0 as falsy!
+    // If answerObj.answer === 0, falls through to answerObj.text
+    // If text is undefined, returns null → LOSES THE ZERO!
+  }
+  return answerObj;
+}
+```
+
+#### The Fix
+
+Use **explicit null/undefined checks** instead of falsy checks:
+
+```javascript
+// AFTER (Fixed)
+extractAnswerValue(answerObj) {
+  if (!answerObj && answerObj !== 0) {  // Allow numeric 0 to pass through
+    return null;
+  }
+  
+  if (typeof answerObj === 'object' && answerObj !== null) {
+    // Explicitly check for undefined/null, preserving 0
+    if (answerObj.answer !== undefined && answerObj.answer !== null) {
+      return answerObj.answer;  // Returns 0 if present ✓
+    }
+    if (answerObj.text !== undefined && answerObj.text !== null) {
+      return answerObj.text;
+    }
+    return null;
+  }
+  
+  return answerObj;
+}
+```
+
+#### Impact on Merge Logic
+
+All merge conditions updated to preserve 0:
+
+```javascript
+// BEFORE (Risky)
+if (!qualtricsValue || qualtricsValue === '') {
+  continue;  // Would skip if value is numeric 0
+}
+
+// AFTER (Safe)
+if (qualtricsValue === null || qualtricsValue === undefined || qualtricsValue === '') {
+  continue;  // Only skips actual empty values, preserves 0
+}
+```
+
+#### Value Type Table
+
+| Value | Type | Meaning | Action |
+|-------|------|---------|--------|
+| `"0"` | String | Not Observed (TGMD) | **PRESERVE** ✓ |
+| `0` | Number | Not Observed (TGMD) | **PRESERVE** ✓ |
+| `"1"` | String | Observed (TGMD) | **PRESERVE** ✓ |
+| `null` | Null | No answer | Skip ✗ |
+| `undefined` | Undefined | No answer | Skip ✗ |
+| `""` | String | Empty | Skip ✗ |
+
+#### Locations Updated
+
+1. **`extractAnswerValue()`** (Line 26) - Root cause fix ⭐
+2. **`mergeMultipleQualtricsRecords()`** (Line 245)
+3. **`mergeMultipleJotFormRecords()`** (Line 302)
+4. **`mergeTGMDFields()` - Qualtrics check** (Line 345)
+5. **`mergeTGMDFields()` - JotForm check** (Line 355)
+
+#### Test Case
+
+```javascript
+// Qualtrics has all TGMD="0" (Not Observed)
+const qualtrics = {
+  "TGMD_111_Hop_t1": { answer: 0, name: "TGMD_111_Hop_t1" },
+  "TGMD_111_Hop_t2": { answer: 0, name: "TGMD_111_Hop_t2" }
+};
+
+// Expected: All fields preserved in merge ✓
+// Old behavior: Would skip (treat 0 as falsy) ✗
+```
+
+**Date Fixed:** October 31, 2025  
+**Test File:** `TEMP/test_data_merger_fix.js` (6/6 tests passing)
+
 ### Test-Pipeline Alignment
 
 **Location:** `TEMP/test-pipeline-core-id.html` Lines 964-996
@@ -2508,6 +2611,14 @@ if (cached) {
 ### Overview
 
 Theory of Mind (ToM) questions use a branching structure where the student's answer to a "selector" question (e.g., ToM_Q1a) determines which subsequent questions are asked. The checking system displays branch information on ALL questions in a branch to make the branching logic visible.
+
+### UI Indicators (2025-10-31)
+
+- **Question Column Badge**: Every branched question now shows a small branch badge next to the question ID with a `git-branch` icon and the selected branch label (e.g., `豬仔`). This mirrors the branch hint shown in the Result column so the branch grouping is visible even when scanning the Question column alone.
+- **Row Metadata**: Table rows gain a `data-branch` attribute when a branch is detected, enabling future filtering or styling rules.
+- **Status Pills**: Status pills continue to append the `(<Branch Name> Branch)` suffix when relevant, keeping column behaviour consistent.
+- **Typed Answer Peek**: Radio questions with an associated `_TEXT` answer now display a peek button in the Student Answer column. Hovering or clicking the icon (or the `_TEXT` row itself when shown) reveals the recorded free-text answer via a floating tooltip. The tooltip only appears when data exists, preserving confidentiality for blank entries and text-only attempts that remain hidden.
+  - Tooltip sanitization filters out Qualtrics placeholders where the `_TEXT` field repeats its own ID (e.g., `ToM_Q3a_TEXT`) so only genuine typed content is surfaced.
 
 ### Branch Detection
 

@@ -1,6 +1,79 @@
 /* Shared Styles for 4Set-Server */
 /* Used across multiple pages */
 
+/* Text Answer Peek */
+.answer-with-peek {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+}
+
+.answer-with-peek span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.text-answer-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 9999px;
+    border: 1px solid rgba(148, 163, 184, 0.4);
+    background: rgba(148, 163, 184, 0.12);
+    color: rgba(30, 64, 175, 0.9);
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
+}
+
+.text-answer-trigger:hover,
+.text-answer-trigger:focus {
+    outline: none;
+    background: rgba(30, 64, 175, 0.15);
+    border-color: rgba(30, 64, 175, 0.4);
+    transform: translateY(-1px);
+}
+
+.text-answer-trigger .lucide {
+    width: 0.875rem;
+    height: 0.875rem;
+}
+
+[data-text-answer].is-active-text-answer,
+.text-answer-trigger.is-active-text-answer {
+    background: rgba(30, 64, 175, 0.18) !important;
+    border-color: rgba(30, 64, 175, 0.5) !important;
+    color: rgba(30, 64, 175, 1) !important;
+}
+
+.text-answer-tooltip {
+    position: fixed;
+    top: 0;
+    left: 0;
+    transform: translate(-50%, -100%);
+    background: rgba(17, 24, 39, 0.92);
+    color: #f9fafb;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    max-width: 22rem;
+    box-shadow: 0 15px 35px -12px rgba(15, 23, 42, 0.45);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    z-index: 10050;
+    transition: opacity 0.16s ease, visibility 0.16s ease;
+    word-break: break-word;
+    text-align: left;
+}
+
+.text-answer-tooltip.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
 /* Badge States */
 .badge-success {
     background: rgba(34, 197, 94, 0.1) !important;

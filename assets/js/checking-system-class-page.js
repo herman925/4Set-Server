@@ -417,7 +417,7 @@
     let legendHtml = '';
     
     if (currentViewMode === 'set') {
-      // By Set view: 3 colors (no yellow/post-term)
+      // By Set view: 3 colors (no yellow/warning)
       legendHtml += `
         <span class="inline-flex items-center gap-1.5">
           <span class="status-circle status-green"></span>
@@ -433,7 +433,7 @@
         </span>
       `;
     } else {
-      // By Task view: 4 colors (includes yellow for Post-Term)
+      // By Task view: 4 colors (includes yellow for Warning)
       legendHtml += `
         <span class="inline-flex items-center gap-1.5">
           <span class="status-circle status-green"></span>
@@ -441,7 +441,7 @@
         </span>
         <span class="inline-flex items-center gap-1.5">
           <span class="status-circle status-yellow"></span>
-          <span>Post-Term</span>
+          <span>Warning</span>
         </span>
         <span class="inline-flex items-center gap-1.5">
           <span class="status-circle status-red"></span>
@@ -846,8 +846,8 @@
         
         if (foundTask) {
           
-          // Post-term detection (yellow): Task has answers after termination
-          if (foundTask.hasPostTerminationAnswers) return 'status-yellow';
+          // Warning detection (yellow): Post-termination data OR termination mismatch
+          if (foundTask.hasPostTerminationAnswers || foundTask.hasTerminationMismatch) return 'status-yellow';
           
           // Complete (green): All questions answered or properly terminated
           if (foundTask.complete) return 'status-green';
@@ -1010,7 +1010,7 @@
   }
 
   /**
-   * Render set status indicator (By Set view only - no yellow/post-term)
+   * Render set status indicator (By Set view only - no yellow/warning)
    */
   function renderSetStatus(status, label) {
     const statusConfig = {

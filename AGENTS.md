@@ -317,6 +317,39 @@ Error (504/truncation) → Reduce to 50 (50%)
 Success → Success → Try 100 again (gradual increase)
 ```
 
+#### Set 4 Completion Logic: MF Task Exclusion
+**Decision**: Exclude Math Fluency (MF) from Set 4 green light criteria  
+**Date**: October 31, 2025  
+**Rationale**:
+- **Practical Reality**: MF is frequently incomplete or not administered, blocking Set 4 completion status
+- **Core Motor Priority**: FineMotor and TGMD are the essential motor assessments in Set 4
+- **User Requirement**: Schools need Set 4 to show as complete when motor assessments are done, regardless of MF status
+
+**Implementation**:
+```javascript
+// Set 4 composition: FineMotor, TGMD, MF
+// Green light criteria: FineMotor + TGMD complete (MF excluded)
+
+if (setId === 'set4') {
+  const mfTask = set.tasks.find(t => t.taskId === 'mf');
+  if (mfTask) {
+    effectiveTasksTotal--;      // Exclude MF from total
+    if (mfTask.complete) {
+      effectiveTasksComplete--;  // Exclude MF from complete count
+    }
+  }
+}
+```
+
+**Impact**:
+- Set 4 shows **green** when FineMotor + TGMD are complete, even if MF is incomplete/not started
+- Applies to all drilldown pages: district, group, school, class, student
+- MF still appears in task lists and individual validation, just doesn't affect set status
+- Documented in `PRDs/task_completion_calculation_logic_prd.md` v1.3
+
+**Files Modified**:
+- `assets/js/jotform-cache.js` (lines 1257-1295) - Set status calculation loop
+
 ### Data Flow Principles
 
 #### Absolute Certainty Principle for Terminations

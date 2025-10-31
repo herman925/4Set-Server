@@ -1,5 +1,36 @@
 # Issue Resolution Summary: Grade Detector Test Version & Merge Strategy Clarification
 
+## 2025-10-31: Cache Completion Messaging Clarification ✅
+
+**Problem**: The cache fetch modal implied that only TGMD data was fetched, which risked misleading operators about the scope of the sync.
+
+**Decision**: Reword the completion message (shared via `config/checking_system_config.json`) to clarify that the sync caches all JotForm submissions locally while still acknowledging Qualtrics when present.
+
+**Change**: Updated `cache.modalText.completeMessage` to: “Database has been fetched successfully. JotForm submissions are now cached locally and ready for validation.”
+
+**Impact**: Ensures operators understand that the fetch covers the full JotForm dataset and avoids overstating Qualtrics coverage.
+
+---
+
+## 2025-10-31: Correct Answer Display for EPN & HTKS ✅
+
+**Problem**: On the student page, English Picture Naming (EPN) questions showed `N/A` as the correct answer, and Head-toe-knee-shoulder (HTKS) questions (scored 0/1/2) also displayed `N/A` for the "Correct Answer" column.
+
+**Root Cause**:
+1. TaskValidator flagged any question without `scoring.correctAnswer` as `isYNQuestion`, forcing the UI to treat all such tasks as yes/no.
+2. The student page hard-coded `N/A` for all Y/N tasks, while HTKS lacks explicit metadata for correct values.
+
+**Fix**:
+1. Enhance TaskValidator to:
+   - Detect true Y/N tasks by inspecting option values rather than absence of metadata.
+   - Derive `displayCorrectAnswer` using option labels (Y/N tasks → `Y`; ordinal scales → highest score label).
+   - Expose both `displayCorrectAnswer` and refined `isYNQuestion` flags per question.
+2. Update student page and export utilities to prioritise `displayCorrectAnswer`, falling back to `correctAnswer` or `—` for text fields.
+
+**Outcome**: Student page and exports now show meaningful correct answers for both EPN (Y/N) and HTKS (0/1/2 scoring) without breaking other tasks.
+
+---
+
 ## Issue Requirements
 
 Based on issue discussion and references to #94:

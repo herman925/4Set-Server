@@ -2027,6 +2027,129 @@ function mergeAllFields(jotformRecord, qualtricsRecord) {
 }
 ```
 
+### Empty Value Semantics ⚠️ **CRITICAL - October 2025 Fix**
+
+**Issue:** TGMD "0" (Not Observed) vs null (no answer) must be preserved correctly through the entire merge pipeline.
+
+#### The Problem
+
+In TGMD assessments, there's a critical distinction:
+- **`"0"` or `0`** = Not Observed (valid answer indicating skill was not demonstrated)
+- **`null`/`undefined`/`""`** = No answer (question not attempted)
+
+The original code used **falsy checks** (`||` operator) that could lose numeric 0 values.
+
+#### The Solution (Fixed October 31, 2025)
+
+**Location:** `assets/js/data-merger.js`
+
+##### 1. extractAnswerValue() - Root Cause Fix
+
+```javascript
+// BEFORE (Bug)
+extractAnswerValue(answerObj) {
+  if (typeof answerObj === 'object' && answerObj !== null) {
+    return answerObj.answer || answerObj.text || null;  // ← Treats 0 as falsy!
+    // If answerObj.answer === 0, falls through to answerObj.text
+    // If text is undefined, returns null → LOSES THE ZERO!
+  }
+  return answerObj;
+}
+
+// AFTER (Fixed)
+extractAnswerValue(answerObj) {
+  if (!answerObj && answerObj !== 0) {  // Allow numeric 0 to pass through
+    return null;
+  }
+  
+  if (typeof answerObj === 'object' && answerObj !== null) {
+    // Explicitly check for undefined/null, preserving 0
+    if (answerObj.answer !== undefined && answerObj.answer !== null) {
+      return answerObj.answer;  // Returns 0 if present ✓
+    }
+    if (answerObj.text !== undefined && answerObj.text !== null) {
+      return answerObj.text;
+    }
+    return null;
+  }
+  
+  return answerObj;
+}
+```
+
+##### 2. Merge Condition Fixes
+
+All merge conditions updated from falsy checks to explicit null checks:
+
+```javascript
+// BEFORE (Risky)
+if (!qualtricsValue || qualtricsValue === '') {
+  continue;  // Would skip if value is numeric 0
+}
+
+// AFTER (Safe)
+if (qualtricsValue === null || qualtricsValue === undefined || qualtricsValue === '') {
+  continue;  // Only skips actual empty values, preserves 0
+}
+```
+
+**Updated in 5 locations:**
+1. `extractAnswerValue()` (Line 26) - Root cause ⭐
+2. `mergeMultipleQualtricsRecords()` (Line 245)
+3. `mergeMultipleJotFormRecords()` (Line 302)
+4. `mergeTGMDFields()` - Qualtrics check (Line 345)
+5. `mergeTGMDFields()` - JotForm check (Line 355)
+
+#### Complete Data Flow Verification
+
+**Scenario 1: Qualtrics NULL (No Value)**
+```
+API: { "QID126166420#1_1": null }
+  ↓ extractValue()
+"" (empty string)
+  ↓ transformResponse()
+Field skipped (not in record)
+  ↓ Final Cache
+Field absent ✓
+```
+
+**Scenario 2: Qualtrics Zero (Actual Input)**
+```
+API: { "QID126166420#1_1": 0 }
+  ↓ extractValue() → String(0)
+"0"
+  ↓ transformResponse()
+{ answer: "0", name: "TGMD_111_Hop_t1" }
+  ↓ extractAnswerValue()
+"0" (preserved by explicit checks)
+  ↓ Merge Condition
+Not skipped (doesn't match null/undefined/"")
+  ↓ Final Cache
+"0" ✓
+```
+
+#### Value Type Truth Table
+
+| Value | Type | Meaning | Action |
+|-------|------|---------|--------|
+| `"0"` | String | Not Observed (TGMD) | **PRESERVE** ✓ |
+| `0` | Number | Not Observed (TGMD) | **PRESERVE** ✓ |
+| `"1"` | String | Observed (TGMD) | **PRESERVE** ✓ |
+| `null` | Null | No answer | Skip ✗ |
+| `undefined` | Undefined | No answer | Skip ✗ |
+| `""` | String | Empty | Skip ✗ |
+
+#### Protection Points
+
+1. **QualtricsTransformer.extractValue()** - Converts numeric 0 to "0" string
+2. **QualtricsTransformer.transformResponse()** - Empty strings don't create fields
+3. **DataMerger.extractAnswerValue()** - Explicit checks preserve 0
+4. **All merge conditions** - Only skip null/undefined/empty, not 0
+
+**Test File:** `TEMP/test_data_merger_fix.js` (6/6 tests passing ✅)
+
+---
+
 #### Understanding the `_sources` Array Field
 
 **Purpose**: The `_sources` field is an **array** (not a string) that tracks which data sources contributed to each submission record. This is critical for:
