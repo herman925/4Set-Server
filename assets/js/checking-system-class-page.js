@@ -232,9 +232,20 @@
     let outstanding = 0;
     for (const setId in setStatus) {
       const set = setStatus[setId];
-      // Count incomplete tasks in each set
-      if (set.tasksTotal > 0) {
-        outstanding += (set.tasksTotal - set.tasksComplete);
+      if (!set) continue;
+
+      if (Array.isArray(set.tasks) && set.tasks.length > 0) {
+        set.tasks.forEach(task => {
+          if (task?.ignoredForIncompleteChecks) return;
+          if (!task.complete) {
+            outstanding++;
+          }
+        });
+        continue;
+      }
+
+      if (typeof set.tasksTotal === 'number' && typeof set.tasksComplete === 'number') {
+        outstanding += Math.max(0, set.tasksTotal - set.tasksComplete);
       }
     }
     return outstanding;
@@ -845,6 +856,7 @@
         );
         
         if (foundTask) {
+          if (foundTask.ignoredForIncompleteChecks) return 'status-grey';
           
           // Warning detection (yellow): Post-termination data OR termination mismatch
           if (foundTask.hasPostTerminationAnswers || foundTask.hasTerminationMismatch) return 'status-yellow';
@@ -1067,7 +1079,8 @@
       if (!set || !set.tasks || set.tasks.length === 0) continue;
       
       // Get incomplete tasks in this set
-      const incompleteTasks = set.tasks.filter(t => !t.complete);
+      const incompleteTasks = set.tasks.filter(t => !t.complete && !t.ignoredForIncompleteChecks);
+      
       if (incompleteTasks.length === 0) continue;
       
       // Get set name from survey structure

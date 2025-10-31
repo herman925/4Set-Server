@@ -1212,8 +1212,13 @@
           continue; // Skip gender-inappropriate tasks
         }
         
-        // Only count tasks that are applicable to this student
-        totalTasks++;
+        const normalizedTaskId = taskId.toLowerCase();
+        const isIgnoredForIncompleteChecks = setId === 'set4' && normalizedTaskId === 'mf';
+        
+        // Only count tasks that are applicable to this student and not ignored for completion
+        if (!isIgnoredForIncompleteChecks) {
+          totalTasks++;
+        }
         
         // TaskValidator returns answeredQuestions/totalQuestions, not totals.answered/total
         const answered = validation.answeredQuestions || 0;
@@ -1227,13 +1232,13 @@
                            (validation.terminated && !validation.hasPostTerminationAnswers && answered > 0) ||
                            (validation.timedOut && !validation.hasPostTerminationAnswers && answered > 0);
         
-        if (isComplete) {
+        if (isComplete && !isIgnoredForIncompleteChecks) {
           completeTasks++;
           setStatus[setId].tasksComplete++;
         }
         
         // Track if task has been started (at least 1 answer)
-        if (answered > 0) {
+        if (answered > 0 && !isIgnoredForIncompleteChecks) {
           setStatus[setId].tasksStarted++;
         }
         
@@ -1250,7 +1255,8 @@
           complete: isComplete,
           answered,
           total,
-          hasPostTerminationAnswers: validation.hasPostTerminationAnswers || false
+          hasPostTerminationAnswers: validation.hasPostTerminationAnswers || false,
+          ignoredForIncompleteChecks: isIgnoredForIncompleteChecks
         });
       }
       
@@ -1266,13 +1272,10 @@
         
         if (setId === 'set4') {
           // Find MF task in set4
-          const mfTask = set.tasks.find(t => t.taskId === 'mf');
-          if (mfTask) {
+          const mfTask = set.tasks.find(t => t.taskId === 'mf' || t.taskId?.toLowerCase() === 'mf');
+          if (mfTask && effectiveTasksTotal > 0) {
             // Exclude MF from both total and complete counts
             effectiveTasksTotal--;
-            if (mfTask.complete) {
-              effectiveTasksComplete--;
-            }
             console.log(`[JotFormCache] Set 4: Excluding MF from completion criteria (${effectiveTasksComplete}/${effectiveTasksTotal} required)`);
           }
         }
