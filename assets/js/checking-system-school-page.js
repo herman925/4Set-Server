@@ -847,7 +847,8 @@
         );
         
         if (foundTask) {
-          // Post-term detection (yellow): Task has answers after termination
+          // Post-term detection or termination mismatch (yellow): Data quality issue
+          // Yellow indicates EITHER post-termination activity OR termination mismatch
           if (foundTask.hasPostTerminationAnswers) return 'status-yellow';
           
           // Complete (green): All questions answered or properly terminated

@@ -2288,7 +2288,7 @@
    * 
    * Status logic:
    * - Green: 100% answered (including 0 values for TGMD "Not-Observed"), OR properly terminated/timed out
-   * - Yellow: Post-termination data detected
+   * - Yellow: Post-termination data detected OR termination mismatch (data quality issues)
    * - Red: Partially answered (some questions missing/unanswered)
    * - Grey: Not started (no answers at all)
    */
@@ -2308,9 +2308,10 @@
       statusCircle.classList.add('status-grey');
       statusCircle.title = 'Not started';
     } else if (stats.hasPostTerminationAnswers) {
-      // Yellow: Post-termination data detected (terminated BUT has answers after termination)
+      // Yellow: Post-termination data OR termination mismatch detected (data quality issue)
+      // Yellow indicates EITHER post-termination activity OR termination mismatch
       statusCircle.classList.add('status-yellow');
-      statusCircle.title = 'Post-termination data detected';
+      statusCircle.title = 'Post-termination data or termination mismatch detected';
     } else if ((stats.hasTerminated || stats.timedOut) && stats.answered > 0) {
       // Green: Properly terminated/timed out (NO post-termination answers)
       statusCircle.classList.add('status-green');

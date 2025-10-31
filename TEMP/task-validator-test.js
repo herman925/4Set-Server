@@ -703,7 +703,7 @@
    * 1. Route to appropriate handler based on config.type
    * 2. Get terminationIndex from handler
    * 3. Recalculate totals: only count questions up to terminationIndex + 1
-   * 4. Detect post-termination answers (data quality issue - yellow flag)
+   * 4. Detect post-termination answers (data quality issue - yellow flag indicates post-termination activity OR termination mismatch)
    * 5. Return adjusted validation result with termination metadata
    * 
    * This ensures task completion is calculated correctly:
