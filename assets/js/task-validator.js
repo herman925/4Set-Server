@@ -207,8 +207,25 @@ window.TaskValidator = (() => {
   function mapAnswerValue(answer, question) {
     if (!answer) return null;
     
+    // CRITICAL: Filter out Qualtrics placeholders
+    // Qualtrics API sometimes returns the question ID as the "answer" for unanswered questions
+    // E.g., MPT_1_r_Q1 = "MPT_1_r_Q1" means the question was not answered
+    // Treat these as null to prevent cache poisoning
+    if (answer === question.id) {
+      return null;
+    }
+    
     // Map JotForm option indices (1, 2, 3) to actual values for option-based questions
-    if ((question.type === 'image-choice' || question.type === 'radio' || question.type === 'radio_text') && question.options) {
+    if ((question.type === 'image-choice' || question.type === 'radio' || question.type === 'radio_text' || question.type === 'radio-largechar') && question.options) {
+      // CRITICAL: Check if answer is ALREADY a valid option value
+      // This handles cases where cache stores actual values instead of indices
+      const answerStr = String(answer);
+      const isAlreadyValue = question.options.some(opt => String(opt.value) === answerStr);
+      if (isAlreadyValue) {
+        return answer; // Already mapped, don't map again
+      }
+      
+      // Answer is not a valid option value, try to map as index
       const optionIndex = parseInt(answer);
       if (!isNaN(optionIndex) && optionIndex >= 1 && optionIndex <= question.options.length) {
         return question.options[optionIndex - 1].value;

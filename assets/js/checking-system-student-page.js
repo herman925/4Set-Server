@@ -573,8 +573,13 @@
 
       // Set last sync timestamp in localStorage (global for this student)
       const syncKey = `jotform_last_sync_${coreId}`;
-      localStorage.setItem(syncKey, new Date().toISOString());
-      console.log(`[StudentPage] ✅ Updated sync timestamp in localStorage: ${syncKey}`);
+      try {
+        localStorage.setItem(syncKey, new Date().toISOString());
+        console.log(`[StudentPage] ✅ Updated sync timestamp in localStorage: ${syncKey}`);
+      } catch (storageError) {
+        console.warn('[StudentPage] Could not access localStorage:', storageError.message);
+        // Continue without localStorage - functionality should still work
+      }
 
       // Populate UI
       populateJotformData(cacheData);
@@ -2400,22 +2405,23 @@
     
     if (coreId) {
       const syncKey = `jotform_last_sync_${coreId}`;
-      const lastSyncTimestamp = localStorage.getItem(syncKey);
-      
-      if (lastSyncTimestamp) {
-        const syncDate = new Date(lastSyncTimestamp);
-        const formattedDate = syncDate.toLocaleString('en-GB', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        }).replace(',', ' ·');
+      try {
+        const lastSyncTimestamp = localStorage.getItem(syncKey);
         
-        syncElement.textContent = `Last synced: ${formattedDate}`;
-      } else {
-        syncElement.textContent = 'Never synced';
+        if (lastSyncTimestamp) {
+          const syncDate = new Date(lastSyncTimestamp);
+          const formattedDate = syncDate.toLocaleString('en-HK', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+          syncElement.textContent = `Last Updated · ${formattedDate}`;
+        }
+      } catch (storageError) {
+        console.warn('[StudentPage] Could not access localStorage for sync timestamp:', storageError.message);
+        // Keep default text if storage is not accessible
       }
     }
   }
@@ -2968,23 +2974,54 @@
       }
     }
     
-    // Validate button - compare cache vs display
+    // Validate button - cache validation
     const validateBtn = document.getElementById('validate-button');
     if (validateBtn) {
       validateBtn.addEventListener('click', async () => {
         console.log('[StudentPage] Running cache validation...');
-        const urlParams = new URLSearchParams(window.location.search);
-        let coreId = urlParams.get('coreId');
-        let grade = urlParams.get('year'); // Student page uses 'year' parameter
         
-        // Try to get from page display if missing from URL
-        if (!coreId) {
-          coreId = document.getElementById('student-core-id')?.textContent.trim();
+        // Debug: Check if CacheValidator is available
+        console.log('[StudentPage] CacheValidator available:', typeof window.CacheValidator !== 'undefined');
+        if (window.CacheValidator) {
+          console.log('[StudentPage] CacheValidator methods:', Object.keys(window.CacheValidator));
         }
+        
+        // Get current grade from active button
+        const activeGradeBtn = document.querySelector('.grade-selector-btn.active');
+        let grade = activeGradeBtn ? activeGradeBtn.dataset.grade : null;
+        
+        // Debug: Show what we're getting for grade
+        console.log('[StudentPage] Active grade button:', activeGradeBtn);
+        console.log('[StudentPage] Grade from button:', grade);
+        
+        // Get coreId from multiple sources with debugging
+        let coreId = window.StudentPage?.currentStudent?.coreId || 
+                     window.CheckingSystemStudentPage?.getStudentData()?.student?.coreId;
+        
+        console.log('[StudentPage] CoreId extraction debug:');
+        console.log('  - window.StudentPage?.currentStudent?.coreId:', window.StudentPage?.currentStudent?.coreId);
+        console.log('  - window.CheckingSystemStudentPage?.getStudentData()?.student?.coreId:', 
+                    window.CheckingSystemStudentPage?.getStudentData()?.student?.coreId);
+        console.log('  - Final coreId:', coreId, '(type:', typeof coreId, ')');
+        
+        // Fallback: Get coreId from URL if still not found
+        if (!coreId || typeof coreId !== 'string') {
+          const urlParams = new URLSearchParams(window.location.search);
+          coreId = urlParams.get('coreId');
+          console.log('[StudentPage] Fallback coreId from URL:', coreId);
+        }
+        
+        // Ensure coreId is a string
+        if (coreId && typeof coreId !== 'string') {
+          coreId = String(coreId);
+          console.log('[StudentPage] Converted coreId to string:', coreId);
+        }
+        
         if (!grade) {
-          // Try to extract from breadcrumb or page title
+          // Last resort: try to extract from breadcrumb
           const breadcrumb = document.querySelector('.breadcrumb-class')?.textContent.trim();
           grade = breadcrumb?.match(/K[123]/)?.[0] || 'K3';
+          console.log('[StudentPage] Fallback grade from breadcrumb:', grade);
         }
         
         if (!coreId) {
@@ -3004,9 +3041,14 @@
           validateBtn.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 flex-shrink-0 animate-spin"></i><span>Validating...</span>';
           lucide.createIcons();
           
-          const validator = CacheValidator.create('student', { coreId, grade });
+          // Check if CacheValidator is available
+          if (typeof window.CacheValidator === 'undefined') {
+            throw new Error('CacheValidator module not loaded. Please refresh the page and try again.');
+          }
+          
+          const validator = window.CacheValidator.create('student', { coreId, grade });
           const results = await validator.validate();
-          CacheValidator.showResults(results);
+          window.CacheValidator.showResults(results);
         } catch (error) {
           console.error('[StudentPage] Validation error:', error);
           alert('Validation failed: ' + error.message);

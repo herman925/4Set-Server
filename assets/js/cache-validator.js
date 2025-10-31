@@ -24,6 +24,7 @@
  * CacheValidator.showResults(results);
  */
 window.CacheValidator = (() => {
+  console.log('[CacheValidator] ===== MODULE LOADING =====');
   
   // ============================================================================
   // IndexedDB Utilities (using localForage)
@@ -87,53 +88,70 @@ window.CacheValidator = (() => {
   // ============================================================================
   
   class StudentValidator {
-    constructor(params) {
-      this.coreId = params.coreId;
-      this.grade = params.grade;
+    constructor(coreId, grade, options = {}) {
+      this.coreId = coreId;
+      this.grade = grade;
+      this.useDom = options.useDom !== false; // Default to true for backward compatibility
     }
-    
+
     async validate() {
-      console.log(`[StudentValidator] Validating ${this.coreId} ${this.grade}`);
+      console.log('[StudentValidator] ===== VALIDATE CALLED =====');
+      console.log('[StudentValidator] Validating', this.coreId, this.grade);
+      console.log('[StudentValidator] Mode:', this.useDom ? 'DOM-based' : 'Cache-only');
+      console.log('[StudentValidator] this:', this);
       
       const results = {
         pageType: 'student',
-        coreId: this.coreId,
-        grade: this.grade,
         timestamp: new Date().toISOString(),
+        params: { coreId: this.coreId, grade: this.grade },
         sections: []
       };
       
-      // Get cache data
-      const mergedCache = await getMergedCache();
-      const submission = mergedCache.find(s => s.coreId === this.coreId && s.grade === this.grade);
+      // Get merged cache from JotFormCache
+      console.log('[StudentValidator] Getting merged cache...');
+      const cacheData = await window.JotFormCache.loadFromCache();
+      const mergedCache = cacheData?.submissions || [];
+      console.log('[StudentValidator] mergedCache length:', mergedCache?.length);
       
-      if (!submission) {
-        results.error = 'Student not found in cache';
+      if (!mergedCache || mergedCache.length === 0) {
+        results.error = 'No merged cache found for this student';
         return results;
       }
       
-      // Debug: Log submission structure
+      // Filter by coreId and grade to get the specific student submission
+      const studentSubmissions = mergedCache.filter(s => 
+        s.coreId === this.coreId && s.grade === this.grade
+      );
+      
+      if (studentSubmissions.length === 0) {
+        results.error = `No submission found for coreId ${this.coreId}, grade ${this.grade}`;
+        return results;
+      }
+      
+      const submission = studentSubmissions[0]; // Get the student's submission
+      
       console.log('[StudentValidator] Submission structure:', {
         coreId: submission.coreId,
         studentId: submission.studentId,
         studentName: submission.studentName,
         hasAnswers: !!submission.answers,
-        answerCount: submission.answers ? Object.keys(submission.answers).length : 0,
-        sampleAnswerKeys: submission.answers ? Object.keys(submission.answers).slice(0, 5) : [],
-        topLevelKeys: Object.keys(submission).slice(0, 20)
+        answerCount: submission.answers ? Object.keys(submission.answers).length : 0
       });
       
-      const validationCache = await getValidationCache();
-      const validationData = validationCache[this.coreId];
+      // Validate profile fields
+      const profileSection = await this.validateProfileFields(submission);
+      results.sections.push(profileSection);
       
-      // Section 1: Profile Fields
-      results.sections.push(await this.validateProfileFields(submission));
-      
-      // Section 2: All Task Questions (validate raw answers for ALL questions across ALL tasks - includes TGMD)
-      results.sections.push(await this.validateAllTaskQuestions(submission));
-      
-      // Section 3: Question Correctness (validate ✓/✗ calculations for all questions)
-      results.sections.push(await this.validateQuestionCorrectness(submission));
+      // Validate task questions
+      if (this.useDom) {
+        // DOM-based validation (student page)
+        const taskSection = await this.validateAllTaskQuestions(submission);
+        results.sections.push(taskSection);
+      } else {
+        // Cache-only validation (class page)
+        const taskSection = await this.validateTasksViaTaskValidator(submission);
+        results.sections.push(taskSection);
+      }
       
       return results;
     }
@@ -146,25 +164,48 @@ window.CacheValidator = (() => {
         failed: 0
       };
       
-      // Try multiple possible property names from cache
-      const getCacheValue = (obj, possibleNames) => {
+      // Build fieldName → answer map from answers object
+      const fieldNameMap = {};
+      if (submission.answers) {
+        for (const [qid, answerObj] of Object.entries(submission.answers)) {
+          if (answerObj.name) {
+            fieldNameMap[answerObj.name] = answerObj.answer;
+          }
+        }
+      }
+      
+      // Helper to get cache value - checks top-level properties AND answers object
+      const getCacheValue = (possibleNames) => {
         for (const name of possibleNames) {
-          if (obj[name] !== undefined) return obj[name];
+          // Check top-level properties first
+          if (submission[name] !== undefined) return submission[name];
+          // Check answers object by field name
+          if (fieldNameMap[name] !== undefined) return fieldNameMap[name];
         }
         return undefined;
       };
       
       const fields = [
-        { cacheNames: ['studentId', 'student-id'], domId: 'student-student-id', label: 'Student ID' },
         { cacheNames: ['coreId', 'core-id'], domId: 'student-core-id', label: 'Core ID' },
-        { cacheNames: ['studentName', 'student-name', 'child-name'], domId: 'student-name', label: 'Student Name' },
-        { cacheNames: ['classId', 'class-id'], domId: 'student-class-id', label: 'Class ID' },
+        { cacheNames: ['child-name', 'studentName', 'student-name'], domId: 'student-name', label: 'Student Name' },
+        { cacheNames: ['class-id', 'classId'], domId: 'student-class-id', label: 'Class ID' },
         { cacheNames: ['gender'], domId: 'student-gender', label: 'Gender', normalize: (v) => v === 'M' ? 'Male' : v === 'F' ? 'Female' : v },
-        { cacheNames: ['schoolId', 'school-id'], domId: 'student-school-id', label: 'School ID' }
+        { 
+          cacheNames: ['school-id', 'schoolId'], 
+          domId: 'student-school-id', 
+          label: 'School ID',
+          normalize: (v) => {
+            // Normalize school IDs: "84" → "S084", "S084" → "S084"
+            if (!v) return v;
+            const str = String(v);
+            if (str.startsWith('S')) return str; // Already has S prefix
+            return 'S' + str.padStart(3, '0'); // Add S and pad to 3 digits
+          }
+        }
       ];
       
       for (const field of fields) {
-        let cacheValue = getCacheValue(submission, field.cacheNames);
+        let cacheValue = getCacheValue(field.cacheNames);
         if (field.normalize && cacheValue) {
           cacheValue = field.normalize(cacheValue);
         }
@@ -174,11 +215,13 @@ window.CacheValidator = (() => {
         
         section.validated++;
         
-        const match = this.normalizeValue(cacheValue) === this.normalizeValue(domValue);
+        // Pass field name for special mappings (e.g., Gender)
+        const fieldName = field.cacheNames[0]; // Use first cache name as identifier
+        const match = this.normalizeValue(cacheValue, fieldName) === this.normalizeValue(domValue, fieldName);
         
         section.mismatches.push({
           field: field.label,
-          cacheRaw: cacheValue || 'undefined',
+          cacheRaw: cacheValue !== undefined ? cacheValue : 'undefined',
           displayValue: domValue,
           status: match ? '✅ Match' : '❌ Mismatch'
         });
@@ -192,129 +235,463 @@ window.CacheValidator = (() => {
     }
     
     async validateAllTaskQuestions(submission) {
-      const section = {
-        name: 'Task Questions - Raw Answers',
-        mismatches: [],
-        validated: 0,
-        failed: 0
-      };
+      console.log('[CacheValidator] ===== validateAllTaskQuestions CALLED =====');
+      console.log('[CacheValidator] submission:', submission);
+      console.log('[CacheValidator] submission.answers exists:', !!submission.answers);
       
       if (!submission.answers) {
         console.warn('[StudentValidator] No answers object in submission');
-        return section;
+        return {
+          name: 'Task Questions - Raw Answers',
+          error: 'No answers object in submission',
+          sets: []
+        };
       }
       
-      // Find all task elements (under sets)
-      const taskElements = document.querySelectorAll('[data-task-id]');
+      // Load task metadata to get question definitions for option mapping
+      const taskMetadata = await this.loadTaskMetadata();
+      console.log('[CacheValidator] Task metadata result:', taskMetadata ? `${taskMetadata.length} tasks` : 'null');
       
-      for (const taskElement of taskElements) {
-        const taskId = taskElement.getAttribute('data-task-id');
-        const tbody = taskElement.querySelector('tbody');
-        if (!tbody) continue;
-        
-        const rows = tbody.querySelectorAll('tr');
-        for (const row of rows) {
-          const cells = row.querySelectorAll('td');
-          if (cells.length < 4) continue;
+      const questionDefMap = new Map();
+      if (taskMetadata && taskMetadata.length > 0) {
+        for (const task of taskMetadata) {
+          console.log('[CacheValidator] Processing task:', task.id || task.title);
           
-          const questionId = cells[0]?.textContent.trim();
-          const displayAnswer = cells[1]?.textContent.trim();
-          
-          // Skip empty/not answered
-          if (!displayAnswer || displayAnswer === '—' || displayAnswer === 'Not answered') {
-            continue;
+          // Load the actual task file to get question definitions
+          try {
+            const taskResponse = await fetch(`assets/tasks/${task.id.toUpperCase()}.json`);
+            const taskData = await taskResponse.json();
+            
+            if (taskData.questions) {
+              for (const q of taskData.questions) {
+                questionDefMap.set(q.id, q);
+                // Handle multi-question groups
+                if (q.questions) {
+                  console.log(`[CacheValidator]   Multi-question group ${q.id} has ${q.questions.length} sub-questions`);
+                  for (const subQ of q.questions) {
+                    questionDefMap.set(subQ.id, subQ);
+                  }
+                }
+              }
+              console.log(`[CacheValidator]   Loaded ${taskData.questions.length} questions for ${task.id}`);
+            }
+          } catch (error) {
+            console.warn(`[CacheValidator] Failed to load task file for ${task.id}:`, error);
           }
+        }
+      } else {
+        console.warn('[CacheValidator] No task metadata available, cannot map answer values');
+      }
+      console.log('[CacheValidator] Loaded', questionDefMap.size, 'question definitions');
+      
+      // Debug: Check if ToM_Q1a was loaded
+      const tomQ1a = questionDefMap.get('ToM_Q1a');
+      console.log('[CacheValidator] ToM_Q1a definition:', tomQ1a ? `type=${tomQ1a.type}, options=${tomQ1a.options?.length}` : 'NOT FOUND');
+      
+      // Build fieldName → answer map for efficient lookups
+      // Store both raw and mapped values for transparency
+      const fieldNameMap = {};
+      for (const [qid, answerObj] of Object.entries(submission.answers)) {
+        if (answerObj.name) {
+          // CRITICAL: Check BOTH answer and text fields, just like TaskValidator
+          // Some questions store answers in .text instead of .answer
+          const rawAnswer = answerObj.answer || answerObj.text || null;
           
-          // Find matching answer in cache by field name
-          let cacheAnswer = null;
-          let matchedFieldName = null;
+          // Apply the SAME option mapping logic as TaskValidator
+          let mappedAnswer = rawAnswer;
+          let questionDef = questionDefMap.get(answerObj.name);
           
-          for (const [qid, answerObj] of Object.entries(submission.answers)) {
-            if (answerObj.name && questionId.includes(answerObj.name.replace(/_/g, ' '))) {
-              cacheAnswer = answerObj.answer;
-              matchedFieldName = answerObj.name;
-              break;
+          // SPECIAL HANDLING for TGMD matrix questions
+          // Cache stores: TGMD_111_Hop_t1, TGMD_111_Hop_t2
+          // Task file defines: TGMD_111_Hop (matrix row)
+          if (!questionDef && answerObj.name && answerObj.name.includes('_t')) {
+            // Try to find the base matrix row definition
+            const baseName = answerObj.name.replace(/_t\d+$/, '');
+            questionDef = questionDefMap.get(baseName);
+            
+            if (questionDef && questionDef.type === 'matrix-radio') {
+              // For matrix questions, use the base row definition
+              console.log(`[CacheValidator] Matrix question: ${answerObj.name} -> base ${baseName}`);
             }
           }
           
-          section.validated++;
-          const match = cacheAnswer !== null && this.normalizeValue(cacheAnswer) === this.normalizeValue(displayAnswer);
-          
-          section.mismatches.push({
-            field: matchedFieldName || questionId,
-            cacheRaw: cacheAnswer !== null ? cacheAnswer : 'Not found',
-            displayValue: displayAnswer,
-            status: match ? '✅ Match' : '❌ Mismatch'
-          });
-          
-          if (!match) {
-            section.failed++;
+          if (questionDef) {
+            mappedAnswer = this.mapAnswerValue(rawAnswer, questionDef);
+          } else if (answerObj.name && answerObj.name.startsWith('NONSYM')) {
+            console.warn('[CacheValidator] NONSYM question definition NOT FOUND:', answerObj.name);
           }
+          fieldNameMap[answerObj.name] = {
+            raw: rawAnswer,
+            mapped: mappedAnswer
+          };
         }
       }
       
-      return section;
-    }
-    
-    async validateQuestionCorrectness(submission) {
-      const section = {
-        name: 'Question Correctness - ✓/✗ Icons',
-        mismatches: [],
-        validated: 0,
-        failed: 0
-      };
+      console.log('[CacheValidator] Built fieldNameMap with', Object.keys(fieldNameMap).length, 'entries');
+      console.log('[CacheValidator] Sample fields:', Object.keys(fieldNameMap).slice(0, 10));
       
-      if (!submission.answers) {
-        console.warn('[StudentValidator] No answers object in submission');
-        return section;
+      // Group results by set → task
+      const setResults = [];
+      
+      // FUCK THE SET CONTAINERS. Just find all tasks directly and group them ourselves.
+      const allTasks = document.querySelectorAll('[data-task][data-set]');
+      console.log('[CacheValidator] Found', allTasks.length, 'total tasks in DOM');
+      
+      // Group tasks by their data-set attribute
+      const tasksBySet = {};
+      for (const taskElement of allTasks) {
+        const setName = taskElement.getAttribute('data-set');
+        const taskId = taskElement.getAttribute('data-task');
+        
+        if (!tasksBySet[setName]) {
+          tasksBySet[setName] = [];
+        }
+        tasksBySet[setName].push(taskElement);
       }
       
-      // Validate that the ✓/✗ icons match actual correctness
-      const taskElements = document.querySelectorAll('[data-task-id]');
+      console.log('[CacheValidator] Grouped into sets:', Object.keys(tasksBySet));
       
-      for (const taskElement of taskElements) {
-        const tbody = taskElement.querySelector('tbody');
-        if (!tbody) continue;
+      // Now process each set
+      for (const [setName, taskElements] of Object.entries(tasksBySet)) {
+        const taskResults = [];
+        console.log('[CacheValidator] Processing set', setName, 'with', taskElements.length, 'tasks');
         
-        const rows = tbody.querySelectorAll('tr');
-        for (const row of rows) {
-          const cells = row.querySelectorAll('td');
-          if (cells.length < 4) continue;
-          
-          const questionId = cells[0]?.textContent.trim();
-          const displayAnswer = cells[1]?.textContent.trim();
-          const correctAnswer = cells[2]?.textContent.trim();
-          const displayResult = cells[3]?.textContent.trim();
-          
-          // Skip if not answered
-          if (!displayAnswer || displayAnswer === '—' || displayAnswer === 'Not answered') {
+        for (const taskElement of taskElements) {
+          const taskId = taskElement.getAttribute('data-task');
+          const tbody = taskElement.querySelector('tbody');
+          console.log('[CacheValidator] Task', taskId, 'tbody found:', !!tbody);
+          if (!tbody) {
+            console.log('[CacheValidator] No tbody for task', taskId, '- skipping');
             continue;
           }
           
-          section.validated++;
+          const questionMismatches = [];
+          let validated = 0;
+          let failed = 0;
           
-          // Calculate expected result based on displayed values
-          const expectedIsCorrect = this.normalizeValue(displayAnswer) === this.normalizeValue(correctAnswer);
-          const displayIsCorrect = displayResult === '✓';
-          const match = expectedIsCorrect === displayIsCorrect;
+          const rows = tbody.querySelectorAll('tr');
+          console.log('[CacheValidator] Task', taskId, 'has', rows.length, 'rows');
           
-          section.mismatches.push({
-            field: questionId,
-            cacheRaw: expectedIsCorrect ? '✓' : '✗',
-            displayValue: displayResult,
+          if (rows.length === 0) {
+            console.log('[CacheValidator] Task', taskId, 'has NO ROWS - skipping');
+            continue;
+          }
+          
+          let processedCount = 0;
+          let skippedCount = 0;
+          
+          for (const row of rows) {
+            const cells = row.querySelectorAll('td');
+            if (cells.length < 4) {
+              console.log('[CacheValidator] Row has only', cells.length, 'cells, skipping');
+              continue;
+            }
+            
+            const questionId = cells[0]?.textContent.trim();
+            const displayAnswer = cells[1]?.textContent.trim();
+            
+            // Extract clean question ID for TGMD matrix questions
+            // DOM shows: "TGMD_111_Hop\n離地腳有自然彎曲並向前擺動以提供動力"
+            // Cache stores: "TGMD_111_Hop_t1", "TGMD_111_Hop_t2"
+            let cleanQuestionId = questionId;
+            if (questionId && questionId.includes('\n')) {
+              // Extract just the first line (the actual question ID)
+              cleanQuestionId = questionId.split('\n')[0].trim();
+            }
+            
+            // For TGMD matrix questions, we need to find the individual column entries
+            // The DOM shows the base question ID, but cache has _t1, _t2 variants
+            let matchingCacheEntries = [];
+            if (cleanQuestionId && cleanQuestionId.startsWith('TGMD_')) {
+              // Find all cache entries that match this TGMD base question
+              Object.keys(fieldNameMap).forEach(cacheKey => {
+                if (cacheKey.startsWith(cleanQuestionId + '_t')) {
+                  matchingCacheEntries.push({
+                    key: cacheKey,
+                    data: fieldNameMap[cacheKey]
+                  });
+                }
+              });
+            }
+            
+            // Look up answer in cache using fieldName
+            // NOTE: Cache values are now pre-mapped using mapAnswerValue() above
+            let cacheData = fieldNameMap[cleanQuestionId];
+            
+            // SPECIAL HANDLING for TGMD matrix questions
+            // Try exact match first, then try matrix base name for fallback
+            if (!cacheData && cleanQuestionId && cleanQuestionId.includes('_t')) {
+              const baseName = cleanQuestionId.replace(/_t\d+$/, '');
+              cacheData = fieldNameMap[baseName];
+              if (cacheData) {
+                console.log(`[CacheValidator] Matrix fallback: ${cleanQuestionId} -> base ${baseName}`);
+              }
+            }
+            
+            // For TGMD matrix questions, combine all trial data
+            let finalCacheAnswer = cacheData?.mapped;
+            let finalCacheRaw = cacheData?.raw;
+            
+            if (matchingCacheEntries.length > 0) {
+              // Process TGMD raw trial data into scores like the student page
+              const trialValues = matchingCacheEntries.map(entry => {
+                const value = entry.data.raw || '0';
+                // Convert to number, treating non-numeric values as 0
+                return parseInt(value, 10) || 0;
+              });
+              
+              // Calculate score: count of successful trials / total trials
+              const successfulTrials = trialValues.reduce((sum, val) => sum + val, 0);
+              const totalTrials = trialValues.length;
+              const score = `${successfulTrials}/${totalTrials}`;
+              
+              finalCacheRaw = trialValues.join(', ');
+              finalCacheAnswer = score;
+              console.log(`[CacheValidator] TGMD matrix: ${cleanQuestionId} trials [${trialValues.join(', ')}] -> score ${score}`);
+            }
+            
+            // CRITICAL: Filter Qualtrics placeholders (same logic as TaskValidator)
+            // If cache value equals question ID, it's a placeholder = treat as empty
+            if (finalCacheAnswer === cleanQuestionId || finalCacheRaw === cleanQuestionId) {
+              finalCacheAnswer = null;
+              finalCacheRaw = null;
+            }
+            
+            processedCount++;
+            
+            validated++;
+            
+            // For TGMD questions, we need special handling to compare trial data
+            let expectedDisplay = displayAnswer;
+            
+            if (cleanQuestionId && cleanQuestionId.startsWith('TGMD_')) {
+              // Extract trial values from TGMD scoring data instead of display text
+              // The display shows icons, but we need the actual trial values for comparison
+              const tgmdScoring = window.StudentPage?.currentValidation?.tgmdScoring?.byTask;
+              if (tgmdScoring) {
+                // Find the criterion in TGMD scoring data
+                for (const [taskName, taskData] of Object.entries(tgmdScoring)) {
+                  const criterion = taskData.criteria?.find(c => c.id === cleanQuestionId);
+                  if (criterion && criterion.trials) {
+                    // Create expected display from trial values (raw format like cache)
+                    const t1Val = criterion.trials.t1;
+                    const t2Val = criterion.trials.t2;
+                    expectedDisplay = `${t1Val === 1 ? '1' : t1Val === 0 ? '0' : ''}, ${t2Val === 1 ? '1' : t2Val === 0 ? '0' : ''}`;
+                    console.log(`[CacheValidator] TGMD scoring for ${cleanQuestionId}: t1=${t1Val}, t2=${t2Val} -> "${expectedDisplay}"`);
+                    break;
+                  }
+                }
+              }
+            }
+            
+            // For TGMD, use raw trial data for comparison (not processed score)
+            const cacheValueForComparison = cleanQuestionId && cleanQuestionId.startsWith('TGMD_') ? finalCacheRaw : finalCacheAnswer;
+            
+            // Normalize values for comparison (null/"—"/empty all normalize to empty string)
+            const normalizedCache = cacheValueForComparison === null || cacheValueForComparison === '—' ? '' : String(cacheValueForComparison).trim();
+            const normalizedDisplay = expectedDisplay === null || expectedDisplay === '—' ? '' : String(expectedDisplay).trim();
+            
+            console.log(`[CacheValidator] Comparing ${cleanQuestionId}: cache="${normalizedCache}" vs display="${normalizedDisplay}"`);
+            
+            // Determine match status
+            let status = '✅ Match';
+            if (normalizedCache !== normalizedDisplay) {
+              status = '❌ Mismatch';
+              failed++;
+            }
+            
+            // Store mismatch details
+            questionMismatches.push({
+              field: cleanQuestionId,
+              cacheRaw: cacheValueForComparison, // Show raw trial data for TGMD, processed score for others
+              displayValue: displayAnswer,
+              status: status
+            });
+          }
+          
+          console.log('[CacheValidator] Task', taskId, 'summary: processed=', processedCount, 'skipped=', skippedCount, 'validated=', validated);
+          
+          if (validated > 0) {
+            taskResults.push({
+              taskId,
+              validated,
+              failed,
+              questions: questionMismatches
+            });
+          } else {
+            console.log('[CacheValidator] Task', taskId, 'skipped - no validated questions');
+          }
+        }
+        
+        console.log('[CacheValidator] Set', setName, 'total tasks added:', taskResults.length);
+        
+        if (taskResults.length > 0) {
+          setResults.push({
+            setName,
+            tasks: taskResults
+          });
+        }
+      }
+      
+      // Calculate totals
+      let totalValidated = 0;
+      let totalFailed = 0;
+      for (const set of setResults) {
+        for (const task of set.tasks) {
+          totalValidated += task.validated;
+          totalFailed += task.failed;
+        }
+      }
+      
+      console.log('[CacheValidator] FINAL SUMMARY: sets=', setResults.length, 'totalValidated=', totalValidated, 'totalFailed=', totalFailed);
+      
+      return {
+        name: 'Task Questions - Raw Answers',
+        validated: totalValidated,
+        failed: totalFailed,
+        sets: setResults
+      };
+    }
+    
+    async validateTasksViaTaskValidator(submission) {
+      console.log('[CacheValidator] ===== validateTasksViaTaskValidator CALLED =====');
+      console.log('[CacheValidator] Using TaskValidator to transform answers');
+      
+      if (!submission.answers) {
+        return {
+          name: 'Task Questions - Cache Validation',
+          error: 'No answers object in submission',
+          tasks: {}
+        };
+      }
+      
+      // Run TaskValidator to get transformed/validated answers
+      console.log('[CacheValidator] Calling TaskValidator.validateAllTasks...');
+      const validation = await window.TaskValidator.validateAllTasks(submission.answers);
+      console.log('[CacheValidator] TaskValidator complete:', validation);
+      
+      // Now compare validation results with stored cache
+      const taskResults = {};
+      let totalValidated = 0;
+      let totalFailed = 0;
+      
+      for (const [taskId, taskValidation] of Object.entries(validation)) {
+        if (!taskValidation.questions) continue;
+        
+        const questionMismatches = [];
+        
+        for (const question of taskValidation.questions) {
+          // Get validated answer from TaskValidator
+          const validatedAnswer = question.studentAnswer;
+          
+          // Get stored answer from cache
+          const answerObj = submission.answers[question.id] || 
+                           Object.values(submission.answers).find(a => a.name === question.id);
+          let cachedAnswer = answerObj?.answer || answerObj?.text;
+          
+          // SPECIAL HANDLING for TGMD matrix questions
+          // Cache stores: TGMD_111_Hop_t1, TGMD_111_Hop_t2
+          // TaskValidator shows: TGMD_111_Hop with processed score
+          if (question.id && question.id.startsWith('TGMD_') && !cachedAnswer) {
+            // Find all TGMD trial entries for this question
+            const trialEntries = Object.entries(submission.answers).filter(([key, obj]) => {
+              return obj.name && obj.name.startsWith(question.id + '_t');
+            });
+            
+            if (trialEntries.length > 0) {
+              // Process trial data into score like before
+              const trialValues = trialEntries.map(([key, obj]) => {
+                const value = obj.answer || obj.text || '0';
+                return parseInt(value, 10) || 0;
+              });
+              
+              const successfulTrials = trialValues.reduce((sum, val) => sum + val, 0);
+              const totalTrials = trialValues.length;
+              cachedAnswer = `${successfulTrials}/${totalTrials}`;
+              console.log(`[CacheValidator] TGMD cache processing: ${question.id} trials [${trialValues.join(', ')}] -> ${cachedAnswer}`);
+            }
+          }
+          
+          totalValidated++;
+          const match = this.normalizeValue(validatedAnswer, question.id) === this.normalizeValue(cachedAnswer, question.id);
+          
+          questionMismatches.push({
+            field: question.id,
+            taskValidatorValue: validatedAnswer !== undefined && validatedAnswer !== null ? validatedAnswer : 'Not found',
+            cachedValue: cachedAnswer !== undefined && cachedAnswer !== null ? cachedAnswer : 'Not found',
             status: match ? '✅ Match' : '❌ Mismatch'
           });
           
           if (!match) {
-            section.failed++;
+            totalFailed++;
           }
         }
+        
+        taskResults[taskId] = {
+          taskName: taskValidation.title || taskId,
+          validated: taskValidation.questions.length,
+          failed: questionMismatches.filter(q => q.status.includes('❌')).length,
+          mismatches: questionMismatches
+        };
       }
       
-      return section;
+      console.log('[CacheValidator] FINAL SUMMARY: tasks=', Object.keys(taskResults).length, 'totalValidated=', totalValidated, 'totalFailed=', totalFailed);
+      
+      return {
+        name: 'Task Questions - Cache Validation',
+        validated: totalValidated,
+        failed: totalFailed,
+        tasks: taskResults
+      };
     }
     
     // Helper methods
+    async loadTaskMetadata() {
+      try {
+        // Load survey structure to get list of task files
+        const structureResponse = await fetch('assets/tasks/survey-structure.json');
+        const structure = await structureResponse.json();
+        
+        // Extract tasks from the structure - convert taskMetadata object to array
+        if (structure && structure.taskMetadata) {
+          const tasks = Object.values(structure.taskMetadata);
+          console.log('[CacheValidator] Loaded task metadata:', tasks.length, 'tasks');
+          return tasks;
+        } else {
+          console.warn('[CacheValidator] Invalid task metadata structure:', structure);
+          return [];
+        }
+      } catch (error) {
+        console.warn('[CacheValidator] Failed to load task metadata:', error);
+        return [];
+      }
+    }
+    
+    mapAnswerValue(answer, question) {
+      if (!answer) return null;
+      
+      // Map JotForm option indices (1, 2, 3) to actual values for option-based questions
+      if ((question.type === 'image-choice' || question.type === 'radio' || question.type === 'radio_text' || question.type === 'radio-largechar') && question.options) {
+        // CRITICAL: Check if answer is ALREADY a valid option value
+        // This handles cases where cache stores actual values instead of indices
+        const answerStr = String(answer);
+        const isAlreadyValue = question.options.some(opt => String(opt.value) === answerStr);
+        if (isAlreadyValue) {
+          return answer; // Already mapped, don't map again
+        }
+        
+        // Answer is not a valid option value, try to map as index
+        const optionIndex = parseInt(answer);
+        if (!isNaN(optionIndex) && optionIndex >= 1 && optionIndex <= question.options.length) {
+          const mappedValue = question.options[optionIndex - 1].value;
+          console.log(`[CacheValidator] Mapped ${question.id}: ${answer} (index) → ${mappedValue} (value)`);
+          return mappedValue;
+        }
+      }
+      
+      return answer;
+    }
+    
     getQIDForField(fieldName) {
       // This would need to reference jotformquestions.json mapping
       // For now, return a placeholder
@@ -341,9 +718,27 @@ window.CacheValidator = (() => {
       return null;
     }
     
-    normalizeValue(value) {
+    normalizeValue(value, questionId = null) {
       if (value === null || value === undefined) return '';
-      return String(value).trim().toLowerCase();
+      const normalized = String(value).trim().toLowerCase();
+      
+      // Treat "not answered" indicators as empty
+      if (normalized === '—' || normalized === 'not answered' || normalized === '') {
+        return '';
+      }
+      
+      // Field-specific mappings for coded values
+      if (questionId === 'FM_Hand') {
+        const handMappings = { '1': 'left', '2': 'right' };
+        return handMappings[normalized] || normalized;
+      }
+      
+      if (questionId === 'Gender' || questionId === 'gender') {
+        const genderMappings = { '1': 'male', '2': 'female', 'm': 'male', 'f': 'female' };
+        return genderMappings[normalized] || normalized;
+      }
+      
+      return normalized;
     }
   }
   
@@ -781,7 +1176,7 @@ window.CacheValidator = (() => {
     for (const section of results.sections) {
       const sectionDiv = document.createElement('details');
       sectionDiv.className = 'mb-4 border border-gray-200 rounded-lg';
-      sectionDiv.open = section.failed > 0;
+      sectionDiv.open = false; // All sections collapsed by default
       
       const sectionHeader = document.createElement('summary');
       sectionHeader.className = 'p-4 cursor-pointer hover:bg-gray-50 transition-colors flex items-center justify-between';
@@ -800,7 +1195,92 @@ window.CacheValidator = (() => {
       
       sectionDiv.appendChild(sectionHeader);
       
-      if (section.mismatches && section.mismatches.length > 0) {
+      // Handle hierarchical set/task structure for Task Questions
+      if (section.sets && section.sets.length > 0) {
+        const setsContainer = document.createElement('div');
+        setsContainer.className = 'p-4 pt-0 space-y-4';
+        
+        for (const set of section.sets) {
+          const setDiv = document.createElement('div');
+          setDiv.className = 'border border-gray-300 rounded-lg overflow-hidden';
+          
+          // Set header
+          const setHeader = document.createElement('div');
+          setHeader.className = 'bg-blue-50 px-4 py-2 border-b border-gray-300';
+          setHeader.innerHTML = `<h4 class="font-semibold text-blue-900">Set: ${set.setName}</h4>`;
+          setDiv.appendChild(setHeader);
+          
+          // Tasks within set
+          const tasksDiv = document.createElement('div');
+          tasksDiv.className = 'divide-y divide-gray-200';
+          
+          for (const task of set.tasks) {
+            const taskDiv = document.createElement('details');
+            taskDiv.className = 'bg-white';
+            taskDiv.open = false; // All tasks collapsed by default
+            
+            const taskSummary = document.createElement('summary');
+            taskSummary.className = 'px-4 py-2 cursor-pointer hover:bg-gray-50 transition-colors flex items-center justify-between';
+            taskSummary.innerHTML = `
+              <span class="font-medium text-gray-900">${task.taskId}</span>
+              <span class="text-sm ${task.failed === 0 ? 'text-green-600' : 'text-red-600'} font-medium">
+                ${task.validated - task.failed} / ${task.validated} passed
+              </span>
+            `;
+            taskDiv.appendChild(taskSummary);
+            
+            // Question table
+            const questionTable = document.createElement('div');
+            questionTable.className = 'px-4 pb-4';
+            
+            const rowsHtml = task.questions.map(q => {
+            // Debug: Log what data we actually have for each question
+            if (q.field && q.field.startsWith('TGMD_')) {
+              console.log(`[Modal Debug] TGMD Question: ${q.field}`);
+              console.log(`  cacheRaw: ${q.cacheRaw}`);
+              console.log(`  cachedValue: ${q.cachedValue}`);
+              console.log(`  displayValue: ${q.displayValue}`);
+              console.log(`  taskValidatorValue: ${q.taskValidatorValue}`);
+              console.log(`  All keys: ${Object.keys(q)}`);
+            }
+            
+            return `
+              <tr class="hover:bg-gray-50 ${q.status.includes('Mismatch') ? 'bg-red-50' : ''}">
+                <td class="px-3 py-2 font-medium text-gray-900">${q.field}</td>
+                <td class="px-3 py-2 text-blue-600 font-mono text-sm">${escapeHtml(String(q.cacheRaw || q.cachedValue || 'Not found'))}</td>
+                <td class="px-3 py-2 text-purple-600 font-mono text-sm">${escapeHtml(String(q.displayValue || q.taskValidatorValue || 'Not found'))}</td>
+                <td class="px-3 py-2 text-sm">${q.status}</td>
+              </tr>
+            `;
+          }).join('');
+            
+            questionTable.innerHTML = `
+              <table class="w-full text-sm mt-2">
+                <thead class="bg-gray-100 text-gray-700 uppercase text-xs">
+                  <tr>
+                    <th class="px-3 py-2 text-left">Question ID</th>
+                    <th class="px-3 py-2 text-left">Cache Value</th>
+                    <th class="px-3 py-2 text-left">Display Value</th>
+                    <th class="px-3 py-2 text-left">Status</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                  ${rowsHtml}
+                </tbody>
+              </table>
+            `;
+            taskDiv.appendChild(questionTable);
+            tasksDiv.appendChild(taskDiv);
+          }
+          
+          setDiv.appendChild(tasksDiv);
+          setsContainer.appendChild(setDiv);
+        }
+        
+        sectionDiv.appendChild(setsContainer);
+      }
+      // Handle flat mismatches structure for other sections (Profile, Correctness)
+      else if (section.mismatches && section.mismatches.length > 0) {
         const mismatchTable = document.createElement('div');
         mismatchTable.className = 'p-4 pt-0';
         
@@ -901,9 +1381,12 @@ window.CacheValidator = (() => {
   // ============================================================================
   
   function create(pageType, params) {
+    console.log('[CacheValidator] create() called with pageType:', pageType, 'params:', params);
     switch (pageType) {
       case 'student':
-        return new StudentValidator(params);
+        const validator = new StudentValidator(params.coreId, params.grade, params.options || {});
+        console.log('[CacheValidator] Created StudentValidator:', validator);
+        return validator;
       case 'class':
         return new ClassValidator(params);
       case 'school':
@@ -920,6 +1403,8 @@ window.CacheValidator = (() => {
   // ============================================================================
   // Public API
   // ============================================================================
+  
+  console.log('[CacheValidator] ===== MODULE LOADED SUCCESSFULLY =====');
   
   return {
     create,

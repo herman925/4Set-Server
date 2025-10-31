@@ -867,6 +867,7 @@
 
   /**
    * Get set status color based on validation cache
+   * Status values from validation: 'complete', 'incomplete', 'notstarted'
    */
   function getSetStatusColor(setStatus, setId) {
     if (!setStatus || !setStatus[setId]) return 'grey';
@@ -876,7 +877,7 @@
     // Determine color based on set status
     if (set.status === 'complete') return 'green';
     if (set.status === 'incomplete') return 'red';
-    if (set.status === 'in-progress') return 'yellow';
+    // Note: 'notstarted' falls through to grey
     
     return 'grey';
   }

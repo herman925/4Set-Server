@@ -1163,10 +1163,10 @@
       
       // Calculate set status
       const setStatus = {
-        set1: { status: 'notstarted', tasksComplete: 0, tasksTotal: 0, tasks: [] },
-        set2: { status: 'notstarted', tasksComplete: 0, tasksTotal: 0, tasks: [] },
-        set3: { status: 'notstarted', tasksComplete: 0, tasksTotal: 0, tasks: [] },
-        set4: { status: 'notstarted', tasksComplete: 0, tasksTotal: 0, tasks: [] }
+        set1: { status: 'notstarted', tasksComplete: 0, tasksStarted: 0, tasksTotal: 0, tasks: [] },
+        set2: { status: 'notstarted', tasksComplete: 0, tasksStarted: 0, tasksTotal: 0, tasks: [] },
+        set3: { status: 'notstarted', tasksComplete: 0, tasksStarted: 0, tasksTotal: 0, tasks: [] },
+        set4: { status: 'notstarted', tasksComplete: 0, tasksStarted: 0, tasksTotal: 0, tasks: [] }
       };
       
       // Count tasks per set (accounting for gender-conditional tasks like TEC)
@@ -1232,6 +1232,11 @@
           setStatus[setId].tasksComplete++;
         }
         
+        // Track if task has been started (at least 1 answer)
+        if (answered > 0) {
+          setStatus[setId].tasksStarted++;
+        }
+        
         if (validation.terminated) {
           terminationTasks.push(taskId);
         }
@@ -1257,7 +1262,8 @@
         const completionRate = set.tasksComplete / set.tasksTotal;
         if (completionRate === 1) {
           set.status = 'complete';
-        } else if (completionRate > 0) {
+        } else if (set.tasksStarted > 0) {
+          // If any task has been started (has at least 1 answer), set is incomplete
           set.status = 'incomplete';
         } else {
           set.status = 'notstarted';

@@ -19,8 +19,7 @@
     }
 
     /**
-     * Extract actual value from answer object (handles both objects and primitives)
-     * This supports the JotForm answer object schema: { answer: "value", text: "value", name: "field" }
+     * Extract value from answer object (handles both new format and legacy)
      * @param {Object|string|number} answerObj - Answer object or primitive value
      * @returns {string|null} - The extracted value or null
      */
@@ -37,6 +36,7 @@
       // If it's a primitive (legacy format or direct value), return as-is
       return answerObj;
     }
+
 
     /**
      * Merge JotForm and Qualtrics datasets by coreId WITH GRADE-BASED GROUPING
