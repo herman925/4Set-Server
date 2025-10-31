@@ -1276,9 +1276,16 @@
           if (mfTask && effectiveTasksTotal > 0) {
             // Exclude MF from both total and complete counts
             effectiveTasksTotal--;
+            if (mfTask.complete) {
+              effectiveTasksComplete--;
+            }
             console.log(`[JotFormCache] Set 4: Excluding MF from completion criteria (${effectiveTasksComplete}/${effectiveTasksTotal} required)`);
           }
         }
+        
+        // Save adjusted values back to set object for downstream use (school/class pages)
+        set.tasksTotal = effectiveTasksTotal;
+        set.tasksComplete = effectiveTasksComplete;
         
         // Avoid division by zero if all tasks were excluded
         if (effectiveTasksTotal === 0) {
