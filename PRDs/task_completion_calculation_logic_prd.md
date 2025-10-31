@@ -1,8 +1,8 @@
 # Task Completion Calculation Logic - PRD
 
-**Version:** 1.2  
+**Version:** 1.3  
 **Created:** October 16, 2025  
-**Last Updated:** October 16, 2025 (Added validation architecture)  
+**Last Updated:** October 31, 2025 (Added Set 4 MF exclusion logic)  
 **Author:** System Architecture Team  
 **Status:** ✅ Implemented
 
@@ -160,6 +160,57 @@ tasksTotal = 3 (not 4)
 **Impact:**
 - **Before fix:** 1/4 complete → incomplete (even if all applicable tasks done)
 - **After fix:** 1/3 complete → incomplete (correct count)
+
+---
+
+### Set 4 Special Handling: MF Exclusion
+
+**Critical:** Set 4's green light status excludes Math Fluency (MF) from completion criteria.
+
+**Rationale:** MF is frequently incomplete or optional, and should not block Set 4 from showing as complete if the core motor assessments (FineMotor and TGMD) are done.
+
+**Calculation Logic:**
+```javascript
+if (setId === 'set4') {
+  // Find MF task in set4
+  const mfTask = set.tasks.find(t => t.taskId === 'mf');
+  if (mfTask) {
+    // Exclude MF from both total and complete counts
+    effectiveTasksTotal--;
+    if (mfTask.complete) {
+      effectiveTasksComplete--;
+    }
+  }
+}
+
+// Calculate completion rate with adjusted counts
+completionRate = effectiveTasksComplete / effectiveTasksTotal;
+```
+
+**Set 4 Composition:**
+- FineMotor (required for green light ✅)
+- TGMD (required for green light ✅)
+- MF (excluded from green light criteria ⚠️)
+
+**Example Scenarios:**
+
+| FineMotor | TGMD | MF | Set 4 Status | Reason |
+|-----------|------|----|--------------|---------| 
+| ✅ Complete | ✅ Complete | ❌ Incomplete | 🟢 **Complete** | 2/2 required tasks done (MF ignored) |
+| ✅ Complete | ✅ Complete | ⚪ Not Started | 🟢 **Complete** | 2/2 required tasks done (MF ignored) |
+| ✅ Complete | ✅ Complete | ✅ Complete | 🟢 **Complete** | 2/2 required tasks done (bonus: MF also done) |
+| ✅ Complete | ❌ Incomplete | ✅ Complete | 🟡 **Incomplete** | Only 1/2 required tasks done |
+| ⚪ Not Started | ⚪ Not Started | ⚪ Not Started | ⚪ **Not Started** | No tasks started |
+
+**Impact:**
+- Students with completed FineMotor + TGMD but incomplete MF → Set 4 shows green ✅
+- All drilldown pages (district, group, school, class, student) use this logic
+- MF task still appears in task lists and individual validation, just doesn't affect set status
+
+**Implementation:**
+- File: `assets/js/jotform-cache.js`
+- Lines: 1257-1295 (Set status calculation loop)
+- Added: October 31, 2025
 
 ---
 

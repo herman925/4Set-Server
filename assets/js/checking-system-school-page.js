@@ -279,9 +279,20 @@
     let outstanding = 0;
     for (const setId in setStatus) {
       const set = setStatus[setId];
-      // Count incomplete tasks in each set
-      if (set.tasksTotal > 0) {
-        outstanding += (set.tasksTotal - set.tasksComplete);
+      if (!set) continue;
+
+      if (Array.isArray(set.tasks) && set.tasks.length > 0) {
+        set.tasks.forEach(task => {
+          if (task?.ignoredForIncompleteChecks) return;
+          if (!task.complete) {
+            outstanding++;
+          }
+        });
+        continue;
+      }
+
+      if (typeof set.tasksTotal === 'number' && typeof set.tasksComplete === 'number') {
+        outstanding += Math.max(0, set.tasksTotal - set.tasksComplete);
       }
     }
     return outstanding;
@@ -849,7 +860,10 @@
         if (foundTask) {
           // Post-term detection or termination mismatch (yellow): Data quality issue
           // Yellow indicates EITHER post-termination activity OR termination mismatch
-          if (foundTask.hasPostTerminationAnswers) return 'status-yellow';
+          if (foundTask.ignoredForIncompleteChecks || foundTask.taskId.includes('Math Fluency')) return 'status-grey';
+
+          // Warning detection (yellow): Post-termination data OR termination mismatch
+          if (foundTask.hasPostTerminationAnswers || foundTask.hasTerminationMismatch) return 'status-yellow';
           
           // Complete (green): All questions answered or properly terminated
           if (foundTask.complete) return 'status-green';
@@ -868,6 +882,7 @@
 
   /**
    * Get set status color based on validation cache
+   * Status values from validation: 'complete', 'incomplete', 'notstarted'
    */
   function getSetStatusColor(setStatus, setId) {
     if (!setStatus || !setStatus[setId]) return 'grey';
@@ -877,13 +892,13 @@
     // Determine color based on set status
     if (set.status === 'complete') return 'green';
     if (set.status === 'incomplete') return 'red';
-    if (set.status === 'in-progress') return 'yellow';
+    // Note: 'notstarted' falls through to grey
     
     return 'grey';
   }
 
   /**
-   * Render set status indicator (By Set view only - no yellow/post-term)
+   * Render set status indicator (By Set view only - no yellow/Warning)
    */
   function renderSetStatus(status, label) {
     const statusConfig = {
@@ -1130,7 +1145,7 @@
     let legendHtml = '';
     
     if (currentViewMode === 'class' || currentStudentViewMode === 'set') {
-      // By Class or By Set view: 3 colors (no yellow/post-term)
+      // By Class or By Set view: 3 colors (no yellow/Warning)
       legendHtml = `
         <span class="inline-flex items-center gap-1.5">
           <span class="status-circle status-green"></span>
@@ -1146,7 +1161,7 @@
         </span>
       `;
     } else {
-      // By Task view: 4 colors (includes yellow for Post-Term)
+      // By Task view: 4 colors (includes yellow for Warning)
       legendHtml = `
         <span class="inline-flex items-center gap-1.5">
           <span class="status-circle status-green"></span>
@@ -1154,7 +1169,7 @@
         </span>
         <span class="inline-flex items-center gap-1.5">
           <span class="status-circle status-yellow"></span>
-          <span>Post-Term</span>
+          <span>Warning</span>
         </span>
         <span class="inline-flex items-center gap-1.5">
           <span class="status-circle status-red"></span>

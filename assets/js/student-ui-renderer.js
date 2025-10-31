@@ -490,7 +490,7 @@ class StudentUIRenderer {
     generateStatusBadge(status, taskValidation) {
         const badges = {
             green: '<span class="answer-pill correct"><i data-lucide="check" class="w-3.5 h-3.5"></i>Complete</span>',
-            yellow: '<span class="answer-pill correct"><i data-lucide="badge-check" class="w-3.5 h-3.5"></i>Post-termination responses</span>',
+            yellow: '<span class="answer-pill correct"><i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>Warning</span>',
             red: '<span class="answer-pill incorrect"><i data-lucide="alert-triangle" class="w-3.5 h-3.5"></i>Incomplete</span>',
             grey: '<span class="answer-pill incorrect"><i data-lucide="circle" class="w-3.5 h-3.5"></i>Not started</span>'
         };
@@ -575,9 +575,8 @@ class StudentUIRenderer {
     getTaskStatus(taskValidation) {
         if (!taskValidation || taskValidation.answeredQuestions === 0) return 'grey';
         
-        // Post-term detection or termination mismatch (yellow): Data quality issue
-        // Yellow indicates EITHER post-termination activity OR termination mismatch
-        if (taskValidation.hasPostTerminationAnswers) return 'yellow';
+        // Warning detection (yellow): Post-termination data OR termination mismatch
+        if (taskValidation.hasPostTerminationAnswers || taskValidation.hasTerminationMismatch) return 'yellow';
         
         // Complete (green): All questions answered
         if (taskValidation.answeredQuestions === taskValidation.totalQuestions) {
@@ -604,7 +603,7 @@ class StudentUIRenderer {
     getStatusTitle(status) {
         const titles = {
             green: 'Complete',
-            yellow: 'Post-termination activity or termination mismatch',
+            yellow: 'Warning',
             red: 'Incomplete',
             grey: 'Not started'
         };

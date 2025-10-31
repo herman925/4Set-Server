@@ -232,9 +232,20 @@
     let outstanding = 0;
     for (const setId in setStatus) {
       const set = setStatus[setId];
-      // Count incomplete tasks in each set
-      if (set.tasksTotal > 0) {
-        outstanding += (set.tasksTotal - set.tasksComplete);
+      if (!set) continue;
+
+      if (Array.isArray(set.tasks) && set.tasks.length > 0) {
+        set.tasks.forEach(task => {
+          if (task?.ignoredForIncompleteChecks) return;
+          if (!task.complete) {
+            outstanding++;
+          }
+        });
+        continue;
+      }
+
+      if (typeof set.tasksTotal === 'number' && typeof set.tasksComplete === 'number') {
+        outstanding += Math.max(0, set.tasksTotal - set.tasksComplete);
       }
     }
     return outstanding;
@@ -417,7 +428,7 @@
     let legendHtml = '';
     
     if (currentViewMode === 'set') {
-      // By Set view: 3 colors (no yellow/post-term)
+      // By Set view: 3 colors (no yellow/warning)
       legendHtml += `
         <span class="inline-flex items-center gap-1.5">
           <span class="status-circle status-green"></span>
@@ -433,7 +444,7 @@
         </span>
       `;
     } else {
-      // By Task view: 4 colors (includes yellow for Post-Term)
+      // By Task view: 4 colors (includes yellow for Warning)
       legendHtml += `
         <span class="inline-flex items-center gap-1.5">
           <span class="status-circle status-green"></span>
@@ -441,7 +452,7 @@
         </span>
         <span class="inline-flex items-center gap-1.5">
           <span class="status-circle status-yellow"></span>
-          <span>Post-Term</span>
+          <span>Warning</span>
         </span>
         <span class="inline-flex items-center gap-1.5">
           <span class="status-circle status-red"></span>
@@ -845,6 +856,7 @@
         );
         
         if (foundTask) {
+          if (foundTask.ignoredForIncompleteChecks) return 'status-grey';
           
           // Post-term detection or termination mismatch (yellow): Data quality issue
           // Yellow indicates EITHER post-termination activity OR termination mismatch
@@ -911,53 +923,107 @@
     const validateButton = document.getElementById('validate-button');
     if (validateButton) {
       validateButton.addEventListener('click', async () => {
-        console.log('[ClassPage] Running cache validation...');
+        console.log('[ClassPage] Running student cache validation...');
         
-        // Get parameters from URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const classId = urlParams.get('classId');
-        
-        if (!classId) {
-          alert('Missing classId parameter in URL');
+        // Show student selector modal
+        if (!students || students.length === 0) {
+          alert('No students loaded. Please refresh the page.');
           return;
         }
         
-        // Determine current view mode
-        const bySetActive = document.getElementById('view-by-set')?.classList.contains('active');
-        const viewMode = bySetActive ? 'by-set' : 'by-task';
-        
-        // Get schoolId and grade from page data (they're loaded during init)
-        const schoolIdElement = document.getElementById('school-name');
+        // Get current grade from page
         const gradeElement = document.getElementById('class-grade');
+        const currentGrade = gradeElement?.textContent.trim() || 'K3';
         
-        try {
-          validateButton.disabled = true;
-          validateButton.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 flex-shrink-0 animate-spin"></i><span>Validating...</span>';
-          lucide.createIcons();
+        // Create student selector modal
+        const modal = document.createElement('div');
+        modal.className = 'fixed inset-0 bg-black/50 flex items-center justify-center z-50';
+        modal.innerHTML = `
+          <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
+            <div class="p-6">
+              <h3 class="text-lg font-semibold mb-4">Select Student to Validate</h3>
+              <select id="student-selector" class="w-full p-2 border rounded mb-4">
+                <option value="">-- Select a student --</option>
+                ${students.map(student => `
+                  <option value="${student.coreId}" data-name="${student.studentName || 'Unknown'}">
+                    ${student.coreId} - ${student.studentName || 'Unknown'}
+                  </option>
+                `).join('')}
+              </select>
+              <div class="flex gap-2 justify-end">
+                <button id="cancel-validate" class="px-4 py-2 border rounded hover:bg-gray-100">Cancel</button>
+                <button id="confirm-validate" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50" disabled>
+                  <i data-lucide="shield-check" class="w-4 h-4 inline-block mr-1"></i>
+                  Validate
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+        
+        document.body.appendChild(modal);
+        lucide.createIcons();
+        
+        const selector = document.getElementById('student-selector');
+        const confirmBtn = document.getElementById('confirm-validate');
+        const cancelBtn = document.getElementById('cancel-validate');
+        
+        // Enable confirm button when student is selected
+        selector.addEventListener('change', () => {
+          confirmBtn.disabled = !selector.value;
+        });
+        
+        // Cancel button
+        cancelBtn.addEventListener('click', () => {
+          document.body.removeChild(modal);
+        });
+        
+        // Confirm button - run validation
+        confirmBtn.addEventListener('click', async () => {
+          const coreId = selector.value;
+          if (!coreId) return;
           
-          const validator = CacheValidator.create('class', {
-            classId: classId,
-            schoolId: schoolIdElement?.dataset?.schoolId || 'unknown',
-            grade: gradeElement?.textContent || 'K3',
-            viewMode
-          });
-          const results = await validator.validate();
-          CacheValidator.showResults(results);
-        } catch (error) {
-          console.error('[ClassPage] Validation error:', error);
-          alert('Validation failed: ' + error.message);
-        } finally {
-          validateButton.disabled = false;
-          validateButton.innerHTML = '<i data-lucide="shield-check" class="w-3.5 h-3.5 flex-shrink-0"></i><span>Validate</span>';
-          lucide.createIcons();
-        }
+          try {
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = '<i data-lucide="loader-2" class="w-4 h-4 inline-block mr-1 animate-spin"></i>Validating...';
+            lucide.createIcons();
+            
+            console.log(`[ClassPage] Validating: coreId=${coreId}, grade=${currentGrade}`);
+            
+            const validator = CacheValidator.create('student', {
+              coreId: coreId,
+              grade: currentGrade,
+              useDom: false  // Cache-only validation for class page
+            });
+            const results = await validator.validate();
+            
+            // Close selector modal
+            document.body.removeChild(modal);
+            
+            // Show results
+            CacheValidator.showResults(results);
+          } catch (error) {
+            console.error('[ClassPage] Validation error:', error);
+            alert('Validation failed: ' + error.message);
+            confirmBtn.disabled = false;
+            confirmBtn.innerHTML = '<i data-lucide="shield-check" class="w-4 h-4 inline-block mr-1"></i>Validate';
+            lucide.createIcons();
+          }
+        });
+        
+        // Close on backdrop click
+        modal.addEventListener('click', (e) => {
+          if (e.target === modal) {
+            document.body.removeChild(modal);
+          }
+        });
       });
       console.log('[ClassPage] Validate button handler attached');
     }
   }
 
   /**
-   * Render set status indicator (By Set view only - no yellow/post-term)
+   * Render set status indicator (By Set view only - no yellow/warning)
    */
   function renderSetStatus(status, label) {
     const statusConfig = {
@@ -1014,7 +1080,8 @@
       if (!set || !set.tasks || set.tasks.length === 0) continue;
       
       // Get incomplete tasks in this set
-      const incompleteTasks = set.tasks.filter(t => !t.complete);
+      const incompleteTasks = set.tasks.filter(t => !t.complete && !t.ignoredForIncompleteChecks);
+      
       if (incompleteTasks.length === 0) continue;
       
       // Get set name from survey structure

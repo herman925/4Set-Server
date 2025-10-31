@@ -19,24 +19,32 @@
     }
 
     /**
-     * Extract actual value from answer object (handles both objects and primitives)
-     * This supports the JotForm answer object schema: { answer: "value", text: "value", name: "field" }
+     * Extract value from answer object (handles both new format and legacy)
+     * CRITICAL: Must handle numeric 0 correctly (TGMD "Not Observed")
      * @param {Object|string|number} answerObj - Answer object or primitive value
-     * @returns {string|null} - The extracted value or null
+     * @returns {string|number|null} - The extracted value or null
      */
     extractAnswerValue(answerObj) {
-      if (!answerObj) {
+      if (!answerObj && answerObj !== 0) {  // Allow numeric 0 to pass through
         return null;
       }
       
       // If it's an object (answer object from JotForm/Qualtrics), extract .answer or .text
       if (typeof answerObj === 'object' && answerObj !== null) {
-        return answerObj.answer || answerObj.text || null;
+        // Use explicit checks instead of || to preserve 0
+        if (answerObj.answer !== undefined && answerObj.answer !== null) {
+          return answerObj.answer;
+        }
+        if (answerObj.text !== undefined && answerObj.text !== null) {
+          return answerObj.text;
+        }
+        return null;
       }
       
       // If it's a primitive (legacy format or direct value), return as-is
       return answerObj;
     }
+
 
     /**
      * Merge JotForm and Qualtrics datasets by coreId WITH GRADE-BASED GROUPING
@@ -195,7 +203,7 @@
             mergedRecords.push(jotformOnly);
             jotformOnlyCount++;
           } else if (mergedQualtrics) {
-            // Qualtrics only for this grade
+            // Qualtrics only for this grade (valid scenario - TGMD can be standalone)
             const qualtricsOnly = {
               ...mergedQualtrics,
               _sources: ['qualtrics'],
@@ -244,7 +252,8 @@
         const value = this.extractAnswerValue(answerObj);
         
         // Only set if not already present and value is not empty (earliest wins)
-        if (value && !merged[key]) {
+        // CRITICAL: Use explicit checks - "0" is valid TGMD answer (Not Observed)
+        if (value !== null && value !== undefined && value !== '' && !merged[key]) {
           merged[key] = answerObj; // Store the full answer object
         }
       }
@@ -300,7 +309,8 @@
           const value = this.extractAnswerValue(answerObj);
           
           // Only set if not already present and value is not empty (earliest wins)
-          if (value && !merged[key]) {
+          // CRITICAL: Use explicit checks - "0" is valid TGMD answer (Not Observed)
+          if (value !== null && value !== undefined && value !== '' && !merged[key]) {
             merged[key] = answerObj; // Store the full answer object
           }
         }
@@ -340,7 +350,10 @@
         const qualtricsValue = this.extractAnswerValue(qualtricsAnswerObj);
         
         // Skip if Qualtrics value is empty
-        if (!qualtricsValue || qualtricsValue === '') {
+        // CRITICAL: Use explicit null/undefined/empty checks, NOT falsy check
+        // Reason: TGMD "0" (Not Observed) is valid answer, numeric 0 is falsy
+        // This ensures "0" values are preserved during merge
+        if (qualtricsValue === null || qualtricsValue === undefined || qualtricsValue === '') {
           continue;
         }
 
@@ -353,7 +366,8 @@
         const jotformValue = this.extractAnswerValue(jotformAnswerObj);
         
         // If JotForm has the field but no value, use Qualtrics
-        if (!jotformValue || jotformValue === '') {
+        // CRITICAL: Use explicit null/undefined/empty checks (same reason as above)
+        if (jotformValue === null || jotformValue === undefined || jotformValue === '') {
           merged[key] = qualtricsAnswerObj;
           continue;
         }

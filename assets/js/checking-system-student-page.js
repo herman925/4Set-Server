@@ -25,7 +25,169 @@
     }
   };
   let taskRegistry = null; // Centralized task identifier mappings
+  let taskDefinitionsCache = {}; // Cache for task JSON definitions (for options mapping)
   let systemPassword = null;
+
+  // Shared tooltip state for revealing associated text answers
+  let textAnswerTooltipElement = null;
+  let activeTextAnswerTrigger = null;
+
+  function escapeHtmlAttribute(value) {
+    if (value === null || value === undefined) {
+      return '';
+    }
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  function ensureTextAnswerTooltipElement() {
+    if (!textAnswerTooltipElement) {
+      const tooltip = document.createElement('div');
+      tooltip.id = 'text-answer-tooltip';
+      tooltip.className = 'text-answer-tooltip';
+      tooltip.setAttribute('role', 'status');
+      tooltip.setAttribute('aria-live', 'polite');
+      document.body.appendChild(tooltip);
+      textAnswerTooltipElement = tooltip;
+    }
+    return textAnswerTooltipElement;
+  }
+
+  function getNormalizedTextAnswer(answers, fieldId) {
+    if (!fieldId || !answers) {
+      return '';
+    }
+
+    const entry = answers[fieldId];
+    if (!entry) {
+      return '';
+    }
+
+    const rawValue = entry.answer ?? entry.text ?? entry.value ?? '';
+    if (rawValue === null || rawValue === undefined) {
+      return '';
+    }
+
+    const stringValue = String(rawValue).trim();
+    if (!stringValue) {
+      return '';
+    }
+
+    // Qualtrics placeholder: unanswered text fields sometimes echo their own ID
+    if (stringValue.toLowerCase() === String(fieldId).toLowerCase()) {
+      return '';
+    }
+
+    return stringValue;
+  }
+
+  function hideTextAnswerTooltip(trigger = null) {
+    if (trigger && trigger !== activeTextAnswerTrigger) {
+      return;
+    }
+    if (!textAnswerTooltipElement) {
+      return;
+    }
+    textAnswerTooltipElement.classList.remove('visible');
+    textAnswerTooltipElement.textContent = '';
+    if (activeTextAnswerTrigger) {
+      activeTextAnswerTrigger.classList.remove('is-active-text-answer');
+    }
+    activeTextAnswerTrigger = null;
+  }
+
+  function positionTextAnswerTooltip(trigger) {
+    const tooltip = ensureTextAnswerTooltipElement();
+    const rect = trigger.getBoundingClientRect();
+    let top = rect.top - 12;
+    let translateY = '-100%';
+
+    if (top < 12) {
+      top = rect.bottom + 12;
+      translateY = '0';
+    }
+
+    tooltip.style.left = `${rect.left + rect.width / 2}px`;
+    tooltip.style.top = `${top}px`;
+    tooltip.style.transform = `translate(-50%, ${translateY})`;
+  }
+
+  function showTextAnswerTooltip(trigger) {
+    const encoded = trigger.getAttribute('data-text-answer');
+    if (!encoded) {
+      return;
+    }
+
+    let decoded;
+    try {
+      decoded = decodeURIComponent(encoded);
+    } catch (error) {
+      decoded = encoded;
+    }
+
+    if (!decoded || !decoded.trim()) {
+      hideTextAnswerTooltip();
+      return;
+    }
+
+    const tooltip = ensureTextAnswerTooltipElement();
+    tooltip.textContent = decoded;
+    positionTextAnswerTooltip(trigger);
+    tooltip.classList.add('visible');
+
+    if (activeTextAnswerTrigger && activeTextAnswerTrigger !== trigger) {
+      activeTextAnswerTrigger.classList.remove('is-active-text-answer');
+    }
+    trigger.classList.add('is-active-text-answer');
+    activeTextAnswerTrigger = trigger;
+  }
+
+  function attachTextAnswerInteraction(trigger) {
+    if (!trigger || trigger.dataset.textAnswerAttached === 'true') {
+      return;
+    }
+
+    const handleEnter = () => showTextAnswerTooltip(trigger);
+    const handleLeave = () => hideTextAnswerTooltip(trigger);
+    const handleClick = event => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (activeTextAnswerTrigger === trigger) {
+        hideTextAnswerTooltip(trigger);
+      } else {
+        showTextAnswerTooltip(trigger);
+      }
+    };
+
+    trigger.addEventListener('mouseenter', handleEnter);
+    trigger.addEventListener('focus', handleEnter);
+    trigger.addEventListener('mouseleave', handleLeave);
+    trigger.addEventListener('blur', handleLeave);
+    trigger.addEventListener('click', handleClick);
+
+    trigger.dataset.textAnswerAttached = 'true';
+  }
+
+  window.addEventListener('scroll', () => hideTextAnswerTooltip(), true);
+  window.addEventListener('resize', () => hideTextAnswerTooltip());
+  document.addEventListener('click', event => {
+    if (!activeTextAnswerTrigger) {
+      return;
+    }
+    if (event.target.closest('[data-text-answer]') === activeTextAnswerTrigger) {
+      return;
+    }
+    hideTextAnswerTooltip();
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key === 'Escape') {
+      hideTextAnswerTooltip();
+    }
+  });
 
   /**
    * Load system configuration from config/checking_system_config.json
@@ -573,8 +735,13 @@
 
       // Set last sync timestamp in localStorage (global for this student)
       const syncKey = `jotform_last_sync_${coreId}`;
-      localStorage.setItem(syncKey, new Date().toISOString());
-      console.log(`[StudentPage] ✅ Updated sync timestamp in localStorage: ${syncKey}`);
+      try {
+        localStorage.setItem(syncKey, new Date().toISOString());
+        console.log(`[StudentPage] ✅ Updated sync timestamp in localStorage: ${syncKey}`);
+      } catch (storageError) {
+        console.warn('[StudentPage] Could not access localStorage:', storageError.message);
+        // Continue without localStorage - functionality should still work
+      }
 
       // Populate UI
       populateJotformData(cacheData);
@@ -758,6 +925,9 @@
       const taskValidation = await window.TaskValidator.validateAllTasks(data.mergedAnswers);
       
       console.log('[StudentPage] Task validation complete:', taskValidation);
+      
+      // Store validation results globally for cache validator access
+      window.StudentPage.currentValidation = taskValidation;
       
       // Populate task tables with real data
       populateTaskTables(taskValidation, data.mergedAnswers);
@@ -974,18 +1144,18 @@
         const row = document.createElement('tr');
         row.className = 'hover:bg-[color:var(--muted)]/30';
         
-        // Determine trial statuses and icons
-        // null = not answered (show question mark)
-        // 0 = answered incorrectly (show red X)
-        // 1 = answered correctly (show green check)
-        const t1Icon = criterion.trials.t1 === null
-          ? '<i data-lucide="circle-help" class="w-3 h-3 text-gray-400"></i>'
+        // Determine trial statuses and display
+        // null/undefined = not answered (show dash)
+        // 0 = not observed (show red X)
+        // 1 = successful (show green check)
+        const t1Display = criterion.trials.t1 === null || criterion.trials.t1 === undefined
+          ? '<span class="text-gray-400">—</span>'
           : criterion.trials.t1 === 1
             ? '<i data-lucide="check" class="w-3 h-3 text-green-600"></i>'
             : '<i data-lucide="x" class="w-3 h-3 text-red-600"></i>';
         
-        const t2Icon = criterion.trials.t2 === null
-          ? '<i data-lucide="circle-help" class="w-3 h-3 text-gray-400"></i>'
+        const t2Display = criterion.trials.t2 === null || criterion.trials.t2 === undefined
+          ? '<span class="text-gray-400">—</span>'
           : criterion.trials.t2 === 1
             ? '<i data-lucide="check" class="w-3 h-3 text-green-600"></i>'
             : '<i data-lucide="x" class="w-3 h-3 text-red-600"></i>';
@@ -1022,8 +1192,8 @@
           </td>
           <td class="py-2 px-2">
             <div class="flex items-center gap-3 text-xs text-[color:var(--foreground)]">
-              <span class="inline-flex items-center gap-1">T1: ${t1Icon}</span>
-              <span class="inline-flex items-center gap-1">T2: ${t2Icon}</span>
+              <span class="inline-flex items-center gap-1">T1: ${t1Display}</span>
+              <span class="inline-flex items-center gap-1">T2: ${t2Display}</span>
             </div>
           </td>
           <td class="py-2 px-2 text-center">
@@ -1043,6 +1213,66 @@
     }
     
     // Note: Overall TGMD Score summary row removed per user request
+  }
+
+  /**
+   * Helper: Transform CCM student answer (value) to Chinese character (label)
+   */
+  function transformCCMAnswer(questionId, studentAnswer, taskDef) {
+    if (!studentAnswer || !taskDef || !taskDef.questions) return studentAnswer;
+    
+    // Find the question definition
+    const questionDef = taskDef.questions.find(q => q.id === questionId);
+    if (!questionDef || !questionDef.options) return studentAnswer;
+    
+    // Find the option that matches the student's answer value
+    const option = questionDef.options.find(opt => opt.value === studentAnswer);
+    return option ? option.label : studentAnswer;
+  }
+
+  /**
+   * Helper: Get HTKS score display (x/2 format)
+   */
+  function getHTKSScoreDisplay(studentAnswer) {
+    if (studentAnswer === null || studentAnswer === undefined) return '—';
+    const score = parseInt(studentAnswer, 10) || 0;
+    return `${score}/2`;
+  }
+
+  /**
+   * Helper: Get HTKS result pill with proper names based on score
+   */
+  function getHTKSResultPill(studentAnswer, branchSuffix = '') {
+    if (studentAnswer === null) {
+      return `<span class="answer-pill incorrect"><i data-lucide="minus" class="w-3 h-3"></i>Not answered${branchSuffix}</span>`;
+    }
+    
+    const score = parseInt(studentAnswer, 10) || 0;
+    
+    if (score === 2) {
+      return `<span class="answer-pill correct"><i data-lucide="check" class="w-3 h-3"></i>Fully Correct${branchSuffix}</span>`;
+    } else if (score === 1) {
+      return `<span class="answer-pill" style="background: #fef3c7; color: #92400e; border-color: #fde68a;"><i data-lucide="alert-circle" class="w-3 h-3"></i>Partially Correct${branchSuffix}</span>`;
+    } else {
+      return `<span class="answer-pill incorrect"><i data-lucide="x" class="w-3 h-3"></i>Incorrect${branchSuffix}</span>`;
+    }
+  }
+
+  /**
+   * Helper: Get Fine Motor result pill (success/not successful)
+   */
+  function getFMResultPill(studentAnswer, branchSuffix = '') {
+    if (studentAnswer === null) {
+      return `<span class="answer-pill incorrect"><i data-lucide="minus" class="w-3 h-3"></i>Not answered${branchSuffix}</span>`;
+    }
+    
+    const value = studentAnswer === '1' || studentAnswer === 1;
+    
+    if (value) {
+      return `<span class="answer-pill correct"><i data-lucide="check" class="w-3 h-3"></i>Successful${branchSuffix}</span>`;
+    } else {
+      return `<span class="answer-pill incorrect"><i data-lucide="x" class="w-3 h-3"></i>Not Successful${branchSuffix}</span>`;
+    }
   }
 
   /**
@@ -1107,11 +1337,41 @@
         }
       }
       
-      // Find the table body within this task
-      const tbody = taskElement.querySelector('table tbody');
-      if (!tbody) {
+      // Find the table within this task
+      const table = taskElement.querySelector('table');
+      const tbody = table?.querySelector('tbody');
+      if (!table || !tbody) {
         console.log(`[StudentPage] No table found for task: ${taskId}`);
         continue;
+      }
+      
+      // Update table header based on task type
+      const isHTKS = taskId === 'headtoekneeshoulder' || taskId === 'htks';
+      const isFM = taskId === 'finemotor' || taskId === 'fm';
+      
+      const thead = table.querySelector('thead');
+      if (thead) {
+        if (isFM) {
+          // Fine Motor: Remove "Correct Answer" column header
+          thead.innerHTML = `
+            <tr>
+              <th class="text-left font-medium pb-2 px-2">Question</th>
+              <th class="text-left font-medium pb-2 px-2">Student Answer</th>
+              <th class="text-left font-medium pb-2 px-2" colspan="2">Result</th>
+            </tr>
+          `;
+        } else if (isHTKS) {
+          // HTKS: Change "Correct Answer" to "Score"
+          thead.innerHTML = `
+            <tr>
+              <th class="text-left font-medium pb-2 px-2">Question</th>
+              <th class="text-left font-medium pb-2 px-2">Student Answer</th>
+              <th class="text-left font-medium pb-2 px-2">Score</th>
+              <th class="text-left font-medium pb-2 px-2">Result</th>
+            </tr>
+          `;
+        }
+        // For other tasks, keep the default headers as-is
       }
       
       // Clear dummy data
@@ -1232,20 +1492,85 @@
           (question.isCorrect ? 'correct' : 'incorrect')));
         row.setAttribute('data-state', dataState);
         row.setAttribute('data-missing', question.studentAnswer === null ? 'true' : 'false');
+        
+        let textAnswerPopover = '';
+        if (question.isTextDisplay && question.textFieldStatus === 'answered') {
+          const cleanTextAnswer = getNormalizedTextAnswer(mergedAnswers, question.id);
+
+          if (cleanTextAnswer) {
+            row.setAttribute('data-has-text-answer', 'true');
+            const encoded = encodeURIComponent(cleanTextAnswer);
+            let triggerTarget = row;
+
+            if (!question.id.endsWith('_TEXT')) {
+              textAnswerPopover = `
+                <button type="button" class="text-answer-trigger" data-text-answer="${encoded}" aria-label="View typed answer" title="View typed answer">
+                  <i data-lucide="copy"></i>
+                </button>
+              `;
+              triggerTarget = null;
+            }
+
+            if (!triggerTarget) {
+              row.dataset.textAnswer = encoded;
+            } else {
+              triggerTarget.setAttribute('data-text-answer', encoded);
+            }
+          }
+        } else if (!question.isTextDisplay) {
+          const textFieldId = question.id + '_TEXT';
+          const cleanRadioText = getNormalizedTextAnswer(mergedAnswers, textFieldId);
+
+          if (cleanRadioText) {
+            row.setAttribute('data-has-text-answer', 'true');
+            const encoded = encodeURIComponent(cleanRadioText);
+            row.dataset.textAnswer = encoded;
+            textAnswerPopover = `
+              <button type="button" class="text-answer-trigger" data-text-answer="${encoded}" aria-label="View typed answer" title="View typed answer">
+                <i data-lucide="copy"></i>
+              </button>
+            `;
+          }
+        }
+        
         row.setAttribute('data-ignored', isIgnoredDueToTimeout ? 'true' : 'false'); // CRITICAL: Mark for calculation exclusion
         row.setAttribute('data-text-display', question.isTextDisplay ? 'true' : 'false'); // Mark _TEXT fields
         row.className = 'hover:bg-[color:var(--muted)]/30';
         
         // Determine branch information for this question (if any)
+        const branchLabel = branchInfo[question.id] || '';
         let branchSuffix = '';
-        if (branchInfo[question.id]) {
-          branchSuffix = ` (${branchInfo[question.id]} Branch)`;
+        if (branchLabel) {
+          branchSuffix = ` (${branchLabel} Branch)`;
+          row.setAttribute('data-branch', branchLabel);
         }
+
+        const branchBadge = branchLabel ? `
+          <span class="inline-flex items-center gap-1 text-[0.65rem] font-medium px-1.5 py-0.5 rounded-full border border-[color:var(--border)] bg-[color:var(--muted)]/15 text-[color:var(--primary)]" title="${branchLabel} Branch">
+            <i data-lucide="git-branch" class="w-3 h-3"></i>
+            <span>${branchLabel}</span>
+          </span>
+        ` : '';
+
+        const questionCellContent = branchBadge
+          ? `<div class="flex items-center gap-2"><span class="font-mono">${question.id}</span>${branchBadge}</div>`
+          : `<span class="font-mono">${question.id}</span>`;
+        
+        // Check if this is a special task that needs custom display logic
+        const isHTKS = taskId === 'headtoekneeshoulder' || taskId === 'htks';
+        const isFM = taskId === 'finemotor' || taskId === 'fm';
+        const isCCM = taskId === 'ccm';
         
         // Determine status pill
         let statusPill;
         if (isIgnoredDueToTimeout) {
           statusPill = '<span class="answer-pill" style="background: #dbeafe; color: #1e40af; border-color: #93c5fd;"><i data-lucide="ban" class="w-3 h-3"></i>Ignored (Terminated)</span>';
+        } else if (isHTKS && !question.isTextDisplay) {
+          // HTKS: Use custom result pill based on score (0/1/2)
+          statusPill = getHTKSResultPill(question.studentAnswer, branchSuffix);
+        } else if (isFM && !question.isTextDisplay) {
+          // Fine Motor: Use custom result pill (成功/不成功)
+          statusPill = getFMResultPill(question.studentAnswer, branchSuffix);
         } else if (question.isTextDisplay) {
           // Special handling for _TEXT display fields
           if (question.textFieldStatus === 'na') {
@@ -1272,27 +1597,79 @@
           statusPill = `<span class="answer-pill incorrect"><i data-lucide="x" class="w-3 h-3"></i>Incorrect${branchSuffix}</span>`;
         }
         
-        // For Y/N tasks (like TGMD), show "N/A" instead of correct answer
-        // For _TEXT fields, show "—" (dash) instead of "N/A" for correct answer column
-        const correctAnswerDisplay = isYNTask ? 'N/A' : (question.isTextDisplay ? '—' : (question.correctAnswer || '—'));
+        // Determine value for "Correct Answer" or "Score" column
+        let correctAnswerDisplay;
+        let correctAnswerColumnLabel = 'Correct Answer'; // Can be changed for special tasks
+        
+        if (question.isTextDisplay) {
+          // _TEXT fields always show dash
+          correctAnswerDisplay = '—';
+        } else if (isHTKS) {
+          // HTKS: Show score in x/2 format instead of correct answer
+          correctAnswerDisplay = getHTKSScoreDisplay(question.studentAnswer);
+        } else if (isFM) {
+          // Fine Motor: No correct answer (remove column entirely - handled below)
+          correctAnswerDisplay = '—';
+        } else {
+          // All other tasks: prefer displayCorrectAnswer → correctAnswer → fallback
+          correctAnswerDisplay = question.displayCorrectAnswer ?? question.correctAnswer ?? '—';
+        }
         
         // Handle special case for text-only attempts (radio blank, text filled)
-        const displayStudentAnswer = question.studentAnswer === '[TEXT_ONLY_ATTEMPT]' 
+        let displayStudentAnswer = question.studentAnswer === '[TEXT_ONLY_ATTEMPT]' 
           ? '—' 
           : (question.studentAnswer || '—');
         
-        row.innerHTML = `
-          <td class="py-2 px-2 text-[color:var(--foreground)] font-mono">${question.id}</td>
-          <td class="py-2 px-2 text-[color:var(--muted-foreground)]">${displayStudentAnswer}</td>
-          <td class="py-2 px-2 text-[color:var(--muted-foreground)]">${correctAnswerDisplay}</td>
-          <td class="py-2 px-2">${statusPill}</td>
-        `;
-        
+        // CCM: Transform student answer value to Chinese character label
+        if (isCCM && question.studentAnswer && !question.isTextDisplay) {
+          const taskDef = taskDefinitionsCache['CCM'] || taskDefinitionsCache['ccm'];
+          if (taskDef) {
+            displayStudentAnswer = transformCCMAnswer(question.id, question.studentAnswer, taskDef);
+          }
+        }
+
+        let studentAnswerCellHtml = `<span>${displayStudentAnswer}</span>`;
+        if (textAnswerPopover) {
+          studentAnswerCellHtml = `
+            <div class="answer-with-peek">
+              <span>${displayStudentAnswer}</span>
+              ${textAnswerPopover}
+            </div>
+          `;
+        }
+
+        // Build row HTML based on task type
+        if (isFM && !question.isTextDisplay) {
+          // Fine Motor: Remove "Correct Answer" column entirely
+          row.innerHTML = `
+            <td class="py-2 px-2 text-[color:var(--foreground)]">${questionCellContent}</td>
+            <td class="py-2 px-2 text-[color:var(--muted-foreground)]">${studentAnswerCellHtml}</td>
+            <td class="py-2 px-2" colspan="2">${statusPill}</td>
+          `;
+        } else {
+          // All other tasks: Standard 4-column layout
+          row.innerHTML = `
+            <td class="py-2 px-2 text-[color:var(--foreground)]">${questionCellContent}</td>
+            <td class="py-2 px-2 text-[color:var(--muted-foreground)]">${studentAnswerCellHtml}</td>
+            <td class="py-2 px-2 text-[color:var(--muted-foreground)]">${correctAnswerDisplay}</td>
+            <td class="py-2 px-2">${statusPill}</td>
+          `;
+        }
+
+        if (textAnswerPopover) {
+          const triggerElement = row.querySelector('[data-text-answer]');
+          if (triggerElement) {
+            attachTextAnswerInteraction(triggerElement);
+          }
+        } else if (row.dataset.textAnswer) {
+          attachTextAnswerInteraction(row);
+        }
+
         tbody.appendChild(row);
       }
       
       // Calculate task statistics (excluding ignored questions)
-      const taskStats = calculateTaskStatistics(validation, taskElement);
+      const taskStats = calculateTaskStatistics(validation, taskElement, taskId);
       
       // Update task summary with refined counters
       updateTaskSummary(taskElement, taskId, taskStats);
@@ -1553,11 +1930,16 @@
   
   /**
    * Load task metadata (title, etc.) from task JSON file
+   * Also caches the full task definition for options mapping
    */
   async function loadTaskMetadata(taskId) {
     try {
       const response = await fetch(`assets/tasks/${taskId}.json`);
       const taskData = await response.json();
+      
+      // Cache the full task definition for later use
+      taskDefinitionsCache[taskId] = taskData;
+      taskDefinitionsCache[taskData.id || taskId.toLowerCase()] = taskData;
       
       return {
         id: taskData.id || taskId.toLowerCase(),
@@ -1835,7 +2217,7 @@
       const calculatedBool = Boolean(calculatedTerminated);
       const mismatch = recordedBool !== calculatedBool;
       
-      // Card styling: GREEN when both agree, ORANGE when mismatch, YELLOW when post-termination
+      // Card styling: GREEN when both agree, ORANGE when mismatch, YELLOW when post-termination or termination mismatch
       let statusClass;
       let statusColor;
       if (hasPostTerminationAnswers) {
@@ -2076,7 +2458,7 @@
     // This ensures consistency with class page and avoids redundant calculation
     const hasPostTerminationAnswers = validation?.hasPostTerminationAnswers || false;
     if (hasPostTerminationAnswers) {
-      console.log(`[StudentPage] ⚠️ Post-termination answers detected in ${taskId} (from task-validator.js)`);
+      console.log(`[StudentPage] ⚠️ Post-termination answers/Termination Mismatch detected in ${taskId} (from task-validator.js)`);
     }
     
     // CASCADE RULE: If a termination triggered, mark ALL subsequent questions as ignored
@@ -2103,7 +2485,7 @@
       
       // CRITICAL: Recalculate statistics after marking questions as ignored
       console.log(`[StudentPage] Recalculating stats for ${taskId} after termination rules applied`);
-      const updatedStats = calculateTaskStatistics(validation, taskElement);
+      const updatedStats = calculateTaskStatistics(validation, taskElement, taskId);
       updateTaskSummary(taskElement, taskId, updatedStats);
       updateTaskLightingStatus(taskElement, updatedStats);
     }
@@ -2122,19 +2504,25 @@
    * Calculate task statistics excluding ignored questions
    * @param {Object} validation - Task validation result from TaskValidator
    * @param {HTMLElement} taskElement - Task DOM element
+   * @param {string} taskId - Task ID
    * @returns {Object} Statistics including total, answered, correct, hasTerminated, timedOut, etc.
    * 
    * CRITICAL: Uses hasPostTerminationAnswers from validation object (task-validator.js) to ensure
    * consistency between student page and class page status indicators.
+   * 
+   * Special handling for HTKS: Uses scoring system (0/1/2) instead of binary correct/incorrect
    */
-  function calculateTaskStatistics(validation, taskElement) {
+  function calculateTaskStatistics(validation, taskElement, taskId) {
     const tbody = taskElement.querySelector('table tbody');
     const rows = tbody ? tbody.querySelectorAll('tr[data-state]') : [];
+    
+    // Check if this is HTKS task (uses scoring system)
+    const isHTKS = taskId === 'headtoekneeshoulder' || taskId === 'htks';
     
     let total = 0;
     let answered = 0;
     let correct = 0;
-    let scoredTotal = 0; // Questions that have a correct answer
+    let scoredTotal = 0; // Questions that have a correct answer (or max possible score for HTKS)
     let scoredAnswered = 0;
     let hasTerminated = false;
     
@@ -2162,22 +2550,52 @@
         answered++;
       }
       
-      if (state === 'correct') {
-        correct++;
-      }
-      
-      // For scored questions (exclude unscored preference questions)
-      if (!isUnscored) {
-        scoredTotal++;
-        if (!isMissing) {
-          scoredAnswered++;
+      // Special handling for HTKS: accumulate scores instead of binary correct/incorrect
+      if (isHTKS) {
+        // For HTKS, get the actual score value from the validation data
+        // Find the question in validation.questions by extracting question ID from the row
+        const questionIdCell = row.querySelector('td:first-child');
+        if (questionIdCell) {
+          const questionIdSpan = questionIdCell.querySelector('.font-mono') || questionIdCell.querySelector('span');
+          const questionId = questionIdSpan ? questionIdSpan.textContent.trim() : null;
+          
+          if (questionId && validation && validation.questions) {
+            const question = validation.questions.find(q => q.id === questionId);
+            if (question && !isMissing) {
+              // Get the score value (0, 1, or 2)
+              const score = parseInt(question.studentAnswer, 10) || 0;
+              correct += score; // Accumulate score
+            }
+          }
+        }
+        
+        // For HTKS, scoredTotal is number of questions × 2 (max score per question)
+        if (!isUnscored) {
+          scoredTotal += 2; // Each HTKS question has max score of 2
+          if (!isMissing) {
+            scoredAnswered++;
+          }
+        }
+      } else {
+        // Standard binary correct/incorrect logic for other tasks
+        if (state === 'correct') {
+          correct++;
+        }
+        
+        // For scored questions (exclude unscored preference questions)
+        if (!isUnscored) {
+          scoredTotal++;
+          if (!isMissing) {
+            scoredAnswered++;
+          }
         }
       }
     });
     
-    // CRITICAL: Use hasPostTerminationAnswers from validation object (calculated by task-validator.js)
+    // CRITICAL: Use hasPostTerminationAnswers and hasTerminationMismatch from validation object (calculated by task-validator.js)
     // This ensures consistency with class page which also uses task-validator.js results
     const hasPostTerminationAnswers = validation?.hasPostTerminationAnswers || false;
+    const hasTerminationMismatch = validation?.hasTerminationMismatch || false;
     
     return {
       total,
@@ -2187,6 +2605,7 @@
       scoredAnswered,
       hasTerminated,
       hasPostTerminationAnswers,
+      hasTerminationMismatch,
       timedOut: validation?.timedOut || false,  // Include timeout flag from validation
       answeredPercent: total > 0 ? Math.round((answered / total) * 100) : 0,
       correctPercent: scoredTotal > 0 ? Math.round((correct / scoredTotal) * 100) : 0
@@ -2369,7 +2788,7 @@
     if (incompleteEl) incompleteEl.textContent = incompleteCount;
     if (notstartedEl) notstartedEl.textContent = notstartedCount;
     
-    console.log(`[StudentPage] Task Status Overview: Complete=${completeCount}, Post-term=${posttermCount}, Incomplete=${incompleteCount}, Not started=${notstartedCount}`);
+    console.log(`[StudentPage] Task Status Overview: Complete=${completeCount}, Warning=${posttermCount}, Incomplete=${incompleteCount}, Not started=${notstartedCount}`);
   }
 
   /**
@@ -2401,22 +2820,23 @@
     
     if (coreId) {
       const syncKey = `jotform_last_sync_${coreId}`;
-      const lastSyncTimestamp = localStorage.getItem(syncKey);
-      
-      if (lastSyncTimestamp) {
-        const syncDate = new Date(lastSyncTimestamp);
-        const formattedDate = syncDate.toLocaleString('en-GB', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: false
-        }).replace(',', ' ·');
+      try {
+        const lastSyncTimestamp = localStorage.getItem(syncKey);
         
-        syncElement.textContent = `Last synced: ${formattedDate}`;
-      } else {
-        syncElement.textContent = 'Never synced';
+        if (lastSyncTimestamp) {
+          const syncDate = new Date(lastSyncTimestamp);
+          const formattedDate = syncDate.toLocaleString('en-HK', {
+            year: 'numeric',
+            month: '2-digit',
+            day: '2-digit',
+            hour: '2-digit',
+            minute: '2-digit'
+          });
+          syncElement.textContent = `Last Updated · ${formattedDate}`;
+        }
+      } catch (storageError) {
+        console.warn('[StudentPage] Could not access localStorage for sync timestamp:', storageError.message);
+        // Keep default text if storage is not accessible
       }
     }
   }
@@ -2969,23 +3389,54 @@
       }
     }
     
-    // Validate button - compare cache vs display
+    // Validate button - cache validation
     const validateBtn = document.getElementById('validate-button');
     if (validateBtn) {
       validateBtn.addEventListener('click', async () => {
         console.log('[StudentPage] Running cache validation...');
-        const urlParams = new URLSearchParams(window.location.search);
-        let coreId = urlParams.get('coreId');
-        let grade = urlParams.get('year'); // Student page uses 'year' parameter
         
-        // Try to get from page display if missing from URL
-        if (!coreId) {
-          coreId = document.getElementById('student-core-id')?.textContent.trim();
+        // Debug: Check if CacheValidator is available
+        console.log('[StudentPage] CacheValidator available:', typeof window.CacheValidator !== 'undefined');
+        if (window.CacheValidator) {
+          console.log('[StudentPage] CacheValidator methods:', Object.keys(window.CacheValidator));
         }
+        
+        // Get current grade from active button
+        const activeGradeBtn = document.querySelector('.grade-selector-btn.active');
+        let grade = activeGradeBtn ? activeGradeBtn.dataset.grade : null;
+        
+        // Debug: Show what we're getting for grade
+        console.log('[StudentPage] Active grade button:', activeGradeBtn);
+        console.log('[StudentPage] Grade from button:', grade);
+        
+        // Get coreId from multiple sources with debugging
+        let coreId = window.StudentPage?.currentStudent?.coreId || 
+                     window.CheckingSystemStudentPage?.getStudentData()?.student?.coreId;
+        
+        console.log('[StudentPage] CoreId extraction debug:');
+        console.log('  - window.StudentPage?.currentStudent?.coreId:', window.StudentPage?.currentStudent?.coreId);
+        console.log('  - window.CheckingSystemStudentPage?.getStudentData()?.student?.coreId:', 
+                    window.CheckingSystemStudentPage?.getStudentData()?.student?.coreId);
+        console.log('  - Final coreId:', coreId, '(type:', typeof coreId, ')');
+        
+        // Fallback: Get coreId from URL if still not found
+        if (!coreId || typeof coreId !== 'string') {
+          const urlParams = new URLSearchParams(window.location.search);
+          coreId = urlParams.get('coreId');
+          console.log('[StudentPage] Fallback coreId from URL:', coreId);
+        }
+        
+        // Ensure coreId is a string
+        if (coreId && typeof coreId !== 'string') {
+          coreId = String(coreId);
+          console.log('[StudentPage] Converted coreId to string:', coreId);
+        }
+        
         if (!grade) {
-          // Try to extract from breadcrumb or page title
+          // Last resort: try to extract from breadcrumb
           const breadcrumb = document.querySelector('.breadcrumb-class')?.textContent.trim();
           grade = breadcrumb?.match(/K[123]/)?.[0] || 'K3';
+          console.log('[StudentPage] Fallback grade from breadcrumb:', grade);
         }
         
         if (!coreId) {
@@ -3005,9 +3456,14 @@
           validateBtn.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 flex-shrink-0 animate-spin"></i><span>Validating...</span>';
           lucide.createIcons();
           
-          const validator = CacheValidator.create('student', { coreId, grade });
+          // Check if CacheValidator is available
+          if (typeof window.CacheValidator === 'undefined') {
+            throw new Error('CacheValidator module not loaded. Please refresh the page and try again.');
+          }
+          
+          const validator = window.CacheValidator.create('student', { coreId, grade });
           const results = await validator.validate();
-          CacheValidator.showResults(results);
+          window.CacheValidator.showResults(results);
         } catch (error) {
           console.error('[StudentPage] Validation error:', error);
           alert('Validation failed: ' + error.message);

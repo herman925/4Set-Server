@@ -1163,10 +1163,10 @@
       
       // Calculate set status
       const setStatus = {
-        set1: { status: 'notstarted', tasksComplete: 0, tasksTotal: 0, tasks: [] },
-        set2: { status: 'notstarted', tasksComplete: 0, tasksTotal: 0, tasks: [] },
-        set3: { status: 'notstarted', tasksComplete: 0, tasksTotal: 0, tasks: [] },
-        set4: { status: 'notstarted', tasksComplete: 0, tasksTotal: 0, tasks: [] }
+        set1: { status: 'notstarted', tasksComplete: 0, tasksStarted: 0, tasksTotal: 0, tasks: [] },
+        set2: { status: 'notstarted', tasksComplete: 0, tasksStarted: 0, tasksTotal: 0, tasks: [] },
+        set3: { status: 'notstarted', tasksComplete: 0, tasksStarted: 0, tasksTotal: 0, tasks: [] },
+        set4: { status: 'notstarted', tasksComplete: 0, tasksStarted: 0, tasksTotal: 0, tasks: [] }
       };
       
       // Count tasks per set (accounting for gender-conditional tasks like TEC)
@@ -1212,8 +1212,13 @@
           continue; // Skip gender-inappropriate tasks
         }
         
-        // Only count tasks that are applicable to this student
-        totalTasks++;
+        const normalizedTaskId = taskId.toLowerCase();
+        const isIgnoredForIncompleteChecks = setId === 'set4' && normalizedTaskId === 'mf';
+        
+        // Only count tasks that are applicable to this student and not ignored for completion
+        if (!isIgnoredForIncompleteChecks) {
+          totalTasks++;
+        }
         
         // TaskValidator returns answeredQuestions/totalQuestions, not totals.answered/total
         const answered = validation.answeredQuestions || 0;
@@ -1227,9 +1232,14 @@
                            (validation.terminated && !validation.hasPostTerminationAnswers && answered > 0) ||
                            (validation.timedOut && !validation.hasPostTerminationAnswers && answered > 0);
         
-        if (isComplete) {
+        if (isComplete && !isIgnoredForIncompleteChecks) {
           completeTasks++;
           setStatus[setId].tasksComplete++;
+        }
+        
+        // Track if task has been started (at least 1 answer)
+        if (answered > 0 && !isIgnoredForIncompleteChecks) {
+          setStatus[setId].tasksStarted++;
         }
         
         if (validation.terminated) {
@@ -1245,7 +1255,8 @@
           complete: isComplete,
           answered,
           total,
-          hasPostTerminationAnswers: validation.hasPostTerminationAnswers || false
+          hasPostTerminationAnswers: validation.hasPostTerminationAnswers || false,
+          ignoredForIncompleteChecks: isIgnoredForIncompleteChecks
         });
       }
       
@@ -1254,10 +1265,39 @@
         const set = setStatus[setId];
         if (set.tasksTotal === 0) continue;
         
-        const completionRate = set.tasksComplete / set.tasksTotal;
+        // Special handling for Set 4: Exclude MF (Math Fluency) from completion criteria
+        // Set 4 can be green if FineMotor and TGMD satisfy green light criteria, regardless of MF status
+        let effectiveTasksTotal = set.tasksTotal;
+        let effectiveTasksComplete = set.tasksComplete;
+        
+        if (setId === 'set4') {
+          // Find MF task in set4
+          const mfTask = set.tasks.find(t => t.taskId === 'mf' || t.taskId?.toLowerCase() === 'mf');
+          if (mfTask && effectiveTasksTotal > 0) {
+            // Exclude MF from both total and complete counts
+            effectiveTasksTotal--;
+            if (mfTask.complete) {
+              effectiveTasksComplete--;
+            }
+            console.log(`[JotFormCache] Set 4: Excluding MF from completion criteria (${effectiveTasksComplete}/${effectiveTasksTotal} required)`);
+          }
+        }
+        
+        // Save adjusted values back to set object for downstream use (school/class pages)
+        set.tasksTotal = effectiveTasksTotal;
+        set.tasksComplete = effectiveTasksComplete;
+        
+        // Avoid division by zero if all tasks were excluded
+        if (effectiveTasksTotal === 0) {
+          set.status = 'notstarted';
+          continue;
+        }
+        
+        const completionRate = effectiveTasksComplete / effectiveTasksTotal;
         if (completionRate === 1) {
           set.status = 'complete';
-        } else if (completionRate > 0) {
+        } else if (set.tasksStarted > 0) {
+          // If any task has been started (has at least 1 answer), set is incomplete
           set.status = 'incomplete';
         } else {
           set.status = 'notstarted';

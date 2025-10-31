@@ -194,6 +194,8 @@ window.TaskValidator = (() => {
            id.includes('_Ter') || // Exclude all termination records (ERV_Ter1, CM_Ter2, etc.)
            id.endsWith('_timeout') || // Exclude timeout fields (SYM_timeout, NONSYM_timeout)
            /_P\d+/.test(id) || // Exclude practice questions (e.g., ERV_P1, ToM_P2, CM_P1, etc.)
+           /^SYM_S[1-3]$/.test(id) || // Exclude SYM sample items (treated like practice questions)
+           /^NONSYM_S[1-3]$/.test(id) || // Exclude NONSYM sample items (treated like practice questions)
            id === 'ToM_Q3_TEXT' || // Instruction question: "What do you think is in the box?" (before revealing)
            id === 'ToM_Q4a_ins1_TEXT'; // Instruction question: "What do you think is in the band-aid box?" (before revealing)
   }
@@ -207,8 +209,25 @@ window.TaskValidator = (() => {
   function mapAnswerValue(answer, question) {
     if (!answer) return null;
     
+    // CRITICAL: Filter out Qualtrics placeholders
+    // Qualtrics API sometimes returns the question ID as the "answer" for unanswered questions
+    // E.g., MPT_1_r_Q1 = "MPT_1_r_Q1" means the question was not answered
+    // Treat these as null to prevent cache poisoning
+    if (answer === question.id) {
+      return null;
+    }
+    
     // Map JotForm option indices (1, 2, 3) to actual values for option-based questions
-    if ((question.type === 'image-choice' || question.type === 'radio' || question.type === 'radio_text') && question.options) {
+    if ((question.type === 'image-choice' || question.type === 'radio' || question.type === 'radio_text' || question.type === 'radio-largechar') && question.options) {
+      // CRITICAL: Check if answer is ALREADY a valid option value
+      // This handles cases where cache stores actual values instead of indices
+      const answerStr = String(answer);
+      const isAlreadyValue = question.options.some(opt => String(opt.value) === answerStr);
+      if (isAlreadyValue) {
+        return answer; // Already mapped, don't map again
+      }
+      
+      // Answer is not a valid option value, try to map as index
       const optionIndex = parseInt(answer);
       if (!isNaN(optionIndex) && optionIndex >= 1 && optionIndex <= question.options.length) {
         return question.options[optionIndex - 1].value;
@@ -332,8 +351,45 @@ window.TaskValidator = (() => {
 
     for (const question of questions) {
       const questionId = question.id;
-      const correctAnswer = question.scoring?.correctAnswer;
-      
+      let correctAnswer = question.scoring?.correctAnswer;
+
+      const questionOptions = Array.isArray(question.options) ? question.options : [];
+      const optionValues = questionOptions
+        .map(opt => opt && opt.value !== undefined ? String(opt.value).trim() : '')
+        .filter(val => val !== '');
+      const normalizedOptionValues = optionValues.map(val => val.toLowerCase());
+      const isYesNoOptions = optionValues.length === 2 && normalizedOptionValues.every(val => (
+        val === 'y' || val === 'n' || val === 'yes' || val === 'no'
+      ));
+      const numericOptions = questionOptions
+        .map(opt => {
+          const numericValue = Number(opt?.value);
+          return Number.isFinite(numericValue) ? { ...opt, numericValue } : null;
+        })
+        .filter(Boolean);
+      const isOrdinalScale = numericOptions.length > 0 && numericOptions.length === questionOptions.length;
+
+      // Normalize correct answer (handles stored option indices)
+      if (correctAnswer !== undefined && correctAnswer !== null) {
+        correctAnswer = mapAnswerValue(correctAnswer, question);
+      }
+
+      // Derive fallback for yes/no questions when scoring metadata is absent
+      let displayCorrectAnswer = null;
+      if (correctAnswer !== undefined && correctAnswer !== null) {
+        const matchedOption = questionOptions.find(opt => String(opt?.value).trim() === String(correctAnswer).trim());
+        displayCorrectAnswer = matchedOption?.label || correctAnswer;
+      } else if (isYesNoOptions) {
+        correctAnswer = 'Y';
+        displayCorrectAnswer = 'Y';
+      } else if (isOrdinalScale) {
+        const bestOption = numericOptions.reduce((prev, current) => {
+          if (!prev) return current;
+          return current.numericValue > prev.numericValue ? current : prev;
+        }, null);
+        displayCorrectAnswer = bestOption?.label || (bestOption ? String(bestOption.numericValue) : null);
+      }
+
       // Get student answer from merged Jotform data
       let studentAnswer = mergedAnswers[questionId]?.answer || 
                           mergedAnswers[questionId]?.text || 
@@ -394,9 +450,11 @@ window.TaskValidator = (() => {
       } else if (question.type === 'matrix-cell') {
         // Matrix cell: 1 = performed correctly, 0 = not performed
         isCorrect = studentAnswer === '1' || studentAnswer === 1;
+      } else if (isYesNoOptions) {
+        // Y/N fallback: treat "Y" as correct when no explicit scoring metadata exists
+        isCorrect = studentAnswer !== null && String(studentAnswer).trim().toLowerCase() === 'y';
       } else {
-        // Y/N question: Y = correct, N = incorrect
-        isCorrect = studentAnswer === 'Y' || studentAnswer === 'y';
+        isCorrect = false;
       }
       
       // Check if this is an unscored preference question (no correctAnswer at all)
@@ -457,10 +515,11 @@ window.TaskValidator = (() => {
       validatedQuestions.push({
         id: questionId,
         studentAnswer: studentAnswer,
-        correctAnswer: correctAnswer, // Will be undefined for Y/N tasks, matrix cells, and unscored questions
+        correctAnswer: correctAnswer, // Will remain undefined for rubric-style questions without explicit scoring metadata
+        displayCorrectAnswer: displayCorrectAnswer,
         isCorrect: isCorrect,
         label: question.label?.answer || question.label?.zh || questionId,
-        isYNQuestion: correctAnswer === undefined, // Flag for UI (includes Y/N, matrix cells, and unscored questions)
+        isYNQuestion: isYesNoOptions,
         isUnscored: isUnscoredQuestion, // Flag for preference questions with no scoring
         isTextDisplay: isTextDisplay, // Flag for _TEXT display fields
         textFieldStatus: textFieldStatus // Status for _TEXT fields: 'answered', 'na', or null
@@ -860,9 +919,11 @@ window.TaskValidator = (() => {
    * 
    * @param {Object} taskResult - Validation result from validateTask()
    * @param {Object} config - Termination configuration from TERMINATION_RULES
+   * @param {Object} mergedAnswers - Full student answers with JotForm termination fields
+   * @param {string} taskId - Task identifier
    * @returns {Object} Adjusted validation result with termination applied
    */
-  function applyTerminationRules(taskResult, config) {
+  function applyTerminationRules(taskResult, config, mergedAnswers, taskId) {
     let terminationData = {};
     
     if (config.type === 'stage_based') {
@@ -879,8 +940,64 @@ window.TaskValidator = (() => {
     let adjustedTotal = taskResult.totalQuestions;
     let adjustedAnswered = taskResult.answeredQuestions;
     let hasPostTerminationAnswers = false;
+    let hasTerminationMismatch = false;
     
     console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()} terminationIndex=${terminationIndex}`);
+    
+    // TERMINATION MISMATCH DETECTION
+    // Compare JotForm recorded termination vs system calculated termination
+    const calculatedTerminated = terminationIndex >= 0;
+    
+    if (config.type === 'stage_based') {
+      // For ERV and CM: check each stage's termination field
+      for (let i = 0; i < config.stages.length; i++) {
+        const stage = config.stages[i];
+        const terminationFieldId = taskId === 'erv' 
+          ? `ERV_Ter${stage.stageNum}`
+          : `CM_Ter${stage.stageNum}`;
+        
+        const terminationField = mergedAnswers[terminationFieldId];
+        const recordedValue = terminationField?.answer || terminationField?.text || '0';
+        const recordedTriggered = recordedValue === '1' || recordedValue === 1;
+        
+        // Calculate what system expects for THIS stage
+        const startIdx = taskResult.questions.findIndex(q => q.id === stage.startId);
+        const endIdx = taskResult.questions.findIndex(q => q.id === stage.endId);
+        
+        if (startIdx !== -1 && endIdx !== -1) {
+          const stageQuestions = taskResult.questions.slice(startIdx, endIdx + 1);
+          const correctInStage = stageQuestions.filter(q => q.isCorrect).length;
+          const systemShouldTerminate = correctInStage < stage.threshold;
+          
+          // Detect mismatch: JotForm says terminated BUT system says should pass (or vice versa)
+          if (recordedTriggered !== systemShouldTerminate) {
+            hasTerminationMismatch = true;
+            console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()} TERMINATION MISMATCH at ${terminationFieldId}: JotForm=${recordedTriggered}, System=${systemShouldTerminate}`);
+            break; // One mismatch is enough
+          }
+        }
+      }
+    } else if (config.type === 'consecutive_incorrect') {
+      // For CWR: check CWR_10Incorrect field
+      const terminationField = mergedAnswers['CWR_10Incorrect'];
+      const recordedValue = terminationField?.answer || terminationField?.text || '0';
+      const recordedTriggered = recordedValue === '1' || recordedValue === 1;
+      
+      if (recordedTriggered !== calculatedTerminated) {
+        hasTerminationMismatch = true;
+        console.log(`[TaskValidator] CWR TERMINATION MISMATCH: JotForm=${recordedTriggered}, System=${calculatedTerminated}`);
+      }
+    } else if (config.type === 'threshold_based') {
+      // For Fine Motor: check FM_Ter field
+      const terminationField = mergedAnswers['FM_Ter'];
+      const recordedValue = terminationField?.answer || terminationField?.text || '0';
+      const recordedTriggered = recordedValue === '1' || recordedValue === 1;
+      
+      if (recordedTriggered !== calculatedTerminated) {
+        hasTerminationMismatch = true;
+        console.log(`[TaskValidator] FM TERMINATION MISMATCH: JotForm=${recordedTriggered}, System=${calculatedTerminated}`);
+      }
+    }
     
     if (terminationIndex >= 0) {
       // Only count questions up to and including termination point
@@ -893,7 +1010,7 @@ window.TaskValidator = (() => {
       for (let i = terminationIndex + 1; i < taskResult.questions.length; i++) {
         if (taskResult.questions[i].studentAnswer !== null) {
           hasPostTerminationAnswers = true;
-          console.log(`[TaskValidator] ⚠️ ${taskResult.taskId.toUpperCase()} POST-TERMINATION ANSWER detected at question ${i}: ${taskResult.questions[i].id} = ${taskResult.questions[i].studentAnswer}`);
+          console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()} POST-TERMINATION ANSWER detected at question ${i}: ${taskResult.questions[i].id} = ${taskResult.questions[i].studentAnswer}`);
           break;
         }
       }
@@ -914,7 +1031,8 @@ window.TaskValidator = (() => {
       terminationIndex,
       terminationStage,
       terminationType: config.type,
-      hasPostTerminationAnswers
+      hasPostTerminationAnswers,
+      hasTerminationMismatch
     };
   }
 
@@ -1074,7 +1192,7 @@ window.TaskValidator = (() => {
       } else if (TERMINATION_RULES[taskId]) {
         // Apply centralized termination rules
         const taskResult = await validateTask(taskId, mergedAnswers);
-        results[taskId] = applyTerminationRules(taskResult, TERMINATION_RULES[taskId]);
+        results[taskId] = applyTerminationRules(taskResult, TERMINATION_RULES[taskId], mergedAnswers, taskId);
       } else {
         // No termination rules - standard validation
         results[taskId] = await validateTask(taskId, mergedAnswers);

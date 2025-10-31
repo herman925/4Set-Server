@@ -38,7 +38,7 @@
       "syncButton": "Fetch Database",
       "syncCancel": "Cancel",
       "completeTitle": "System Ready",
-      "completeMessage": "Database has been fetched successfully. You can now use the checking system."
+      "completeMessage": "Database has been fetched successfully. JotForm submissions are now cached locally and ready for validation."
     }
   },
   "classPageTaskView": {
