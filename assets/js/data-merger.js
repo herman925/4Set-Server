@@ -45,6 +45,25 @@
       return answerObj;
     }
 
+    /**
+     * Check if a value is empty (null, undefined, or empty string)
+     * CRITICAL: Preserves numeric 0 as non-empty (TGMD "Not Observed")
+     * @param {*} answerLike - Answer object or primitive value
+     * @returns {boolean} - True if empty, false otherwise
+     */
+    isValueEmpty(answerLike) {
+      const value = this.extractAnswerValue(answerLike);
+      return value === undefined || value === null || value === '';
+    }
+
+    /**
+     * Check if a value is present (not empty)
+     * @param {*} answerLike - Answer object or primitive value
+     * @returns {boolean} - True if present, false otherwise
+     */
+    isValuePresent(answerLike) {
+      return !this.isValueEmpty(answerLike);
+    }
 
     /**
      * Merge JotForm and Qualtrics datasets by coreId WITH GRADE-BASED GROUPING
@@ -254,16 +273,9 @@
           continue;
         }
         
-        // Extract value from answer object for checking
-        const value = this.extractAnswerValue(answerObj);
-        
         // Only set if not already present and value is not empty (earliest wins)
         // CRITICAL: Use explicit checks - "0" is valid TGMD answer (Not Observed)
-        // Check if merged[key] is truly empty (not just falsy, which would include 0)
-        const mergedValue = this.extractAnswerValue(merged[key]);
-        const isMergedEmpty = mergedValue === undefined || mergedValue === null || mergedValue === '';
-        
-        if (value !== null && value !== undefined && value !== '' && isMergedEmpty) {
+        if (this.isValuePresent(answerObj) && this.isValueEmpty(merged[key])) {
           merged[key] = answerObj; // Store the full answer object
         }
       }
@@ -325,16 +337,9 @@
             continue;
           }
           
-          // Extract value from answer object for checking
-          const value = this.extractAnswerValue(answerObj);
-          
           // Only set if not already present and value is not empty (earliest wins)
           // CRITICAL: Use explicit checks - "0" is valid TGMD answer (Not Observed)
-          // Check if merged[key] is truly empty (not just falsy, which would include 0)
-          const mergedValue = this.extractAnswerValue(merged[key]);
-          const isMergedEmpty = mergedValue === undefined || mergedValue === null || mergedValue === '';
-          
-          if (value !== null && value !== undefined && value !== '' && isMergedEmpty) {
+          if (this.isValuePresent(answerObj) && this.isValueEmpty(merged[key])) {
             merged[key] = answerObj; // Store the full answer object
           }
         }
@@ -376,8 +381,7 @@
         // Skip if Qualtrics value is empty
         // CRITICAL: Use explicit null/undefined/empty checks, NOT falsy check
         // Reason: TGMD "0" (Not Observed) is valid answer, numeric 0 is falsy
-        // This ensures "0" values are preserved during merge
-        if (qualtricsValue === null || qualtricsValue === undefined || qualtricsValue === '') {
+        if (this.isValueEmpty(qualtricsAnswerObj)) {
           continue;
         }
 
@@ -387,14 +391,14 @@
           continue;
         }
         
-        const jotformValue = this.extractAnswerValue(jotformAnswerObj);
-        
         // If JotForm has the field but no value, use Qualtrics
         // CRITICAL: Use explicit null/undefined/empty checks (same reason as above)
-        if (jotformValue === null || jotformValue === undefined || jotformValue === '') {
+        if (this.isValueEmpty(jotformAnswerObj)) {
           merged[key] = qualtricsAnswerObj;
           continue;
         }
+        
+        const jotformValue = this.extractAnswerValue(jotformAnswerObj);
 
         // Both have values - compare actual values and use earliest non-empty
         if (jotformValue !== qualtricsValue) {
