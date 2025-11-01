@@ -238,6 +238,12 @@
      * @returns {Object} Merged record
      */
     mergeMultipleQualtricsRecords(record1, record2) {
+      // CRITICAL: Validate same grade before merging (never merge K1 with K2 or K3)
+      if (record1.grade && record2.grade && record1.grade !== record2.grade) {
+        console.error(`[DataMerger] ⚠️  Cannot merge Qualtrics records from different grades: ${record1.grade} vs ${record2.grade} for student ${record1.coreId || 'unknown'}`);
+        return record1; // Return first record unchanged to prevent cross-grade contamination
+      }
+      
       const merged = { ...record1 };
 
       // Merge ALL Qualtrics fields - ONLY fill in if not already present (earliest non-empty value wins)
@@ -253,7 +259,11 @@
         
         // Only set if not already present and value is not empty (earliest wins)
         // CRITICAL: Use explicit checks - "0" is valid TGMD answer (Not Observed)
-        if (value !== null && value !== undefined && value !== '' && !merged[key]) {
+        // Check if merged[key] is truly empty (not just falsy, which would include 0)
+        const mergedValue = this.extractAnswerValue(merged[key]);
+        const isMergedEmpty = mergedValue === undefined || mergedValue === null || mergedValue === '';
+        
+        if (value !== null && value !== undefined && value !== '' && isMergedEmpty) {
           merged[key] = answerObj; // Store the full answer object
         }
       }
@@ -284,6 +294,16 @@
         return jotformRecords[0];
       }
 
+      // CRITICAL: Validate all records have same grade (never merge K1 with K2 or K3)
+      const grades = new Set(jotformRecords.map(r => r.grade).filter(g => g));
+      if (grades.size > 1) {
+        console.error(`[DataMerger] ⚠️  Cannot merge JotForm records from different grades: ${Array.from(grades).join(', ')} for student ${jotformRecords[0].coreId || 'unknown'}`);
+        // Return only records from the earliest grade to prevent cross-grade contamination
+        const firstGrade = jotformRecords[0].grade;
+        jotformRecords = jotformRecords.filter(r => r.grade === firstGrade);
+        console.log(`[DataMerger] Filtered to ${jotformRecords.length} records from grade ${firstGrade}`);
+      }
+
       // Start with base structure from earliest record
       const merged = {
         coreId: jotformRecords[0].coreId,
@@ -310,7 +330,11 @@
           
           // Only set if not already present and value is not empty (earliest wins)
           // CRITICAL: Use explicit checks - "0" is valid TGMD answer (Not Observed)
-          if (value !== null && value !== undefined && value !== '' && !merged[key]) {
+          // Check if merged[key] is truly empty (not just falsy, which would include 0)
+          const mergedValue = this.extractAnswerValue(merged[key]);
+          const isMergedEmpty = mergedValue === undefined || mergedValue === null || mergedValue === '';
+          
+          if (value !== null && value !== undefined && value !== '' && isMergedEmpty) {
             merged[key] = answerObj; // Store the full answer object
           }
         }
