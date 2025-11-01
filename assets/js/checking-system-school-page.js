@@ -858,6 +858,8 @@
         );
         
         if (foundTask) {
+          // Post-term detection or termination mismatch (yellow): Data quality issue
+          // Yellow indicates EITHER post-termination activity OR termination mismatch
           if (foundTask.ignoredForIncompleteChecks || foundTask.taskId.includes('Math Fluency')) return 'status-grey';
 
           // Warning detection (yellow): Post-termination data OR termination mismatch
