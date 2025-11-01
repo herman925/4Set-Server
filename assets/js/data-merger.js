@@ -308,28 +308,29 @@
 
       // CRITICAL: Validate all records have same grade (never merge K1 with K2 or K3)
       const grades = new Set(jotformRecords.map(r => r.grade).filter(g => g));
+      let workingRecords = jotformRecords;
       if (grades.size > 1) {
         console.error(`[DataMerger] ⚠️  Cannot merge JotForm records from different grades: ${Array.from(grades).join(', ')} for student ${jotformRecords[0].coreId || 'unknown'}`);
-        // Return only records from the earliest grade to prevent cross-grade contamination
+        // Filter to only records from the earliest grade to prevent cross-grade contamination
         const firstGrade = jotformRecords[0].grade;
-        jotformRecords = jotformRecords.filter(r => r.grade === firstGrade);
-        console.log(`[DataMerger] Filtered to ${jotformRecords.length} records from grade ${firstGrade}`);
+        workingRecords = jotformRecords.filter(r => r.grade === firstGrade);
+        console.log(`[DataMerger] Filtered to ${workingRecords.length} records from grade ${firstGrade}`);
       }
 
       // Start with base structure from earliest record
       const merged = {
-        coreId: jotformRecords[0].coreId,
-        'student-id': jotformRecords[0]['student-id'],
+        coreId: workingRecords[0].coreId,
+        'student-id': workingRecords[0]['student-id'],
         _meta: {
-          ...jotformRecords[0]._meta,
+          ...workingRecords[0]._meta,
           multipleSubmissions: true,
-          submissionCount: jotformRecords.length,
-          submissionIds: jotformRecords.map(r => r._meta.submissionId)
+          submissionCount: workingRecords.length,
+          submissionIds: workingRecords.map(r => r._meta.submissionId)
         }
       };
 
       // Merge all fields from all submissions (earliest non-empty value wins)
-      for (const record of jotformRecords) {
+      for (const record of workingRecords) {
         for (const [key, answerObj] of Object.entries(record)) {
           // Skip metadata and special fields
           if (this.excludeFields.has(key) || key.startsWith('_') || 
@@ -375,9 +376,6 @@
         const jotformAnswerObj = jotformRecord[key];
         const qualtricsAnswerObj = value;
 
-        // Extract actual values from answer objects for comparison
-        const qualtricsValue = this.extractAnswerValue(qualtricsAnswerObj);
-        
         // Skip if Qualtrics value is empty
         // CRITICAL: Use explicit null/undefined/empty checks, NOT falsy check
         // Reason: TGMD "0" (Not Observed) is valid answer, numeric 0 is falsy
@@ -398,9 +396,11 @@
           continue;
         }
         
+        // Both have values - extract for comparison
+        const qualtricsValue = this.extractAnswerValue(qualtricsAnswerObj);
         const jotformValue = this.extractAnswerValue(jotformAnswerObj);
 
-        // Both have values - compare actual values and use earliest non-empty
+        // Compare actual values and use earliest non-empty
         if (jotformValue !== qualtricsValue) {
           // Detect conflict
           conflicts.push({
