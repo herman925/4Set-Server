@@ -207,7 +207,8 @@ window.TaskValidator = (() => {
    * @returns {string} - The mapped value or original answer
    */
   function mapAnswerValue(answer, question) {
-    if (!answer) return null;
+    // CRITICAL: Allow 0 as valid answer (TGMD "Not Observed")
+    if (answer === null || answer === undefined) return null;
     
     // CRITICAL: Filter out Qualtrics placeholders
     // Qualtrics API sometimes returns the question ID as the "answer" for unanswered questions
@@ -597,9 +598,9 @@ window.TaskValidator = (() => {
         let trialValue = null;
         if (q.studentAnswer !== null && q.studentAnswer !== undefined && q.studentAnswer !== '') {
           trialValue = parseInt(q.studentAnswer, 10);
-          // If parseInt fails, treat as 0 (answered but invalid)
-          if (isNaN(trialValue)) {
-            trialValue = 0;
+          if (isNaN(trialValue) || trialValue < 0 || trialValue > 1) {
+            console.warn(`[TaskValidator] Invalid TGMD trial value for ${q.id}: ${q.studentAnswer} (expected 0 or 1)`);
+            trialValue = 0; // Treat invalid as 0
           }
         }
         
