@@ -650,8 +650,10 @@
             // Enable spotlight to highlight the unconfigured badges (pill spotlight style)
             uploadPageSpotlight.enable();
             
-            // Refresh icons
-            lucide.createIcons();
+            // Refresh icons (if lucide is loaded)
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
         }
         
         // Close configuration warning modal
