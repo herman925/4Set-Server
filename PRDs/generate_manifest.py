@@ -116,7 +116,7 @@ def generate_manifest():
     """Generate the PRD manifest file"""
     # Scan PRD directory for markdown and json files
     files = []
-    excluded_files = {'manifest.json', 'generate_manifest.py', 'index.html', 'index_old.html'}
+    excluded_files = {'manifest.json', 'generate_manifest.py', 'index.html', 'index_old.html', 'README.md'}
     
     for filename in os.listdir(PRD_DIR):
         if filename.endswith(('.md', '.json')) and filename not in excluded_files:
