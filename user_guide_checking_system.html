@@ -16,6 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="assets/js/smart-navigation.js"></script>
   <style>
     body {
       font-family: 'Inter', sans-serif;
@@ -73,6 +74,15 @@
               <line x1="12" y1="3" x2="12" y2="15"></line>
             </svg>
           </a>
+          <a href="user_guide_processor_setup.html" class="text-gray-600 hover:text-primary transition p-2 rounded-lg hover:bg-gray-100" title="Processor Agent Setup Guide">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M12 1v6m0 6v6"></path>
+              <path d="m4.93 4.93 4.24 4.24m5.66 5.66 4.24 4.24"></path>
+              <path d="m1 12 6 0m6 0 6 0"></path>
+              <path d="m4.93 19.07 4.24-4.24m5.66-5.66 4.24-4.24"></path>
+            </svg>
+          </a>
           <a href="guide_homepage.html" class="text-gray-600 hover:text-primary transition p-2 rounded-lg hover:bg-gray-100" title="Back to Guide Homepage">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
               <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
@@ -98,17 +108,45 @@
         <div class="bg-white rounded-lg shadow-lg p-6">
           <h2 class="text-lg font-bold mb-4" style="color: var(--primary)">Table of Contents</h2>
           <nav class="space-y-2">
-            <a href="#overview" class="toc-link block text-sm text-gray-700 py-1">I. Overview</a>
-            <a href="#getting-started" class="toc-link block text-sm text-gray-700 py-1">II. Getting Started</a>
-            <a href="#navigation" class="toc-link block text-sm text-gray-700 py-1">III. Navigation Guide</a>
-            <a href="#data-views" class="toc-link block text-sm text-gray-700 py-1">IV. Understanding Data Views</a>
-            <a href="#status-indicators" class="toc-link block text-sm text-gray-700 py-1">V. Status Indicators</a>
-            <a href="#filters" class="toc-link block text-sm text-gray-700 py-1">VI. Filters and Search</a>
-            <a href="#export" class="toc-link block text-sm text-gray-700 py-1">VII. Data Export</a>
-            <a href="#cache" class="toc-link block text-sm text-gray-700 py-1">VIII. Cache Management</a>
-            <a href="#troubleshooting" class="toc-link block text-sm text-gray-700 py-1">IX. Troubleshooting</a>
-            <a href="#faqs" class="toc-link block text-sm text-gray-700 py-1">X. FAQs</a>
-            <a href="#best-practices" class="toc-link block text-sm text-gray-700 py-1">XI. Best Practices</a>
+            <a href="#overview" class="toc-link block text-sm text-gray-700 py-1 font-semibold">I. Overview</a>
+              <a href="#overview-what-it-does" class="toc-link block text-sm text-gray-700 py-1 ml-5">1. What It Does</a>
+              <a href="#overview-key-questions" class="toc-link block text-sm text-gray-700 py-1 ml-5">2. Key Questions Answered</a>
+              <a href="#overview-why-it-matters" class="toc-link block text-sm text-gray-700 py-1 ml-5">3. Why This Matters</a>
+              <a href="#overview-ui-glance" class="toc-link block text-sm text-gray-700 py-1 ml-5">4. Key UI Elements</a>
+
+            <a href="#getting-started" class="toc-link block text-sm text-gray-700 py-1 font-semibold mt-2">II. Getting Started</a>
+              <a href="#getting-started-quick" class="toc-link block text-sm text-gray-700 py-1 ml-5">1. Quick Start</a>
+              <a href="#getting-started-access" class="toc-link block text-sm text-gray-700 py-1 ml-5">2. System Access</a>
+              <a href="#getting-started-setup" class="toc-link block text-sm text-gray-700 py-1 ml-5">3. First-Time Setup</a>
+
+            <a href="#navigation" class="toc-link block text-sm text-gray-700 py-1 font-semibold mt-2">III. Navigation Guide</a>
+              <a href="#navigation-hierarchy" class="toc-link block text-sm text-gray-700 py-1 ml-5">1. System Hierarchy</a>
+              <a href="#navigation-home" class="toc-link block text-sm text-gray-700 py-1 ml-5">2. Homepage Layout</a>
+              <a href="#navigation-breadcrumbs" class="toc-link block text-sm text-gray-700 py-1 ml-5">3. Breadcrumbs</a>
+
+            <a href="#data-views" class="toc-link block text-sm text-gray-700 py-1 font-semibold mt-2">IV. Understanding Data Views</a>
+              <a href="#data-views-district" class="toc-link block text-sm text-gray-700 py-1 ml-5">1. District View</a>
+              <a href="#data-views-group" class="toc-link block text-sm text-gray-700 py-1 ml-5">2. Group View</a>
+              <a href="#data-views-school" class="toc-link block text-sm text-gray-700 py-1 ml-5">3. School View</a>
+              <a href="#data-views-class" class="toc-link block text-sm text-gray-700 py-1 ml-5">4. Class View</a>
+              <a href="#data-views-student" class="toc-link block text-sm text-gray-700 py-1 ml-5">5. Student View</a>
+
+            <a href="#status-indicators" class="toc-link block text-sm text-gray-700 py-1 font-semibold mt-2">V. Status Indicators</a>
+              <a href="#status-flow" class="toc-link block text-sm text-gray-700 py-1 ml-5">1. Decision Flow</a>
+              <a href="#status-green" class="toc-link block text-sm text-gray-700 py-1 ml-5">2. Green Status</a>
+              <a href="#status-yellow" class="toc-link block text-sm text-gray-700 py-1 ml-5">3. Yellow Status</a>
+              <a href="#status-red" class="toc-link block text-sm text-gray-700 py-1 ml-5">4. Red Status</a>
+              <a href="#status-grey" class="toc-link block text-sm text-gray-700 py-1 ml-5">5. Grey Status</a>
+
+            <a href="#filters" class="toc-link block text-sm text-gray-700 py-1 font-semibold mt-2">VI. Filters and Search</a>
+              <a href="#filters-panel" class="toc-link block text-sm text-gray-700 py-1 ml-5">1. Homepage Filter Panel</a>
+              <a href="#filters-how-to" class="toc-link block text-sm text-gray-700 py-1 ml-5">2. How to Use Filters</a>
+
+            <a href="#export" class="toc-link block text-sm text-gray-700 py-1 font-semibold mt-2">VII. Data Export</a>
+            <a href="#cache" class="toc-link block text-sm text-gray-700 py-1 font-semibold">VIII. Cache Management</a>
+            <a href="#troubleshooting" class="toc-link block text-sm text-gray-700 py-1 font-semibold">IX. Troubleshooting</a>
+            <a href="#faqs" class="toc-link block text-sm text-gray-700 py-1 font-semibold">X. FAQs</a>
+            <a href="#best-practices" class="toc-link block text-sm text-gray-700 py-1 font-semibold">XI. Best Practices</a>
           </nav>
         </div>
       </aside>

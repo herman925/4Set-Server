@@ -82,11 +82,15 @@
 
 /* Content sections - Enhanced visual separation */
 .content-section {
-  scroll-margin-top: 2rem;
+  scroll-margin-top: 6.5rem;
   padding-top: 3rem;
   padding-bottom: 3rem;
   border-bottom: 2px solid #e2e8f0;
   margin-bottom: 2rem;
+}
+
+.content-section h3 {
+  scroll-margin-top: 6.5rem;
 }
 
 .content-section:last-child {

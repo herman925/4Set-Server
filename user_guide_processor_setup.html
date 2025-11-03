@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administrator Guide: Processor Agent Setup - 4Set System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="assets/js/tailwind.config.js"></script>
+  <link rel="stylesheet" href="assets/css/theme_pantone_light_1.css">
+  <link rel="stylesheet" href="assets/css/global.css">
+  <link rel="stylesheet" href="assets/css/user-guides.css">
+  <link rel="stylesheet" href="assets/css/spotlight-system.css">
+  <link rel="stylesheet" href="assets/css/tooltip-styles.css">
+  <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="assets/js/smart-navigation.js"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
+    .mermaid {
+      display: flex;
+      justify-content: center;
+      margin: 2rem 0;
+      background: white;
+      padding: 2rem;
+      border-radius: 0.5rem;
+    }
+    .code-block {
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      color: #1e293b;
+      padding: 1.5rem;
+      border-radius: 0.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.875rem;
+      overflow-x: auto;
+      margin: 1rem 0;
+      line-height: 1.6;
+    }
+    .code-block code {
+      color: #0f172a;
+      font-weight: 500;
+    }
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2rem;
+      height: 2rem;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      font-weight: bold;
+      margin-right: 0.75rem;
+    }
+    .screenshot-placeholder {
+      background: linear-gradient(135deg, #e0e7ff 0%, #f3f4f6 100%);
+      border: 2px dashed #9ca3af;
+      border-radius: 8px;
+      padding: 3rem 2rem;
+      text-align: center;
+      color: #6b7280;
+      font-style: italic;
+      margin: 1.5rem 0;
+    }
+    .warning-box {
+      background: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin: 1rem 0;
+    }
+    .info-box {
+      background: #dbeafe;
+      border-left: 4px solid #3b82f6;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin: 1rem 0;
+    }
+    .success-box {
+      background: #d1fae5;
+      border-left: 4px solid #10b981;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin: 1rem 0;
+    }
+  </style>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ 
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+          primaryColor: '#4A90E2',
+          primaryTextColor: '#1F2937',
+          primaryBorderColor: '#2E5C8A',
+          lineColor: '#6B7280',
+          secondaryColor: '#E8F5E9',
+          tertiaryColor: '#FFF3E0',
+          edgeLabelBackground: '#ffffff',
+          textColor: '#1F2937',
+          mainBkg: '#ffffff',
+          nodeBorder: '#6B7280'
+        }
+      });
+    });
+  </script>
+</head>
+<body class="min-h-screen">
+  <!-- Header -->
+  <header class="bg-white shadow-md sticky top-0 z-50">
+    <div class="container mx-auto px-6 py-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <a href="index.html" class="text-2xl font-bold" style="color: var(--primary)">4Set System</a>
+          <span class="text-gray-400">|</span>
+          <h1 class="text-xl font-semibold text-gray-700">Administrator Guide: Processor Agent Setup</h1>
+        </div>
+        <div class="flex items-center gap-3">
+          <a href="user_guide_processor_setup.html" class="text-gray-600 hover:text-primary transition p-2 rounded-lg hover:bg-gray-100" title="Processor Agent Setup Guide">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M12 1v6m0 6v6"></path>
+              <path d="m4.93 4.93 4.24 4.24m5.66 5.66 4.24 4.24"></path>
+              <path d="m1 12 6 0m6 0 6 0"></path>
+              <path d="m4.93 19.07 4.24-4.24m5.66-5.66 4.24-4.24"></path>
+            </svg>
+          </a>
+          <a href="quick_start_guide.html" class="text-gray-600 hover:text-primary transition p-2 rounded-lg hover:bg-gray-100" title="Quick Start Guide">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 20V10"></path>
+              <path d="M18 20V4"></path>
+              <path d="M6 20v-4"></path>
+            </svg>
+          </a>
+          <a href="user_guide_uploader.html" class="text-gray-600 hover:text-primary transition p-2 rounded-lg hover:bg-gray-100" title="Assessment Uploader Guide">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="17 8 12 3 7 8"></polyline>
+              <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+          </a>
+          <a href="guide_homepage.html" class="text-gray-600 hover:text-primary transition p-2 rounded-lg hover:bg-gray-100" title="Back to Guide Homepage">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+          </a>
+          <a href="index.html" class="text-gray-600 hover:text-primary transition p-2 rounded-lg hover:bg-gray-100" title="Back to System Home">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <div class="container mx-auto px-6 py-8">
+    <div class="flex gap-8">
+      <!-- Sidebar Navigation -->
+      <aside class="sidebar w-64 flex-shrink-0">
+        <div class="bg-white rounded-lg shadow-lg p-6 sticky top-24">
+          <h2 class="text-lg font-bold mb-4" style="color: var(--primary)">Table of Contents</h2>
+          <nav class="space-y-2">
+            <a href="#overview" class="toc-link block text-sm text-gray-700 py-1">Overview</a>
+            <a href="#prerequisites" class="toc-link block text-sm text-gray-700 py-1">Prerequisites</a>
+
+            <a href="#credential-setup" class="toc-link block text-sm text-gray-700 py-1 font-semibold mt-2">I. Credential Setup</a>
+              <a href="#credential-gui" class="toc-link block text-sm text-gray-700 py-1 ml-5">1.1 Using Credential Manager</a>
+              <a href="#credential-cmd" class="toc-link block text-sm text-gray-700 py-1 ml-5">1.2 Command-Line Alternative</a>
+
+            <a href="#onedrive-sync" class="toc-link block text-sm text-gray-700 py-1 font-semibold mt-2">II. OneDrive Sync Configuration</a>
+              <a href="#onedrive-signin" class="toc-link block text-sm text-gray-700 py-1 ml-5">2.1 Navigate to SharePoint</a>
+              <a href="#onedrive-folders" class="toc-link block text-sm text-gray-700 py-1 ml-5">2.2 Locate Documents</a>
+              <a href="#onedrive-verify" class="toc-link block text-sm text-gray-700 py-1 ml-5">2.3 Sync General Folder</a>
+              <a href="#onedrive-confirm" class="toc-link block text-sm text-gray-700 py-1 ml-5">2.4 Verify Completion</a>
+
+            <a href="#powershell-install" class="toc-link block text-sm text-gray-700 py-1 font-semibold mt-2">III. PowerShell 7 Installation</a>
+              <a href="#powershell-inst" class="toc-link block text-sm text-gray-700 py-1 ml-5">3.1 Installation</a>
+              <a href="#powershell-verify" class="toc-link block text-sm text-gray-700 py-1 ml-5">3.2 Verification</a>
+
+            <a href="#python-install" class="toc-link block text-sm text-gray-700 py-1 font-semibold mt-2">IV. Python &amp; Dependencies</a>
+              <a href="#python-inst" class="toc-link block text-sm text-gray-700 py-1 ml-5">4.1 Install Python</a>
+              <a href="#python-deps" class="toc-link block text-sm text-gray-700 py-1 ml-5">4.2 Install Libraries</a>
+
+            <a href="#agent-config" class="toc-link block text-sm text-gray-700 py-1 font-semibold mt-2">V. Agent Configuration</a>
+              <a href="#config-gui" class="toc-link block text-sm text-gray-700 py-1 ml-5">5.1 Launch Config GUI</a>
+              <a href="#config-paths" class="toc-link block text-sm text-gray-700 py-1 ml-5">5.2 Configure Paths</a>
+              <a href="#config-worker" class="toc-link block text-sm text-gray-700 py-1 ml-5">5.3 Worker Settings</a>
+
+            <a href="#publish-updates" class="toc-link block text-sm text-gray-700 py-1 font-semibold mt-2">VI. Publish Changes to GitHub Pages</a>
+              <a href="#publish-prereq" class="toc-link block text-sm text-gray-700 py-1 ml-5">6.1 Prerequisites</a>
+              <a href="#publish-steps" class="toc-link block text-sm text-gray-700 py-1 ml-5">6.2 Commit &amp; Push Workflow</a>
+          </nav>
+        </div>
+      </aside>
+
+      <!-- Main Content Area -->
+      <main class="flex-1">
+        <div class="bg-white rounded-lg shadow-lg p-8">
+          
+          <!-- Overview Section -->
+          <section id="overview" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-4" style="color: var(--primary)">
+              <span class="text-4xl mr-2">📋</span>
+              Overview
+            </h2>
+            <p class="text-gray-700 mb-4">
+              This guide will walk you through setting up the 4Set Processor Agent on a Windows workstation or server. 
+              The processor agent is an autonomous service that monitors a designated OneDrive folder for PDF assessment 
+              forms, validates them, extracts data, and uploads to JotForm automatically.
+            </p>
+            <div class="info-box">
+              <p class="font-semibold text-blue-800 mb-2">What You'll Accomplish:</p>
+              <ul class="list-disc list-inside text-blue-700 space-y-1">
+                <li>Install required dependencies (PowerShell 7, Python)</li>
+                <li>Configure Windows Credential Manager for secure key storage</li>
+                <li>Sync the correct OneDrive folders</li>
+                <li>Launch the Agent Configuration GUI to verify paths</li>
+                <li>Confirm the agent is ready to run successfully</li>
+              </ul>
+            </div>
+          </section>
+
+          <!-- Prerequisites Section -->
+          <section id="prerequisites" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-4" style="color: var(--primary)">
+              <span class="text-4xl mr-2">✅</span>
+              Prerequisites
+            </h2>
+            <p class="text-gray-700 mb-4">Before beginning the setup, ensure you have:</p>
+            <ul class="list-disc list-inside text-gray-700 space-y-2 mb-4">
+              <li>Windows 10/11 Enterprise or Windows Server 2019+</li>
+              <li>Administrator access to the machine</li>
+              <li>Microsoft 365 account with access to the KeySteps@JC OneDrive</li>
+              <li>Master encryption key for credentials.enc (provided by project administrator)</li>
+              <li>Minimum 8GB RAM, quad-core processor recommended</li>
+              <li>At least 50GB free disk space for logs and temporary files</li>
+            </ul>
+          </section>
+
+          <!-- Credential Setup Section -->
+          <section id="credential-setup" class="content-section mb-12">
+            <h2 class="text-4xl font-bold mb-6 pb-4 border-b-4 border-primary" style="color: var(--primary)">
+              Section I: Credential Setup
+            </h2>
+            <p class="text-gray-700 mb-4">
+              The processor agent uses Windows Credential Manager to securely store the master encryption key 
+              for decrypting sensitive configuration files (credentials.enc).
+            </p>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="credential-gui">
+              <span class="step-number">1.1</span>
+              Using Windows Credential Manager (Recommended)
+            </h3>
+            
+            <p class="text-gray-700 mb-4">Store the master key using the Windows Credential Manager GUI:</p>
+            
+            <ol class="list-decimal ml-6 space-y-3 text-gray-700 mb-4">
+              <li>Press <kbd class="px-2 py-1 bg-gray-200 rounded text-sm font-mono">Win</kbd> + <kbd class="px-2 py-1 bg-gray-200 rounded text-sm font-mono">R</kbd> and type <code class="bg-gray-100 px-2 py-1 rounded">control /name Microsoft.CredentialManager</code></li>
+              <li>Click on <strong>Windows Credentials</strong></li>
+              <li>Click <strong>Add a generic credential</strong></li>
+              <li>Fill in the following details:
+                <ul class="list-disc ml-6 mt-2 space-y-1">
+                  <li><strong>Internet or network address:</strong> <code class="bg-blue-50 px-2 py-1 rounded font-mono">4set-processor-master</code></li>
+                  <li><strong>User name:</strong> <code class="bg-blue-50 px-2 py-1 rounded font-mono">keysteps</code></li>
+                  <li><strong>Password:</strong> [Enter the system password for the entire repo - provided by administrator]</li>
+                </ul>
+              </li>
+              <li>Click <strong>OK</strong> to save</li>
+            </ol>
+
+            <div class="warning-box">
+              <p class="font-semibold text-yellow-800 mb-2">⚠️ Critical Requirements:</p>
+              <ul class="list-disc list-inside text-yellow-700 space-y-1 text-sm">
+                <li>Credential name MUST be exactly: <code class="font-mono">4set-processor-master</code></li>
+                <li>Username MUST be exactly: <code class="font-mono">keysteps</code></li>
+                <li>Password must be the master system password (ask administrator if unknown)</li>
+                <li>Never share or commit this password to version control</li>
+              </ul>
+            </div>
+
+            <div class="screenshot-placeholder">
+              <img src="assets/img/credential-manager-placeholder.png" alt="Windows Credential Manager" class="w-full" onerror="this.parentElement.innerHTML='📸 Screenshot: Windows Credential Manager - Add Generic Credential dialog'">
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="credential-cmd">
+              <span class="step-number">1.2</span>
+              Alternative: Using Command Line
+            </h3>
+            
+            <p class="text-gray-700 mb-4">Alternatively, you can use the <code class="bg-gray-100 px-2 py-1 rounded">cmdkey</code> command:</p>
+            
+            <div class="code-block">
+              <div class="text-gray-600 mb-2 font-semibold">Run in Command Prompt (as Administrator):</div>
+              <code>cmdkey /generic:4set-processor-master /user:keysteps /pass:"YOUR_PASSWORD_HERE"</code>
+            </div>
+
+            <div class="info-box mt-4">
+              <p class="text-blue-800 text-sm"><strong>💡 Tip:</strong> Replace <code>YOUR_PASSWORD_HERE</code> with the actual system password. Keep the quotes around the password.</p>
+            </div>
+
+            <div class="success-box mt-6">
+              <p class="font-semibold text-green-800 mb-2">✅ Verify Storage Success:</p>
+              <ol class="list-decimal ml-5 space-y-1 text-green-700 text-sm">
+                <li>Open Credential Manager again</li>
+                <li>Under <strong>Generic Credentials</strong>, look for <code>4set-processor-master</code></li>
+                <li>Verify username shows as <code>keysteps</code></li>
+              </ol>
+            </div>
+          </section>
+
+          <!-- OneDrive Sync Section -->
+          <section id="onedrive-sync" class="content-section mb-12">
+            <h2 class="text-4xl font-bold mb-6 pb-4 border-b-4 border-primary" style="color: var(--primary)">
+              Section II: OneDrive Sync Configuration
+            </h2>
+            <p class="text-gray-700 mb-4">
+              The processor agent requires OneDrive to be properly synchronized to monitor the upload folder and archive processed PDFs. 
+              This section walks you through syncing the SharePoint site to your local machine.
+            </p>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="onedrive-signin">
+              <span class="step-number">2.1</span>
+              Navigate to SharePoint Site
+            </h3>
+            
+            <p class="text-gray-700 mb-4">First, access the KeySteps@JC SharePoint site:</p>
+            
+            <ol class="list-decimal ml-6 space-y-3 text-gray-700 mb-4">
+              <li>Open your web browser and navigate to:
+                <div class="code-block mt-2">
+                  <code>https://uedhk.sharepoint.com/sites/o365grp_KeyStepsJC</code>
+                </div>
+              </li>
+              <li>When prompted, sign in with your credentials:
+                <ul class="list-disc ml-6 mt-2 space-y-1">
+                  <li><strong>Email:</strong> <code class="bg-blue-50 px-2 py-1 rounded font-mono">keysteps@eduhk.hk</code></li>
+                  <li><strong>Password:</strong> [EdUHK password]</li>
+                </ul>
+              </li>
+              <li>After authentication, you'll land on the KeySteps@JC team site home page</li>
+            </ol>
+
+            <div class="info-box">
+              <p class="text-sm"><strong>💡 Note:</strong> If you can't access the site, contact your administrator to verify you have the necessary permissions.</p>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="onedrive-folders">
+              <span class="step-number">2.2</span>
+              Locate the Documents Library
+            </h3>
+            
+            <p class="text-gray-700 mb-4">Navigate to the shared document library:</p>
+            
+            <ol class="list-decimal ml-6 space-y-3 text-gray-700 mb-4">
+              <li>On the left sidebar, click <strong>Documents</strong> (or you may see it as a library in the top navigation)</li>
+              <li>You should now see various folders including:
+                <ul class="list-disc ml-6 mt-2 space-y-1">
+                  <li><strong>General</strong> ← This is the folder we need to sync</li>
+                  <li>Other project folders may also be visible</li>
+                </ul>
+              </li>
+            </ol>
+
+            <div class="warning-box">
+              <p class="font-semibold text-yellow-800 mb-2">⚠️ Critical:</p>
+              <p class="text-yellow-700 text-sm">Make sure you're viewing the <strong>General</strong> folder. This is where all project data resides, including the PDF upload folders the agent monitors.</p>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="onedrive-verify">
+              <span class="step-number">2.3</span>
+              Sync the General Folder
+            </h3>
+            
+            <p class="text-gray-700 mb-4">Now sync the folder to your local machine:</p>
+            
+            <ol class="list-decimal ml-6 space-y-3 text-gray-700 mb-4">
+              <li>Click on the <strong>General</strong> folder to open it (or make sure you're inside it)</li>
+              <li>At the top of the page, look for the <strong>Sync</strong> button
+                <ul class="list-disc ml-6 mt-2 space-y-1">
+                  <li>It's usually in the top toolbar, near "New", "Upload", "Share"</li>
+                  <li>The button may show a cloud icon with arrows</li>
+                </ul>
+              </li>
+              <li>Click the <strong>Sync</strong> button</li>
+              <li>A dialog box will appear asking <em>"This site is trying to open Microsoft OneDrive"</em></li>
+              <li>Click <strong>Open</strong> or <strong>Allow</strong> to confirm</li>
+              <li>OneDrive will launch and begin syncing the folder to:
+                <div class="code-block mt-2">
+                  <code>C:\Users\KeySteps\OneDrive - The Education University of Hong Kong\o365grp_KeySteps@JC - General</code>
+                </div>
+              </li>
+            </ol>
+
+            <div class="success-box mt-4">
+              <p class="font-semibold text-green-800 mb-2">✅ Expected Local Path:</p>
+              <p class="text-green-700 text-sm">After sync completes, the folder will be available at:<br>
+              <code class="font-mono">C:\Users\KeySteps\OneDrive - The Education University of Hong Kong\o365grp_KeySteps@JC - General\</code></p>
+            </div>
+
+            <div class="info-box mt-4">
+              <p class="text-sm"><strong>💡 Username Note:</strong> Most users will have the local username <strong>KeySteps</strong> (with camel case). If your username differs, replace <code>KeySteps</code> with your actual Windows username in the path above.</p>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="onedrive-confirm">
+              <span class="step-number">2.4</span>
+              Verify Sync Completion
+            </h3>
+            
+            <p class="text-gray-700 mb-4">Confirm that the sync is working properly:</p>
+            
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700 mb-4">
+              <li>Right-click the <strong>OneDrive</strong> cloud icon in the system tray (bottom-right corner)</li>
+              <li>Click <strong>Settings</strong></li>
+              <li>Go to the <strong>Account</strong> tab</li>
+              <li>Verify you see an entry for <strong>o365grp_KeySteps@JC - General</strong></li>
+              <li>Check that the status shows <strong>"Files are up to date"</strong> with a green checkmark ✅</li>
+              <li>In File Explorer, navigate to the local path and confirm you can see:
+                <ul class="list-disc ml-6 mt-2 space-y-1">
+                  <li><code>97 - Project RAW Data/PDF Form Data/</code> folder</li>
+                  <li><code>98 - IT Support/</code> folder</li>
+                  <li>Other project folders</li>
+                </ul>
+              </li>
+            </ol>
+
+            <div class="success-box">
+              <p class="text-green-700 text-sm"><strong>✅ Success!</strong> If you can see these folders locally with green checkmarks in File Explorer, the sync is configured correctly.</p>
+            </div>
+
+            <div class="warning-box mt-4">
+              <p class="font-semibold text-yellow-800 mb-2">⚠️ Troubleshooting:</p>
+              <ul class="list-disc list-inside text-yellow-700 text-sm space-y-1">
+                <li>If sync is stuck: Right-click OneDrive icon → "Pause syncing" → Wait 10 seconds → "Resume syncing"</li>
+                <li>If folders are missing: Check OneDrive Settings → Account → "Choose folders" to ensure everything is selected</li>
+                <li>If path is different: Update <code>config/agent.json</code> with your actual local path</li>
+              </ul>
+            </div>
+          </section>
+
+          <!-- PowerShell 7 Installation Section -->
+          <section id="powershell-install" class="content-section mb-12">
+            <h2 class="text-4xl font-bold mb-6 pb-4 border-b-4 border-primary" style="color: var(--primary)">
+              Section III: PowerShell 7 Installation
+            </h2>
+            <p class="text-gray-700 mb-4">
+              The processor agent requires <strong>PowerShell 7 or later</strong> for AES-GCM encryption support (required for credential decryption).
+            </p>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="powershell-inst">
+              <span class="step-number">3.1</span>
+              Installation via WinGet
+            </h3>
+            
+            <p class="text-gray-700 mb-4">Install PowerShell 7 using Windows Package Manager (WinGet):</p>
+            
+            <div class="code-block">
+              <div class="text-gray-400 mb-2">Run in Command Prompt or PowerShell (as Administrator):</div>
+              <code>winget install --id Microsoft.Powershell --source winget</code>
+            </div>
+
+            <div class="info-box mt-4">
+              <p class="font-semibold text-blue-800 mb-2">Alternative Installation Methods:</p>
+              <ul class="list-disc list-inside text-blue-700 text-sm space-y-1">
+                <li><strong>MSI Installer:</strong> Download from <a href="https://aka.ms/powershell-release?tag=stable" class="underline">https://aka.ms/powershell-release?tag=stable</a></li>
+                <li><strong>Microsoft Store:</strong> Search for "PowerShell" (not "Windows PowerShell")</li>
+              </ul>
+            </div>
+
+            <div class="screenshot-placeholder mt-6">
+              <img src="assets/img/powershell-install-placeholder.png" alt="PowerShell 7 Installation" class="w-full" onerror="this.parentElement.innerHTML='📸 Screenshot: PowerShell 7 installation progress'">
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="powershell-verify">
+              <span class="step-number">3.2</span>
+              Verification
+            </h3>
+            
+            <p class="text-gray-700 mb-4">Verify PowerShell 7 is installed and check the version:</p>
+            
+            <div class="code-block">
+              <div class="text-gray-400 mb-2">Run in PowerShell 7:</div>
+              <code>$PSVersionTable.PSVersion</code>
+            </div>
+
+            <div class="success-box mt-4">
+              <p class="font-semibold text-green-800">✅ Expected Output:</p>
+              <div class="bg-gray-900 text-green-400 p-3 rounded mt-2 font-mono text-sm">
+                Major  Minor  Patch  PreReleaseLabel BuildLabel<br>
+                -----  -----  -----  --------------- ----------<br>
+                7      4      0
+              </div>
+              <p class="text-green-700 text-sm mt-2">Version should be 7.0 or higher</p>
+            </div>
+
+            <div class="warning-box mt-4">
+              <p class="font-semibold text-yellow-800 mb-2">⚠️ Common Issue:</p>
+              <p class="text-yellow-700 text-sm">If you see version 5.x, you're running Windows PowerShell (old version). Make sure to launch <strong>PowerShell 7</strong> from the Start menu, not "Windows PowerShell".</p>
+            </div>
+          </section>
+
+          <!-- Python Installation Section -->
+          <section id="python-install" class="content-section mb-12">
+            <h2 class="text-4xl font-bold mb-6 pb-4 border-b-4 border-primary" style="color: var(--primary)">
+              Section IV: Python Installation & Dependencies
+            </h2>
+            <p class="text-gray-700 mb-4">
+              The PDF parser requires Python 3.7+ with specific libraries for PDF field extraction.
+            </p>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="python-inst">
+              <span class="step-number">4.1</span>
+              Install Python
+            </h3>
+            
+            <div class="code-block">
+              <div class="text-gray-400 mb-2">Run in Command Prompt (as Administrator):</div>
+              <code>winget install Python.Python.3.13</code>
+            </div>
+
+            <div class="warning-box mt-4">
+              <p class="font-semibold text-yellow-800 mb-2">⚠️ Avoid Windows Store Python:</p>
+              <p class="text-yellow-700 text-sm">Do NOT use the Python stub from Windows Store. Install the full version from python.org or via WinGet.</p>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="python-deps">
+              <span class="step-number">4.2</span>
+              Install Required Libraries
+            </h3>
+            
+            <p class="text-gray-700 mb-4">Install dependencies from requirements.txt:</p>
+            
+            <div class="code-block">
+              <div class="text-gray-400 mb-2">Run in PowerShell 7 (from project directory):</div>
+              <code>pip install -r requirements.txt</code>
+            </div>
+
+            <p class="text-gray-700 mt-4 text-sm"><strong>Required packages:</strong> pypdf, PyPDF2, python-dateutil</p>
+          </section>
+
+          <!-- Agent Configuration Section -->
+          <section id="agent-config" class="content-section mb-12">
+            <h2 class="text-4xl font-bold mb-6 pb-4 border-b-4 border-primary" style="color: var(--primary)">
+              Section V: Agent Configuration
+            </h2>
+            <p class="text-gray-700 mb-4">
+              Use the bundled <strong>Agent Configuration GUI</strong> to update <code class="bg-gray-100 px-2 py-1 rounded">config/agent.json</code> without manual editing. The tool provides validation, reset, and reload options to keep paths consistent.
+            </p>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="config-gui">
+              <span class="step-number">5.1</span>
+              Launch the Configuration GUI
+            </h3>
+
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700 mb-4">
+              <li>Open <strong>PowerShell 7</strong> and navigate to the repository root.</li>
+              <li>Run the GUI launcher:
+                <div class="code-block mt-2">
+                  <div class="text-gray-400 mb-2">Run in PowerShell 7:</div>
+                  <code>python tools/agent_config_gui.py</code><br>
+                  <span class="text-gray-500 text-xs">(or <code>.\tools\agent_config_gui.py</code> if Python files are associated)</span>
+                </div>
+              </li>
+              <li>The window titled <em>“4Set Processor Agent Configuration”</em> loads the current <code>agent.json</code> settings automatically.</li>
+            </ol>
+
+            <div class="info-box">
+              <p class="text-sm"><strong>💡 Tip:</strong> The GUI must be run from a workstation with Python dependencies installed (see Section 4).</p>
+            </div>
+
+            <div class="screenshot-placeholder mt-4">
+              <img src="assets/img/agent-config-gui-placeholder.png" alt="Agent Configuration GUI" class="w-full" onerror="this.parentElement.innerHTML='📸 Screenshot Placeholder: Agent Configuration GUI with path fields'">
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="config-paths">
+              <span class="step-number">5.2</span>
+              Configure Paths Using the GUI
+            </h3>
+
+            <p class="text-gray-700 mb-4">The GUI reads live values from <code>config/agent.json</code>. By default the processor stores its working folders <strong>inside the repository</strong> so everything can be versioned together. Use the <strong>…</strong> browse buttons whenever you need to relocate a folder. The table below lists the actual defaults shipped in the repository and shows how you might update them if you want to move processing onto <code>D:\4Set</code> while leaving the watched folder on a different drive.</p>
+
+            <table class="min-w-full bg-white border border-gray-200 rounded-lg overflow-hidden mb-4 text-sm">
+              <thead class="bg-gray-100 text-gray-700 uppercase">
+                <tr>
+                  <th class="px-4 py-2 text-left">Field</th>
+                  <th class="px-4 py-2 text-left">Default value (KeySteps example)</th>
+                  <th class="px-4 py-2 text-left">How to customise</th>
+                </tr>
+              </thead>
+              <tbody class="text-gray-700">
+                <tr class="border-t">
+                  <td class="px-4 py-2 font-medium">OneDrive Relative Path</td>
+                  <td class="px-4 py-2 font-mono text-xs">\The Education University of Hong Kong\o365grp_KeySteps@JC - General\98 - IT Support\04 - Homemade Apps\4Set-Server</td>
+                  <td class="px-4 py-2">Leave as-is so auto-detect resolves the repository within the synced OneDrive root. Only change this if the repo lives in a different tenant path.</td>
+                </tr>
+                <tr class="border-t">
+                  <td class="px-4 py-2 font-medium">Watch Path</td>
+                  <td class="px-4 py-2 font-mono text-xs">./incoming</td>
+                  <td class="px-4 py-2">Choose the synced PDF drop folder. Example: browse to <code>D:\4Set\incoming</code> if you stage PDFs on a local data drive.</td>
+                </tr>
+                <tr class="border-t">
+                  <td class="px-4 py-2 font-medium">Staging Path</td>
+                  <td class="px-4 py-2 font-mono text-xs">./processing</td>
+                  <td class="px-4 py-2">Temporary working directory. To move off the repo, select <code>D:\4Set\processing</code>; the GUI will create it if missing.</td>
+                </tr>
+                <tr class="border-t">
+                  <td class="px-4 py-2 font-medium">Filing Root</td>
+                  <td class="px-4 py-2 font-mono text-xs">./filed</td>
+                  <td class="px-4 py-2">Archive for successfully processed PDFs. Example relocation: <code>D:\4Set\filed</code>.</td>
+                </tr>
+                <tr class="border-t">
+                  <td class="px-4 py-2 font-medium">Unsorted Root</td>
+                  <td class="px-4 py-2 font-mono text-xs">./filed/Unsorted</td>
+                  <td class="px-4 py-2">Target for rejected PDFs. Match the filing root (e.g. <code>D:\4Set\filed\Unsorted</code>).</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="info-box">
+              <p class="text-sm">After selecting new paths, click <strong>Save</strong>. If you make a mistake, use <strong>Reset to Defaults</strong> to revert to the last saved values, or <strong>Reload from File</strong> to pull the contents of <code>agent.json</code> again.</p>
+            </div>
+
+            <p class="text-gray-700 text-sm mt-4">Example: to run processing from <code>D:\4Set</code>, browse each editable field and select <code>D:\4Set\incoming</code>, <code>D:\4Set\processing</code>, <code>D:\4Set\filed</code>, and <code>D:\4Set\filed\Unsorted</code>, then press <strong>Save</strong>. The new paths are written to <code>config/agent.json</code> and take effect the next time the agent starts.</p>
+
+            <p class="text-gray-700 text-xs mt-3">The read-only <strong>OneDrive Fallback Root</strong> remains <code>C:\Users\KeySteps</code> unless you edit <code>config/agent.json</code> manually. Only override it when auto-detect cannot locate your OneDrive profile.</p>
+
+            <div class="warning-box">
+              <p class="font-semibold text-yellow-800 mb-1">⚠️ Save vs Reset vs Reload</p>
+              <ul class="list-disc ml-5 text-sm text-yellow-700 space-y-1">
+                <li><strong>Save:</strong> Writes changes to <code>config/agent.json</code>.</li>
+                <li><strong>Reset to Defaults:</strong> Restores fields to the last saved values.</li>
+                <li><strong>Reload from File:</strong> Re-reads <code>agent.json</code> in case someone else updated it.</li>
+              </ul>
+            </div>
+
+            <p class="text-gray-700 mt-4 text-sm">The GUI enforces read-only access for <strong>OneDrive Fallback Root</strong>; override this only if the auto-detect feature fails.</p>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="config-worker">
+              <span class="step-number">5.3</span>
+              Worker Settings
+            </h3>
+            
+            <p class="text-gray-700 mb-4">Worker settings control how aggressively the agent watches for new PDFs and how many files it processes in parallel. The defaults are tuned for a typical office workstation so that uploads are picked up quickly without overwhelming OneDrive sync or the JotForm API.</p>
+            
+            <p class="text-gray-700 mb-2 font-medium">Default values (leave unchanged unless you have a specific operational requirement):</p>
+            
+            <ul class="list-disc ml-6 space-y-1 text-gray-700">
+              <li><code>maxConcurrency</code>: 5 (parallel PDF processing)</li>
+              <li><code>pollingIntervalSeconds</code>: 10 (folder watch frequency)</li>
+              <li><code>debounceSeconds</code>: 3 (file stability delay)</li>
+            </ul>
+
+            <div class="info-box mt-4">
+              <p class="text-sm"><strong>Design rationale:</strong> Processing up to five PDFs at a time keeps pace with the expected upload volume (~20 per minute) while leaving headroom for OneDrive and JotForm API limits. The 10-second polling interval strikes a balance between responsiveness and unnecessary disk activity, and the 3-second debounce ensures partially synced files are not parsed prematurely.</p>
+            </div>
+
+            <p class="text-gray-700 text-sm mt-3">Only adjust these values after benchmarking in production—especially <code>maxConcurrency</code>, which may need to be lowered on low-spec machines or increased cautiously on dedicated servers.</p>
+
+          </section>
+
+          <!-- Publish Changes Section -->
+          <section id="publish-updates" class="content-section mb-12">
+            <h2 class="text-4xl font-bold mb-6 pb-4 border-b-4 border-primary" style="color: var(--primary)">
+              Section VI: Publish Changes to GitHub Pages
+            </h2>
+            <p class="text-gray-700 mb-4">
+              This repository is deployed via GitHub Pages. <strong>Any change</strong>&mdash;whether to documentation, configuration artifacts, or supporting assets&mdash;must be committed locally and pushed to the remote repository for the live site to update.
+            </p>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="publish-prereq">
+              <span class="step-number">6.1</span>
+              Prerequisites
+            </h3>
+
+            <ul class="list-disc ml-6 space-y-1 text-gray-700 mb-4">
+              <li>Git is installed and configured with your GitHub credentials.</li>
+              <li>You have write access to the <code>4Set-Server</code> repository.</li>
+              <li>All local changes have been saved (e.g., HTML, CSS, JSON updates).</li>
+            </ul>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="publish-steps">
+              <span class="step-number">6.2</span>
+              Commit &amp; Push Workflow
+            </h3>
+
+            <ol class="list-decimal ml-6 space-y-2 text-gray-700 mb-4">
+              <li><strong>Check status:</strong>
+                <div class="code-block mt-1">
+                  <code>git status</code>
+                </div>
+              </li>
+              <li><strong>Stage changes:</strong>
+                <div class="code-block mt-1">
+                  <code>git add user_guide_processor_setup.html assets/css/user-guides.css config/agent.json</code>
+                </div>
+                <p class="text-sm text-gray-600 mt-2">Include any other modified files as needed (screenshots, scripts, etc.).</p>
+              </li>
+              <li><strong>Commit with a descriptive message:</strong>
+                <div class="code-block mt-1">
+                  <code>git commit -m "docs: update processor setup guide"</code>
+                </div>
+              </li>
+              <li><strong>Push to GitHub:</strong>
+                <div class="code-block mt-1">
+                  <code>git push origin main</code>
+                </div>
+              </li>
+              <li>Wait for GitHub Pages to rebuild (typically under 1 minute). Refresh the published site to verify the updates.</li>
+            </ol>
+
+            <div class="info-box">
+              <p class="text-sm">Run <code>git pull origin main</code> before starting new edits to avoid merge conflicts. For larger updates, work on a feature branch and create a pull request.</p>
+            </div>
+          </section>
+
+        </div>
+      </main>
+    </div>
+
+  <!-- Footer -->
+  <footer class="bg-white shadow-md mt-12">
+    <div class="container mx-auto px-6 py-6 text-center text-sm text-gray-600">
+      <p>© 2025 All rights reserved – Herman Chan</p>
+      <p class="mt-1">System available on <a href="https://github.com/herman925/4Set-Server" class="text-blue-600 hover:underline">GitHub</a></p>
+    </div>
+  </footer>
+
+  <script>
+    // Add smooth scrolling for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      });
+    });
+
+    // Highlight active section in TOC
+    const sections = document.querySelectorAll('section[id]');
+    const navLinks = document.querySelectorAll('.toc-link');
+
+    window.addEventListener('scroll', () => {
+      let current = '';
+      sections.forEach(section => {
+        const sectionTop = section.offsetTop;
+        const sectionHeight = section.clientHeight;
+        if (window.pageYOffset >= sectionTop - 100) {
+          current = section.getAttribute('id');
+        }
+      });
+
+      navLinks.forEach(link => {
+        link.classList.remove('text-primary', 'font-semibold');
+        if (link.getAttribute('href') === `#${current}`) {
+          link.classList.add('text-primary', 'font-semibold');
+        }
+      });
+    });
+  </script>
+</body>
+</html>

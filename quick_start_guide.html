@@ -16,6 +16,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="assets/js/smart-navigation.js"></script>
   <style>
     body {
       font-family: 'Inter', sans-serif;
@@ -123,6 +124,15 @@
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
               <polyline points="17 8 12 3 7 8"></polyline>
               <line x1="12" y1="3" x2="12" y2="15"></line>
+            </svg>
+          </a>
+          <a href="user_guide_processor_setup.html" class="text-gray-600 hover:text-primary transition p-2 rounded-lg hover:bg-gray-100" title="Processor Agent Setup Guide">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M12 1v6m0 6v6"></path>
+              <path d="m4.93 4.93 4.24 4.24m5.66 5.66 4.24 4.24"></path>
+              <path d="m1 12 6 0m6 0 6 0"></path>
+              <path d="m4.93 19.07 4.24-4.24m5.66-5.66 4.24-4.24"></path>
             </svg>
           </a>
           <a href="user_guide_checking_system.html" class="text-gray-600 hover:text-primary transition p-2 rounded-lg hover:bg-gray-100" title="Checking System Guide">
@@ -3028,7 +3038,7 @@ flowchart LR
       <div id="checkingModalOverlay" style="position: fixed; inset: 0; pointer-events: none; z-index: 10000;"></div>
       
       <!-- Close Button -->
-      <button data-spotlight-checking="close" onclick="closeCheckingHomeModal()" style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-center; transition: all 0.2s; z-index: 10003;">
+      <button data-spotlight-checking="close" onclick="closeCheckingHomeModal()" style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10003;">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
       </button>
       
@@ -3133,7 +3143,7 @@ flowchart LR
   <div id="studentViewModal" style="display: none; position: fixed; inset: 0; z-index: 9999; padding: 2rem; overflow-y: auto;">
     <div style="max-width: 1100px; margin: 0 auto; position: relative; z-index: 2;">
       <div id="studentModalOverlay" style="position: fixed; inset: 0; pointer-events: none; z-index: 10000;"></div>
-      <button data-spotlight-student="close" onclick="closeStudentViewModal()" style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-center; transition: all 0.2s; z-index: 10003;">
+      <button data-spotlight-student="close" onclick="closeStudentViewModal()" style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10003;">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
       </button>
       <div style="background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); overflow: hidden; position: relative; z-index: 10; max-height: 90vh; overflow-y: auto;">
@@ -3268,7 +3278,7 @@ flowchart LR
   <div id="classViewModal" style="display: none; position: fixed; inset: 0; z-index: 9999; padding: 2rem; overflow-y: auto;">
     <div style="max-width: 1100px; margin: 0 auto; position: relative; z-index: 2;">
       <div id="classModalOverlay" style="position: fixed; inset: 0; pointer-events: none; z-index: 10000;"></div>
-      <button data-spotlight-class="close" onclick="closeClassViewModal()" style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-center; transition: all 0.2s; z-index: 10003;">
+      <button data-spotlight-class="close" onclick="closeClassViewModal()" style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10003;">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
       </button>
       <div style="background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); overflow: hidden; position: relative; z-index: 10; max-height: 90vh; overflow-y: auto;">
@@ -3426,7 +3436,7 @@ flowchart LR
   <div id="schoolViewModal" style="display: none; position: fixed; inset: 0; z-index: 9999; padding: 2rem; overflow-y: auto;">
     <div style="max-width: 1100px; margin: 0 auto; position: relative; z-index: 2;">
       <div id="schoolModalOverlay" style="position: fixed; inset: 0; pointer-events: none; z-index: 10000;"></div>
-      <button data-spotlight-school="close" onclick="closeSchoolViewModal()" style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-center; transition: all 0.2s; z-index: 10003;">
+      <button data-spotlight-school="close" onclick="closeSchoolViewModal()" style="position: absolute; top: -12px; right: -12px; width: 48px; height: 48px; background-color: white; border-radius: 50%; box-shadow: 0 4px 12px rgba(0,0,0,0.3); border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; z-index: 10003;">
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
       </button>
       <div style="background: white; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.4); overflow: hidden; position: relative; z-index: 10; max-height: 90vh; overflow-y: auto;">
@@ -3686,5 +3696,12 @@ flowchart LR
 
   <!-- JavaScript -->
   <script src="assets/js/user-guides.js"></script>
+
+  <footer class="bg-white shadow-md mt-12">
+    <div class="container mx-auto px-6 py-6 text-center text-sm text-gray-600">
+      <p> 2025 All rights reserved – Herman Chan</p>
+      <p class="mt-1">System available on <a href="https://github.com/herman925/4Set-Server" class="text-blue-600 hover:underline">GitHub</a></p>
+    </div>
+  </footer>
 </body>
 </html>
