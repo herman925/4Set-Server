@@ -62,326 +62,14 @@
       </div>
     </div>
 
-    <!-- Core System Documents -->
-    <div class="mb-12">
-      <h3 class="text-2xl font-semibold mb-6 flex items-center gap-2" style="color: var(--primary)">
-        <i data-lucide="layers" class="w-6 h-6"></i>
-        Core System Documents
-      </h3>
-      <div class="grid md:grid-cols-2 gap-6" id="coreDocuments">
-        <!-- Overview PRD -->
-        <a href="overview_prd.md" class="prd-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6 border border-gray-200 hover:border-primary/50">
-          <div class="flex items-start gap-4">
-            <div class="text-4xl">📋</div>
-            <div class="flex-1">
-              <h4 class="text-xl font-semibold mb-2" style="color: var(--primary)">System Overview</h4>
-              <p class="text-sm text-gray-600 mb-3">Complete system architecture, goals, user journey, and functional requirements for the 4Set platform</p>
-              <span class="text-xs text-gray-500 font-mono">overview_prd.md</span>
-            </div>
-          </div>
-        </a>
-
-        <!-- Data Pipeline -->
-        <a href="data-pipeline.md" class="prd-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6 border border-gray-200 hover:border-primary/50">
-          <div class="flex items-start gap-4">
-            <div class="text-4xl">🔄</div>
-            <div class="flex-1">
-              <h4 class="text-xl font-semibold mb-2" style="color: var(--primary)">Data Pipeline</h4>
-              <p class="text-sm text-gray-600 mb-3">End-to-end data flow architecture from PDF ingestion to JotForm submission</p>
-              <span class="text-xs text-gray-500 font-mono">data-pipeline.md</span>
-            </div>
-          </div>
-        </a>
-
-        <!-- Data Security -->
-        <a href="data_security_prd.md" class="prd-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6 border border-gray-200 hover:border-primary/50">
-          <div class="flex items-start gap-4">
-            <div class="text-4xl">🔒</div>
-            <div class="flex-1">
-              <h4 class="text-xl font-semibold mb-2" style="color: var(--primary)">Data Security</h4>
-              <p class="text-sm text-gray-600 mb-3">AES-256-GCM encryption, credential management, and security protocols</p>
-              <span class="text-xs text-gray-500 font-mono">data_security_prd.md</span>
-            </div>
-          </div>
-        </a>
-
-        <!-- Calculation Bible -->
-        <a href="calculation_bible.md" class="prd-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6 border border-gray-200 hover:border-primary/50">
-          <div class="flex items-start gap-4">
-            <div class="text-4xl">📐</div>
-            <div class="flex-1">
-              <h4 class="text-xl font-semibold mb-2" style="color: var(--primary)">Calculation Reference</h4>
-              <p class="text-sm text-gray-600 mb-3">Complete calculation and validation reference for assessment scoring and termination logic</p>
-              <span class="text-xs text-gray-500 font-mono">calculation_bible.md</span>
-            </div>
-          </div>
-        </a>
-      </div>
+    <!-- Loading State -->
+    <div id="loadingState" class="text-center py-12">
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <p class="mt-4 text-gray-600">Loading PRD documents...</p>
     </div>
 
-    <!-- Processor Agent Documents -->
-    <div class="mb-12">
-      <h3 class="text-2xl font-semibold mb-6 flex items-center gap-2" style="color: var(--primary)">
-        <i data-lucide="cpu" class="w-6 h-6"></i>
-        Processor Agent
-      </h3>
-      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6" id="processorDocuments">
-        <!-- Processor Agent PRD -->
-        <a href="processor_agent_prd.md" class="prd-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6 border border-gray-200 hover:border-primary/50">
-          <div class="flex items-start gap-4">
-            <div class="text-4xl">⚙️</div>
-            <div class="flex-1">
-              <h4 class="text-xl font-semibold mb-2" style="color: var(--primary)">Agent Specification</h4>
-              <p class="text-sm text-gray-600 mb-3">Detailed requirements and specifications for the processor agent</p>
-              <span class="text-xs text-gray-500 font-mono">processor_agent_prd.md</span>
-            </div>
-          </div>
-        </a>
-
-        <!-- Processor Agent Runbook -->
-        <a href="processor_agent_runbook_prd.md" class="prd-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6 border border-gray-200 hover:border-primary/50">
-          <div class="flex items-start gap-4">
-            <div class="text-4xl">📚</div>
-            <div class="flex-1">
-              <h4 class="text-xl font-semibold mb-2" style="color: var(--primary)">Operational Runbook</h4>
-              <p class="text-sm text-gray-600 mb-3">Step-by-step operational procedures for agent deployment and maintenance</p>
-              <span class="text-xs text-gray-500 font-mono">processor_agent_runbook_prd.md</span>
-            </div>
-          </div>
-        </a>
-
-        <!-- Debug Messages -->
-        <a href="processor_agent_debugmsg_prd.md" class="prd-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6 border border-gray-200 hover:border-primary/50">
-          <div class="flex items-start gap-4">
-            <div class="text-4xl">🐛</div>
-            <div class="flex-1">
-              <h4 class="text-xl font-semibold mb-2" style="color: var(--primary)">Debug Messages</h4>
-              <p class="text-sm text-gray-600 mb-3">Standardized debug message formats and logging conventions</p>
-              <span class="text-xs text-gray-500 font-mono">processor_agent_debugmsg_prd.md</span>
-            </div>
-          </div>
-        </a>
-      </div>
-    </div>
-
-    <!-- Feature Documents -->
-    <div class="mb-12">
-      <h3 class="text-2xl font-semibold mb-6 flex items-center gap-2" style="color: var(--primary)">
-        <i data-lucide="package" class="w-6 h-6"></i>
-        Feature Specifications
-      </h3>
-      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6" id="featureDocuments">
-        <!-- Checking System PRD -->
-        <a href="checking_system_prd.md" class="prd-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6 border border-gray-200 hover:border-primary/50">
-          <div class="flex items-start gap-4">
-            <div class="text-4xl">✅</div>
-            <div class="flex-1">
-              <h4 class="text-xl font-semibold mb-2" style="color: var(--primary)">Checking System</h4>
-              <p class="text-sm text-gray-600 mb-3">Quality assurance validation rules and checking system architecture</p>
-              <span class="text-xs text-gray-500 font-mono">checking_system_prd.md</span>
-            </div>
-          </div>
-        </a>
-
-        <!-- Checking System Pipeline -->
-        <a href="checking_system_pipeline_prd.md" class="prd-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6 border border-gray-200 hover:border-primary/50">
-          <div class="flex items-start gap-4">
-            <div class="text-4xl">🔍</div>
-            <div class="flex-1">
-              <h4 class="text-xl font-semibold mb-2" style="color: var(--primary)">Checking Pipeline</h4>
-              <p class="text-sm text-gray-600 mb-3">Pipeline architecture for validation and quality checks</p>
-              <span class="text-xs text-gray-500 font-mono">checking_system_pipeline_prd.md</span>
-            </div>
-          </div>
-        </a>
-
-        <!-- Assessment Uploader -->
-        <a href="assessment_uploader_prd.md" class="prd-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6 border border-gray-200 hover:border-primary/50">
-          <div class="flex items-start gap-4">
-            <div class="text-4xl">📤</div>
-            <div class="flex-1">
-              <h4 class="text-xl font-semibold mb-2" style="color: var(--primary)">Assessment Uploader</h4>
-              <p class="text-sm text-gray-600 mb-3">Web-based PDF upload interface specifications</p>
-              <span class="text-xs text-gray-500 font-mono">assessment_uploader_prd.md</span>
-            </div>
-          </div>
-        </a>
-
-        <!-- Upload Monitoring -->
-        <a href="upload_monitoring_prd.md" class="prd-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6 border border-gray-200 hover:border-primary/50">
-          <div class="flex items-start gap-4">
-            <div class="text-4xl">📊</div>
-            <div class="flex-1">
-              <h4 class="text-xl font-semibold mb-2" style="color: var(--primary)">Upload Monitoring</h4>
-              <p class="text-sm text-gray-600 mb-3">Upload failure detection and monitoring system</p>
-              <span class="text-xs text-gray-500 font-mono">upload_monitoring_prd.md</span>
-            </div>
-          </div>
-        </a>
-
-        <!-- PDF Pipeline -->
-        <a href="pdfpipeline_prd.md" class="prd-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6 border border-gray-200 hover:border-primary/50">
-          <div class="flex items-start gap-4">
-            <div class="text-4xl">📄</div>
-            <div class="flex-1">
-              <h4 class="text-xl font-semibold mb-2" style="color: var(--primary)">PDF Pipeline</h4>
-              <p class="text-sm text-gray-600 mb-3">PDF extraction and processing pipeline specifications</p>
-              <span class="text-xs text-gray-500 font-mono">pdfpipeline_prd.md</span>
-            </div>
-          </div>
-        </a>
-
-        <!-- Termination Rules -->
-        <a href="termination-rules.md" class="prd-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6 border border-gray-200 hover:border-primary/50">
-          <div class="flex items-start gap-4">
-            <div class="text-4xl">🛑</div>
-            <div class="flex-1">
-              <h4 class="text-xl font-semibold mb-2" style="color: var(--primary)">Termination Rules</h4>
-              <p class="text-sm text-gray-600 mb-3">Assessment termination logic and conditions</p>
-              <span class="text-xs text-gray-500 font-mono">termination-rules.md</span>
-            </div>
-          </div>
-        </a>
-
-        <!-- Task Completion Calculation -->
-        <a href="task_completion_calculation_logic_prd.md" class="prd-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6 border border-gray-200 hover:border-primary/50">
-          <div class="flex items-start gap-4">
-            <div class="text-4xl">🎯</div>
-            <div class="flex-1">
-              <h4 class="text-xl font-semibold mb-2" style="color: var(--primary)">Task Completion Logic</h4>
-              <p class="text-sm text-gray-600 mb-3">Calculation logic for task completion tracking</p>
-              <span class="text-xs text-gray-500 font-mono">task_completion_calculation_logic_prd.md</span>
-            </div>
-          </div>
-        </a>
-      </div>
-    </div>
-
-    <!-- Integration Documents -->
-    <div class="mb-12">
-      <h3 class="text-2xl font-semibold mb-6 flex items-center gap-2" style="color: var(--primary)">
-        <i data-lucide="link" class="w-6 h-6"></i>
-        Integration & External Systems
-      </h3>
-      <div class="grid md:grid-cols-2 gap-6" id="integrationDocuments">
-        <!-- JotForm Qualtrics Integration -->
-        <a href="jotform_qualtrics_integration_prd.md" class="prd-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6 border border-gray-200 hover:border-primary/50">
-          <div class="flex items-start gap-4">
-            <div class="text-4xl">🔗</div>
-            <div class="flex-1">
-              <h4 class="text-xl font-semibold mb-2" style="color: var(--primary)">JotForm & Qualtrics Integration</h4>
-              <p class="text-sm text-gray-600 mb-3">Complete integration specifications for JotForm and Qualtrics systems</p>
-              <span class="text-xs text-gray-500 font-mono">jotform_qualtrics_integration_prd.md</span>
-            </div>
-          </div>
-        </a>
-
-        <!-- Qualtrics Implementation Plan -->
-        <a href="qualtrics_implementation_plan.md" class="prd-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6 border border-gray-200 hover:border-primary/50">
-          <div class="flex items-start gap-4">
-            <div class="text-4xl">📝</div>
-            <div class="flex-1">
-              <h4 class="text-xl font-semibold mb-2" style="color: var(--primary)">Qualtrics Implementation</h4>
-              <p class="text-sm text-gray-600 mb-3">Detailed implementation plan for Qualtrics integration</p>
-              <span class="text-xs text-gray-500 font-mono">qualtrics_implementation_plan.md</span>
-            </div>
-          </div>
-        </a>
-
-        <!-- Survey Structure -->
-        <a href="survey_structure.md" class="prd-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6 border border-gray-200 hover:border-primary/50">
-          <div class="flex items-start gap-4">
-            <div class="text-4xl">📋</div>
-            <div class="flex-1">
-              <h4 class="text-xl font-semibold mb-2" style="color: var(--primary)">Survey Structure</h4>
-              <p class="text-sm text-gray-600 mb-3">Survey data structure and field definitions</p>
-              <span class="text-xs text-gray-500 font-mono">survey_structure.md</span>
-            </div>
-          </div>
-        </a>
-
-        <!-- Qualtrics Schema Example -->
-        <a href="qualtrics_schema_example.json" class="prd-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6 border border-gray-200 hover:border-primary/50">
-          <div class="flex items-start gap-4">
-            <div class="text-4xl">💾</div>
-            <div class="flex-1">
-              <h4 class="text-xl font-semibold mb-2" style="color: var(--primary)">Qualtrics Schema</h4>
-              <p class="text-sm text-gray-600 mb-3">Example JSON schema for Qualtrics survey data</p>
-              <span class="text-xs text-gray-500 font-mono">qualtrics_schema_example.json</span>
-            </div>
-          </div>
-        </a>
-      </div>
-    </div>
-
-    <!-- User Guide PRDs -->
-    <div class="mb-12">
-      <h3 class="text-2xl font-semibold mb-6 flex items-center gap-2" style="color: var(--primary)">
-        <i data-lucide="book-open" class="w-6 h-6"></i>
-        User Guide Specifications
-      </h3>
-      <div class="grid md:grid-cols-2 lg:grid-cols-3 gap-6" id="guideDocuments">
-        <!-- Guideline PRD -->
-        <a href="guideline_prd.md" class="prd-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6 border border-gray-200 hover:border-primary/50">
-          <div class="flex items-start gap-4">
-            <div class="text-4xl">🎨</div>
-            <div class="flex-1">
-              <h4 class="text-xl font-semibold mb-2" style="color: var(--primary)">User Guide System Design</h4>
-              <p class="text-sm text-gray-600 mb-3">Design patterns and components for the user guide system</p>
-              <span class="text-xs text-gray-500 font-mono">guideline_prd.md</span>
-            </div>
-          </div>
-        </a>
-
-        <!-- Checking System User Guide -->
-        <a href="checking_system_user_guide_prd.md" class="prd-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6 border border-gray-200 hover:border-primary/50">
-          <div class="flex items-start gap-4">
-            <div class="text-4xl">📖</div>
-            <div class="flex-1">
-              <h4 class="text-xl font-semibold mb-2" style="color: var(--primary)">Checking System Guide</h4>
-              <p class="text-sm text-gray-600 mb-3">User guide specifications for the checking system</p>
-              <span class="text-xs text-gray-500 font-mono">checking_system_user_guide_prd.md</span>
-            </div>
-          </div>
-        </a>
-
-        <!-- Assessment Uploader User Guide -->
-        <a href="assessment_uploader_user_guide_prd.md" class="prd-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6 border border-gray-200 hover:border-primary/50">
-          <div class="flex items-start gap-4">
-            <div class="text-4xl">📚</div>
-            <div class="flex-1">
-              <h4 class="text-xl font-semibold mb-2" style="color: var(--primary)">Uploader Guide</h4>
-              <p class="text-sm text-gray-600 mb-3">User guide specifications for the assessment uploader</p>
-              <span class="text-xs text-gray-500 font-mono">assessment_uploader_user_guide_prd.md</span>
-            </div>
-          </div>
-        </a>
-
-        <!-- Qualtrics TGMD User Guide -->
-        <a href="qualtrics_tgmd_user_guide_prd.md" class="prd-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6 border border-gray-200 hover:border-primary/50">
-          <div class="flex items-start gap-4">
-            <div class="text-4xl">🏃</div>
-            <div class="flex-1">
-              <h4 class="text-xl font-semibold mb-2" style="color: var(--primary)">TGMD Guide</h4>
-              <p class="text-sm text-gray-600 mb-3">User guide for Qualtrics TGMD assessment integration</p>
-              <span class="text-xs text-gray-500 font-mono">qualtrics_tgmd_user_guide_prd.md</span>
-            </div>
-          </div>
-        </a>
-
-        <!-- Data Conflicts User Guide -->
-        <a href="data_conflicts_user_guide_prd.md" class="prd-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6 border border-gray-200 hover:border-primary/50">
-          <div class="flex items-start gap-4">
-            <div class="text-4xl">⚠️</div>
-            <div class="flex-1">
-              <h4 class="text-xl font-semibold mb-2" style="color: var(--primary)">Data Conflicts Guide</h4>
-              <p class="text-sm text-gray-600 mb-3">User guide for handling data conflicts and overwrites</p>
-              <span class="text-xs text-gray-500 font-mono">data_conflicts_user_guide_prd.md</span>
-            </div>
-          </div>
-        </a>
-      </div>
-    </div>
+    <!-- Documents Container (dynamically populated) -->
+    <div id="documentsContainer" style="display: none;"></div>
 
     <!-- Back to Top -->
     <div class="text-center mt-12">
@@ -407,36 +95,117 @@
     // Initialize Lucide icons
     lucide.createIcons();
 
-    // Search functionality
-    const searchInput = document.getElementById('searchInput');
-    const prdCards = document.querySelectorAll('.prd-card');
-
-    searchInput.addEventListener('input', (e) => {
-      const searchTerm = e.target.value.toLowerCase();
-      
-      prdCards.forEach(card => {
-        const title = card.querySelector('h4').textContent.toLowerCase();
-        const description = card.querySelector('p').textContent.toLowerCase();
-        const filename = card.querySelector('.font-mono').textContent.toLowerCase();
+    // Load and render PRD documents
+    async function loadPRDDocuments() {
+      try {
+        const response = await fetch('manifest.json');
+        const manifest = await response.json();
         
-        if (title.includes(searchTerm) || description.includes(searchTerm) || filename.includes(searchTerm)) {
-          card.style.display = 'flex';
-        } else {
-          card.style.display = 'none';
-        }
-      });
-    });
+        renderDocuments(manifest);
+        
+        // Hide loading state, show documents
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('documentsContainer').style.display = 'block';
+        
+        // Reinitialize Lucide icons after rendering
+        lucide.createIcons();
+        
+        // Setup search functionality
+        setupSearch();
+      } catch (error) {
+        console.error('Error loading PRD manifest:', error);
+        document.getElementById('loadingState').innerHTML = `
+          <div class="text-red-600">
+            <p class="text-xl font-semibold mb-2">Error loading documents</p>
+            <p class="text-sm">Please try refreshing the page or contact support if the issue persists.</p>
+          </div>
+        `;
+      }
+    }
 
-    // Smooth scroll to top
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-      anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-          target.scrollIntoView({ behavior: 'smooth' });
+    function renderDocuments(manifest) {
+      const container = document.getElementById('documentsContainer');
+      const categories = manifest.categories;
+      const documents = manifest.documents;
+      
+      // Group documents by category
+      const docsByCategory = {};
+      documents.forEach(doc => {
+        if (!docsByCategory[doc.category]) {
+          docsByCategory[doc.category] = [];
         }
+        docsByCategory[doc.category].push(doc);
       });
-    });
+      
+      // Render each category
+      const categoryOrder = ['core', 'processor', 'features', 'integration', 'guides'];
+      let html = '';
+      
+      categoryOrder.forEach(categoryKey => {
+        const category = categories[categoryKey];
+        const categoryDocs = docsByCategory[categoryKey];
+        
+        if (!category || !categoryDocs || categoryDocs.length === 0) return;
+        
+        // Determine grid columns based on category
+        const gridCols = categoryKey === 'core' || categoryKey === 'integration' ? 'md:grid-cols-2' : 'md:grid-cols-2 lg:grid-cols-3';
+        
+        html += `
+          <div class="mb-12">
+            <h3 class="text-2xl font-semibold mb-6 flex items-center gap-2" style="color: var(--primary)">
+              <i data-lucide="${category.icon}" class="w-6 h-6"></i>
+              ${category.name}
+            </h3>
+            <div class="grid ${gridCols} gap-6">
+        `;
+        
+        categoryDocs.forEach(doc => {
+          html += `
+            <a href="${doc.filename}" class="prd-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6 border border-gray-200 hover:border-primary/50" data-search-title="${doc.title.toLowerCase()}" data-search-desc="${doc.description.toLowerCase()}" data-search-file="${doc.filename.toLowerCase()}">
+              <div class="flex items-start gap-4">
+                <div class="text-4xl">${doc.icon}</div>
+                <div class="flex-1">
+                  <h4 class="text-xl font-semibold mb-2" style="color: var(--primary)">${doc.title}</h4>
+                  <p class="text-sm text-gray-600 mb-3">${doc.description}</p>
+                  <span class="text-xs text-gray-500 font-mono">${doc.filename}</span>
+                </div>
+              </div>
+            </a>
+          `;
+        });
+        
+        html += `
+            </div>
+          </div>
+        `;
+      });
+      
+      container.innerHTML = html;
+    }
+
+    function setupSearch() {
+      const searchInput = document.getElementById('searchInput');
+      const prdCards = document.querySelectorAll('.prd-card');
+
+      searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        
+        prdCards.forEach(card => {
+          const title = card.getAttribute('data-search-title');
+          const description = card.getAttribute('data-search-desc');
+          const filename = card.getAttribute('data-search-file');
+          
+          if (title.includes(searchTerm) || description.includes(searchTerm) || filename.includes(searchTerm)) {
+            card.style.display = 'flex';
+          } else {
+            card.style.display = 'none';
+          }
+        });
+      });
+    }
+
+    // Load documents when page loads
+    document.addEventListener('DOMContentLoaded', loadPRDDocuments);
   </script>
 </body>
 </html>
