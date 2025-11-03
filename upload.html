@@ -610,25 +610,10 @@
         
         // No-op - legacy functions removed (now using File System Access API)
         
-        // Show configuration warning modal with spotlight
+        // Show configuration warning modal (clean modal like checking_system_home.html)
         function showConfigWarningModal(needsPCNumber, needsDestination) {
             const modal = document.getElementById('config-warning-modal');
             const messageDiv = document.getElementById('config-warning-message');
-            const pcBadge = document.getElementById('pc-number-badge');
-            const destBadge = document.getElementById('upload-destination-badge');
-            
-            // Temporarily remove spotlight from configured badges
-            if (!needsPCNumber) {
-                pcBadge.removeAttribute('data-spotlight');
-            } else {
-                pcBadge.setAttribute('data-spotlight', 'button');
-            }
-            
-            if (!needsDestination) {
-                destBadge.removeAttribute('data-spotlight');
-            } else {
-                destBadge.setAttribute('data-spotlight', 'button');
-            }
             
             // Build warning message
             let message = '<p class="mb-4">Before uploading files, you need to configure:</p><ul class="space-y-2 ml-6 list-disc">';
@@ -644,11 +629,8 @@
             message += '</ul>';
             messageDiv.innerHTML = message;
             
-            // Show modal
+            // Show modal (no spotlight - clean modal approach)
             modal.classList.remove('hidden');
-            
-            // Enable spotlight to highlight the unconfigured badges (pill spotlight style)
-            uploadPageSpotlight.enable();
             
             // Refresh icons (if lucide is loaded)
             if (typeof lucide !== 'undefined') {
@@ -659,17 +641,7 @@
         // Close configuration warning modal
         function closeConfigWarningModal() {
             const modal = document.getElementById('config-warning-modal');
-            const pcBadge = document.getElementById('pc-number-badge');
-            const destBadge = document.getElementById('upload-destination-badge');
-            
             modal.classList.add('hidden');
-            
-            // Restore spotlight attributes for both badges
-            pcBadge.setAttribute('data-spotlight', 'button');
-            destBadge.setAttribute('data-spotlight', 'button');
-            
-            // Disable spotlight
-            uploadPageSpotlight.disable();
         }
 
         // Setup event listeners
