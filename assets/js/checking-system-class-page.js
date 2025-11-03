@@ -858,8 +858,9 @@
         if (foundTask) {
           if (foundTask.ignoredForIncompleteChecks) return 'status-grey';
           
-          // Warning detection (yellow): Post-termination data OR termination mismatch
-          if (foundTask.hasPostTerminationAnswers || foundTask.hasTerminationMismatch) return 'status-yellow';
+          // Post-term detection or termination mismatch (yellow): Data quality issue
+          // Yellow indicates EITHER post-termination activity OR termination mismatch
+          if (foundTask.hasPostTerminationAnswers) return 'status-yellow';
           
           // Complete (green): All questions answered or properly terminated
           if (foundTask.complete) return 'status-green';

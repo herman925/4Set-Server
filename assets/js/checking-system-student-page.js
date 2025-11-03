@@ -2707,7 +2707,7 @@
    * 
    * Status logic:
    * - Green: 100% answered (including 0 values for TGMD "Not-Observed"), OR properly terminated/timed out
-   * - Yellow: Warning - Post-termination data OR termination mismatch detected
+   * - Yellow: Post-termination data detected OR termination mismatch (data quality issues)
    * - Red: Partially answered (some questions missing/unanswered)
    * - Grey: Not started (no answers at all)
    */
@@ -2726,16 +2726,11 @@
       // No data yet
       statusCircle.classList.add('status-grey');
       statusCircle.title = 'Not started';
-    } else if (stats.hasPostTerminationAnswers || stats.hasTerminationMismatch) {
-      // Yellow: Warning - Post-termination data OR termination mismatch detected
+    } else if (stats.hasPostTerminationAnswers) {
+      // Yellow: Post-termination data OR termination mismatch detected (data quality issue)
+      // Yellow indicates EITHER post-termination activity OR termination mismatch
       statusCircle.classList.add('status-yellow');
-      if (stats.hasPostTerminationAnswers && stats.hasTerminationMismatch) {
-        statusCircle.title = 'Warning: Post-termination data & termination mismatch detected';
-      } else if (stats.hasPostTerminationAnswers) {
-        statusCircle.title = 'Warning: Post-termination data detected';
-      } else {
-        statusCircle.title = 'Warning: Termination mismatch detected';
-      }
+      statusCircle.title = 'Post-termination data or termination mismatch detected';
     } else if ((stats.hasTerminated || stats.timedOut) && stats.answered > 0) {
       // Green: Properly terminated/timed out (NO post-termination answers)
       statusCircle.classList.add('status-green');

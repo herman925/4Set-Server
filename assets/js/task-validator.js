@@ -907,9 +907,16 @@ window.TaskValidator = (() => {
    * CRITICAL: This function implements the PRD-mandated exclusion rule:
    * "Questions after termination point are COMPLETELY EXCLUDED from ALL calculations"
    * 
-   * Examples:
-   * - Before: CWR 24/150 = 16% (misleading)
-   * - After:  CWR 24/24 = 100% complete 
+   * Process:
+   * 1. Route to appropriate handler based on config.type
+   * 2. Get terminationIndex from handler
+   * 3. Recalculate totals: only count questions up to terminationIndex + 1
+   * 4. Detect post-termination answers (data quality issue - yellow flag indicates post-termination activity OR termination mismatch)
+   * 5. Return adjusted validation result with termination metadata
+   * 
+   * This ensures task completion is calculated correctly:
+   * - Before: CWR 24/55 = 43% incomplete ❌
+   * - After:  CWR 24/24 = 100% complete ✅
    * 
    * @param {Object} taskResult - Validation result from validateTask()
    * @param {Object} config - Termination configuration from TERMINATION_RULES
