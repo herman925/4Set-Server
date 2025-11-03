@@ -111,7 +111,7 @@
                 <!-- Upload Zone -->
                 <div class="lg:col-span-2">
                     <div class="interactive-btn-wrapper" style="position: relative;">
-                        <div data-spotlight="button" class="upload-zone entry-card p-8 sm:p-12 lg:p-16 text-center cursor-pointer" id="upload-zone">
+                        <div class="upload-zone entry-card p-8 sm:p-12 lg:p-16 text-center cursor-pointer" id="upload-zone">
                             <input type="file" id="file-input" accept=".pdf" multiple class="hidden" aria-label="Select PDF files to upload">
                             
                             <div class="flex flex-col items-center gap-4">
@@ -609,6 +609,66 @@
         }
         
         // No-op - legacy functions removed (now using File System Access API)
+        
+        // Show configuration warning modal with spotlight
+        function showConfigWarningModal(needsPCNumber, needsDestination) {
+            const modal = document.getElementById('config-warning-modal');
+            const messageDiv = document.getElementById('config-warning-message');
+            const pcBadge = document.getElementById('pc-number-badge');
+            const destBadge = document.getElementById('upload-destination-badge');
+            
+            // Temporarily remove spotlight from configured badges
+            if (!needsPCNumber) {
+                pcBadge.removeAttribute('data-spotlight');
+            } else {
+                pcBadge.setAttribute('data-spotlight', 'button');
+            }
+            
+            if (!needsDestination) {
+                destBadge.removeAttribute('data-spotlight');
+            } else {
+                destBadge.setAttribute('data-spotlight', 'button');
+            }
+            
+            // Build warning message
+            let message = '<p class="mb-4">Before uploading files, you need to configure:</p><ul class="space-y-2 ml-6 list-disc">';
+            
+            if (needsPCNumber) {
+                message += '<li><strong>PC Number:</strong> Set your workstation identifier for tracking uploads</li>';
+            }
+            
+            if (needsDestination) {
+                message += '<li><strong>Upload Destination:</strong> Select the folder where PDFs will be saved</li>';
+            }
+            
+            message += '</ul>';
+            messageDiv.innerHTML = message;
+            
+            // Show modal
+            modal.classList.remove('hidden');
+            
+            // Enable spotlight to highlight the unconfigured badges (pill spotlight style)
+            uploadPageSpotlight.enable();
+            
+            // Refresh icons
+            lucide.createIcons();
+        }
+        
+        // Close configuration warning modal
+        function closeConfigWarningModal() {
+            const modal = document.getElementById('config-warning-modal');
+            const pcBadge = document.getElementById('pc-number-badge');
+            const destBadge = document.getElementById('upload-destination-badge');
+            
+            modal.classList.add('hidden');
+            
+            // Restore spotlight attributes for both badges
+            pcBadge.setAttribute('data-spotlight', 'button');
+            destBadge.setAttribute('data-spotlight', 'button');
+            
+            // Disable spotlight
+            uploadPageSpotlight.disable();
+        }
 
         // Setup event listeners
         function setupEventListeners() {
@@ -656,33 +716,13 @@
         function handleFiles(files) {
             if (files.length === 0) return;
             
-            // Check if PC number is set
-            if (!state.pcNumber || state.pcNumber === '000') {
-                // Spotlight the PC number badge
-                const badge = document.getElementById('pc-number-badge');
-                badge.classList.add('spotlight-attention');
-                
-                setTimeout(() => {
-                    badge.classList.remove('spotlight-attention');
-                }, 2000);
-                
-                // Show message
-                alert('⚠️ PC Number Required\n\nPlease set your PC number before uploading files.\n\nClick the "PC Number" badge to configure.');
-                return;
-            }
+            const hasPCNumber = state.pcNumber && state.pcNumber !== '000';
+            const hasDestination = state.directoryHandle !== null;
             
-            // Check if upload destination is set
-            if (!state.directoryHandle) {
-                // Spotlight the upload destination badge
-                const badge = document.getElementById('upload-destination-badge');
-                badge.classList.add('spotlight-attention');
-                
-                setTimeout(() => {
-                    badge.classList.remove('spotlight-attention');
-                }, 2000);
-                
-                // Show destination modal
-                showUploadDestinationDialog();
+            // Check if PC number and destination are set
+            if (!hasPCNumber || !hasDestination) {
+                // Show configuration warning modal with spotlight
+                showConfigWarningModal(!hasPCNumber, !hasDestination);
                 return;
             }
             
@@ -1284,6 +1324,38 @@
         </div>
     </div>
 
+    <!-- Configuration Warning Modal -->
+    <div id="config-warning-modal" class="modal-backdrop hidden">
+        <div class="modal-panel max-w-lg">
+            <div class="mb-6">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="p-3 rounded-full bg-amber-100">
+                        <i data-lucide="alert-triangle" class="w-6 h-6 text-amber-600"></i>
+                    </div>
+                    <h3 class="text-xl font-semibold text-[color:var(--foreground)]">Configuration Required</h3>
+                </div>
+                
+                <div id="config-warning-message" class="space-y-4 text-sm text-[color:var(--muted-foreground)] mb-6">
+                    <!-- Warning message will be dynamically inserted here -->
+                </div>
+                
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <p class="text-sm text-blue-900">
+                        <strong>💡 Quick Setup:</strong> Click the highlighted badge(s) above to complete your configuration.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="flex justify-end">
+                <button 
+                    onclick="closeConfigWarningModal()" 
+                    class="px-6 py-2.5 text-sm bg-[color:var(--primary)] text-[color:var(--primary-foreground)] rounded-lg hover:opacity-90 transition-opacity font-semibold">
+                    Ok Got It
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Floating Upload Status Panel -->
     <div id="upload-status-panel" class="upload-status-panel hidden">
         <div class="panel-header">
@@ -1338,13 +1410,8 @@
         });
         const uploadTooltipPositioner = window.uploadTooltipPositioner;
 
-        // Enable spotlight on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            // Enable spotlight system after a short delay to ensure page is fully loaded
-            setTimeout(() => {
-                uploadPageSpotlight.enable();
-            }, 500);
-        });
+        // Note: Spotlight is now triggered conditionally when user attempts upload without configuration
+        // It is no longer auto-enabled on page load
 
         // Toggle tooltip function
         function toggleUploadTooltip(tooltipId) {
