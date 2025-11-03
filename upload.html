@@ -675,11 +675,30 @@
             // Browse button
             browseBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
+                
+                // Check configuration before opening file dialog
+                const hasPCNumber = state.pcNumber && state.pcNumber !== '000';
+                const hasDestination = state.directoryHandle !== null;
+                
+                if (!hasPCNumber || !hasDestination) {
+                    showConfigWarningModal(!hasPCNumber, !hasDestination);
+                    return;
+                }
+                
                 fileInput.click();
             });
 
             // Click on upload zone
             uploadZone.addEventListener('click', () => {
+                // Check configuration before opening file dialog
+                const hasPCNumber = state.pcNumber && state.pcNumber !== '000';
+                const hasDestination = state.directoryHandle !== null;
+                
+                if (!hasPCNumber || !hasDestination) {
+                    showConfigWarningModal(!hasPCNumber, !hasDestination);
+                    return;
+                }
+                
                 fileInput.click();
             });
 
@@ -702,6 +721,15 @@
             uploadZone.addEventListener('drop', (e) => {
                 e.preventDefault();
                 uploadZone.classList.remove('drag-over');
+                
+                // Check configuration before processing dropped files
+                const hasPCNumber = state.pcNumber && state.pcNumber !== '000';
+                const hasDestination = state.directoryHandle !== null;
+                
+                if (!hasPCNumber || !hasDestination) {
+                    showConfigWarningModal(!hasPCNumber, !hasDestination);
+                    return;
+                }
                 
                 const files = Array.from(e.dataTransfer.files).filter(f => f.name.toLowerCase().endsWith('.pdf'));
                 if (files.length > 0) {
