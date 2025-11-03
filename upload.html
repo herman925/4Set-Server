@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="assets/css/index.css" />
     <link rel="stylesheet" href="assets/css/global.css" />
     <link rel="stylesheet" href="assets/css/upload.css" />
+    <link rel="stylesheet" href="assets/css/spotlight-system.css" />
+    <link rel="stylesheet" href="assets/css/tooltip-styles.css" />
     <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -17,6 +19,9 @@
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
 </head>
 <body class="min-h-screen hero-background">
+    <!-- Spotlight Overlay -->
+    <div id="uploadPageOverlay" style="position: fixed; inset: 0; pointer-events: none; z-index: 10000;"></div>
+    
     <div class="relative overflow-hidden">
         <!-- Decorative Background Elements (matching index.html) -->
         <div class="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/70 to-transparent"></div>
@@ -61,20 +66,34 @@
                                     <span id="status-text" class="status-value text-[10px] text-[color:var(--muted-foreground)] leading-tight whitespace-nowrap">Ready</span>
                                 </div>
                             </div>
-                            <button onclick="showPCNumberDialog()" id="pc-number-badge" class="flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium border hover:opacity-80 transition-all cursor-pointer min-h-[40px] min-w-[120px]" title="Click to set PC number">
-                                <i data-lucide="monitor" class="w-3 h-3 flex-shrink-0"></i>
-                                <div class="flex flex-col items-start flex-1">
-                                    <span class="text-[color:var(--foreground)] font-semibold leading-tight whitespace-nowrap">PC Number</span>
-                                    <span id="pc-number" class="status-value font-mono text-[10px] leading-tight whitespace-nowrap">—</span>
+                            <div class="interactive-btn-wrapper" style="position: relative;">
+                                <button data-spotlight="button" onclick="showPCNumberDialog(); event.stopPropagation();" id="pc-number-badge" class="flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium border hover:opacity-80 transition-all cursor-pointer min-h-[40px] min-w-[120px]" title="Click to set PC number">
+                                    <i data-lucide="monitor" class="w-3 h-3 flex-shrink-0"></i>
+                                    <div class="flex flex-col items-start flex-1">
+                                        <span class="text-[color:var(--foreground)] font-semibold leading-tight whitespace-nowrap">PC Number</span>
+                                        <span id="pc-number" class="status-value font-mono text-[10px] leading-tight whitespace-nowrap">—</span>
+                                    </div>
+                                </button>
+                                <div id="tooltip-pc-number" class="feature-tooltip" style="display: none;">
+                                    <div style="font-weight: 600; margin-bottom: 4px;">💻 PC Number</div>
+                                    <div style="font-size: 13px; opacity: 0.9;">Set your workstation identifier for tracking uploads</div>
+                                    <div style="position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 6px solid #1f2937;"></div>
                                 </div>
-                            </button>
-                            <button onclick="showUploadDestinationDialog()" id="upload-destination-badge" class="flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium border hover:opacity-80 transition-all cursor-pointer min-h-[40px] min-w-[120px]" title="Click to set upload destination">
-                                <i data-lucide="folder-open" class="w-3 h-3 flex-shrink-0"></i>
-                                <div class="flex flex-col items-start flex-1">
-                                    <span class="text-[color:var(--foreground)] font-semibold leading-tight whitespace-nowrap">Upload Destination</span>
-                                    <span id="destination-status" class="status-value text-[10px] leading-tight whitespace-nowrap">Not Set</span>
+                            </div>
+                            <div class="interactive-btn-wrapper" style="position: relative;">
+                                <button data-spotlight="button" onclick="showUploadDestinationDialog(); event.stopPropagation();" id="upload-destination-badge" class="flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium border hover:opacity-80 transition-all cursor-pointer min-h-[40px] min-w-[120px]" title="Click to set upload destination">
+                                    <i data-lucide="folder-open" class="w-3 h-3 flex-shrink-0"></i>
+                                    <div class="flex flex-col items-start flex-1">
+                                        <span class="text-[color:var(--foreground)] font-semibold leading-tight whitespace-nowrap">Upload Destination</span>
+                                        <span id="destination-status" class="status-value text-[10px] leading-tight whitespace-nowrap">Not Set</span>
+                                    </div>
+                                </button>
+                                <div id="tooltip-upload-destination" class="feature-tooltip" style="display: none;">
+                                    <div style="font-weight: 600; margin-bottom: 4px;">📁 Upload Destination</div>
+                                    <div style="font-size: 13px; opacity: 0.9;">Select the folder where PDFs will be saved for processing</div>
+                                    <div style="position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 6px solid #1f2937;"></div>
                                 </div>
-                            </button>
+                            </div>
                         </div>
                         <div class="flex items-start gap-2 text-xs text-[color:var(--muted-foreground)] bg-[color:var(--muted)]/20 px-3 py-2 rounded-lg border border-[color:var(--border)] max-w-2xl flex-1 min-w-[300px]">
                             <i data-lucide="info" class="w-3.5 h-3.5 flex-shrink-0 mt-0.5 text-[color:var(--primary)]"></i>
@@ -91,23 +110,24 @@
                 
                 <!-- Upload Zone -->
                 <div class="lg:col-span-2">
-                    <div class="upload-zone entry-card p-8 sm:p-12 lg:p-16 text-center cursor-pointer" id="upload-zone">
-                        <input type="file" id="file-input" accept=".pdf" multiple class="hidden" aria-label="Select PDF files to upload">
-                        
-                        <div class="flex flex-col items-center gap-4">
-                            <div class="p-6 rounded-full bg-[color:var(--primary)]/10">
-                                <i data-lucide="file-plus" class="w-12 h-12 sm:w-16 sm:h-16 text-[color:var(--primary)]"></i>
-                            </div>
+                    <div class="interactive-btn-wrapper" style="position: relative;">
+                        <div data-spotlight="button" class="upload-zone entry-card p-8 sm:p-12 lg:p-16 text-center cursor-pointer" id="upload-zone">
+                            <input type="file" id="file-input" accept=".pdf" multiple class="hidden" aria-label="Select PDF files to upload">
                             
-                            <div>
-                                <h2 class="text-xl sm:text-2xl lg:text-3xl font-bold text-[color:var(--foreground)] mb-2">Drop PDF Files Here</h2>
-                                <p class="text-sm sm:text-base text-[color:var(--muted-foreground)] mb-4">or click anywhere to browse your computer</p>
-                            </div>
+                            <div class="flex flex-col items-center gap-4">
+                                <div class="p-6 rounded-full bg-[color:var(--primary)]/10">
+                                    <i data-lucide="file-plus" class="w-12 h-12 sm:w-16 sm:h-16 text-[color:var(--primary)]"></i>
+                                </div>
+                                
+                                <div>
+                                    <h2 class="text-xl sm:text-2xl lg:text-3xl font-bold text-[color:var(--foreground)] mb-2">Drop PDF Files Here</h2>
+                                    <p class="text-sm sm:text-base text-[color:var(--muted-foreground)] mb-4">or click anywhere to browse your computer</p>
+                                </div>
 
-                            <button class="hero-button btn-primary flex items-center gap-2 px-6 sm:px-8 py-3 text-sm sm:text-base font-semibold" id="browse-btn">
-                                <i data-lucide="folder-open" class="w-4 h-4 sm:w-5 sm:h-5"></i>
-                                Browse Files
-                            </button>
+                                <button class="hero-button btn-primary flex items-center gap-2 px-6 sm:px-8 py-3 text-sm sm:text-base font-semibold" id="browse-btn">
+                                    <i data-lucide="folder-open" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                                    Browse Files
+                                </button>
 
                             <div class="mt-4 space-y-1.5 text-[color:var(--muted-foreground)]">
                                 <p class="flex items-center gap-2 justify-center text-xs sm:text-sm">
@@ -121,6 +141,12 @@
                             </div>
                         </div>
                     </div>
+                    <div id="tooltip-upload-zone" class="feature-tooltip" style="display: none;">
+                        <div style="font-weight: 600; margin-bottom: 4px;">📤 Upload Zone</div>
+                        <div style="font-size: 13px; opacity: 0.9;">Drag and drop PDF files here or click to browse. Files are saved directly to your selected destination folder.</div>
+                        <div style="position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 6px solid #1f2937;"></div>
+                    </div>
+                </div>
                     <div class="mt-3 flex justify-end">
                         <button
                             id="upload-panel-trigger"
@@ -1276,5 +1302,150 @@
             <!-- Upload items will be added here -->
         </div>
     </div>
+
+    <!-- Spotlight System -->
+    <script src="assets/js/spotlight-system.js"></script>
+    <script src="assets/js/tooltip-positioner.js"></script>
+
+    <style>
+        @keyframes simpleFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .interactive-btn-wrapper:hover > div:first-child,
+        .interactive-btn-wrapper:hover > button {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2) !important;
+        }
+    </style>
+
+    <script>
+        // Initialize spotlight system for upload page
+        const uploadPageSpotlight = new SpotlightSystem({
+            overlaySelector: '#uploadPageOverlay',
+            targets: '[data-spotlight="button"]',
+            closeButton: null,
+            modalSelector: 'body',
+            padding: 14,
+            dimOpacity: 0.55
+        });
+
+        // Initialize tooltip positioner
+        window.uploadTooltipPositioner = new TooltipPositioner({
+            tooltipSelector: '.feature-tooltip',
+            padding: 10,
+            arrowSize: 6
+        });
+        const uploadTooltipPositioner = window.uploadTooltipPositioner;
+
+        // Enable spotlight on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Enable spotlight system after a short delay to ensure page is fully loaded
+            setTimeout(() => {
+                uploadPageSpotlight.enable();
+            }, 500);
+        });
+
+        // Toggle tooltip function
+        function toggleUploadTooltip(tooltipId) {
+            const tooltip = document.getElementById(tooltipId);
+            if (!tooltip) return;
+            
+            const isVisible = tooltip.style.display === 'block';
+            
+            // Hide all other tooltips first
+            document.querySelectorAll('.feature-tooltip').forEach(t => {
+                if (t.id !== tooltipId) {
+                    t.style.display = 'none';
+                }
+            });
+            
+            // Toggle this tooltip
+            const newDisplay = isVisible ? 'none' : 'block';
+            
+            tooltip.style.transform = 'none';
+            tooltip.style.animation = 'none';
+            
+            if (!isVisible) {
+                tooltip.style.display = 'none';
+            } else {
+                tooltip.style.display = 'none';
+                tooltip.style.visibility = 'hidden';
+                tooltip.style.opacity = '0';
+                tooltip.style.left = '';
+                tooltip.style.top = '';
+            }
+            
+            // Position tooltip FIRST (while hidden), THEN show with animation + cutout simultaneously
+            if (!isVisible) {
+                const wrapper = tooltip.closest('.interactive-btn-wrapper');
+                if (wrapper) {
+                    const trigger = wrapper.querySelector('button') || wrapper.querySelector('[data-spotlight]');
+                    if (trigger) {
+                        // Position AND show tooltip
+                        uploadTooltipPositioner.positionTooltip(tooltip, trigger);
+                        
+                        // Update cutout to match visible tooltip
+                        uploadPageSpotlight.updateHoles();
+                    }
+                }
+            } else {
+                // Update spotlight immediately when hiding
+                uploadPageSpotlight.updateHoles();
+            }
+            
+            // Auto-hide after 5 seconds
+            if (!isVisible) {
+                setTimeout(() => {
+                    tooltip.style.display = 'none';
+                    uploadPageSpotlight.updateHoles();
+                }, 5000);
+            }
+        }
+
+        // Add click handlers to interactive elements
+        document.addEventListener('DOMContentLoaded', function() {
+            // PC Number badge
+            const pcNumberBadge = document.getElementById('pc-number-badge');
+            if (pcNumberBadge) {
+                pcNumberBadge.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    toggleUploadTooltip('tooltip-pc-number');
+                });
+            }
+
+            // Upload Destination badge
+            const uploadDestBadge = document.getElementById('upload-destination-badge');
+            if (uploadDestBadge) {
+                uploadDestBadge.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    toggleUploadTooltip('tooltip-upload-destination');
+                });
+            }
+
+            // Upload Zone
+            const uploadZone = document.getElementById('upload-zone');
+            if (uploadZone) {
+                uploadZone.addEventListener('click', function(e) {
+                    // Only show tooltip if clicking on the zone itself, not during file selection
+                    if (e.target === uploadZone || uploadZone.contains(e.target)) {
+                        toggleUploadTooltip('tooltip-upload-zone');
+                    }
+                });
+            }
+
+            // Close tooltips when clicking outside
+            document.addEventListener('click', function(e) {
+                if (!e.target.closest('.interactive-btn-wrapper')) {
+                    document.querySelectorAll('.feature-tooltip').forEach(tooltip => {
+                        if (tooltip.style.display === 'block') {
+                            tooltip.style.display = 'none';
+                            uploadPageSpotlight.updateHoles();
+                        }
+                    });
+                }
+            });
+        });
+    </script>
 </body>
 </html>
