@@ -1403,49 +1403,9 @@
             }
         }
 
-        // Add click handlers to interactive elements
-        document.addEventListener('DOMContentLoaded', function() {
-            // PC Number badge
-            const pcNumberBadge = document.getElementById('pc-number-badge');
-            if (pcNumberBadge) {
-                pcNumberBadge.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    toggleUploadTooltip('tooltip-pc-number');
-                });
-            }
-
-            // Upload Destination badge
-            const uploadDestBadge = document.getElementById('upload-destination-badge');
-            if (uploadDestBadge) {
-                uploadDestBadge.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    toggleUploadTooltip('tooltip-upload-destination');
-                });
-            }
-
-            // Upload Zone
-            const uploadZone = document.getElementById('upload-zone');
-            if (uploadZone) {
-                uploadZone.addEventListener('click', function(e) {
-                    // Only show tooltip if clicking on the zone itself, not during file selection
-                    if (e.target === uploadZone || uploadZone.contains(e.target)) {
-                        toggleUploadTooltip('tooltip-upload-zone');
-                    }
-                });
-            }
-
-            // Close tooltips when clicking outside
-            document.addEventListener('click', function(e) {
-                if (!e.target.closest('.interactive-btn-wrapper')) {
-                    document.querySelectorAll('.feature-tooltip').forEach(tooltip => {
-                        if (tooltip.style.display === 'block') {
-                            tooltip.style.display = 'none';
-                            uploadPageSpotlight.updateHoles();
-                        }
-                    });
-                }
-            });
-        });
+        // Spotlight effect provides visual guidance to interactive elements
+        // The existing onclick handlers (showPCNumberDialog, showUploadDestinationDialog) 
+        // provide the primary interaction, so no additional tooltip handlers are needed
     </script>
 </body>
 </html>
