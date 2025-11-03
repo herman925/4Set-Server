@@ -1561,6 +1561,7 @@
       const submissions = [];
       let orphanedCount = 0;
       let unexpectedMissingCount = 0;
+      const failedConversions = [];
       
       for (const record of records) {
         try {
@@ -1724,6 +1725,11 @@
           submissions.push(submission);
         } catch (error) {
           console.error('[JotFormCache] Failed to convert record to submission:', record.coreId, error);
+          failedConversions.push({ 
+            coreId: record.coreId || 'unknown', 
+            grade: record.grade || 'unknown',
+            error: error.message || String(error)
+          });
         }
       }
       
@@ -1735,6 +1741,9 @@
       }
       if (unexpectedMissingCount > 0) {
         console.warn(`[JotFormCache] ⚠️  Skipped (missing original): ${unexpectedMissingCount}`);
+      }
+      if (failedConversions.length > 0) {
+        console.warn(`[JotFormCache] ⚠️  ${failedConversions.length} records failed conversion:`, failedConversions);
       }
       console.log(`[JotFormCache] ===============================================`);
       return submissions;
