@@ -698,16 +698,17 @@
                   <code>git status</code>
                 </div>
               </li>
-              <li><strong>Stage changes:</strong>
+              <li><strong>Stage the files you changed:</strong>
                 <div class="code-block mt-1">
-                  <code>git add user_guide_processor_setup.html assets/css/user-guides.css config/agent.json</code>
+                  <code>git add path/to/changed-file.ext</code>
                 </div>
-                <p class="text-sm text-gray-600 mt-2">Include any other modified files as needed (screenshots, scripts, etc.).</p>
+                <p class="text-sm text-gray-600 mt-2">Repeat <code>git add</code> for every modified file. Example for a documentation update: <code>git add user_guide_processor_setup.html assets/css/user-guides.css</code>.</p>
               </li>
               <li><strong>Commit with a descriptive message:</strong>
                 <div class="code-block mt-1">
-                  <code>git commit -m "docs: update processor setup guide"</code>
+                  <code>git commit -m "docs: refresh processor setup guide"</code>
                 </div>
+                <p class="text-sm text-gray-600 mt-1">Use a message that summarises the change (e.g., <code>"chore: update screenshots"</code>).</p>
               </li>
               <li><strong>Push to GitHub:</strong>
                 <div class="code-block mt-1">
@@ -730,7 +731,7 @@
   <footer class="bg-white shadow-md mt-12">
     <div class="container mx-auto px-6 py-6 text-center text-sm text-gray-600">
       <p>© 2025 All rights reserved – Herman Chan</p>
-      <p class="mt-1">System available on <a href="https://github.com/herman925/4Set-Server" class="text-blue-600 hover:underline">GitHub</a></p>
+      <p class="mt-1">KeySteps@JC, The Education University of Hong Kong · System available on <a href="https://github.com/herman925/4Set-Server" class="text-blue-600 hover:underline">GitHub</a></p>
     </div>
   </footer>
 
