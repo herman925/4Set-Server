@@ -1681,7 +1681,7 @@
             }
           ],
           "scoring": {
-            "correctAnswer": "1"
+            "correctAnswer": "2"
           }
         },
         {
@@ -1721,7 +1721,7 @@
             }
           ],
           "scoring": {
-            "correctAnswer": "1"
+            "correctAnswer": "4"
           }
         },
         {
@@ -1761,7 +1761,7 @@
             }
           ],
           "scoring": {
-            "correctAnswer": "1"
+            "correctAnswer": "2"
           }
         },
         {
@@ -1841,7 +1841,7 @@
             }
           ],
           "scoring": {
-            "correctAnswer": "1"
+            "correctAnswer": "4"
           }
         },
         {
@@ -1881,7 +1881,7 @@
             }
           ],
           "scoring": {
-            "correctAnswer": "1"
+            "correctAnswer": "2"
           }
         },
         {
@@ -1921,7 +1921,7 @@
             }
           ],
           "scoring": {
-            "correctAnswer": "1"
+            "correctAnswer": "3"
           }
         },
         {
@@ -2001,7 +2001,7 @@
             }
           ],
           "scoring": {
-            "correctAnswer": "1"
+            "correctAnswer": "2"
           }
         },
         {
@@ -2041,7 +2041,7 @@
             }
           ],
           "scoring": {
-            "correctAnswer": "1"
+            "correctAnswer": "4"
           }
         },
         {
@@ -2081,7 +2081,7 @@
             }
           ],
           "scoring": {
-            "correctAnswer": "1"
+            "correctAnswer": "4"
           }
         },
         {
@@ -2121,7 +2121,7 @@
             }
           ],
           "scoring": {
-            "correctAnswer": "1"
+            "correctAnswer": "3"
           }
         }
       ]
