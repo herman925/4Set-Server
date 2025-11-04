@@ -419,14 +419,16 @@
     const viewByTaskBtn = document.getElementById('view-by-task-btn');
     
     if (viewBySetBtn && viewByTaskBtn) {
+      // Extract classId once for both event handlers
+      const urlParams = new URLSearchParams(window.location.search);
+      const classId = urlParams.get('classId');
+      
       viewBySetBtn.addEventListener('click', () => {
         currentViewMode = 'set';
         updateViewModeButtons();
         renderStudentTable();
         
         // Save preference
-        const urlParams = new URLSearchParams(window.location.search);
-        const classId = urlParams.get('classId');
         if (window.CheckingSystemPreferences && classId) {
           window.CheckingSystemPreferences.saveViewMode(classId, 'set');
           console.log('[ClassPage] Saved view mode preference: set');
@@ -439,8 +441,6 @@
         renderStudentTable();
         
         // Save preference
-        const urlParams = new URLSearchParams(window.location.search);
-        const classId = urlParams.get('classId');
         if (window.CheckingSystemPreferences && classId) {
           window.CheckingSystemPreferences.saveViewMode(classId, 'task');
           console.log('[ClassPage] Saved view mode preference: task');

@@ -3274,6 +3274,10 @@
    * Setup UI button handlers
    */
   function setupUIHandlers() {
+    // Extract coreId once at the beginning for all handlers
+    const urlParams = new URLSearchParams(window.location.search);
+    const coreId = urlParams.get('coreId');
+    
     // Back button - navigate to previous page
     const backButton = document.getElementById('back-button');
     if (backButton) {
@@ -3287,8 +3291,6 @@
     const taskFilter = document.getElementById('task-filter');
     if (taskFilter) {
       // Restore saved filter preference
-      const urlParams = new URLSearchParams(window.location.search);
-      const coreId = urlParams.get('coreId');
       if (window.CheckingSystemPreferences && coreId) {
         const savedFilter = window.CheckingSystemPreferences.getTaskFilter(coreId);
         if (savedFilter) {
