@@ -1192,7 +1192,9 @@
           
           isSyncing = false;
           currentSyncProgress = 100;
-          await updateStatusPill();
+          // Skip cache check since validation cache wasn't built (student data unavailable)
+          // Submissions cache is valid, so pill should show green
+          await updateStatusPill(null, true);
           
           modalTitle.textContent = 'Submissions Cached';
           modalMessage.textContent = 'Submission data cached successfully. Validation will complete when you navigate to a class page.';
