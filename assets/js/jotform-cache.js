@@ -1441,7 +1441,12 @@
             for (const [qid, answerObj] of Object.entries(submission.answers)) {
               // Use the field name if available, otherwise use QID
               const fieldName = answerObj.name || `q${qid}`;
-              const value = answerObj.answer || answerObj.text || '';
+              
+              // CRITICAL: For radio_text questions, .text contains question ID (e.g., 'MPT_1_r_Q1'), NOT the answer
+              // Only .answer field should be used. Falling back to .text creates dummy placeholder values
+              // that block real answers in merge logic (earliest non-empty value wins).
+              // For other question types, .text may contain valid text responses.
+              const value = answerObj.answer || '';
               
               // Skip empty values and the student-id we already processed
               if (value && qid !== STUDENT_ID_QID) {
