@@ -92,9 +92,16 @@
   }
 
   /**
-   * Check if BOTH caches exist and are valid
-   * - Submissions cache (raw JotForm data)
-   * - Validation cache (TaskValidator results)
+   * Check if submissions cache exists and is valid
+   * 
+   * IMPORTANT: This function only checks SUBMISSIONS cache, not validation cache.
+   * Validation cache is optional and built on-demand when navigating to class/school pages.
+   * 
+   * This ensures the homepage status pill shows green after successful data fetch,
+   * even if validation cache hasn't been built yet or was cleared during Qualtrics sync.
+   * 
+   * - Submissions cache (raw JotForm data) - REQUIRED
+   * - Validation cache (TaskValidator results) - OPTIONAL (built on-demand)
    */
   async function isCacheReady() {
     const checkStartTime = Date.now();
@@ -106,7 +113,7 @@
     }
     
     try {
-      // Check submissions cache
+      // Check submissions cache (this is the primary requirement)
       const submissionsCheckStart = Date.now();
       const submissionsStats = await window.JotFormCache.getCacheStats();
       const submissionsCheckEnd = Date.now();
@@ -118,19 +125,11 @@
         return false;
       }
       
-      // Check validation cache
-      const validationCheckStart = Date.now();
-      const validationCache = await window.JotFormCache.loadValidationCache();
-      const validationCheckEnd = Date.now();
-      console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Validation check took ${validationCheckEnd - validationCheckStart}ms`);
+      // Validation cache is OPTIONAL - it's built on-demand when navigating to class pages
+      // Don't check it here to avoid false negatives after Qualtrics sync (which clears validation cache)
+      // or when student data isn't available during initial sync
       
-      if (!validationCache || validationCache.size === 0) {
-        console.log('[CacheUI] Validation cache not ready');
-        console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Total time ${Date.now() - checkStartTime}ms, result: FALSE (validation missing)`);
-        return false;
-      }
-      
-      console.log('[CacheUI] Both caches ready: submissions + validation');
+      console.log('[CacheUI] Submissions cache ready');
       console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Total time ${Date.now() - checkStartTime}ms, result: TRUE ✅`);
       return true;
     } catch (error) {
