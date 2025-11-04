@@ -726,6 +726,25 @@ Level 4: Student View (checking_system_4_student.html)
     ↓ Individual student detail validation
 ```
 
+### User Preferences & State Persistence
+
+The Checking System automatically saves user interface preferences to prevent view resets when navigating between pages:
+
+**Saved Preferences:**
+- **Section Expansion/Collapse**: All `<details>` element states (open/closed) are preserved per page
+- **View Mode (Class Page)**: Choice between "by Set" and "by Task" views is remembered per class
+- **Grade Selection (Student Page)**: Selected grade (K1/K2/K3) is remembered per student
+- **Task Filter (Student Page)**: Filter dropdown selection is remembered per student
+
+**Implementation:**
+- Uses browser `localStorage` for persistence
+- Preferences are scoped to specific entities (classId, coreId, schoolId, etc.)
+- Graceful fallback if localStorage is unavailable
+- Managed by `assets/js/checking-system-preferences.js` utility
+
+**Usage:**
+No action required from users - preferences are saved automatically as you interact with the interface. Your view settings will be restored when you return to a page.
+
 ### Key Questions Answered
 
 #### 1. Data Completeness
