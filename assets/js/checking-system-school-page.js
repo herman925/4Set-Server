@@ -116,6 +116,12 @@
     // Setup filters
     setupFilters();
 
+    // Set up automatic section state tracking
+    if (window.CheckingSystemPreferences) {
+      window.CheckingSystemPreferences.autoTrackSectionStates(schoolId);
+      console.log('[SchoolPage] Enabled section state tracking');
+    }
+
     lucide.createIcons();
   }
 

@@ -30,6 +30,15 @@
       return;
     }
 
+    // Load saved view mode preference
+    if (window.CheckingSystemPreferences) {
+      const savedViewMode = window.CheckingSystemPreferences.getViewMode(classId);
+      if (savedViewMode) {
+        currentViewMode = savedViewMode;
+        console.log(`[ClassPage] Restored view mode: ${currentViewMode}`);
+      }
+    }
+
     // Load system config
     await loadSystemConfig();
     
@@ -85,6 +94,12 @@
 
     // Setup filters
     setupFilters();
+
+    // Set up automatic section state tracking
+    if (window.CheckingSystemPreferences) {
+      window.CheckingSystemPreferences.autoTrackSectionStates(classId);
+      console.log('[ClassPage] Enabled section state tracking');
+    }
 
     lucide.createIcons();
   }
@@ -404,16 +419,32 @@
     const viewByTaskBtn = document.getElementById('view-by-task-btn');
     
     if (viewBySetBtn && viewByTaskBtn) {
+      // Extract classId once for both event handlers
+      const urlParams = new URLSearchParams(window.location.search);
+      const classId = urlParams.get('classId');
+      
       viewBySetBtn.addEventListener('click', () => {
         currentViewMode = 'set';
         updateViewModeButtons();
         renderStudentTable();
+        
+        // Save preference
+        if (window.CheckingSystemPreferences && classId) {
+          window.CheckingSystemPreferences.saveViewMode(classId, 'set');
+          console.log('[ClassPage] Saved view mode preference: set');
+        }
       });
       
       viewByTaskBtn.addEventListener('click', () => {
         currentViewMode = 'task';
         updateViewModeButtons();
         renderStudentTable();
+        
+        // Save preference
+        if (window.CheckingSystemPreferences && classId) {
+          window.CheckingSystemPreferences.saveViewMode(classId, 'task');
+          console.log('[ClassPage] Saved view mode preference: task');
+        }
       });
     }
   }

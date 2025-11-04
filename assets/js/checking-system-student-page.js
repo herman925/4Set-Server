@@ -314,6 +314,21 @@
     // Determine which grade to display
     if (yearParam && availableGrades.includes(yearParam)) {
       selectedGrade = yearParam;
+    } else if (window.CheckingSystemPreferences) {
+      // Check for saved grade preference
+      const savedGrade = window.CheckingSystemPreferences.getGradeSelection(coreId);
+      if (savedGrade && availableGrades.includes(savedGrade)) {
+        selectedGrade = savedGrade;
+        console.log(`[StudentPage] Restored saved grade preference: ${savedGrade}`);
+      } else if (availableGrades.length > 0) {
+        // Default to K3 if available, otherwise the highest grade
+        selectedGrade = availableGrades.includes('K3') ? 'K3' : availableGrades[0];
+      } else {
+        console.error('[StudentPage] ❌ No valid grade found for student');
+        console.error('[StudentPage] Student records:', studentRecords);
+        showError('No valid grade data found for this student. All records have undefined or empty year field.');
+        return;
+      }
     } else if (availableGrades.length > 0) {
       // Default to K3 if available, otherwise the highest grade
       selectedGrade = availableGrades.includes('K3') ? 'K3' : availableGrades[0];
@@ -3257,8 +3272,13 @@
 
   /**
    * Setup UI button handlers
+   * Note: Called after init() completes, so all DOM elements (tasks, sets) are fully rendered
    */
   function setupUIHandlers() {
+    // Extract coreId once at the beginning for all handlers
+    const urlParams = new URLSearchParams(window.location.search);
+    const coreId = urlParams.get('coreId');
+    
     // Back button - navigate to previous page
     const backButton = document.getElementById('back-button');
     if (backButton) {
@@ -3271,10 +3291,27 @@
     // Task view filter dropdown
     const taskFilter = document.getElementById('task-filter');
     if (taskFilter) {
+      // Restore saved filter preference
+      // Safe to call applyTaskFilter here since task DOM elements are already rendered
+      if (window.CheckingSystemPreferences && coreId) {
+        const savedFilter = window.CheckingSystemPreferences.getTaskFilter(coreId);
+        if (savedFilter) {
+          taskFilter.value = savedFilter;
+          applyTaskFilter(savedFilter);
+          console.log(`[StudentPage] Restored saved task filter: ${savedFilter}`);
+        }
+      }
+      
       taskFilter.addEventListener('change', (e) => {
         const filterValue = e.target.value;
         console.log(`[StudentPage] Task filter changed to: ${filterValue}`);
         applyTaskFilter(filterValue);
+        
+        // Save filter preference
+        if (window.CheckingSystemPreferences && coreId) {
+          window.CheckingSystemPreferences.saveTaskFilter(coreId, filterValue);
+          console.log(`[StudentPage] Saved task filter preference: ${filterValue}`);
+        }
       });
     }
     
@@ -3569,6 +3606,12 @@
     urlParams.set('year', grade);
     window.history.replaceState({}, '', `${window.location.pathname}?${urlParams}`);
     
+    // Save grade preference
+    if (window.CheckingSystemPreferences && coreId) {
+      window.CheckingSystemPreferences.saveGradeSelection(coreId, grade);
+      console.log(`[StudentPage] Saved grade preference: ${grade}`);
+    }
+    
     // Reload student data for selected grade
     await loadStudentFromCache(coreId, cachedDataGlobal, grade);
     
@@ -3595,6 +3638,14 @@
       // No loading overlay shown - cache should be ready
       await init();
       setupUIHandlers();
+      
+      // Set up automatic section state tracking
+      const urlParams = new URLSearchParams(window.location.search);
+      const coreId = urlParams.get('coreId');
+      if (window.CheckingSystemPreferences && coreId) {
+        window.CheckingSystemPreferences.autoTrackSectionStates(coreId);
+        console.log('[StudentPage] Enabled section state tracking');
+      }
     } catch (error) {
       console.error('[StudentPage] Initialization failed:', error);
       showError(`Failed to load student data: ${error.message}`);
