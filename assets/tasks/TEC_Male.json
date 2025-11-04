@@ -840,7 +840,10 @@
             "image": "images/TEC_M/TEC_B_Q17.2.3.jpeg"
           }
         }
-      ]
+      ],
+      "scoring": {
+        "correctAnswer": "4"
+      }
     },
     {
       "id": "TEC_M_Q18",
