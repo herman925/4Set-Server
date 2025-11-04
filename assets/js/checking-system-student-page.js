@@ -3272,6 +3272,7 @@
 
   /**
    * Setup UI button handlers
+   * Note: Called after init() completes, so all DOM elements (tasks, sets) are fully rendered
    */
   function setupUIHandlers() {
     // Extract coreId once at the beginning for all handlers
@@ -3291,6 +3292,7 @@
     const taskFilter = document.getElementById('task-filter');
     if (taskFilter) {
       // Restore saved filter preference
+      // Safe to call applyTaskFilter here since task DOM elements are already rendered
       if (window.CheckingSystemPreferences && coreId) {
         const savedFilter = window.CheckingSystemPreferences.getTaskFilter(coreId);
         if (savedFilter) {

@@ -177,16 +177,14 @@
       }
     });
     
-    // Set up listeners to save state changes
+    // Set up listeners to save state changes (optimized to only update changed element)
     details.forEach((detail, index) => {
       const detailId = detail.id || `detail_${index}`;
       
       detail.addEventListener('toggle', () => {
-        const currentStates = {};
-        document.querySelectorAll(selector).forEach((d, i) => {
-          const id = d.id || `detail_${i}`;
-          currentStates[id] = d.open;
-        });
+        // Get existing states and update only the changed element
+        const currentStates = getSectionStates(pageId);
+        currentStates[detailId] = detail.open;
         saveSectionStates(pageId, currentStates);
       });
     });
