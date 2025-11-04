@@ -69,6 +69,13 @@
     // Setup filters
     setupFilters();
 
+    // Set up automatic section state tracking
+    if (window.CheckingSystemPreferences) {
+      const pageId = group ? `district_${district}_group_${group}` : `district_${district}`;
+      window.CheckingSystemPreferences.autoTrackSectionStates(pageId);
+      console.log('[DistrictPage] Enabled section state tracking');
+    }
+
     lucide.createIcons();
   }
 
