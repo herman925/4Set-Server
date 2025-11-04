@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PRD Tree - 4Set System Documentation</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="../assets/js/tailwind.config.js"></script>
+  <link rel="stylesheet" href="../assets/css/theme_pantone_light_1.css">
+  <link rel="stylesheet" href="../assets/css/global.css">
+  <link rel="icon" type="image/x-icon" href="../assets/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+</head>
+<body class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
+  <!-- Header -->
+  <header class="bg-white shadow-md sticky top-0 z-50">
+    <div class="container mx-auto px-6 py-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <a href="../index.html" class="text-2xl font-bold" style="color: var(--primary)">4Set System</a>
+          <span class="text-gray-400">|</span>
+          <h1 class="text-xl font-semibold text-gray-700">Product Requirements Documents</h1>
+        </div>
+        <div class="flex items-center gap-3">
+          <a href="../guide_homepage.html" class="text-gray-600 hover:text-primary transition p-2 rounded-lg hover:bg-gray-100" title="Back to Guide Homepage">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-6 py-12">
+    <!-- Introduction -->
+    <div class="text-center mb-12">
+      <div class="inline-flex items-center gap-3 mb-4">
+        <div class="text-6xl">🌳</div>
+        <h2 class="text-4xl font-bold" style="color: var(--primary)">PRD Tree</h2>
+      </div>
+      <p class="text-lg text-gray-600 max-w-3xl mx-auto">
+        Comprehensive Product Requirements Documents outlining feature specifications, system architecture, and design decisions for the 4Set System.
+      </p>
+    </div>
+
+    <!-- Search Box -->
+    <div class="mb-8 max-w-2xl mx-auto">
+      <div class="relative">
+        <input 
+          type="text" 
+          id="searchInput"
+          placeholder="Search PRD documents..."
+          class="w-full px-4 py-3 pl-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+        >
+        <i data-lucide="search" class="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400"></i>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div id="loadingState" class="text-center py-12">
+      <div class="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <p class="mt-4 text-gray-600">Loading PRD documents...</p>
+    </div>
+
+    <!-- Documents Container (dynamically populated) -->
+    <div id="documentsContainer" style="display: none;"></div>
+
+    <!-- Back to Top -->
+    <div class="text-center mt-12">
+      <a href="../guide_homepage.html" class="inline-flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-lg font-semibold hover:opacity-90 transition-opacity">
+        <i data-lucide="arrow-left" class="w-5 h-5"></i>
+        Back to Guide Homepage
+      </a>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-white border-t border-gray-200 mt-16">
+    <div class="max-w-7xl mx-auto px-6 py-8 text-center text-sm text-gray-600">
+      <p>© 2025 All rights reserved - Herman Chan</p>
+      <p class="mt-2">
+        System available on 
+        <a href="https://github.com/herman925/4Set-Server" target="_blank" rel="noopener noreferrer" class="text-primary hover:underline">GitHub</a>
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Load and render PRD documents
+    async function loadPRDDocuments() {
+      try {
+        const response = await fetch('manifest.json');
+        const manifest = await response.json();
+        
+        renderDocuments(manifest);
+        
+        // Hide loading state, show documents
+        document.getElementById('loadingState').style.display = 'none';
+        document.getElementById('documentsContainer').style.display = 'block';
+        
+        // Reinitialize Lucide icons after rendering
+        lucide.createIcons();
+        
+        // Setup search functionality
+        setupSearch();
+      } catch (error) {
+        console.error('Error loading PRD manifest:', error);
+        document.getElementById('loadingState').innerHTML = `
+          <div class="text-red-600">
+            <p class="text-xl font-semibold mb-2">Error loading documents</p>
+            <p class="text-sm">Please try refreshing the page or contact support if the issue persists.</p>
+          </div>
+        `;
+      }
+    }
+
+    function renderDocuments(manifest) {
+      const container = document.getElementById('documentsContainer');
+      const categories = manifest.categories;
+      const documents = manifest.documents;
+      
+      // Group documents by category
+      const docsByCategory = {};
+      documents.forEach(doc => {
+        if (!docsByCategory[doc.category]) {
+          docsByCategory[doc.category] = [];
+        }
+        docsByCategory[doc.category].push(doc);
+      });
+      
+      // Render each category
+      const categoryOrder = ['core', 'processor', 'features', 'integration', 'guides'];
+      let html = '';
+      
+      categoryOrder.forEach(categoryKey => {
+        const category = categories[categoryKey];
+        const categoryDocs = docsByCategory[categoryKey];
+        
+        if (!category || !categoryDocs || categoryDocs.length === 0) return;
+        
+        // Determine grid columns based on category
+        const gridCols = categoryKey === 'core' || categoryKey === 'integration' ? 'md:grid-cols-2' : 'md:grid-cols-2 lg:grid-cols-3';
+        
+        html += `
+          <div class="mb-12">
+            <h3 class="text-2xl font-semibold mb-6 flex items-center gap-2" style="color: var(--primary)">
+              <i data-lucide="${category.icon}" class="w-6 h-6"></i>
+              ${category.name}
+            </h3>
+            <div class="grid ${gridCols} gap-6">
+        `;
+        
+        categoryDocs.forEach(doc => {
+          html += `
+            <a href="${doc.filename}" class="prd-card bg-white rounded-xl shadow-md hover:shadow-xl transition-all p-6 border border-gray-200 hover:border-primary/50" data-search-title="${doc.title.toLowerCase()}" data-search-desc="${doc.description.toLowerCase()}" data-search-file="${doc.filename.toLowerCase()}">
+              <div class="flex items-start gap-4">
+                <div class="text-4xl">${doc.icon}</div>
+                <div class="flex-1">
+                  <h4 class="text-xl font-semibold mb-2" style="color: var(--primary)">${doc.title}</h4>
+                  <p class="text-sm text-gray-600 mb-3">${doc.description}</p>
+                  <span class="text-xs text-gray-500 font-mono">${doc.filename}</span>
+                </div>
+              </div>
+            </a>
+          `;
+        });
+        
+        html += `
+            </div>
+          </div>
+        `;
+      });
+      
+      container.innerHTML = html;
+    }
+
+    function setupSearch() {
+      const searchInput = document.getElementById('searchInput');
+      const prdCards = document.querySelectorAll('.prd-card');
+
+      searchInput.addEventListener('input', (e) => {
+        const searchTerm = e.target.value.toLowerCase();
+        
+        prdCards.forEach(card => {
+          const title = card.getAttribute('data-search-title');
+          const description = card.getAttribute('data-search-desc');
+          const filename = card.getAttribute('data-search-file');
+          
+          if (title.includes(searchTerm) || description.includes(searchTerm) || filename.includes(searchTerm)) {
+            card.style.display = 'flex';
+          } else {
+            card.style.display = 'none';
+          }
+        });
+      });
+    }
+
+    // Load documents when page loads
+    document.addEventListener('DOMContentLoaded', loadPRDDocuments);
+  </script>
+</body>
+</html>

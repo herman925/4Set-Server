@@ -1,0 +1,194 @@
+{
+  "generated": "auto",
+  "version": "1.0",
+  "categories": {
+    "core": {
+      "name": "Core System Documents",
+      "icon": "layers",
+      "description": "Foundational system architecture and core specifications"
+    },
+    "processor": {
+      "name": "Processor Agent",
+      "icon": "cpu",
+      "description": "Processor agent specifications and operational procedures"
+    },
+    "features": {
+      "name": "Feature Specifications",
+      "icon": "package",
+      "description": "Individual feature requirements and implementations"
+    },
+    "integration": {
+      "name": "Integration & External Systems",
+      "icon": "link",
+      "description": "External system integrations and data exchange"
+    },
+    "guides": {
+      "name": "User Guide Specifications",
+      "icon": "book-open",
+      "description": "User guide design patterns and documentation"
+    }
+  },
+  "documents": [
+    {
+      "filename": "calculation_bible.md",
+      "title": "Calculation Bible",
+      "description": "Complete calculation and validation reference for assessment scoring and termination logic",
+      "category": "core",
+      "icon": "\ud83d\udcd0"
+    },
+    {
+      "filename": "data-pipeline.md",
+      "title": "Data Pipeline",
+      "description": "End-to-end data flow architecture from PDF ingestion to JotForm submission",
+      "category": "core",
+      "icon": "\ud83d\udd04"
+    },
+    {
+      "filename": "data_security_prd.md",
+      "title": "Data Security Prd",
+      "description": "AES-256-GCM encryption, credential management, and security protocols",
+      "category": "core",
+      "icon": "\ud83d\udd12"
+    },
+    {
+      "filename": "overview_prd.md",
+      "title": "Overview Prd",
+      "description": "Complete system architecture, goals, user journey, and functional requirements for the 4Set platform",
+      "category": "core",
+      "icon": "\ud83d\udccb"
+    },
+    {
+      "filename": "processor_agent_debugmsg_prd.md",
+      "title": "Processor Agent Debugmsg Prd",
+      "description": "Standardized debug message formats and logging conventions",
+      "category": "processor",
+      "icon": "\ud83d\udc1b"
+    },
+    {
+      "filename": "processor_agent_prd.md",
+      "title": "Processor Agent Prd",
+      "description": "Detailed requirements and specifications for the processor agent",
+      "category": "processor",
+      "icon": "\u2699\ufe0f"
+    },
+    {
+      "filename": "processor_agent_runbook_prd.md",
+      "title": "Processor Agent Runbook Prd",
+      "description": "Step-by-step operational procedures for agent deployment and maintenance",
+      "category": "processor",
+      "icon": "\ud83d\udcda"
+    },
+    {
+      "filename": "assessment_uploader_prd.md",
+      "title": "Assessment Uploader Prd",
+      "description": "Web-based PDF upload interface specifications",
+      "category": "features",
+      "icon": "\ud83d\udce4"
+    },
+    {
+      "filename": "checking_system_pipeline_prd.md",
+      "title": "Checking System Pipeline Prd",
+      "description": "Pipeline architecture for validation and quality checks",
+      "category": "features",
+      "icon": "\ud83d\udd0d"
+    },
+    {
+      "filename": "checking_system_prd.md",
+      "title": "Checking System Prd",
+      "description": "Quality assurance validation rules and checking system architecture",
+      "category": "features",
+      "icon": "\u2705"
+    },
+    {
+      "filename": "pdfpipeline_prd.md",
+      "title": "Pdfpipeline Prd",
+      "description": "PDF extraction and processing pipeline specifications",
+      "category": "features",
+      "icon": "\ud83d\udcc4"
+    },
+    {
+      "filename": "task_completion_calculation_logic_prd.md",
+      "title": "Task Completion Calculation Logic Prd",
+      "description": "Calculation logic for task completion tracking",
+      "category": "features",
+      "icon": "\ud83c\udfaf"
+    },
+    {
+      "filename": "termination-rules.md",
+      "title": "Termination Rules",
+      "description": "Assessment termination logic and conditions",
+      "category": "features",
+      "icon": "\ud83d\uded1"
+    },
+    {
+      "filename": "upload_monitoring_prd.md",
+      "title": "Upload Monitoring Prd",
+      "description": "Upload failure detection and monitoring system",
+      "category": "features",
+      "icon": "\ud83d\udcca"
+    },
+    {
+      "filename": "jotform_qualtrics_integration_prd.md",
+      "title": "Jotform Qualtrics Integration Prd",
+      "description": "Complete integration specifications for JotForm and Qualtrics systems",
+      "category": "integration",
+      "icon": "\ud83d\udd17"
+    },
+    {
+      "filename": "qualtrics_implementation_plan.md",
+      "title": "Qualtrics Implementation Plan",
+      "description": "Detailed implementation plan for Qualtrics integration",
+      "category": "integration",
+      "icon": "\ud83d\udcdd"
+    },
+    {
+      "filename": "qualtrics_schema_example.json",
+      "title": "Qualtrics Schema Example",
+      "description": "Example JSON schema for Qualtrics survey data",
+      "category": "integration",
+      "icon": "\ud83d\udcbe"
+    },
+    {
+      "filename": "survey_structure.md",
+      "title": "Survey Structure",
+      "description": "Survey data structure and field definitions",
+      "category": "integration",
+      "icon": "\ud83d\udccb"
+    },
+    {
+      "filename": "assessment_uploader_user_guide_prd.md",
+      "title": "Assessment Uploader User Guide Prd",
+      "description": "User guide specifications for the assessment uploader",
+      "category": "guides",
+      "icon": "\ud83d\udcda"
+    },
+    {
+      "filename": "checking_system_user_guide_prd.md",
+      "title": "Checking System User Guide Prd",
+      "description": "User guide specifications for the checking system",
+      "category": "guides",
+      "icon": "\ud83d\udcd6"
+    },
+    {
+      "filename": "data_conflicts_user_guide_prd.md",
+      "title": "Data Conflicts User Guide Prd",
+      "description": "User guide for handling data conflicts and overwrites",
+      "category": "guides",
+      "icon": "\u26a0\ufe0f"
+    },
+    {
+      "filename": "guideline_prd.md",
+      "title": "Guideline Prd",
+      "description": "Design patterns and components for the user guide system",
+      "category": "guides",
+      "icon": "\ud83c\udfa8"
+    },
+    {
+      "filename": "qualtrics_tgmd_user_guide_prd.md",
+      "title": "Qualtrics Tgmd User Guide Prd",
+      "description": "User guide for Qualtrics TGMD assessment integration",
+      "category": "guides",
+      "icon": "\ud83c\udfc3"
+    }
+  ]
+}
