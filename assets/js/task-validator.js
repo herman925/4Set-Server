@@ -379,7 +379,13 @@ window.TaskValidator = (() => {
       let displayCorrectAnswer = null;
       if (correctAnswer !== undefined && correctAnswer !== null) {
         const matchedOption = questionOptions.find(opt => String(opt?.value).trim() === String(correctAnswer).trim());
-        displayCorrectAnswer = matchedOption?.label || correctAnswer;
+        // For image-choice questions, show the value instead of label
+        // Labels in image-choice are descriptive text for administrators, not display values
+        if (question.type === 'image-choice') {
+          displayCorrectAnswer = correctAnswer; // Use the numeric value (e.g., "4")
+        } else {
+          displayCorrectAnswer = matchedOption?.label || correctAnswer;
+        }
       } else if (isYesNoOptions) {
         correctAnswer = 'Y';
         displayCorrectAnswer = 'Y';
