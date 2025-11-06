@@ -2591,6 +2591,205 @@ c10034Records.forEach(r => {
 
 **Related Documentation**: Full technical details in `jotform_qualtrics_integration_prd.md` § Bug Fixes and Resolutions
 
+## Cache Validator: Merge-Provenance Hover Tooltips
+
+### Overview
+The Cache Validator modal now includes **merge-provenance tooltips** that display detailed source information for each question row. These tooltips help validators and QA staff understand which data source(s) provided each answer and how conflicts were resolved.
+
+### Purpose
+- **Speed up data-integrity investigations** - Quickly identify which submission or response provided each answer
+- **Confirm grade-aware merges** - Verify that data is correctly separated by grade level (K1/K2/K3)
+- **Understand conflict resolution** - See how the "earliest non-empty wins" principle was applied
+- **Debug merge behavior** - No longer need to comb through console logs or cache files
+
+### Accessing the Tooltips
+1. Open the Cache Validator modal by clicking the **"Validate"** button in the student detail page header
+2. Expand a task section to view the question-level comparison table
+3. Look for the **info icon (ℹ️)** next to each question ID
+4. **Hover** over the icon (desktop) or **tap** the icon (touch devices) to display the tooltip
+5. **Click** the icon to toggle the tooltip (stays open until clicked again or Escape key pressed)
+
+### Tooltip Content
+
+Each provenance tooltip displays:
+
+#### 1. Grade Context
+```
+Grade: K3
+```
+Shows which grade level (K1/K2/K3) the data belongs to, ensuring grade-separation transparency.
+
+#### 2. Data Sources
+Listed in chronological order (earliest first):
+
+**JotForm Source:**
+- Type: JotForm
+- Submission ID: `6362362300324596100`
+- Session Key: `10993_20251010_K3_01`
+- Timestamp: `10/10/2025, 09:15:30`
+- Data: Found ✓ (or "Not found" if field was empty)
+
+**Qualtrics Source:**
+- Type: Qualtrics
+- Response ID: `R_3kQz7vX8YqH2LpM`
+- Timestamp: `10/12/2025, 14:22:15`
+- Data: Found ✓
+
+#### 3. Winner Indication
+The source that "won" (provided the final answer) is marked with:
+```
+✓ WINNER (green badge)
+```
+
+#### 4. Resolution Explanation
+Shows why a specific source was chosen:
+- **"Earliest non-empty (JotForm before Qualtrics)"** - JotForm submission was earlier
+- **"Earliest non-empty (Qualtrics before JotForm)"** - Qualtrics response was earlier
+- **"Only source with data"** - Only one source had a value for this field
+- **"JotForm empty, Qualtrics has data"** - JotForm field was blank, Qualtrics provided value
+- **"Both sources have same value"** - No conflict, values matched
+- **"⚠️ Conflict: Values differ between sources"** - Different values detected, earliest chosen
+
+#### 5. Single-Source Cases
+For questions with only one data source:
+```
+JotForm only (no merge needed)
+```
+or
+```
+Qualtrics only (no merge needed)
+```
+
+### Accessibility Features
+
+The tooltips are designed to be fully accessible:
+
+✅ **Keyboard Navigation**
+- Tab to focus on info icon
+- Enter/Space to toggle tooltip
+- Escape to close tooltip
+
+✅ **Screen Reader Support**
+- Proper ARIA labels: `aria-label="Show data source provenance for [Question ID]"`
+- Live region updates: `role="status"` and `aria-live="polite"`
+
+✅ **Touch Devices**
+- Tap icon to toggle tooltip (stays open until tapped again)
+- No reliance on hover-only interactions
+
+✅ **Visual Indicators**
+- Icon changes color when tooltip is active
+- Tooltip positioning adapts to viewport (above/below as needed)
+
+### Implementation Details
+
+#### Data Tracking
+Provenance metadata is tracked during the merge process in `data-merger.js`:
+
+```javascript
+// Each merged record includes _fieldProvenance
+merged._fieldProvenance = {
+  'TGMD_111_Hop_t1': {
+    field: 'TGMD_111_Hop_t1',
+    grade: 'K3',
+    sources: [
+      {
+        type: 'JotForm',
+        submissionId: '6362362300324596100',
+        sessionKey: '10993_20251010_K3_01',
+        timestamp: '2025-10-10T09:15:30',
+        found: true
+      },
+      {
+        type: 'Qualtrics',
+        responseId: 'R_3kQz7vX8YqH2LpM',
+        timestamp: '2025-10-12T14:22:15',
+        found: true
+      }
+    ],
+    winner: 'jotform',
+    winnerReason: 'Earliest non-empty (JotForm before Qualtrics)',
+    winnerTimestamp: '2025-10-10T09:15:30'
+  }
+}
+```
+
+#### Grade Separation
+The provenance system respects grade boundaries:
+- Tracks grade level for each source
+- Never mixes data from different grades (K1/K2/K3)
+- Clearly displays which grade the data belongs to
+- Helps detect cross-grade contamination bugs
+
+#### Performance Considerations
+- Provenance data is computed once during merge (not on hover)
+- Stored alongside merged records in IndexedDB
+- Minimal overhead on tooltip display (pre-formatted data)
+- No repeated API calls or heavy computation
+
+### Troubleshooting Guide
+
+**Issue**: Tooltip shows "No provenance data available"
+- **Cause**: Record was created before provenance tracking was implemented
+- **Solution**: Re-sync cache to regenerate merged records with provenance
+
+**Issue**: Tooltip shows wrong grade
+- **Cause**: Grade detection issue during merge
+- **Solution**: Check grade-detector.js logic and session key format
+
+**Issue**: Tooltip shows unexpected "winner"
+- **Cause**: Timestamps may be incorrect or merge order issues
+- **Solution**: Verify timestamps in source data (JotForm created_at, Qualtrics startDate)
+
+**Issue**: Multiple sources both marked as "winner"
+- **Cause**: Bug in merge logic or provenance tracking
+- **Solution**: Check data-merger.js conflict resolution logic
+
+### UI Screenshots
+
+**Example 1: JotForm + Qualtrics Merge**
+![Provenance tooltip showing merged data](https://github.com/user-attachments/assets/eb98d845-c0c0-449b-9a78-7785271728c2)
+
+**Example 2: Conflict Resolution**
+![Provenance tooltip showing conflict resolution](https://github.com/user-attachments/assets/33e06422-0e04-4674-a945-b32982b00a7d)
+
+### Testing Notes
+
+**Manual Testing Checklist:**
+- [ ] Tooltip appears on hover (desktop)
+- [ ] Tooltip appears on tap (mobile/tablet)
+- [ ] Tooltip shows correct grade context
+- [ ] All sources listed in chronological order
+- [ ] Winner is clearly marked
+- [ ] Resolution explanation makes sense
+- [ ] Single-source cases handled gracefully
+- [ ] TGMD grouped rows show correct provenance
+- [ ] SYM/NONSYM merged logic displays properly
+- [ ] Keyboard navigation works (Tab, Escape)
+- [ ] Screen reader announces content properly
+- [ ] Tooltip positioning adapts to viewport
+
+**Edge Cases Tested:**
+- ✅ JotForm-only records (no Qualtrics data)
+- ✅ Qualtrics-only records (orphaned TGMD data)
+- ✅ Both sources have same value (no conflict)
+- ✅ Conflicting values (timestamp-based resolution)
+- ✅ Multiple JotForm submissions for same student/grade
+- ✅ Multiple Qualtrics responses for same student/grade
+- ✅ Cross-grade data (should NOT merge, shown as separate)
+- ✅ Empty fields (marked as "Not found")
+- ✅ TGMD matrix questions (grouped trial data)
+
+### Future Enhancements
+
+Potential improvements for future iterations:
+- Add download button to export provenance report per student
+- Show diff view for conflicting values (side-by-side comparison)
+- Add filtering to show only questions with conflicts
+- Include telemetry to track which tooltips are most accessed
+- Add search/filter within provenance tooltip for long source lists
+- Link directly to original submission/response in JotForm/Qualtrics
+
 ## Open Questions
 - Preferred schedule (hourly, daily, manual trigger) for production.
 - Storage choice for historical snapshots (SQLite vs. JSON vs. external DB).

@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Provenance Tooltip Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <link rel="stylesheet" href="../assets/css/global.css" />
+    <style>
+        body {
+            padding: 2rem;
+            background: #f9fafb;
+        }
+        .demo-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .demo-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+        .demo-table th, .demo-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .demo-table th {
+            background: #f3f4f6;
+            font-weight: 600;
+            font-size: 0.875rem;
+            color: #374151;
+        }
+        .demo-table tr:hover {
+            background: #f9fafb;
+        }
+    </style>
+</head>
+<body>
+    <div class="demo-container">
+        <h1 class="text-2xl font-bold text-gray-900 mb-4">Provenance Tooltip Demo</h1>
+        <p class="text-gray-600 mb-6">
+            This demo shows the new merge-provenance tooltips that appear in the Cache Validator modal.
+            Hover over or click the info icons next to question IDs to see data source information.
+        </p>
+
+        <div class="border border-gray-200 rounded-lg overflow-hidden">
+            <table class="demo-table">
+                <thead>
+                    <tr>
+                        <th>Question ID</th>
+                        <th>Cache Value</th>
+                        <th>Display Value</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Example 1: JotForm + Qualtrics merge -->
+                    <tr>
+                        <td>
+                            <div class="flex items-center">
+                                <span class="font-medium text-gray-900">TGMD_111_Hop_t1</span>
+                                <button class="provenance-trigger" 
+                                        data-provenance-demo="merge"
+                                        title="Show data source provenance">
+                                    <i data-lucide="info" class="w-3 h-3"></i>
+                                </button>
+                            </div>
+                        </td>
+                        <td class="text-blue-600 font-mono text-sm">1</td>
+                        <td class="text-purple-600 font-mono text-sm">1</td>
+                        <td class="text-sm text-green-600">✅ Match</td>
+                    </tr>
+                    
+                    <!-- Example 2: JotForm only -->
+                    <tr>
+                        <td>
+                            <div class="flex items-center">
+                                <span class="font-medium text-gray-900">ToM_Q1a</span>
+                                <button class="provenance-trigger" 
+                                        data-provenance-demo="jotform-only"
+                                        title="Show data source provenance">
+                                    <i data-lucide="info" class="w-3 h-3"></i>
+                                </button>
+                            </div>
+                        </td>
+                        <td class="text-blue-600 font-mono text-sm">Correct</td>
+                        <td class="text-purple-600 font-mono text-sm">Correct</td>
+                        <td class="text-sm text-green-600">✅ Match</td>
+                    </tr>
+                    
+                    <!-- Example 3: Qualtrics only -->
+                    <tr>
+                        <td>
+                            <div class="flex items-center">
+                                <span class="font-medium text-gray-900">TGMD_Leg</span>
+                                <button class="provenance-trigger" 
+                                        data-provenance-demo="qualtrics-only"
+                                        title="Show data source provenance">
+                                    <i data-lucide="info" class="w-3 h-3"></i>
+                                </button>
+                            </div>
+                        </td>
+                        <td class="text-blue-600 font-mono text-sm">Left</td>
+                        <td class="text-purple-600 font-mono text-sm">Left</td>
+                        <td class="text-sm text-green-600">✅ Match</td>
+                    </tr>
+
+                    <!-- Example 4: Conflict resolved by timestamp -->
+                    <tr class="bg-red-50">
+                        <td>
+                            <div class="flex items-center">
+                                <span class="font-medium text-gray-900">SYM_Q1</span>
+                                <button class="provenance-trigger" 
+                                        data-provenance-demo="conflict"
+                                        title="Show data source provenance">
+                                    <i data-lucide="info" class="w-3 h-3"></i>
+                                </button>
+                            </div>
+                        </td>
+                        <td class="text-blue-600 font-mono text-sm">Square</td>
+                        <td class="text-purple-600 font-mono text-sm">Triangle</td>
+                        <td class="text-sm text-red-600">❌ Mismatch</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h3 class="text-sm font-semibold text-blue-900 mb-2">✨ Tooltip Features:</h3>
+            <ul class="text-sm text-blue-800 space-y-1 list-disc list-inside">
+                <li><strong>Grade context</strong> - Shows which grade level (K1/K2/K3) the data belongs to</li>
+                <li><strong>Source counts</strong> - Number of JotForm submissions and Qualtrics responses checked</li>
+                <li><strong>Identifiers</strong> - Submission IDs, session keys, response IDs with timestamps</li>
+                <li><strong>Winner explanation</strong> - Why a specific source was chosen (earliest non-empty, conflict resolution)</li>
+                <li><strong>Accessible</strong> - Works with keyboard (Tab, Escape), screen readers, and touch devices</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Tooltip element (created dynamically, but shown here for demo) -->
+    <div id="provenance-tooltip" class="provenance-tooltip" style="display: none;">
+        <!-- Content will be populated by JavaScript -->
+    </div>
+
+    <script>
+        // Initialize Lucide icons
+        if (typeof lucide !== 'undefined') {
+            lucide.createIcons();
+        }
+
+        // Demo tooltip content for different scenarios
+        const demoContent = {
+            'merge': `
+                <div class="font-semibold mb-2 text-blue-300">Data Provenance: TGMD_111_Hop_t1</div>
+                <div class="text-xs text-gray-300 mb-2">Grade: K3</div>
+                <div class="mb-2"><strong class="text-blue-200">Sources:</strong></div>
+                <div class="mb-2 p-2 rounded bg-green-900/30">
+                    <div class="font-medium text-yellow-300">1. JotForm <span class="px-1 py-0.5 bg-green-500 text-white rounded text-xs">✓ WINNER</span></div>
+                    <div class="text-xs text-gray-300 mt-1">Submission ID: 6362362300324596100</div>
+                    <div class="text-xs text-gray-300">Session Key: 10993_20251010_K3_01</div>
+                    <div class="text-xs text-gray-300">Timestamp: 10/10/2025, 09:15:30</div>
+                    <div class="text-xs text-green-400">Data: Found ✓</div>
+                </div>
+                <div class="mb-2 p-2 rounded bg-gray-700/30">
+                    <div class="font-medium text-yellow-300">2. Qualtrics</div>
+                    <div class="text-xs text-gray-300 mt-1">Response ID: R_3kQz7vX8YqH2LpM</div>
+                    <div class="text-xs text-gray-300">Timestamp: 10/12/2025, 14:22:15</div>
+                    <div class="text-xs text-green-400">Data: Found ✓</div>
+                </div>
+                <div class="mt-2 p-2 bg-blue-900/30 rounded">
+                    <div class="font-semibold text-blue-200">Resolution:</div>
+                    <div class="text-xs text-gray-300">Earliest non-empty (JotForm before Qualtrics)</div>
+                    <div class="text-xs text-gray-400 mt-1">Selected: 10/10/2025, 09:15:30</div>
+                </div>
+            `,
+            'jotform-only': `
+                <div class="font-semibold mb-2 text-blue-300">Data Provenance: ToM_Q1a</div>
+                <div class="text-xs text-gray-300 mb-2">Grade: K3</div>
+                <div class="mb-2"><strong class="text-blue-200">Sources:</strong></div>
+                <div class="mb-2 p-2 rounded bg-green-900/30">
+                    <div class="font-medium text-yellow-300">1. JotForm <span class="px-1 py-0.5 bg-green-500 text-white rounded text-xs">✓ WINNER</span></div>
+                    <div class="text-xs text-gray-300 mt-1">Submission ID: 6362362300324596100</div>
+                    <div class="text-xs text-gray-300">Session Key: 10993_20251010_K3_01</div>
+                    <div class="text-xs text-gray-300">Timestamp: 10/10/2025, 09:15:30</div>
+                    <div class="text-xs text-green-400">Data: Found ✓</div>
+                </div>
+                <div class="mt-2 text-xs text-gray-400 italic">JotForm only (no merge needed)</div>
+            `,
+            'qualtrics-only': `
+                <div class="font-semibold mb-2 text-blue-300">Data Provenance: TGMD_Leg</div>
+                <div class="text-xs text-gray-300 mb-2">Grade: K3</div>
+                <div class="mb-2"><strong class="text-blue-200">Sources:</strong></div>
+                <div class="mb-2 p-2 rounded bg-green-900/30">
+                    <div class="font-medium text-yellow-300">1. Qualtrics <span class="px-1 py-0.5 bg-green-500 text-white rounded text-xs">✓ WINNER</span></div>
+                    <div class="text-xs text-gray-300 mt-1">Response ID: R_3kQz7vX8YqH2LpM</div>
+                    <div class="text-xs text-gray-300">Timestamp: 10/12/2025, 14:22:15</div>
+                    <div class="text-xs text-green-400">Data: Found ✓</div>
+                </div>
+                <div class="mt-2 p-2 bg-blue-900/30 rounded">
+                    <div class="font-semibold text-blue-200">Resolution:</div>
+                    <div class="text-xs text-gray-300">Only source with data</div>
+                </div>
+            `,
+            'conflict': `
+                <div class="font-semibold mb-2 text-blue-300">Data Provenance: SYM_Q1</div>
+                <div class="text-xs text-gray-300 mb-2">Grade: K3</div>
+                <div class="mb-2"><strong class="text-blue-200">Sources:</strong></div>
+                <div class="mb-2 p-2 rounded bg-green-900/30">
+                    <div class="font-medium text-yellow-300">1. JotForm <span class="px-1 py-0.5 bg-green-500 text-white rounded text-xs">✓ WINNER</span></div>
+                    <div class="text-xs text-gray-300 mt-1">Submission ID: 6362362300324596100</div>
+                    <div class="text-xs text-gray-300">Session Key: 10993_20251010_K3_01</div>
+                    <div class="text-xs text-gray-300">Timestamp: 10/10/2025, 09:15:30</div>
+                    <div class="text-xs text-green-400">Data: Found ✓ (Value: Square)</div>
+                </div>
+                <div class="mb-2 p-2 rounded bg-gray-700/30">
+                    <div class="font-medium text-yellow-300">2. Qualtrics</div>
+                    <div class="text-xs text-gray-300 mt-1">Response ID: R_3kQz7vX8YqH2LpM</div>
+                    <div class="text-xs text-gray-300">Timestamp: 10/12/2025, 14:22:15</div>
+                    <div class="text-xs text-green-400">Data: Found ✓ (Value: Triangle)</div>
+                </div>
+                <div class="mt-2 p-2 bg-blue-900/30 rounded">
+                    <div class="font-semibold text-blue-200">Resolution:</div>
+                    <div class="text-xs text-gray-300">Earliest non-empty (JotForm before Qualtrics)</div>
+                    <div class="text-xs text-gray-400 mt-1">Selected: 10/10/2025, 09:15:30</div>
+                    <div class="text-xs text-orange-400 mt-1">⚠️ Conflict: Values differ between sources</div>
+                </div>
+            `
+        };
+
+        // Simple tooltip handler for demo
+        const tooltip = document.getElementById('provenance-tooltip');
+        let activeButton = null;
+
+        document.querySelectorAll('.provenance-trigger').forEach(button => {
+            button.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+
+                const demoType = button.getAttribute('data-provenance-demo');
+                
+                if (activeButton === button) {
+                    // Hide if clicking same button
+                    tooltip.style.display = 'none';
+                    button.classList.remove('is-active');
+                    activeButton = null;
+                } else {
+                    // Show tooltip
+                    tooltip.innerHTML = demoContent[demoType];
+                    tooltip.style.display = 'block';
+                    
+                    // Position tooltip
+                    const rect = button.getBoundingClientRect();
+                    tooltip.style.left = `${rect.left + rect.width / 2}px`;
+                    tooltip.style.top = `${rect.top - 12}px`;
+                    tooltip.style.transform = 'translate(-50%, -100%)';
+                    tooltip.classList.add('visible');
+                    
+                    if (activeButton) {
+                        activeButton.classList.remove('is-active');
+                    }
+                    button.classList.add('is-active');
+                    activeButton = button;
+                }
+            });
+
+            button.addEventListener('mouseenter', () => {
+                const demoType = button.getAttribute('data-provenance-demo');
+                tooltip.innerHTML = demoContent[demoType];
+                tooltip.style.display = 'block';
+                
+                const rect = button.getBoundingClientRect();
+                tooltip.style.left = `${rect.left + rect.width / 2}px`;
+                tooltip.style.top = `${rect.top - 12}px`;
+                tooltip.style.transform = 'translate(-50%, -100%)';
+                tooltip.classList.add('visible');
+                button.classList.add('is-active');
+            });
+
+            button.addEventListener('mouseleave', () => {
+                if (activeButton !== button) {
+                    tooltip.classList.remove('visible');
+                    button.classList.remove('is-active');
+                    setTimeout(() => {
+                        if (!tooltip.classList.contains('visible')) {
+                            tooltip.style.display = 'none';
+                        }
+                    }, 200);
+                }
+            });
+        });
+
+        // Hide on outside click
+        document.addEventListener('click', (e) => {
+            if (!e.target.closest('.provenance-trigger') && !e.target.closest('#provenance-tooltip')) {
+                tooltip.classList.remove('visible');
+                if (activeButton) {
+                    activeButton.classList.remove('is-active');
+                    activeButton = null;
+                }
+                setTimeout(() => {
+                    if (!tooltip.classList.contains('visible')) {
+                        tooltip.style.display = 'none';
+                    }
+                }, 200);
+            }
+        });
+    </script>
+</body>
+</html>
