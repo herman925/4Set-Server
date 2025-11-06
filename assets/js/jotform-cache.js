@@ -1093,6 +1093,15 @@
             // Skip if no field name or no actual value (match student page logic)
             if (!answerObj.name || !answerObj.answer) continue;
             
+            // HTKS VALUE MAPPING: PDF sends choice indices (1, 2, 3) but we need scores (2, 1, 0)
+            // Apply same mapping as transformSubmissionsToRecords for consistency
+            if (answerObj.name.startsWith('HTKS_Q')) {
+              const choiceToScore = { '1': '2', '2': '1', '3': '0' };
+              if (choiceToScore[answerObj.answer]) {
+                answerObj.answer = choiceToScore[answerObj.answer];
+              }
+            }
+            
             // Only set if not already present (earliest non-empty value wins)
             if (!mergedAnswers[answerObj.name]) {
               mergedAnswers[answerObj.name] = answerObj;
@@ -1446,7 +1455,20 @@
               // Only .answer field should be used. Falling back to .text creates dummy placeholder values
               // that block real answers in merge logic (earliest non-empty value wins).
               // For other question types, .text may contain valid text responses.
-              const value = answerObj.answer || '';
+              let value = answerObj.answer || '';
+              
+              // HTKS VALUE MAPPING: PDF sends choice indices (1, 2, 3) but we need scores (2, 1, 0)
+              // This handles existing data already uploaded by processor_agent.ps1
+              // Mapping: PDF choice 1 → Score 2 (fully correct)
+              //          PDF choice 2 → Score 1 (partially correct)
+              //          PDF choice 3 → Score 0 (incorrect)
+              if (value && fieldName.startsWith('HTKS_Q')) {
+                const choiceToScore = { '1': '2', '2': '1', '3': '0' };
+                if (choiceToScore[value]) {
+                  console.log(`[JotFormCache] HTKS mapping: ${fieldName} choice ${value} → score ${choiceToScore[value]}`);
+                  value = choiceToScore[value];
+                }
+              }
               
               // Skip empty values and the student-id we already processed
               if (value && qid !== STUDENT_ID_QID) {

@@ -216,6 +216,7 @@ The 4Set System is a comprehensive web-based assessment data processing pipeline
    - Comprehensive testing of termination rule calculations
    - Validation of cross-field mapping consistency
    - End-to-end data integrity verification
+   - Add student page question-level provenance hover to surface merge sources
 
 3. **Documentation Enhancement**
    - API documentation for telemetry endpoints
