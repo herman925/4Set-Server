@@ -29,13 +29,16 @@ class AgentConfigGUI:
             return
 
         # Keep a snapshot of the defaults as the current file contents
+        validation = self.config.get("validation", {})
         self.defaults = {
             "relativePath": self.config.get("oneDrive", {}).get("relativePath", ""),
             "fallbackRoot": self.config.get("oneDrive", {}).get("fallbackRoot", ""),
             "watchPath": self.config.get("watchPath", ""),
             "stagingPath": self.config.get("stagingPath", ""),
             "filingRoot": self.config.get("filingRoot", ""),
-            "unsortedRoot": self.config.get("unsortedRoot", "")
+            "unsortedRoot": self.config.get("unsortedRoot", ""),
+            "metadataRetries": validation.get("metadataRetries", 3),
+            "metadataRetryDelaySeconds": validation.get("metadataRetryDelaySeconds", 2)
         }
 
         self.entries = {}
@@ -55,6 +58,25 @@ class AgentConfigGUI:
         self._add_entry(form_frame, row, "Filing Root", "filingRoot", editable=True)
         row += 1
         self._add_entry(form_frame, row, "Unsorted Root", "unsortedRoot", editable=True)
+        row += 1
+        
+        # Separator
+        separator = tk.Frame(form_frame, height=2, relief=tk.SUNKEN, borderwidth=1)
+        separator.grid(row=row, column=0, columnspan=3, sticky="ew", pady=12)
+        row += 1
+        
+        # Validation section header
+        header = tk.Label(form_frame, text="Metadata Retry Settings", font=("", 10, "bold"), anchor="w")
+        header.grid(row=row, column=0, columnspan=3, sticky="w", pady=(0, 8))
+        row += 1
+        
+        self._add_spinbox(form_frame, row, "Metadata Retries", "metadataRetries", 
+                         min_val=1, max_val=10, 
+                         description="Number of attempts to find .meta.json file")
+        row += 1
+        self._add_spinbox(form_frame, row, "Retry Delay (seconds)", "metadataRetryDelaySeconds", 
+                         min_val=1, max_val=30,
+                         description="Seconds to wait between retry attempts")
 
         button_frame = tk.Frame(master, padx=16, pady=8)
         button_frame.grid(row=1, column=0, sticky="ew")
@@ -91,7 +113,26 @@ class AgentConfigGUI:
 
         self.entries[key] = {
             "var": entry_var,
-            "editable": editable
+            "editable": editable,
+            "type": "string"
+        }
+    
+    def _add_spinbox(self, parent, row, label_text, key, min_val=1, max_val=100, description=""):
+        label = tk.Label(parent, text=label_text, anchor="w")
+        label.grid(row=row, column=0, sticky="w", pady=4)
+        
+        spinbox_var = tk.IntVar(value=self.defaults.get(key, min_val))
+        spinbox = tk.Spinbox(parent, from_=min_val, to=max_val, textvariable=spinbox_var, width=10)
+        spinbox.grid(row=row, column=1, padx=(8, 0), pady=4, sticky="w")
+        
+        if description:
+            desc_label = tk.Label(parent, text=description, anchor="w", fg="gray")
+            desc_label.grid(row=row, column=2, padx=(8, 0), sticky="w")
+        
+        self.entries[key] = {
+            "var": spinbox_var,
+            "editable": True,
+            "type": "int"
         }
 
     def _browse(self, var):
@@ -104,11 +145,17 @@ class AgentConfigGUI:
         updated = False
 
         one_drive = self.config.setdefault("oneDrive", {})
+        validation = self.config.setdefault("validation", {})
 
         for key, meta in self.entries.items():
             var = meta["var"]
             editable = meta["editable"]
-            value = var.get().strip()
+            value_type = meta.get("type", "string")
+            
+            if value_type == "int":
+                value = var.get()  # IntVar returns int directly
+            else:
+                value = var.get().strip()
 
             if key in ("relativePath", "fallbackRoot"):
                 if not editable:
@@ -116,6 +163,12 @@ class AgentConfigGUI:
                     continue
                 if one_drive.get(key) != value:
                     one_drive[key] = value
+                    updated = True
+            elif key in ("metadataRetries", "metadataRetryDelaySeconds"):
+                # Validation section parameters
+                current_value = validation.get(key)
+                if current_value != value:
+                    validation[key] = value
                     updated = True
             else:
                 current_value = self.config.get(key)
@@ -137,13 +190,21 @@ class AgentConfigGUI:
 
         # Refresh defaults to the newly saved values
         for key, meta in self.entries.items():
-            self.defaults[key] = meta["var"].get().strip()
+            if isinstance(meta["var"], tk.IntVar):
+                self.defaults[key] = meta["var"].get()
+            else:
+                self.defaults[key] = meta["var"].get().strip()
 
         self.set_status("Configuration saved.")
 
     def reset_defaults(self):
         for key, meta in self.entries.items():
-            meta["var"].set(self.defaults.get(key, ""))
+            default_value = self.defaults.get(key, "")
+            # Handle IntVar and StringVar differently
+            if isinstance(meta["var"], tk.IntVar):
+                meta["var"].set(int(default_value) if default_value else 0)
+            else:
+                meta["var"].set(default_value)
         self.set_status("Fields reset to defaults (current file values).")
 
     def reload_from_file(self):
@@ -154,17 +215,25 @@ class AgentConfigGUI:
             messagebox.showerror("Error", f"Failed to reload configuration:\n{exc}")
             return
 
+        validation = self.config.get("validation", {})
         self.defaults = {
             "relativePath": self.config.get("oneDrive", {}).get("relativePath", ""),
             "fallbackRoot": self.config.get("oneDrive", {}).get("fallbackRoot", ""),
             "watchPath": self.config.get("watchPath", ""),
             "stagingPath": self.config.get("stagingPath", ""),
             "filingRoot": self.config.get("filingRoot", ""),
-            "unsortedRoot": self.config.get("unsortedRoot", "")
+            "unsortedRoot": self.config.get("unsortedRoot", ""),
+            "metadataRetries": validation.get("metadataRetries", 3),
+            "metadataRetryDelaySeconds": validation.get("metadataRetryDelaySeconds", 2)
         }
 
         for key, meta in self.entries.items():
-            meta["var"].set(self.defaults.get(key, ""))
+            default_value = self.defaults.get(key, "")
+            # Handle IntVar and StringVar differently
+            if isinstance(meta["var"], tk.IntVar):
+                meta["var"].set(int(default_value) if default_value else 0)
+            else:
+                meta["var"].set(default_value)
 
         self.set_status("Reloaded configuration from file.")
 

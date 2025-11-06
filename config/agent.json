@@ -26,6 +26,8 @@
   },
   "validation": {
     "debounceWindowSeconds": 15,
-    "sizeDriftBytes": 1024
+    "sizeDriftBytes": 1024,
+    "metadataRetries": 5,
+    "metadataRetryDelaySeconds": 10
   }
 }

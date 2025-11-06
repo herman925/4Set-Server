@@ -2132,24 +2132,45 @@ function Process-IncomingFile {
     }
     try {
         # Read and cleanup metadata file BEFORE moving PDF to staging
+        # Retry mechanism for slow OneDrive sync: Wait for .meta.json to appear
         $uploadComputerNo = $null
         $metadataFile = [System.IO.Path]::ChangeExtension($Path, '.meta.json')
-        if (Test-Path $metadataFile) {
-            try {
-                $metadata = Get-Content -Path $metadataFile -Raw | ConvertFrom-Json
-                if ($metadata.uploadedFrom) {
-                    $uploadComputerNo = $metadata.uploadedFrom
-                    Write-Log -Message "Read computer number from metadata: $uploadComputerNo" -Level "INFO" -File $fileName
+        $metadataFound = $false
+        $maxRetries = $script:MetadataRetries
+        $retryDelaySeconds = $script:MetadataRetryDelay
+        
+        # Try to find metadata file with retries
+        for ($attempt = 1; $attempt -le $maxRetries; $attempt++) {
+            if (Test-Path $metadataFile) {
+                $metadataFound = $true
+                try {
+                    $metadata = Get-Content -Path $metadataFile -Raw | ConvertFrom-Json
+                    if ($metadata.uploadedFrom) {
+                        $uploadComputerNo = $metadata.uploadedFrom
+                        Write-Log -Message "Read computer number from metadata: $uploadComputerNo" -Level "INFO" -File $fileName
+                    }
+                    # Delete metadata file immediately after reading
+                    Remove-Item -Path $metadataFile -Force -ErrorAction Stop
+                    Write-Log -Message "Cleaned up metadata file from incoming folder" -Level "INFO" -File $fileName
+                } catch {
+                    Write-Log -Message "Failed to read/remove metadata file: $($_.Exception.Message)" -Level "WARN" -File $fileName
+                    # Try to delete anyway
+                    try { Remove-Item -Path $metadataFile -Force -ErrorAction SilentlyContinue } catch { }
                 }
-                # Delete metadata file immediately after reading
-                Remove-Item -Path $metadataFile -Force -ErrorAction Stop
-                Write-Log -Message "Cleaned up metadata file from incoming folder" -Level "INFO" -File $fileName
-            } catch {
-                Write-Log -Message "Failed to read/remove metadata file: $($_.Exception.Message)" -Level "WARN" -File $fileName
-                # Try to delete anyway
-                try { Remove-Item -Path $metadataFile -Force -ErrorAction SilentlyContinue } catch { }
+                break  # Found and processed, exit retry loop
+            } else {
+                # Metadata file not found yet
+                if ($attempt -lt $maxRetries) {
+                    Write-Log -Message "Metadata file not found (attempt $attempt/$maxRetries), waiting ${retryDelaySeconds}s for OneDrive sync..." -Level "INFO" -File $fileName
+                    Start-Sleep -Seconds $retryDelaySeconds
+                } else {
+                    Write-Log -Message "Metadata file not found after $maxRetries attempts - proceeding without computer number" -Level "WARN" -File $fileName
+                }
             }
         }
+        
+        # If metadata was never found after all retries, mark for special handling
+        $missingMetadata = -not $metadataFound
         
         $stagingTarget = Ensure-UniquePath -Directory $script:StagingPath -FileName $fileName
         Move-Item -Path $Path -Destination $stagingTarget -Force
@@ -2176,6 +2197,16 @@ function Process-IncomingFile {
             Remove-ManifestEntry -Path $script:QueueManifestPath -Id $originalName
             Set-ManifestStatus -Path $script:QueueManifestPath -Id $fileName -FileName $fileName -Status "Staging"
             Write-Log -Message ("Renamed {0} → {1}" -f $originalName, $fileName) -Level "RENAME" -File $fileName
+        }
+
+        # Check if metadata was missing after retries - file to Unsorted with reason code
+        if ($missingMetadata) {
+            Set-ManifestStatus -Path $script:QueueManifestPath -Id $fileName -FileName $fileName -Status "Rejected"
+            Write-Log -Message "metadata_not_found: Computer number metadata file not found after $maxRetries retry attempts" -Level "REJECT" -File $fileName
+            $rejectTarget = Ensure-UniquePath -Directory $script:UnsortedRoot -FileName $fileName
+            Move-Item -Path $stagingTarget -Destination $rejectTarget -Force
+            Remove-ManifestEntry -Path $script:QueueManifestPath -Id $fileName
+            return
         }
 
         Set-ManifestStatus -Path $script:QueueManifestPath -Id $fileName -FileName $fileName -Status "Parsing"
@@ -2331,6 +2362,14 @@ $script:QueueManifestPath = Resolve-RelativePath -BasePath $rootDirectory -PathV
 $script:DebounceWindow = 15
 if ($config.validation -and $config.validation.debounceWindowSeconds) {
     $script:DebounceWindow = [int]$config.validation.debounceWindowSeconds
+}
+$script:MetadataRetries = 3
+if ($config.validation -and $config.validation.metadataRetries) {
+    $script:MetadataRetries = [int]$config.validation.metadataRetries
+}
+$script:MetadataRetryDelay = 2
+if ($config.validation -and $config.validation.metadataRetryDelaySeconds) {
+    $script:MetadataRetryDelay = [int]$config.validation.metadataRetryDelaySeconds
 }
 $pollSeconds = 5
 if ($config.worker -and $config.worker.pollIntervalSeconds) {
