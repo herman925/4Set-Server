@@ -22,7 +22,7 @@
     }
   },
   "cache": {
-    "ttlHours": 1,
+    "ttlHours": 0,
     "sessionStorageKeyPrefix": "student_jotform_",
     "globalCacheKey": "jotform_global_cache",
     "statusLabels": {

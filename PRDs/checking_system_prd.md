@@ -557,7 +557,7 @@ All text customizable in `config/checking_system_config.json`:
 ```json
 {
   "cache": {
-    "ttlHours": 1,
+    "ttlHours": 0,
     "statusLabels": {
       "notReady": "System Not Ready",
       "ready": "System Ready",
@@ -598,7 +598,7 @@ All text customizable in `config/checking_system_config.json`:
 - **Database Name**: `JotFormCacheDB`
 - **Store Name**: `cache`
 - **Cache Key**: `jotform_global_cache`
-- **Cache Duration**: 1 hour (configurable via `config.cache.ttlHours`)
+- **Cache Duration**: Infinite (set `config.cache.ttlHours` to `0` for no automatic expiry)
 - **Storage Capacity**: 50+ MB to several GB (browser-dependent)
 - **Typical Size**: ~30 MB for 500 submissions (full JotForm response with all metadata)
 

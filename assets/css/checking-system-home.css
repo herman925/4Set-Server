@@ -251,18 +251,19 @@
 .cache-ready-info-box {
     background: color-mix(in srgb, var(--primary) 8%, #ffffff);
     border: 1px solid color-mix(in srgb, var(--primary) 25%, #ffffff 75%);
-    color: var(--primary-foreground);
+    color: var(--foreground);
     border-radius: calc(var(--radius) + 0.25rem);
     padding: 0.75rem;
 }
 
 .cache-ready-info-title {
-    color: var(--primary-foreground);
+    color: var(--foreground);
     letter-spacing: 0.01em;
+    font-weight: 600;
 }
 
 .cache-ready-info-list {
-    color: color-mix(in srgb, var(--primary-foreground) 85%, #000000 15%);
+    color: var(--muted-foreground);
     line-height: 1.45;
 }
 

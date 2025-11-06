@@ -1397,11 +1397,25 @@
     const badge = document.getElementById('system-health-badge');
     if (badge) {
       badge.addEventListener('click', async () => {
-        const ready = await isCacheReady();
-        if (!ready) {
-          showSyncModal();
-        } else {
+        // Performance optimization: Check pill state first to avoid expensive cache check
+        // If pill is already green (System Ready), directly show modal without re-checking
+        const isGreen = badge.classList.contains('badge-success');
+        const statusText = document.getElementById('status-text');
+        const isSystemReady = statusText?.textContent === 'System Ready';
+        
+        if (isGreen && isSystemReady) {
+          // Fast path: Pill is green, cache is already confirmed ready
+          console.log('[CacheUI] Pill is green, showing modal immediately (no cache check)');
           showCacheReadyModal();
+        } else {
+          // Slow path: Verify cache status before showing appropriate modal
+          console.log('[CacheUI] Pill state unknown, checking cache readiness...');
+          const ready = await isCacheReady();
+          if (!ready) {
+            showSyncModal();
+          } else {
+            showCacheReadyModal();
+          }
         }
       });
     }

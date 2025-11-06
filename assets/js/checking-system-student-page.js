@@ -16,7 +16,7 @@
       loadingStatusDelayMs: 500
     },
     cache: {
-      ttlHours: 1,
+      ttlHours: 0,
       sessionStorageKeyPrefix: "student_jotform_"
     },
     taskView: {
@@ -588,13 +588,47 @@
       if (cached) {
         console.log('[StudentPage] ========== CACHE LOOKUP ==========');
         console.log('[StudentPage] Cache key:', cacheKey);
-        
+
         const cachedData = JSON.parse(cached);
-        const expiresAt = new Date(cachedData.expiresAt);
+        const ttlHours = Number(systemConfig?.cache?.ttlHours ?? 0);
+        const hasExpiry = ttlHours > 0;
         const now = new Date();
-        const timeRemaining = Math.round((expiresAt - now) / 1000 / 60); // minutes
+
+        // HTKS VALUE MAPPING FIX: Transform cached data that has raw choice values
+        // PDF sends choice indices (1, 2, 3) but we need scores (2, 1, 0)
+        // This fixes cached data from before the transformation was added
+        let htksFixCount = 0;
+        if (cachedData.mergedAnswers) {
+          for (const [fieldName, answerObj] of Object.entries(cachedData.mergedAnswers)) {
+            if (fieldName.startsWith('HTKS_Q')) {
+              const choiceToScore = { '1': '2', '2': '1', '3': '0' };
+              if (choiceToScore[answerObj.answer]) {
+                console.log(`[StudentPage] HTKS fix: ${fieldName} ${answerObj.answer} → ${choiceToScore[answerObj.answer]}`);
+                answerObj.answer = choiceToScore[answerObj.answer];
+                htksFixCount++;
+              }
+            }
+          }
+        }
+        if (htksFixCount > 0) {
+          console.log(`[StudentPage] ✅ Fixed ${htksFixCount} HTKS values in cached data`);
+        }
+
+        if (!hasExpiry) {
+          console.log('[StudentPage] ✅ CACHE HIT - Using cached data (no expiry configured)');
+          console.log(`[StudentPage]   Cached at: ${cachedData.timestamp}`);
+          console.log(`[StudentPage]   Submissions merged: ${cachedData.submissionCount}`);
+          console.log(`[StudentPage]   Fields: ${Object.keys(cachedData.mergedAnswers).length}`);
+          console.log('[StudentPage] ==========================================');
+
+          populateJotformData(cachedData);
+          return;
+        }
+
+        const expiresAt = cachedData.expiresAt ? new Date(cachedData.expiresAt) : null;
+        const timeRemaining = expiresAt ? Math.round((expiresAt - now) / 1000 / 60) : null; // minutes
         
-        if (now < expiresAt) {
+        if (expiresAt && now < expiresAt) {
           console.log('[StudentPage] ✅ CACHE HIT - Using cached data');
           console.log(`[StudentPage]   Cached at: ${cachedData.timestamp}`);
           console.log(`[StudentPage]   Expires at: ${cachedData.expiresAt} (${timeRemaining} minutes remaining)`);
@@ -606,7 +640,11 @@
           return;
         } else {
           console.log('[StudentPage] ❌ CACHE EXPIRED - Fetching fresh data');
-          console.log(`[StudentPage]   Expired ${Math.abs(timeRemaining)} minutes ago`);
+          if (timeRemaining !== null) {
+            console.log(`[StudentPage]   Expired ${Math.abs(timeRemaining)} minutes ago`);
+          } else {
+            console.log('[StudentPage]   Expiration timestamp missing; treating as expired');
+          }
           console.log('[StudentPage] ==========================================');
         }
       } else {
@@ -706,13 +744,19 @@
 
       // Cache the results (merged data only, not all 517 raw submissions!)
       console.log('[StudentPage] ========== CACHING MERGED DATA ==========');
+      const ttlHours = Number(systemConfig?.cache?.ttlHours ?? 0);
+      const expiresAt = ttlHours > 0
+        ? new Date(Date.now() + ttlHours * 60 * 60 * 1000).toISOString()
+        : null;
+
       const cacheData = {
         coreId,
         submissionCount: submissions.length,
         mergedAnswers: mergedData,
         metrics,
         timestamp: new Date().toISOString(),
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString() // 1 hour TTL
+        expiresAt,
+        ttlHours
       };
       
       console.log('[StudentPage] Cache key:', cacheKey);
@@ -722,7 +766,11 @@
       console.log(`[StudentPage]   Unique fields in merged data: ${Object.keys(cacheData.mergedAnswers).length}`);
       console.log(`[StudentPage]   Completion: ${cacheData.metrics.completionPercentage}%`);
       console.log(`[StudentPage]   Cached at: ${cacheData.timestamp}`);
-      console.log(`[StudentPage]   Expires at: ${cacheData.expiresAt}`);
+      if (expiresAt) {
+        console.log(`[StudentPage]   Expires at: ${cacheData.expiresAt}`);
+      } else {
+        console.log('[StudentPage]   Expires at: ∞ (no automatic expiration)');
+      }
       
       // Show sample of merged fields
       const sampleFields = Object.keys(cacheData.mergedAnswers).slice(0, 5);

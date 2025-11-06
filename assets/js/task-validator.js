@@ -465,7 +465,9 @@ window.TaskValidator = (() => {
       }
       
       // Check if this is an unscored preference question (no correctAnswer at all)
-      const isUnscoredQuestion = correctAnswer === undefined && question.type !== 'matrix-cell' && !['Y', 'y', 'N', 'n'].includes(studentAnswer);
+      // HTKS and Fine Motor use scoring systems (0/1/2 or 0/1) without a "correct answer", so exclude them
+      const isScoringTask = taskId === 'headtoekneeshoulder' || taskId === 'finemotor';
+      const isUnscoredQuestion = !isScoringTask && correctAnswer === undefined && question.type !== 'matrix-cell' && !['Y', 'y', 'N', 'n'].includes(studentAnswer);
       
       // SPECIAL HANDLING for _TEXT display fields
       let isTextDisplay = question.isTextDisplay || false;

@@ -106,7 +106,7 @@
   const QUALTRICS_RAW_CACHE_KEY = 'qualtrics_raw_responses'; // Raw Qualtrics responses before merge
   const VALIDATION_CACHE_KEY = 'student_task_validation_cache'; // Pre-computed task validation results
   
-  const CACHE_DURATION_MS = 60 * 60 * 1000; // 1 hour
+  const CACHE_DURATION_MS = Infinity; // No automatic expiration
   
   // JotForm question IDs - these are hardcoded based on current form structure
   // CRITICAL: If the JotForm structure changes, these QIDs must be updated
@@ -263,6 +263,7 @@
      */
     fixUntransformedSubmissions(submissions) {
       let fixedCount = 0;
+      let htksFixedCount = 0;
       
       for (const submission of submissions) {
         // Check if submission needs fixing (has answers but no coreId)
@@ -293,13 +294,31 @@
             console.warn('[JotFormCache] Failed to fix submission:', submission.id, error);
           }
         }
+        
+        // HTKS VALUE MAPPING: Fix existing cache data that has raw choice values
+        // PDF sends choice indices (1, 2, 3) but we need scores (2, 1, 0)
+        // This fixes data already in cache from before the transformation was added
+        if (submission.answers) {
+          for (const [qid, answerObj] of Object.entries(submission.answers)) {
+            if (answerObj.name && answerObj.name.startsWith('HTKS_Q')) {
+              const choiceToScore = { '1': '2', '2': '1', '3': '0' };
+              if (choiceToScore[answerObj.answer]) {
+                answerObj.answer = choiceToScore[answerObj.answer];
+                htksFixedCount++;
+              }
+            }
+          }
+        }
       }
       
       if (fixedCount > 0) {
         console.log(`[JotFormCache] ✅ Fixed ${fixedCount} untransformed submissions in cache`);
       }
+      if (htksFixedCount > 0) {
+        console.log(`[JotFormCache] ✅ Fixed ${htksFixedCount} HTKS choice values in cache`);
+      }
       
-      return submissions;
+      return { submissions, totalFixed: fixedCount + htksFixedCount };
     }
 
     /**
@@ -314,10 +333,11 @@
         console.log('[JotFormCache] Using cached data (valid)');
         
         // Fix any untransformed submissions before returning
-        const fixedSubmissions = this.fixUntransformedSubmissions(cached.submissions);
+        const { submissions: fixedSubmissions, totalFixed } = this.fixUntransformedSubmissions(cached.submissions);
         
         // If we fixed any, save back to cache
-        if (fixedSubmissions !== cached.submissions) {
+        if (totalFixed > 0) {
+          console.log(`[JotFormCache] 💾 Saving ${totalFixed} fixes back to cache...`);
           await this.saveToCache(fixedSubmissions);
         }
         
@@ -338,12 +358,19 @@
   this.loadPromise = this.fetchAllSubmissions(normalizedCredentials)
         .then(async submissions => {
           console.log('[JotFormCache] Fetch complete, saving', submissions.length, 'submissions');
-          await this.saveToCache(submissions); // WAIT for IndexedDB write to complete
-          this.cache = submissions;
+          
+          // Fix any untransformed data (including HTKS) before saving
+          const { submissions: fixedSubmissions, totalFixed } = this.fixUntransformedSubmissions(submissions);
+          if (totalFixed > 0) {
+            console.log(`[JotFormCache] 💾 Applied ${totalFixed} fixes to fresh data before caching`);
+          }
+          
+          await this.saveToCache(fixedSubmissions); // WAIT for IndexedDB write to complete
+          this.cache = fixedSubmissions;
           this.isLoading = false;
           this.loadPromise = null;
           console.log('[JotFormCache] getAllSubmissions complete - cache committed');
-          return submissions;
+          return fixedSubmissions;
         })
         .catch(error => {
           this.isLoading = false;
@@ -665,7 +692,7 @@
      */
     isCacheValid(cacheEntry) {
       if (!cacheEntry || !cacheEntry.timestamp) return false;
-      return (Date.now() - cacheEntry.timestamp) < CACHE_DURATION_MS;
+      return CACHE_DURATION_MS === Infinity || (Date.now() - cacheEntry.timestamp) < CACHE_DURATION_MS;
     }
 
     /**
