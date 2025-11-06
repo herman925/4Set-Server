@@ -822,6 +822,18 @@
         
         if (!fieldName || !answer.answer) continue;
 
+        // HTKS VALUE MAPPING: PDF sends choice indices (1, 2, 3) but we need scores (2, 1, 0)
+        // This handles direct API fetch when cache is not available
+        // Mapping: PDF choice 1 → Score 2 (fully correct)
+        //          PDF choice 2 → Score 1 (partially correct)
+        //          PDF choice 3 → Score 0 (incorrect)
+        if (fieldName.startsWith('HTKS_Q')) {
+          const choiceToScore = { '1': '2', '2': '1', '3': '0' };
+          if (choiceToScore[answer.answer]) {
+            answer.answer = choiceToScore[answer.answer];
+          }
+        }
+
         if (!merged[fieldName]) {
           // NEW FIELD - fill missing data
           merged[fieldName] = answer;
