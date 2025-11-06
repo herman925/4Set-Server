@@ -14,7 +14,7 @@
       // Configuration - fields to exclude from merge
       this.excludeFields = new Set([
         '_recordId', 'responseId', '_meta', '_sources', 
-        '_orphaned', '_qualtricsConflicts'
+        '_orphaned', '_qualtricsConflicts', '_fieldProvenance'
       ]);
     }
 
@@ -63,6 +63,88 @@
      */
     isValuePresent(answerLike) {
       return !this.isValueEmpty(answerLike);
+    }
+
+    /**
+     * Create provenance metadata for a field
+     * Tracks which source(s) provided data and when
+     * @param {string} fieldName - Name of the field
+     * @param {string} source - Source identifier ('jotform' or 'qualtrics')
+     * @param {Object} sourceRecord - The full source record
+     * @param {string} winner - Which source 'won' for this field
+     * @returns {Object} Provenance metadata
+     */
+    createFieldProvenance(fieldName, source, sourceRecord, winner) {
+      const provenance = {
+        field: fieldName,
+        sources: [],
+        winner: winner,
+        grade: sourceRecord.grade || 'Unknown'
+      };
+
+      if (source === 'jotform') {
+        const submissionId = sourceRecord._meta?.submissionId || sourceRecord.id;
+        const sessionKey = sourceRecord.sessionkey || sourceRecord['session-key'];
+        const createdAt = sourceRecord.created_at || sourceRecord._meta?.created_at;
+        
+        provenance.sources.push({
+          type: 'JotForm',
+          submissionId: submissionId,
+          sessionKey: sessionKey,
+          timestamp: createdAt,
+          found: this.isValuePresent(sourceRecord[fieldName])
+        });
+      } else if (source === 'qualtrics') {
+        const responseId = sourceRecord._meta?.qualtricsResponseId || sourceRecord.responseId;
+        const startDate = sourceRecord._meta?.startDate || sourceRecord.recordedDate;
+        
+        provenance.sources.push({
+          type: 'Qualtrics',
+          responseId: responseId,
+          timestamp: startDate,
+          found: this.isValuePresent(sourceRecord[fieldName])
+        });
+      }
+
+      return provenance;
+    }
+
+    /**
+     * Merge field provenances from multiple sources
+     * @param {Object} existingProvenance - Existing provenance for this field
+     * @param {Object} newProvenance - New provenance to add
+     * @returns {Object} Merged provenance
+     */
+    mergeFieldProvenance(existingProvenance, newProvenance) {
+      if (!existingProvenance) {
+        return newProvenance;
+      }
+
+      // Merge sources arrays
+      const mergedSources = [...existingProvenance.sources];
+      for (const newSource of newProvenance.sources) {
+        // Check if we already have this source
+        const exists = mergedSources.some(s => 
+          s.type === newSource.type && 
+          (s.submissionId === newSource.submissionId || s.responseId === newSource.responseId)
+        );
+        if (!exists) {
+          mergedSources.push(newSource);
+        }
+      }
+
+      // Sort by timestamp (earliest first)
+      mergedSources.sort((a, b) => {
+        const dateA = a.timestamp ? new Date(a.timestamp) : new Date(0);
+        const dateB = b.timestamp ? new Date(b.timestamp) : new Date(0);
+        return dateA - dateB;
+      });
+
+      return {
+        ...existingProvenance,
+        sources: mergedSources,
+        winner: newProvenance.winner || existingProvenance.winner
+      };
     }
 
     /**
@@ -326,11 +408,13 @@
           multipleSubmissions: true,
           submissionCount: workingRecords.length,
           submissionIds: workingRecords.map(r => r._meta.submissionId)
-        }
+        },
+        _fieldProvenance: {} // Track which submission provided each field
       };
 
       // Merge all fields from all submissions (earliest non-empty value wins)
-      for (const record of workingRecords) {
+      for (let i = 0; i < workingRecords.length; i++) {
+        const record = workingRecords[i];
         for (const [key, answerObj] of Object.entries(record)) {
           // Skip metadata and special fields
           if (this.excludeFields.has(key) || key.startsWith('_') || 
@@ -338,10 +422,23 @@
             continue;
           }
           
+          // Track provenance for all fields (even if empty)
+          const provenance = this.createFieldProvenance(key, 'jotform', record, null);
+          if (!merged._fieldProvenance[key]) {
+            merged._fieldProvenance[key] = provenance;
+          } else {
+            merged._fieldProvenance[key] = this.mergeFieldProvenance(merged._fieldProvenance[key], provenance);
+          }
+          
           // Only set if not already present and value is not empty (earliest wins)
           // CRITICAL: Use explicit checks - "0" is valid TGMD answer (Not Observed)
           if (this.isValuePresent(answerObj) && this.isValueEmpty(merged[key])) {
             merged[key] = answerObj; // Store the full answer object
+            // Mark this source as the winner
+            merged._fieldProvenance[key].winner = 'jotform';
+            merged._fieldProvenance[key].winnerIndex = i;
+            merged._fieldProvenance[key].winnerSubmissionId = record._meta?.submissionId;
+            merged._fieldProvenance[key].winnerTimestamp = record.created_at || record._meta?.created_at;
           }
         }
       }
@@ -360,6 +457,11 @@
       const merged = { ...jotformRecord };
       const conflicts = [];
 
+      // Initialize provenance tracking if not exists
+      if (!merged._fieldProvenance) {
+        merged._fieldProvenance = {};
+      }
+
       // Get timestamps for comparison
       const jotformTimestamp = jotformRecord.created_at ? new Date(jotformRecord.created_at) : new Date();
       const qualtricsTimestamp = qualtricsRecord._meta?.startDate 
@@ -376,16 +478,27 @@
         const jotformAnswerObj = jotformRecord[key];
         const qualtricsAnswerObj = value;
 
+        // Track Qualtrics provenance
+        const qualtricsProvenance = this.createFieldProvenance(key, 'qualtrics', qualtricsRecord, null);
+        
         // Skip if Qualtrics value is empty
         // CRITICAL: Use explicit null/undefined/empty checks, NOT falsy check
         // Reason: TGMD "0" (Not Observed) is valid answer, numeric 0 is falsy
         if (this.isValueEmpty(qualtricsAnswerObj)) {
+          // Still track that Qualtrics was checked for this field
+          if (merged._fieldProvenance[key]) {
+            merged._fieldProvenance[key] = this.mergeFieldProvenance(merged._fieldProvenance[key], qualtricsProvenance);
+          }
           continue;
         }
 
         // If JotForm doesn't have this field, use Qualtrics answer object
         if (!jotformAnswerObj) {
           merged[key] = qualtricsAnswerObj;
+          qualtricsProvenance.winner = 'qualtrics';
+          qualtricsProvenance.winnerTimestamp = qualtricsTimestamp.toISOString();
+          qualtricsProvenance.winnerReason = 'Only source with data';
+          merged._fieldProvenance[key] = qualtricsProvenance;
           continue;
         }
         
@@ -393,12 +506,19 @@
         // CRITICAL: Use explicit null/undefined/empty checks (same reason as above)
         if (this.isValueEmpty(jotformAnswerObj)) {
           merged[key] = qualtricsAnswerObj;
+          qualtricsProvenance.winner = 'qualtrics';
+          qualtricsProvenance.winnerTimestamp = qualtricsTimestamp.toISOString();
+          qualtricsProvenance.winnerReason = 'JotForm empty, Qualtrics has data';
+          merged._fieldProvenance[key] = this.mergeFieldProvenance(merged._fieldProvenance[key], qualtricsProvenance);
           continue;
         }
         
         // Both have values - extract for comparison
         const qualtricsValue = this.extractAnswerValue(qualtricsAnswerObj);
         const jotformValue = this.extractAnswerValue(jotformAnswerObj);
+
+        // Merge provenance
+        merged._fieldProvenance[key] = this.mergeFieldProvenance(merged._fieldProvenance[key], qualtricsProvenance);
 
         // Compare actual values and use earliest non-empty
         if (jotformValue !== qualtricsValue) {
@@ -415,8 +535,20 @@
           // Keep earliest answer object based on timestamp
           if (qualtricsTimestamp < jotformTimestamp) {
             merged[key] = qualtricsAnswerObj;
+            merged._fieldProvenance[key].winner = 'qualtrics';
+            merged._fieldProvenance[key].winnerTimestamp = qualtricsTimestamp.toISOString();
+            merged._fieldProvenance[key].winnerReason = 'Earliest non-empty (Qualtrics before JotForm)';
+          } else {
+            // Keep JotForm (already in merged)
+            merged._fieldProvenance[key].winner = 'jotform';
+            merged._fieldProvenance[key].winnerTimestamp = jotformTimestamp.toISOString();
+            merged._fieldProvenance[key].winnerReason = 'Earliest non-empty (JotForm before Qualtrics)';
           }
-          // else: keep JotForm answer object (already in merged via spread)
+        } else {
+          // Values are equal - mark JotForm as winner (arbitrary, since they match)
+          merged._fieldProvenance[key].winner = 'jotform';
+          merged._fieldProvenance[key].winnerTimestamp = jotformTimestamp.toISOString();
+          merged._fieldProvenance[key].winnerReason = 'Both sources have same value';
         }
       }
 

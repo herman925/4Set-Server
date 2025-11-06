@@ -530,12 +530,16 @@ window.CacheValidator = (() => {
               failed++;
             }
             
-            // Store mismatch details
+            // Get provenance data if available
+            const provenance = submission._fieldProvenance ? submission._fieldProvenance[cleanQuestionId] : null;
+            
+            // Store mismatch details with provenance
             questionMismatches.push({
               field: cleanQuestionId,
               cacheRaw: cacheValueForComparison, // Show raw trial data for TGMD, processed score for others
               displayValue: cleanQuestionId && cleanQuestionId.startsWith('TGMD_') ? expectedDisplay : displayAnswer,
-              status: status
+              status: status,
+              provenance: provenance // Include provenance metadata
             });
           }
           
@@ -1263,14 +1267,30 @@ window.CacheValidator = (() => {
             const questionTable = document.createElement('div');
             questionTable.className = 'px-4 pb-4';
             
-            const rowsHtml = task.questions.map(q => `
-              <tr class="hover:bg-gray-50 ${q.status.includes('Mismatch') ? 'bg-red-50' : ''}">
-                <td class="px-3 py-2 font-medium text-gray-900">${q.field}</td>
-                <td class="px-3 py-2 text-blue-600 font-mono text-sm">${escapeHtml(String(q.cacheRaw || q.cachedValue || 'Not found'))}</td>
-                <td class="px-3 py-2 text-purple-600 font-mono text-sm">${escapeHtml(String(q.displayValue || q.taskValidatorValue || 'Not found'))}</td>
-                <td class="px-3 py-2 text-sm">${q.status}</td>
-              </tr>
-            `).join('');
+            const rowsHtml = task.questions.map(q => {
+              // Generate provenance button if available
+              let provenanceButton = '';
+              if (q.provenance && q.provenance.sources && q.provenance.sources.length > 0) {
+                const provenanceJson = JSON.stringify(q.provenance).replace(/"/g, '&quot;');
+                provenanceButton = `<button class="provenance-trigger" data-provenance="${provenanceJson}" title="Show data source provenance" aria-label="Show data source provenance for ${q.field}">
+                  <i data-lucide="info" class="w-3 h-3"></i>
+                </button>`;
+              }
+              
+              return `
+                <tr class="hover:bg-gray-50 ${q.status.includes('Mismatch') ? 'bg-red-50' : ''}">
+                  <td class="px-3 py-2 font-medium text-gray-900">
+                    <div class="flex items-center">
+                      <span>${q.field}</span>
+                      ${provenanceButton}
+                    </div>
+                  </td>
+                  <td class="px-3 py-2 text-blue-600 font-mono text-sm">${escapeHtml(String(q.cacheRaw || q.cachedValue || 'Not found'))}</td>
+                  <td class="px-3 py-2 text-purple-600 font-mono text-sm">${escapeHtml(String(q.displayValue || q.taskValidatorValue || 'Not found'))}</td>
+                  <td class="px-3 py-2 text-sm">${q.status}</td>
+                </tr>
+              `;
+            }).join('');
             
             questionTable.innerHTML = `
               <table class="w-full text-sm mt-2">
@@ -1376,6 +1396,185 @@ window.CacheValidator = (() => {
     if (window.lucide) {
       lucide.createIcons();
     }
+    
+    // Set up provenance tooltips
+    setupProvenanceTooltips(modal);
+  }
+  
+  /**
+   * Set up provenance tooltip handlers
+   * @param {HTMLElement} container - The container element (modal) with provenance triggers
+   */
+  function setupProvenanceTooltips(container) {
+    // Create tooltip element if it doesn't exist
+    let tooltip = document.getElementById('provenance-tooltip');
+    if (!tooltip) {
+      tooltip = document.createElement('div');
+      tooltip.id = 'provenance-tooltip';
+      tooltip.className = 'provenance-tooltip';
+      tooltip.setAttribute('role', 'status');
+      tooltip.setAttribute('aria-live', 'polite');
+      document.body.appendChild(tooltip);
+    }
+    
+    let activeButton = null;
+    
+    // Function to format timestamp
+    const formatTimestamp = (timestamp) => {
+      if (!timestamp) return 'Unknown';
+      const date = new Date(timestamp);
+      return date.toLocaleString('en-US', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+    };
+    
+    // Function to show tooltip
+    const showTooltip = (button) => {
+      try {
+        const provenanceJson = button.getAttribute('data-provenance');
+        if (!provenanceJson) return;
+        
+        const provenance = JSON.parse(provenanceJson);
+        
+        // Build tooltip content
+        let content = `<div class="font-semibold mb-2 text-blue-300">Data Provenance: ${provenance.field}</div>`;
+        content += `<div class="text-xs text-gray-300 mb-2">Grade: ${provenance.grade}</div>`;
+        
+        if (provenance.sources && provenance.sources.length > 0) {
+          content += `<div class="mb-2"><strong class="text-blue-200">Sources:</strong></div>`;
+          
+          // Sort sources by timestamp (earliest first)
+          const sortedSources = [...provenance.sources].sort((a, b) => {
+            const dateA = a.timestamp ? new Date(a.timestamp) : new Date(0);
+            const dateB = b.timestamp ? new Date(b.timestamp) : new Date(0);
+            return dateA - dateB;
+          });
+          
+          sortedSources.forEach((source, index) => {
+            const isWinner = provenance.winner && 
+              ((source.type === 'JotForm' && provenance.winner === 'jotform') ||
+               (source.type === 'Qualtrics' && provenance.winner === 'qualtrics'));
+            
+            const winnerBadge = isWinner ? ' <span class="px-1 py-0.5 bg-green-500 text-white rounded text-xs">✓ WINNER</span>' : '';
+            
+            content += `<div class="mb-2 p-2 rounded ${isWinner ? 'bg-green-900/30' : 'bg-gray-700/30'}">`;
+            content += `<div class="font-medium text-yellow-300">${index + 1}. ${source.type}${winnerBadge}</div>`;
+            
+            if (source.type === 'JotForm') {
+              content += `<div class="text-xs text-gray-300 mt-1">Submission ID: ${source.submissionId || 'N/A'}</div>`;
+              if (source.sessionKey) {
+                content += `<div class="text-xs text-gray-300">Session Key: ${source.sessionKey}</div>`;
+              }
+            } else if (source.type === 'Qualtrics') {
+              content += `<div class="text-xs text-gray-300 mt-1">Response ID: ${source.responseId || 'N/A'}</div>`;
+            }
+            
+            content += `<div class="text-xs text-gray-300">Timestamp: ${formatTimestamp(source.timestamp)}</div>`;
+            content += `<div class="text-xs ${source.found ? 'text-green-400' : 'text-gray-400'}">Data: ${source.found ? 'Found ✓' : 'Not found'}</div>`;
+            content += `</div>`;
+          });
+        }
+        
+        // Winner explanation
+        if (provenance.winner && provenance.winnerReason) {
+          content += `<div class="mt-2 p-2 bg-blue-900/30 rounded">`;
+          content += `<div class="font-semibold text-blue-200">Resolution:</div>`;
+          content += `<div class="text-xs text-gray-300">${provenance.winnerReason}</div>`;
+          if (provenance.winnerTimestamp) {
+            content += `<div class="text-xs text-gray-400 mt-1">Selected: ${formatTimestamp(provenance.winnerTimestamp)}</div>`;
+          }
+          content += `</div>`;
+        }
+        
+        // Handle single-source cases
+        if (!provenance.sources || provenance.sources.length === 1) {
+          const source = provenance.sources ? provenance.sources[0] : null;
+          if (source) {
+            content += `<div class="mt-2 text-xs text-gray-400 italic">${source.type} only (no merge needed)</div>`;
+          }
+        }
+        
+        tooltip.innerHTML = content;
+        
+        // Position tooltip
+        const rect = button.getBoundingClientRect();
+        let top = rect.top - 12;
+        let translateY = '-100%';
+        
+        // If too close to top, show below
+        if (top < 12) {
+          top = rect.bottom + 12;
+          translateY = '0';
+        }
+        
+        tooltip.style.left = `${rect.left + rect.width / 2}px`;
+        tooltip.style.top = `${top}px`;
+        tooltip.style.transform = `translate(-50%, ${translateY})`;
+        tooltip.classList.add('visible');
+        
+        if (activeButton && activeButton !== button) {
+          activeButton.classList.remove('is-active');
+        }
+        button.classList.add('is-active');
+        activeButton = button;
+        
+      } catch (error) {
+        console.error('[CacheValidator] Error showing provenance tooltip:', error);
+      }
+    };
+    
+    // Function to hide tooltip
+    const hideTooltip = (button) => {
+      if (button && button !== activeButton) return;
+      
+      tooltip.classList.remove('visible');
+      if (activeButton) {
+        activeButton.classList.remove('is-active');
+        activeButton = null;
+      }
+    };
+    
+    // Attach event listeners to all provenance buttons
+    const buttons = container.querySelectorAll('.provenance-trigger');
+    buttons.forEach(button => {
+      button.addEventListener('mouseenter', () => showTooltip(button));
+      button.addEventListener('focus', () => showTooltip(button));
+      button.addEventListener('mouseleave', () => hideTooltip(button));
+      button.addEventListener('blur', () => hideTooltip(button));
+      button.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (activeButton === button) {
+          hideTooltip(button);
+        } else {
+          showTooltip(button);
+        }
+      });
+    });
+    
+    // Hide on scroll or window events
+    window.addEventListener('scroll', () => hideTooltip(), true);
+    window.addEventListener('resize', () => hideTooltip());
+    
+    // Hide when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!activeButton) return;
+      if (e.target.closest('.provenance-trigger') === activeButton) return;
+      hideTooltip();
+    });
+    
+    // Hide on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        hideTooltip();
+      }
+    });
   }
   
   function escapeHtml(text) {
