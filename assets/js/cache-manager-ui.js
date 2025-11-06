@@ -1391,13 +1391,14 @@
               <li><strong>localStorage:</strong> User preferences, saved passwords, view settings</li>
               <li><strong>sessionStorage:</strong> Current session data, decrypted credentials</li>
               <li><strong>All cached metadata:</strong> School, class, core ID mappings/information</li>
+              <li><strong>Hard reload:</strong> Forces re-download of all JS/CSS files (like Ctrl+F5)</li>
             </ul>
           </div>
           
           <div class="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg mb-4 border border-amber-600">
             <p class="text-xs font-semibold" style="color: #78350f;">
               <i data-lucide="info" class="w-4 h-4 inline" style="color: #78350f;"></i>
-              <strong>After reset:</strong> You will need to re-enter the system password, rebuild the cache (60-90 sec), and reconfigure all preferences.
+              <strong>After reset:</strong> Page will hard reload (bypassing browser cache). You'll need to re-enter password, rebuild cache (60-90 sec), and reconfigure preferences. Any JS/CSS updates will take effect immediately.
             </p>
           </div>
           
@@ -1512,7 +1513,8 @@
         'This includes:\n' +
         '• All JotForm & Qualtrics data & validated results\n' +
         '• All site preferences and saved passwords\n' +
-        '• All session data and decrypted credentials\n\n' +
+        '• All session data and decrypted credentials\n' +
+        '• Update all JS/CSS files\n\n' +
         'This action CANNOT be undone.\n\n' +
         'Are you ABSOLUTELY SURE you want to proceed?'
       );
@@ -1558,14 +1560,19 @@
         alert(
           '✅ EMERGENCY RESET COMPLETE\n\n' +
           'All cached data has been purged from your browser.\n\n' +
-          'The page will now reload. You will need to:\n' +
+          'The page will now perform a HARD RELOAD (like Ctrl+F5).\n' +
+          'This will re-download all JS/CSS files and force code updates.\n\n' +
+          'You will need to:\n' +
           '1. Re-enter the system password\n' +
           '2. Rebuild the cache (Fetch Database)\n' +
           '3. Reconfigure any preferences'
         );
         
-        // Reload page to fresh state
-        window.location.reload();
+        // Hard reload: Forces browser to bypass HTTP cache and re-download all assets
+        // This is equivalent to Ctrl+F5 / Cmd+Shift+R
+        // Using cache-busting parameter to ensure fresh code load
+        const cacheBust = '?_nocache=' + Date.now();
+        window.location.href = window.location.pathname + cacheBust;
         
       } catch (error) {
         console.error('[EmergencyReset] Error during purge:', error);
