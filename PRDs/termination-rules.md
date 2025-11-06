@@ -517,27 +517,13 @@ edge_i_accuracy ≤ 4 × Square_accuracy (for any individual edge)
 
 *Proof:*
 - Let `square_accuracy = S` where 50% ≤ S < 90%
-- Square perimeter = 4 edges
-- Minimum accuracy scenario: Assume first edge contributes minimum possible to reach S%
-- If first edge contributes 0%, then the remaining 3 edges must contribute S%
-- Each edge is 25% of perimeter maximum
+- Square perimeter = 4 edges, each edge represents 25% of total perimeter
+- Consider the minimum first edge contribution scenario for S = 50%
+- If first edge contributes 0%, then remaining 3 edges must contribute 50%
 - Maximum contribution from 3 edges = 3 × 25% = 75%
-- Therefore: If S ≥ 50%, first edge MUST contribute at least: S - 75% = 50% - 75% = -25%
+- Mathematically, 0% + 50% = 50% is possible if two edges are perfect (2 × 25% = 50%)
 
-Wait, let me recalculate properly:
-
-- If `square_accuracy = 50%` of perimeter is cut accurately
-- This means 50% of the total perimeter length is accurate
-- If first edge contributes X% of the total perimeter accurately
-- And remaining 3 edges contribute Y% total
-- Then: X + Y = 50%
-- If X = 0 (first edge completely inaccurate), then Y must = 50%
-- But Y represents contributions from edges 2, 3, and 4
-- Each subsequent edge can contribute at most 25% of total perimeter
-- If student cuts edge 2 perfectly (25%), edge 3 perfectly (25%), that's only 50% total from those two edges
-- For Y = 50%, we need at least 2 edges to be perfect
-
-*Therefore:*
+*Analysis:*
 - For `squ_2 = 1` (50-89% square), the first edge MUST have been attempted and cut with significant accuracy
 - **HIGH CONFIDENCE** that side_1 should be marked (at least 10-49% threshold)
 - Given that 50%+ square requires substantial cutting, **HIGH CONFIDENCE** that side_2 should also be marked (50-89% threshold)
@@ -704,36 +690,25 @@ The first edge is only **25% of the total perimeter**. A student could:
 
 **Numerical Example:**
 
+In our scoring system:
+- `side_1-3` measures the FIRST EDGE only (not corners)
+- `squ_1-3` measures the ENTIRE SQUARE perimeter (all 4 edges + 4 corners)
+
 ```
-Student Performance:
-- First edge (edge_1): 30% accuracy → side_1 = 1 (10-49% threshold met) ✓
-- Corner 1: 2% accuracy (struggled with turn)
-- Edge 2: 8% accuracy (lost control after corner)
-- Corner 2: 1% accuracy (struggled again)
-- Edge 3: 5% accuracy
-- Corner 3: 1% accuracy
-- Edge 4: 3% accuracy
+Student Performance Scenario:
+- First edge (edge_1): 30% accuracy of its own length
+  → side_1 = 1 (30% meets 10-49% threshold) ✓
 
-Total square perimeter accuracy:
-= (30% × 0.25) + (2% × 0) + (8% × 0.25) + (1% × 0) + (5% × 0.25) + (1% × 0) + (3% × 0.25)
-= 7.5% + 0% + 2% + 0% + 1.25% + 0% + 0.75%
-= 11.5%
+But first edge is only 25% of total perimeter:
+- First edge contributes to square: 30% (of edge) × 25% (of perimeter) = 7.5% to total
 
-Wait, let me recalculate considering corners separately...
-
-Actually, in our scoring system:
-- side_1-3 measures the FIRST EDGE only (not corners)
-- squ_1-3 measures the ENTIRE SQUARE perimeter (all 4 edges + 4 corners)
-
-So if first edge = 30% of its own length (achieving side_1 threshold)
-But the first edge is only 25% of total perimeter
-Then first edge contributes: 30% × 25% = 7.5% to total square
-
-If remaining 75% of perimeter (edges 2-4 + corners) averages only 3% accuracy:
-Total square = 7.5% + (3% × 75%) = 7.5% + 2.25% = 9.75% < 10%
+If remaining 75% of perimeter (edges 2-4 + corners) averages only 2-3% accuracy:
+- Remaining contribution: 3% × 75% = 2.25%
+- Total square = 7.5% + 2.25% = 9.75% < 10%
+- Therefore: squ_1 = 0 (below 10% threshold) ✗
 ```
 
-Therefore, squ_1 = 0 (below 10% threshold) even though side_1 = 1 (30% > 10%).
+Result: side_1 = 1 but all squ = 0
 
 **This explains the asymmetry:**
 - First edge success (30%) is only 25% of the total perimeter
