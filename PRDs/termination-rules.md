@@ -753,8 +753,8 @@ Ratio = 1.0 / 16 = 6.25% of total difficulty
 **Why This Matters for Validation:**
 
 Even if a child succeeds on the first edge (6.25% of total difficulty), they face:
-- 3.75x more difficult tasks ahead (remaining edges + corners)
-- 4 corner transitions (each 3x harder than straight cutting)
+- Remaining difficulty = 15 units (16 total - 1 for first edge) = 15x the difficulty of first edge alone
+- 3 more straight edges + 4 corner transitions (corners are 3x harder than straight cutting)
 - Accumulated fatigue and loss of concentration
 
 **Probability Model:**
