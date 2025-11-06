@@ -255,6 +255,14 @@
     box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2);
 }
 
+#emergency-reset-badge span {
+    color: rgb(240, 78, 105) !important;
+}
+
+#emergency-reset-badge .lucide {
+    color: rgb(240, 78, 105) !important;
+}
+
 #emergency-reset-badge::before {
     content: '';
     position: absolute;
@@ -264,12 +272,25 @@
     height: 100%;
     background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
     animation: shimmer 3s infinite;
+    pointer-events: none;
+    z-index: 0;
+}
+
+#emergency-reset-badge span,
+#emergency-reset-badge .lucide {
+    position: relative;
+    z-index: 1;
 }
 
 #emergency-reset-badge:hover {
     background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
     box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
     transform: translateY(-1px);
+}
+
+#emergency-reset-badge:hover span,
+#emergency-reset-badge:hover .lucide {
+    color: white !important;
 }
 
 #emergency-reset-badge:active {
