@@ -51,7 +51,9 @@
     year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
-    hour12: false
+    hour12: false,
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    timeZoneName: 'short'
   });
 
   const fallbackRaw = {
@@ -80,7 +82,9 @@
     if (!value) return '—';
     const parsed = new Date(value);
     if (Number.isNaN(parsed.valueOf())) return value;
-    return dateFormatter.format(parsed);
+    const formatted = dateFormatter.format(parsed);
+    console.log(`[jotform] Formatted uploaded time: ${value} → ${formatted} (detected timezone: ${Intl.DateTimeFormat().resolvedOptions().timeZone})`);
+    return formatted;
   }
 
   function formatLastSync(value) {

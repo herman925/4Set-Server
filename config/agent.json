@@ -1,13 +1,13 @@
 {
   "oneDrive": {
     "autoDetect": true,
-    "relativePath": "\\The Education University of Hong Kong\\o365grp_KeySteps@JC - General\\98 - IT Support\\04 - Homemade Apps\\4Set-Server",
+    "relativePath": "\\The Education University of Hong Kong\\o365grp_KeySteps@JC - General\\97 - Project RAW Data\\PDF Form Data",
     "fallbackRoot": "C:\\Users\\KeySteps"
   },
   "watchPath": "./incoming",
   "stagingPath": "./processing",
-  "filingRoot": "./filed",
-  "unsortedRoot": "./filed/Unsorted",
+  "filingRoot": "",
+  "unsortedRoot": "./Unsorted",
   "logDirectory": "./logs",
   "queueManifest": "./queue_manifest.json",
   "hostIdentity": {

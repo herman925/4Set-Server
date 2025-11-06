@@ -139,6 +139,35 @@ class AgentConfigGUI:
         initial_dir = var.get() or os.path.dirname(CONFIG_PATH)
         path = filedialog.askdirectory(initialdir=initial_dir, title="Select Folder")
         if path:
+            # Normalize to backslashes for Windows
+            path = path.replace('/', '\\')
+            
+            # For OneDrive relative path, strip the base and convert to relative format
+            # Check if this is the relativePath field by examining which entry uses this var
+            is_relative_path = False
+            for key, meta in self.entries.items():
+                if meta["var"] == var and key == "relativePath":
+                    is_relative_path = True
+                    break
+            
+            if is_relative_path:
+                # Try to strip OneDrive base from common environment variables
+                onedrive_bases = []
+                if os.environ.get('OneDriveCommercial'):
+                    onedrive_bases.append(os.environ.get('OneDriveCommercial').replace('/', '\\'))
+                if os.environ.get('OneDrive'):
+                    onedrive_bases.append(os.environ.get('OneDrive').replace('/', '\\'))
+                
+                # Try to match and strip the OneDrive base
+                for base in onedrive_bases:
+                    if path.lower().startswith(base.lower()):
+                        # Strip the base and ensure leading backslash
+                        relative = path[len(base):]
+                        if not relative.startswith('\\'):
+                            relative = '\\' + relative
+                        path = relative
+                        break
+            
             var.set(path)
 
     def save_config(self):
