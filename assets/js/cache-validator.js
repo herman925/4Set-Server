@@ -1562,34 +1562,49 @@ window.CacheValidator = (() => {
     
     // Hide on scroll or window events (with throttling for performance)
     let scrollTimeout;
-    window.addEventListener('scroll', () => {
+    const handleScroll = () => {
       if (scrollTimeout) {
         clearTimeout(scrollTimeout);
       }
       scrollTimeout = setTimeout(() => hideTooltip(), 100);
-    }, true);
+    };
+    window.addEventListener('scroll', handleScroll);
     
     let resizeTimeout;
-    window.addEventListener('resize', () => {
+    const handleResize = () => {
       if (resizeTimeout) {
         clearTimeout(resizeTimeout);
       }
       resizeTimeout = setTimeout(() => hideTooltip(), 100);
-    });
+    };
+    window.addEventListener('resize', handleResize);
     
     // Hide when clicking outside
-    document.addEventListener('click', (e) => {
+    const handleClickOutside = (e) => {
       if (!activeButton) return;
       if (e.target.closest('.provenance-trigger') === activeButton) return;
       hideTooltip();
-    });
+    };
+    document.addEventListener('click', handleClickOutside);
     
     // Hide on Escape key
-    document.addEventListener('keydown', (e) => {
+    const handleEscape = (e) => {
       if (e.key === 'Escape') {
         hideTooltip();
       }
-    });
+    };
+    document.addEventListener('keydown', handleEscape);
+    
+    // Cleanup listeners when modal is closed
+    // Store cleanup function for potential future use
+    container._cleanupProvenanceListeners = () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('resize', handleResize);
+      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+      if (scrollTimeout) clearTimeout(scrollTimeout);
+      if (resizeTimeout) clearTimeout(resizeTimeout);
+    };
   }
   
   function escapeHtml(text) {

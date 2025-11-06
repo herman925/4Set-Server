@@ -78,8 +78,9 @@
      */
     createFieldProvenance(fieldName, source, sourceRecord, winner) {
       // Use descriptive fallback for missing grade to highlight data quality issues
-      const grade = sourceRecord.grade || 'Grade Not Detected';
-      if (!sourceRecord.grade) {
+      let grade = sourceRecord.grade;
+      if (!grade) {
+        grade = 'Grade Not Detected';
         console.warn(`[DataMerger] Grade not detected for field ${fieldName} from ${source}`);
       }
       
