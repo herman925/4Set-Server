@@ -1362,6 +1362,212 @@
   } // End of showSyncModal
 
   /**
+   * Show emergency reset password modal
+   * Requires system password (same as decryption password) to authorize complete cache purge
+   */
+  function showEmergencyResetModal() {
+    ensureModalCSS();
+    
+    const modal = document.createElement('div');
+    modal.id = 'emergency-reset-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+      <div class="modal-backdrop" style="background: rgba(0, 0, 0, 0.7);"></div>
+      <div class="modal-content" style="max-width: 500px; animation: slideDown 0.3s ease-out; border: 2px solid #ef4444;">
+        <div class="modal-header" style="background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border-bottom: 2px solid #ef4444;">
+          <h3 class="text-lg font-semibold text-red-900 flex items-center gap-2">
+            <i data-lucide="alert-triangle" class="w-6 h-6 text-red-600 animate-pulse"></i>
+            ⚠️ EMERGENCY CACHE RESET
+          </h3>
+        </div>
+        <div class="modal-body">
+          <div class="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg mb-4 border-2 border-red-400">
+            <p class="text-sm font-bold text-red-950 dark:text-red-100 mb-2">
+              <i data-lucide="shield-alert" class="w-4 h-4 inline"></i>
+              This action will completely purge ALL browser data for this site:
+            </p>
+            <ul class="text-xs text-red-900 dark:text-red-100 space-y-1 ml-6 list-disc font-medium">
+              <li><strong>IndexedDB:</strong> JotForm submissions, validation cache, Qualtrics TGMD data</li>
+              <li><strong>localStorage:</strong> User preferences, saved passwords, view settings</li>
+              <li><strong>sessionStorage:</strong> Current session data, decrypted credentials</li>
+              <li><strong>All cached metadata:</strong> School IDs, class mappings, student rosters</li>
+            </ul>
+          </div>
+          
+          <div class="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg mb-4 border border-amber-400">
+            <p class="text-xs text-amber-950 dark:text-amber-100 font-semibold">
+              <i data-lucide="info" class="w-4 h-4 inline"></i>
+              <strong>After reset:</strong> You will need to re-enter the system password, rebuild the cache (60-90 sec), and reconfigure all preferences.
+            </p>
+          </div>
+          
+          <div class="mb-4">
+            <label for="emergency-password" class="block text-sm font-medium text-[color:var(--foreground)] mb-2">
+              Enter System Password to Authorize
+            </label>
+            <input 
+              type="password" 
+              id="emergency-password" 
+              class="w-full px-3 py-2 border border-[color:var(--border)] rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 bg-[color:var(--background)] text-[color:var(--foreground)]"
+              placeholder="System password required"
+              autocomplete="off"
+            />
+            <p id="emergency-error" class="text-xs text-red-600 mt-1 hidden">Incorrect password. Access denied.</p>
+          </div>
+        </div>
+        <div class="modal-footer flex gap-3">
+          <button id="emergency-cancel-btn" class="px-4 py-2.5 text-sm font-medium text-[color:var(--foreground)] bg-[color:var(--muted)] hover:bg-[color:var(--accent)] rounded-lg transition-colors">
+            Cancel
+          </button>
+          <button id="emergency-confirm-btn" class="px-4 py-2.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors font-semibold">
+            🚨 PURGE ALL DATA
+          </button>
+        </div>
+      </div>
+    `;
+    
+    document.body.appendChild(modal);
+    lucide.createIcons();
+    
+    const passwordInput = document.getElementById('emergency-password');
+    const errorText = document.getElementById('emergency-error');
+    const confirmBtn = document.getElementById('emergency-confirm-btn');
+    const cancelBtn = document.getElementById('emergency-cancel-btn');
+    
+    // Focus password input
+    setTimeout(() => passwordInput.focus(), 100);
+    
+    // Allow Enter key to submit
+    passwordInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        confirmBtn.click();
+      }
+    });
+    
+    // Cancel button
+    cancelBtn.addEventListener('click', () => {
+      modal.remove();
+    });
+    
+    // Backdrop click to cancel
+    const backdrop = modal.querySelector('.modal-backdrop');
+    if (backdrop) {
+      backdrop.addEventListener('click', () => modal.remove());
+    }
+    
+    // Confirm button - verify password and execute purge
+    confirmBtn.addEventListener('click', async () => {
+      const password = passwordInput.value;
+      
+      if (!password) {
+        errorText.textContent = 'Password required.';
+        errorText.classList.remove('hidden');
+        passwordInput.focus();
+        return;
+      }
+      
+      // Verify password matches system password (stored in sessionStorage)
+      const cachedData = sessionStorage.getItem('checking_system_data');
+      if (!cachedData) {
+        errorText.textContent = 'System not initialized. Please reload and decrypt first.';
+        errorText.classList.remove('hidden');
+        return;
+      }
+      
+      let systemPassword = null;
+      try {
+        const data = JSON.parse(cachedData);
+        systemPassword = data.password; // The password used for decryption
+      } catch (e) {
+        console.error('[EmergencyReset] Error reading system password:', e);
+        errorText.textContent = 'System error. Please contact administrator.';
+        errorText.classList.remove('hidden');
+        return;
+      }
+      
+      // Verify password
+      if (password !== systemPassword) {
+        errorText.textContent = 'Incorrect password. Access denied.';
+        errorText.classList.remove('hidden');
+        passwordInput.value = '';
+        passwordInput.focus();
+        return;
+      }
+      
+      // Password verified - show final confirmation
+      const finalConfirm = confirm(
+        '⚠️⚠️⚠️ FINAL CONFIRMATION ⚠️⚠️⚠️\n\n' +
+        'You are about to PERMANENTLY DELETE all cached data for this site.\n\n' +
+        'This includes:\n' +
+        '• All JotForm submissions and validation results\n' +
+        '• All Qualtrics TGMD data\n' +
+        '• All user preferences and saved passwords\n' +
+        '• All session data and decrypted credentials\n\n' +
+        'This action CANNOT be undone.\n\n' +
+        'Are you ABSOLUTELY SURE you want to proceed?'
+      );
+      
+      if (!finalConfirm) {
+        modal.remove();
+        return;
+      }
+      
+      // Execute comprehensive purge
+      console.log('[EmergencyReset] 🚨 EXECUTING COMPREHENSIVE PURGE...');
+      
+      try {
+        // Step 1: Clear IndexedDB stores
+        console.log('[EmergencyReset] Clearing IndexedDB stores...');
+        if (window.JotFormCache) {
+          await window.JotFormCache.clearCache(); // Clears all 3 stores
+        }
+        
+        // Step 2: Clear localStorage
+        console.log('[EmergencyReset] Clearing localStorage...');
+        localStorage.clear();
+        
+        // Step 3: Clear sessionStorage
+        console.log('[EmergencyReset] Clearing sessionStorage...');
+        sessionStorage.clear();
+        
+        // Step 4: Clear any service worker caches (if present)
+        if ('caches' in window) {
+          console.log('[EmergencyReset] Clearing service worker caches...');
+          const cacheNames = await caches.keys();
+          await Promise.all(cacheNames.map(name => caches.delete(name)));
+        }
+        
+        console.log('[EmergencyReset] ✅ COMPREHENSIVE PURGE COMPLETE');
+        
+        // Close modal
+        modal.remove();
+        
+        // Show success message and reload
+        alert(
+          '✅ EMERGENCY RESET COMPLETE\n\n' +
+          'All cached data has been purged from your browser.\n\n' +
+          'The page will now reload. You will need to:\n' +
+          '1. Re-enter the system password\n' +
+          '2. Rebuild the cache (Fetch Database)\n' +
+          '3. Reconfigure any preferences'
+        );
+        
+        // Reload page to fresh state
+        window.location.reload();
+        
+      } catch (error) {
+        console.error('[EmergencyReset] Error during purge:', error);
+        alert(
+          '❌ ERROR DURING PURGE\n\n' +
+          'An error occurred while clearing data:\n' +
+          error.message + '\n\n' +
+          'Please try again or contact system administrator.'
+        );
+      }
+    });
+  }
+
+  /**
    * Initialize cache manager UI
    */
   async function init() {
@@ -1420,6 +1626,15 @@
       });
     }
 
+    // Click on Emergency Reset pill
+    const emergencyBadge = document.getElementById('emergency-reset-badge');
+    if (emergencyBadge) {
+      emergencyBadge.addEventListener('click', () => {
+        console.log('[CacheUI] Emergency Reset clicked');
+        showEmergencyResetModal();
+      });
+    }
+
     // Intercept "Start Checking" button - use CAPTURE phase to run before other listeners
     const startCheckingBtn = document.getElementById('start-checking-btn');
     if (startCheckingBtn) {
@@ -1461,7 +1676,8 @@
     updateStatusPill,
     isCacheReady,
     showSyncModal,
-    showBlockingModal
+    showBlockingModal,
+    showEmergencyResetModal
   };
 
   // Auto-initialize

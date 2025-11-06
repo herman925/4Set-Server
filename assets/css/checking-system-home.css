@@ -247,6 +247,45 @@
     margin-top: 0.125rem;
 }
 
+/* Emergency Reset Badge - Enhanced danger styling */
+#emergency-reset-badge {
+    position: relative;
+    overflow: hidden;
+    border: 2px solid #dc2626;
+    box-shadow: 0 2px 8px rgba(220, 38, 38, 0.2);
+}
+
+#emergency-reset-badge::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    animation: shimmer 3s infinite;
+}
+
+#emergency-reset-badge:hover {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+    transform: translateY(-1px);
+}
+
+#emergency-reset-badge:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 6px rgba(220, 38, 38, 0.3);
+}
+
+@keyframes shimmer {
+    0% {
+        left: -100%;
+    }
+    50%, 100% {
+        left: 100%;
+    }
+}
+
 /* Cache ready modal info box */
 .cache-ready-info-box {
     background: color-mix(in srgb, var(--primary) 8%, #ffffff);

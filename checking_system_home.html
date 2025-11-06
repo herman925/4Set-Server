@@ -43,20 +43,29 @@
 
             <!-- System Status Pills -->
             <div class="entry-card mb-6 p-4">
-                <div class="flex items-center gap-3 flex-wrap">
-                    <!-- Decryption Status Pill -->
-                    <div id="decryption-status-badge" class="badge-error flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium">
-                        <span class="status-indicator inline-block h-2 w-2 rounded-full"></span>
-                        <span id="decryption-status-text">Not Decrypted</span>
+                <div class="flex items-center justify-between gap-3 flex-wrap">
+                    <!-- Left side: Status Pills -->
+                    <div class="flex items-center gap-3">
+                        <!-- Decryption Status Pill -->
+                        <div id="decryption-status-badge" class="badge-error flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium">
+                            <span class="status-indicator inline-block h-2 w-2 rounded-full"></span>
+                            <span id="decryption-status-text">Not Decrypted</span>
+                        </div>
+                        
+                        <!-- JotForm Cache Status Pill -->
+                        <div id="system-health-badge" class="badge-error flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium">
+                            <span class="status-indicator inline-block h-2 w-2 rounded-full"></span>
+                            <span id="status-text">System Not Ready</span>
+                        </div>
+                        
+                        <span class="text-xs text-[color:var(--muted-foreground)]">Last Synced: <span class="font-mono" id="snapshot-timestamp">—</span></span>
                     </div>
                     
-                    <!-- JotForm Cache Status Pill -->
-                    <div id="system-health-badge" class="badge-error flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium">
-                        <span class="status-indicator inline-block h-2 w-2 rounded-full"></span>
-                        <span id="status-text">System Not Ready</span>
+                    <!-- Right side: Emergency Reset -->
+                    <div id="emergency-reset-badge" class="badge-error flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium cursor-pointer hover:opacity-80 transition-opacity" title="Emergency: Purge all cached data (password required)">
+                        <i data-lucide="alert-triangle" class="w-3 h-3"></i>
+                        <span>Emergency Reset</span>
                     </div>
-                    
-                    <span class="text-xs text-[color:var(--muted-foreground)]">Last Synced: <span class="font-mono" id="snapshot-timestamp">—</span></span>
                 </div>
             </div>
 
