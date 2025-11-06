@@ -2337,11 +2337,19 @@ Four-column grid showing termination stages only:
 ### FM (Fine Motor) - Threshold-Based Termination
 
 #### Termination Rule
-- **FM_Ter** (Square Cutting): Must score > 0 across FM_squ_1–FM_squ_3
-- If all 3 questions score 0, tree-cutting items (FM_tree_*) are skipped
+- **FM_Ter** (All Cutting Items): Must score > 0 across FM_slide_1–FM_slide_3 and FM_squ_1–FM_squ_3
+- If all 6 questions score 0, tree-cutting items (FM_tree_*) are skipped
+
+#### Incomplete Data Detection
+- If ANY of FM_side_1-3 = 1 (successful) BUT ALL of FM_squ_1-3 = 0 (unsuccessful)
+- System flags as **"Possible Wrong Input"** with yellow warning
+- Questions FM_squ_1-3 display "Possible Wrong Input" instead of "Not Successful"
+- This indicates data quality issue requiring investigation
 
 #### Display
-Shows pass/fail status for square cutting trial with score breakdown
+- **FM_Hand**: Shown as metadata row (慣用手: 左手/右手/未形成) - not scored
+- **Cutting Items**: Shows success/not successful status
+- **No "Correct Answer" column** for Fine Motor (performance assessment)
 
 ## Implementation Notes
 

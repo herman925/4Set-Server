@@ -290,11 +290,15 @@ The 4Set assessment system consists of **2 main sets** containing **15 unique ta
 **Scorable Questions:** 13  
 **Practice Questions:** 0
 
-**Question Range:** Multiple subtasks including square cutting, bead threading, etc.
+**Question Range:** Multiple subtasks including edge cutting, square cutting, tree cutting
 
 **Termination Rule:**
-- **Square Cutting:** If all 3 square-cutting items (FM_squ_1, FM_squ_2, FM_squ_3) have score = 0, terminate
+- **All Cutting Items:** If all 6 cutting items (FM_slide_1-3 + FM_squ_1-3) have score = 0, terminate
 - Questions after termination are excluded from total count
+- **FM_Hand** is metadata (dominant hand), not scored
+
+**Incomplete Data Detection:**
+- If ANY side_1-3 = 1 but ALL squ_1-3 = 0 → Yellow warning ("Possible Wrong Input")
 
 ---
 
@@ -408,7 +412,7 @@ function isExcludedField(id) {
 - `ERV_Ter3` - Stage 3 termination (Q25-Q36)
 - `CM_Ter1` through `CM_Ter4` - CM stage terminations
 - `CWR_10Incorrect` - 10 consecutive incorrect termination
-- `FM_Ter` - Fine motor square cutting termination
+- `FM_Ter` - Fine motor all cutting items termination (slide + square)
 
 **Calculation:** EXCLUDED from question counts (metadata only)
 

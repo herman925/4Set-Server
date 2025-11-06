@@ -743,9 +743,9 @@ window.TaskValidator = (() => {
     },
     'finemotor': {
       type: 'threshold_based',
-      questionIds: ['FM_squ_1', 'FM_squ_2', 'FM_squ_3'],
+      questionIds: ['FM_slide_1', 'FM_slide_2', 'FM_slide_3', 'FM_squ_1', 'FM_squ_2', 'FM_squ_3'],
       threshold: 1, // At least 1 must be correct (score > 0)
-      description: 'All square-cutting items must score 0 to terminate'
+      description: 'All sliding and square-cutting items must score 0 to terminate'
     }
   };
 
@@ -959,6 +959,8 @@ window.TaskValidator = (() => {
     
     if (config.type === 'stage_based') {
       // For ERV and CM: check each stage's termination field
+      // CRITICAL: Only check stages that were actually reached (have at least one answered question)
+      // Unreached stages should not be checked as their termination fields are not recorded
       for (let i = 0; i < config.stages.length; i++) {
         const stage = config.stages[i];
         const terminationFieldId = taskId === 'erv' 
@@ -975,6 +977,15 @@ window.TaskValidator = (() => {
         
         if (startIdx !== -1 && endIdx !== -1) {
           const stageQuestions = taskResult.questions.slice(startIdx, endIdx + 1);
+          const answeredInStage = stageQuestions.filter(q => q.studentAnswer !== null).length;
+          
+          // CRITICAL FIX: Skip stages that were never reached (no answered questions)
+          // This prevents false mismatches for unreached stages where CM_Ter3/CM_Ter4 are not recorded
+          if (answeredInStage === 0) {
+            console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()} Stage ${stage.stageNum} not reached (0 answers) - skipping mismatch check`);
+            break; // Stop checking further stages
+          }
+          
           const correctInStage = stageQuestions.filter(q => q.isCorrect).length;
           const systemShouldTerminate = correctInStage < stage.threshold;
           
@@ -983,6 +994,12 @@ window.TaskValidator = (() => {
             hasTerminationMismatch = true;
             console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()} TERMINATION MISMATCH at ${terminationFieldId}: JotForm=${recordedTriggered}, System=${systemShouldTerminate}`);
             break; // One mismatch is enough
+          }
+          
+          // If this stage terminated, stop checking further stages
+          if (recordedTriggered) {
+            console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()} Stage ${stage.stageNum} terminated - stopping mismatch checks`);
+            break;
           }
         }
       }
@@ -1005,6 +1022,171 @@ window.TaskValidator = (() => {
       if (recordedTriggered !== calculatedTerminated) {
         hasTerminationMismatch = true;
         console.log(`[TaskValidator] FM TERMINATION MISMATCH: JotForm=${recordedTriggered}, System=${calculatedTerminated}`);
+      }
+      
+      // INCOMPLETE DATA DETECTION for Fine Motor:
+      // If ANY side_1-3 is successful (value = 1) BUT ALL squ_1-3 are unsuccessful (value = 0),
+      // this indicates incomplete or wrong input data
+      if (taskResult.taskId === 'finemotor' || taskResult.taskId === 'fm') {
+        const sideQuestions = ['FM_side_1', 'FM_side_2', 'FM_side_3'];
+        const squQuestions = ['FM_squ_1', 'FM_squ_2', 'FM_squ_3'];
+        
+        // Check if any side question is successful
+        const anySideSuccessful = sideQuestions.some(qid => {
+          const q = taskResult.questions.find(question => question.id === qid);
+          return q && (q.studentAnswer === '1' || q.studentAnswer === 1);
+        });
+        
+        // Check if ALL squ questions are unsuccessful
+        const allSquUnsuccessful = squQuestions.every(qid => {
+          const q = taskResult.questions.find(question => question.id === qid);
+          return q && (q.studentAnswer === '0' || q.studentAnswer === 0);
+        });
+        
+        if (anySideSuccessful && allSquUnsuccessful) {
+          hasTerminationMismatch = true; // Use termination mismatch flag to trigger yellow status
+          console.log(`[TaskValidator] FM INCOMPLETE DATA: side_1-3 has successful but ALL squ_1-3 are unsuccessful`);
+          
+          // Mark the squ questions for special display
+          squQuestions.forEach(qid => {
+            const q = taskResult.questions.find(question => question.id === qid);
+            if (q) {
+              q.hasIncompleteData = true;
+            }
+          });
+        }
+        
+        // HIERARCHICAL CONSISTENCY VALIDATION for Fine Motor:
+        // FM_side_1-3 are progressive thresholds (10-49%, 50-89%, 90-100%) for the SAME first edge
+        // FM_squ_1-3 are progressive thresholds (10-49%, 50-89%, 90-100%) for the SAME entire square
+        // Higher thresholds REQUIRE lower thresholds to be marked (cumulative/hierarchical)
+        // Example: If side_3=1, then side_2 and side_1 MUST also = 1
+        
+        // Get side values
+        const side1 = taskResult.questions.find(q => q.id === 'FM_side_1');
+        const side2 = taskResult.questions.find(q => q.id === 'FM_side_2');
+        const side3 = taskResult.questions.find(q => q.id === 'FM_side_3');
+        
+        const side1Val = side1 && (side1.studentAnswer === '1' || side1.studentAnswer === 1) ? 1 : 0;
+        const side2Val = side2 && (side2.studentAnswer === '1' || side2.studentAnswer === 1) ? 1 : 0;
+        const side3Val = side3 && (side3.studentAnswer === '1' || side3.studentAnswer === 1) ? 1 : 0;
+        
+        // Check side_1-3 hierarchical consistency
+        let sideViolation = false;
+        if (side3Val === 1 && (side1Val === 0 || side2Val === 0)) {
+          sideViolation = true; // side_3 requires side_1 AND side_2
+        } else if (side2Val === 1 && side1Val === 0) {
+          sideViolation = true; // side_2 requires side_1
+        }
+        
+        if (sideViolation) {
+          hasTerminationMismatch = true; // Trigger yellow warning
+          console.log(`[TaskValidator] FM HIERARCHICAL VIOLATION: side thresholds [${side1Val},${side2Val},${side3Val}] - higher threshold marked without lower ones`);
+          
+          // Mark all side questions with violation flag
+          sideQuestions.forEach(qid => {
+            const q = taskResult.questions.find(question => question.id === qid);
+            if (q) {
+              q.hasHierarchicalViolation = true;
+            }
+          });
+        }
+        
+        // Get squ values
+        const squ1 = taskResult.questions.find(q => q.id === 'FM_squ_1');
+        const squ2 = taskResult.questions.find(q => q.id === 'FM_squ_2');
+        const squ3 = taskResult.questions.find(q => q.id === 'FM_squ_3');
+        
+        const squ1Val = squ1 && (squ1.studentAnswer === '1' || squ1.studentAnswer === 1) ? 1 : 0;
+        const squ2Val = squ2 && (squ2.studentAnswer === '1' || squ2.studentAnswer === 1) ? 1 : 0;
+        const squ3Val = squ3 && (squ3.studentAnswer === '1' || squ3.studentAnswer === 1) ? 1 : 0;
+        
+        // Check squ_1-3 hierarchical consistency
+        let squViolation = false;
+        if (squ3Val === 1 && (squ1Val === 0 || squ2Val === 0)) {
+          squViolation = true; // squ_3 requires squ_1 AND squ_2
+        } else if (squ2Val === 1 && squ1Val === 0) {
+          squViolation = true; // squ_2 requires squ_1
+        }
+        
+        if (squViolation) {
+          hasTerminationMismatch = true; // Trigger yellow warning
+          console.log(`[TaskValidator] FM HIERARCHICAL VIOLATION: square thresholds [${squ1Val},${squ2Val},${squ3Val}] - higher threshold marked without lower ones`);
+          
+          // Mark all squ questions with violation flag
+          squQuestions.forEach(qid => {
+            const q = taskResult.questions.find(question => question.id === qid);
+            if (q) {
+              q.hasHierarchicalViolation = true;
+            }
+          });
+        }
+        
+        // CROSS-SECTION DEPENDENCY VALIDATION for Fine Motor (GRADUATED):
+        // The first edge (side_1-3) is PART of the entire square (squ_1-3)
+        // Higher squ thresholds = Higher confidence about which side thresholds should exist
+        // Confidence levels: 'high' (RED pill) or 'medium' (YELLOW pill)
+        
+        // Check if ALL side questions are unanswered (null)
+        const allSideUnanswered = sideQuestions.every(qid => {
+          const q = taskResult.questions.find(question => question.id === qid);
+          return !q || q.studentAnswer === null || q.studentAnswer === undefined;
+        });
+        
+        const side1Null = !side1 || side1.studentAnswer === null || side1.studentAnswer === undefined;
+        const side2Null = !side2 || side2.studentAnswer === null || side2.studentAnswer === undefined;
+        
+        // Case 1: squ_3 = 1 (90-100% square) - VERY HIGH confidence
+        if (squ3Val === 1 && allSideUnanswered) {
+          hasTerminationMismatch = true;
+          console.log(`[TaskValidator] FM CROSS-SECTION VIOLATION (HIGH): squ_3=1 but ALL sides unanswered`);
+          
+          // Flag side_1, side_2, side_3 with HIGH confidence (RED pills)
+          [side1, side2, side3].forEach(q => {
+            if (q) {
+              q.hasCrossSectionViolation = true;
+              q.crossSectionConfidence = 'high'; // RED "Missing Data"
+            }
+          });
+        }
+        
+        // Case 2: squ_2 = 1 (50-89% square) - HIGH confidence
+        else if (squ2Val === 1) {
+          if (allSideUnanswered) {
+            hasTerminationMismatch = true;
+            console.log(`[TaskValidator] FM CROSS-SECTION VIOLATION (HIGH): squ_2=1 but ALL sides unanswered`);
+            
+            // Flag side_1, side_2 with HIGH confidence (RED pills)
+            [side1, side2].forEach(q => {
+              if (q) {
+                q.hasCrossSectionViolation = true;
+                q.crossSectionConfidence = 'high'; // RED "Missing Data"
+              }
+            });
+          } else if (!side1Null && side2Null) {
+            // Partial answer: side_1 answered but side_2 missing
+            hasTerminationMismatch = true;
+            console.log(`[TaskValidator] FM CROSS-SECTION VIOLATION (MEDIUM): squ_2=1, side_1 answered, but side_2 unanswered`);
+            
+            // Flag side_2 only with MEDIUM confidence (YELLOW pill)
+            if (side2) {
+              side2.hasCrossSectionViolation = true;
+              side2.crossSectionConfidence = 'medium'; // YELLOW "Possible Missing Data"
+            }
+          }
+        }
+        
+        // Case 3: squ_1 = 1 (10-49% square) - MEDIUM confidence
+        else if (squ1Val === 1 && allSideUnanswered) {
+          hasTerminationMismatch = true;
+          console.log(`[TaskValidator] FM CROSS-SECTION VIOLATION (MEDIUM): squ_1=1 but ALL sides unanswered`);
+          
+          // Flag side_1 only with MEDIUM confidence (YELLOW pill)
+          if (side1) {
+            side1.hasCrossSectionViolation = true;
+            side1.crossSectionConfidence = 'medium'; // YELLOW "Possible Missing Data"
+          }
+        }
       }
     }
     

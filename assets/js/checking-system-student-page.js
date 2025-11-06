@@ -1334,20 +1334,43 @@
   }
 
   /**
-   * Helper: Get Fine Motor result pill (success/not successful)
+   * Helper: Get Fine Motor result pill (7-pill system with confidence tiers)
    */
-  function getFMResultPill(studentAnswer, branchSuffix = '') {
+  function getFMResultPill(studentAnswer, branchSuffix = '', hasIncompleteData = false, hasHierarchicalViolation = false, hasCrossSectionViolation = false, crossSectionConfidence = '') {
+    // Priority 1: Cross-section violation with HIGH confidence → RED "Missing Data"
+    if (hasCrossSectionViolation && crossSectionConfidence === 'high') {
+      return `<span class="answer-pill incorrect"><i data-lucide="alert-triangle" class="w-3 h-3"></i>Missing Data${branchSuffix}</span>`;
+    }
+    
+    // Priority 2: Cross-section violation with MEDIUM confidence → YELLOW "Possible Missing Data"
+    if (hasCrossSectionViolation && crossSectionConfidence === 'medium') {
+      return `<span class="answer-pill" style="background: #fef3c7; color: #92400e; border-color: #fde68a;"><i data-lucide="alert-triangle" class="w-3 h-3"></i>Possible Missing Data${branchSuffix}</span>`;
+    }
+    
+    // Priority 3: Student answer is null → GRAY "Not answered"
     if (studentAnswer === null) {
       return `<span class="answer-pill incorrect"><i data-lucide="minus" class="w-3 h-3"></i>Not answered${branchSuffix}</span>`;
     }
     
+    // Priority 4: Hierarchical violation → YELLOW "Illogical Score"
+    if (hasHierarchicalViolation) {
+      return `<span class="answer-pill" style="background: #fef3c7; color: #92400e; border-color: #fde68a;"><i data-lucide="alert-triangle" class="w-3 h-3"></i>Illogical Score${branchSuffix}</span>`;
+    }
+    
     const value = studentAnswer === '1' || studentAnswer === 1;
     
+    // Priority 5: Value = 1 → GREEN "Successful"
     if (value) {
       return `<span class="answer-pill correct"><i data-lucide="check" class="w-3 h-3"></i>Successful${branchSuffix}</span>`;
-    } else {
-      return `<span class="answer-pill incorrect"><i data-lucide="x" class="w-3 h-3"></i>Not Successful${branchSuffix}</span>`;
     }
+    
+    // Priority 6: Incomplete data → YELLOW "Possible Wrong Input"
+    if (hasIncompleteData) {
+      return `<span class="answer-pill" style="background: #fef3c7; color: #92400e; border-color: #fde68a;"><i data-lucide="alert-triangle" class="w-3 h-3"></i>Possible Wrong Input${branchSuffix}</span>`;
+    }
+    
+    // Priority 7: Default value = 0 → RED "Not Successful"
+    return `<span class="answer-pill incorrect"><i data-lucide="x" class="w-3 h-3"></i>Not Successful${branchSuffix}</span>`;
   }
 
   /**
@@ -1537,9 +1560,37 @@
         mergedAnswers
       );
       
+      // For Fine Motor: display FM_Hand as metadata (like TGMD_Leg)
+      if ((taskId === 'finemotor' || taskId === 'fm') && validation && validation.questions) {
+        const fmHand = validation.questions.find(q => q.id === 'FM_Hand');
+        if (fmHand) {
+          const handRow = document.createElement('tr');
+          handRow.className = 'bg-blue-50 border-b-2 border-blue-200';
+          const handAnswer = fmHand.studentAnswer || '—';
+          const handAnswerDisplay = handAnswer === 'Left' ? '左手' : 
+                                     handAnswer === 'Right' ? '右手' : 
+                                     handAnswer === 'Undetermined' ? '未形成' : handAnswer;
+          handRow.innerHTML = `
+            <td colspan="3" class="py-3 px-2">
+              <div class="flex items-center gap-2">
+                <i data-lucide="hand" class="w-4 h-4 text-blue-600"></i>
+                <span class="font-semibold text-blue-900">慣用手: ${handAnswerDisplay}</span>
+              </div>
+            </td>
+          `;
+          tbody.appendChild(handRow);
+        }
+      }
+      
       // Populate with real questions (using reordered list)
       for (let i = 0; i < orderedQuestions.length; i++) {
         const question = orderedQuestions[i];
+        
+        // Skip FM_Hand since it's displayed as metadata
+        if (question.id === 'FM_Hand') {
+          continue;
+        }
+        
         const row = document.createElement('tr');
         
         // Check if this question is after a timeout/termination (should be marked as "Ignored")
@@ -1644,8 +1695,15 @@
           // HTKS: Use custom result pill based on score (0/1/2)
           statusPill = getHTKSResultPill(question.studentAnswer, branchSuffix);
         } else if (isFM && !question.isTextDisplay) {
-          // Fine Motor: Use custom result pill (成功/不成功)
-          statusPill = getFMResultPill(question.studentAnswer, branchSuffix);
+          // Fine Motor: Use 7-pill system with confidence tiers
+          statusPill = getFMResultPill(
+            question.studentAnswer, 
+            branchSuffix, 
+            question.hasIncompleteData, 
+            question.hasHierarchicalViolation, 
+            question.hasCrossSectionViolation,
+            question.crossSectionConfidence || ''
+          );
         } else if (question.isTextDisplay) {
           // Special handling for _TEXT display fields
           if (question.textFieldStatus === 'na') {
@@ -2801,7 +2859,7 @@
       // No data yet
       statusCircle.classList.add('status-grey');
       statusCircle.title = 'Not started';
-    } else if (stats.hasPostTerminationAnswers) {
+    } else if (stats.hasPostTerminationAnswers || stats.hasTerminationMismatch) {
       // Yellow: Post-termination data OR termination mismatch detected (data quality issue)
       // Yellow indicates EITHER post-termination activity OR termination mismatch
       statusCircle.classList.add('status-yellow');

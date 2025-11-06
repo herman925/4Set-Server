@@ -269,13 +269,32 @@ for (question of questions) {
 ### Threshold-Based Termination (Fine Motor)
 
 ```javascript
-targetQuestions = questions.filter(q => ['FM_squ_1', 'FM_squ_2', 'FM_squ_3'].includes(q.id));
+// Check ALL cutting items (sliding + square)
+targetQuestions = questions.filter(q => 
+  ['FM_slide_1', 'FM_slide_2', 'FM_slide_3', 'FM_squ_1', 'FM_squ_2', 'FM_squ_3'].includes(q.id)
+);
 correctCount = targetQuestions.filter(q => q.isCorrect).length;
 
-if (correctCount < 1) {  // All scored 0
+if (correctCount < 1) {  // All 6 items scored 0
   lastQuestion = targetQuestions[targetQuestions.length - 1];
   terminationIndex = questions.findIndex(q => q.id === lastQuestion.id);
   adjustedTotal = terminationIndex + 1;
+}
+
+// Incomplete data detection: If ANY side_1-3 is successful BUT ALL squ_1-3 are unsuccessful
+const anySideSuccessful = ['FM_side_1', 'FM_side_2', 'FM_side_3'].some(id => {
+  const q = questions.find(question => question.id === id);
+  return q && (q.studentAnswer === '1' || q.studentAnswer === 1);
+});
+
+const allSquUnsuccessful = ['FM_squ_1', 'FM_squ_2', 'FM_squ_3'].every(id => {
+  const q = questions.find(question => question.id === id);
+  return q && (q.studentAnswer === '0' || q.studentAnswer === 0);
+});
+
+if (anySideSuccessful && allSquUnsuccessful) {
+  // Trigger yellow warning - sets hasTerminationMismatch = true
+  // Questions FM_squ_1-3 display "Possible Wrong Input" instead of "Not Successful"
 }
 ```
 

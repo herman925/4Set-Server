@@ -1363,7 +1363,7 @@
 
   /**
    * Show emergency reset password modal
-   * Requires system password (same as decryption password) to authorize complete cache purge
+   * Verifies system password by attempting file decryption before allowing cache purge
    */
   function showEmergencyResetModal() {
     ensureModalCSS();
@@ -1382,28 +1382,28 @@
         </div>
         <div class="modal-body">
           <div class="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg mb-4 border-2 border-red-400">
-            <p class="text-sm font-bold text-red-950 dark:text-red-100 mb-2">
-              <i data-lucide="shield-alert" class="w-4 h-4 inline"></i>
+            <p class="text-sm font-bold mb-2" style="color: #7f1d1d;">
+              <i data-lucide="shield-alert" class="w-4 h-4 inline" style="color: #7f1d1d;"></i>
               This action will completely purge ALL browser data for this site:
             </p>
-            <ul class="text-xs text-red-900 dark:text-red-100 space-y-1 ml-6 list-disc font-medium">
-              <li><strong>IndexedDB:</strong> JotForm submissions, validation cache, Qualtrics TGMD data</li>
+            <ul class="text-xs space-y-1 ml-6 list-disc font-medium" style="color: #991b1b;">
+              <li><strong>IndexedDB:</strong> JotForm submissions, validation cache, Qualtrics data</li>
               <li><strong>localStorage:</strong> User preferences, saved passwords, view settings</li>
               <li><strong>sessionStorage:</strong> Current session data, decrypted credentials</li>
-              <li><strong>All cached metadata:</strong> School IDs, class mappings, student rosters</li>
+              <li><strong>All cached metadata:</strong> School, class, core ID mappings/information</li>
             </ul>
           </div>
           
-          <div class="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg mb-4 border border-amber-400">
-            <p class="text-xs text-amber-950 dark:text-amber-100 font-semibold">
-              <i data-lucide="info" class="w-4 h-4 inline"></i>
+          <div class="p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg mb-4 border border-amber-600">
+            <p class="text-xs font-semibold" style="color: #78350f;">
+              <i data-lucide="info" class="w-4 h-4 inline" style="color: #78350f;"></i>
               <strong>After reset:</strong> You will need to re-enter the system password, rebuild the cache (60-90 sec), and reconfigure all preferences.
             </p>
           </div>
           
           <div class="mb-4">
             <label for="emergency-password" class="block text-sm font-medium text-[color:var(--foreground)] mb-2">
-              Enter System Password to Authorize
+              Enter System Password to authorise
             </label>
             <input 
               type="password" 
@@ -1466,31 +1466,42 @@
         return;
       }
       
-      // Verify password matches system password (stored in sessionStorage)
-      const cachedData = sessionStorage.getItem('checking_system_data');
-      if (!cachedData) {
-        errorText.textContent = 'System not initialized. Please reload and decrypt first.';
-        errorText.classList.remove('hidden');
-        return;
-      }
+      // Verify password against stored credentials
+      console.log('[EmergencyReset] Verifying password...');
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = 'Verifying...';
       
-      let systemPassword = null;
       try {
+        // Get credentials from sessionStorage
+        const cachedData = sessionStorage.getItem('checking_system_data');
+        if (!cachedData) {
+          throw new Error('System not initialized. Please reload and decrypt first.');
+        }
+        
         const data = JSON.parse(cachedData);
-        systemPassword = data.password; // The password used for decryption
+        const storedPassword = data.credentials?.systemPassword;
+        
+        if (!storedPassword) {
+          throw new Error('System password not found in credentials');
+        }
+        
+        // Compare entered password with stored systemPassword
+        if (password !== storedPassword) {
+          throw new Error('Incorrect password');
+        }
+        
+        console.log('[EmergencyReset] Password verified successfully');
+        
       } catch (e) {
-        console.error('[EmergencyReset] Error reading system password:', e);
-        errorText.textContent = 'System error. Please contact administrator.';
-        errorText.classList.remove('hidden');
-        return;
-      }
-      
-      // Verify password
-      if (password !== systemPassword) {
-        errorText.textContent = 'Incorrect password. Access denied.';
+        console.error('[EmergencyReset] Password verification failed:', e);
+        errorText.textContent = e.message === 'Incorrect password' 
+          ? 'Incorrect password. Access denied.'
+          : 'System error. Please contact administrator.';
         errorText.classList.remove('hidden');
         passwordInput.value = '';
         passwordInput.focus();
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = '🚨 PURGE ALL DATA';
         return;
       }
       
@@ -1499,16 +1510,17 @@
         '⚠️⚠️⚠️ FINAL CONFIRMATION ⚠️⚠️⚠️\n\n' +
         'You are about to PERMANENTLY DELETE all cached data for this site.\n\n' +
         'This includes:\n' +
-        '• All JotForm submissions and validation results\n' +
-        '• All Qualtrics TGMD data\n' +
-        '• All user preferences and saved passwords\n' +
+        '• All JotForm & Qualtrics data & validated results\n' +
+        '• All site preferences and saved passwords\n' +
         '• All session data and decrypted credentials\n\n' +
         'This action CANNOT be undone.\n\n' +
         'Are you ABSOLUTELY SURE you want to proceed?'
       );
       
       if (!finalConfirm) {
-        modal.remove();
+        // User cancelled - reset button state
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = '🚨 PURGE ALL DATA';
         return;
       }
       
@@ -1563,6 +1575,9 @@
           error.message + '\n\n' +
           'Please try again or contact system administrator.'
         );
+        // Reset button state on error
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = '🚨 PURGE ALL DATA';
       }
     });
   }

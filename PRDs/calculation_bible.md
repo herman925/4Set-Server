@@ -735,7 +735,7 @@ const TERMINATION_RULES = {
   },
   'finemotor': {
     type: 'threshold_based',
-    questionIds: ['FM_squ_1', 'FM_squ_2', 'FM_squ_3'],
+    questionIds: ['FM_slide_1', 'FM_slide_2', 'FM_slide_3', 'FM_squ_1', 'FM_squ_2', 'FM_squ_3'],
     threshold: 1
   }
 };
@@ -888,9 +888,9 @@ for (let i = 0; i < taskResult.questions.length; i++) {
 ```javascript
 'finemotor': {
   type: 'threshold_based',
-  questionIds: ['FM_squ_1', 'FM_squ_2', 'FM_squ_3'],
+  questionIds: ['FM_slide_1', 'FM_slide_2', 'FM_slide_3', 'FM_squ_1', 'FM_squ_2', 'FM_squ_3'],
   threshold: 1,  // At least 1 must be correct (score > 0)
-  description: 'All square-cutting items must score 0 to terminate'
+  description: 'All sliding and square-cutting items must score 0 to terminate'
 }
 ```
 
@@ -920,18 +920,186 @@ if (correctCount < config.threshold) {
 ```
 
 **Example 1 - FM Termination:**
-- FM_squ_1: 0 (incorrect)
-- FM_squ_2: 0 (incorrect)
-- FM_squ_3: 0 (incorrect)
+- FM_slide_1-3: 0, 0, 0 (all unsuccessful)
+- FM_squ_1-3: 0, 0, 0 (all unsuccessful)
 - Result: 0 correct < 1 threshold → **TERMINATED**
 - Tree-cutting items (FM_tree_*) are skipped
 
 **Example 2 - FM Continue:**
-- FM_squ_1: 0 (incorrect)
-- FM_squ_2: 1 (correct) ✅
-- FM_squ_3: 0 (incorrect)
+- FM_slide_1-3: 1, 0, 0 (one successful) ✅
+- FM_squ_1-3: 0, 0, 0 (all unsuccessful)
 - Result: 1 correct ≥ 1 threshold → **CONTINUE**
 - Student proceeds to tree-cutting items
+
+**Example 3 - FM Incomplete Data Warning:**
+- FM_side_1: 1 (successful on first edge)
+- FM_side_2-3: 0
+- FM_squ_1-3: 0, 0, 0 (ALL unsuccessful)
+- Result: 🟡 **Yellow warning** - "Possible Wrong Input" on squ_1-3
+- Reason: Student succeeded on first edge but failed all square edges (data quality issue)
+
+**Example 4 - FM Hierarchical Consistency Violation:**
+- FM_side_1-3: [0, 1, 0] ❌ (side_2 marked without side_1)
+- FM_squ_1-3: [1, 0, 1] ❌ (squ_3 marked without squ_2)
+- Result: 🟡 **Yellow warning** - "Validation Error: Threshold Hierarchy" on ALL affected questions
+- Reason: Progressive thresholds must be cumulative (higher requires lower)
+- Valid patterns: [0,0,0], [1,0,0], [1,1,0], [1,1,1]
+- Invalid patterns: [0,1,0], [0,0,1], [1,0,1]
+- Note: All 6 values can be 1 (student achieved all thresholds)
+
+**Example 5 - FM Cross-Section Dependency Violation:**
+- FM_side_1-3: [null, null, null] (all unanswered) ❌
+- FM_squ_1-3: [0, 1, 0] (squ_2 marked successful)
+- Result: ❌ **Red pills** - "Missing Data" on side_1 and side_2
+- Task Status: 🟡 **Yellow task** (data quality issue)
+- Reason: First edge is PART of entire square - can't cut square without cutting first edge
+- Confidence: HIGH - squ_2=1 means ~50-89% square, requires first edge at ~50%+
+- Note: Reverse NOT validated (side success doesn't guarantee squ success - edge is only ~25% of perimeter)
+
+---
+
+#### Fine Motor Validation Implementation
+
+**7-Pill System with Confidence Tiers:**
+
+```javascript
+// Question-level pills (ordered by priority)
+function getFMResultPill(question, validation) {
+  // Priority 1: High-confidence cross-section violation (RED)
+  if (question.hasCrossSectionViolation && 
+      validation.crossSectionConfidence === 'high') {
+    return {color: 'red', icon: 'alert-triangle', text: 'Missing Data'};
+  }
+  
+  // Priority 2: Medium-confidence cross-section violation (YELLOW)
+  if (question.hasCrossSectionViolation && 
+      validation.crossSectionConfidence === 'medium') {
+    return {color: 'yellow', icon: 'alert-triangle', text: 'Possible Missing Data'};
+  }
+  
+  // Priority 3: Null answer (GRAY)
+  if (question.studentAnswer === null) {
+    return {color: 'gray', icon: 'minus', text: 'Not answered'};
+  }
+  
+  // Priority 4: Hierarchical violation (YELLOW)
+  if (question.hasHierarchicalViolation) {
+    return {color: 'yellow', icon: 'alert-triangle', text: 'Illogical Score'};
+  }
+  
+  // Priority 5: Successful (GREEN)
+  if (question.studentAnswer === 1) {
+    return {color: 'green', icon: 'check', text: 'Successful'};
+  }
+  
+  // Priority 6: Incomplete data (YELLOW)
+  if (question.hasIncompleteData) {
+    return {color: 'yellow', icon: 'alert-triangle', text: 'Possible Wrong Input'};
+  }
+  
+  // Priority 7: Not successful (RED)
+  return {color: 'red', icon: 'x', text: 'Not Successful'};
+}
+```
+
+**Graduated Cross-Section Validation Logic:**
+
+```javascript
+// Determine confidence level based on squ threshold achieved
+function validateCrossSectionDependency(sideQuestions, squQuestions) {
+  const squ1 = squQuestions[0].studentAnswer === 1;
+  const squ2 = squQuestions[1].studentAnswer === 1;
+  const squ3 = squQuestions[2].studentAnswer === 1;
+  
+  const allSideNull = sideQuestions.every(q => q.studentAnswer === null);
+  const side1Null = sideQuestions[0].studentAnswer === null;
+  const side2Null = sideQuestions[1].studentAnswer === null;
+  
+  // Case 1: squ_3 = 1 (90-100% square) - VERY HIGH confidence
+  if (squ3 && allSideNull) {
+    markQuestions(sideQuestions, 'hasCrossSectionViolation', 'high');
+    // Flag: side_1, side_2, side_3 → RED "Missing Data"
+  }
+  
+  // Case 2: squ_2 = 1 (50-89% square) - HIGH confidence
+  else if (squ2) {
+    if (allSideNull) {
+      markQuestions([sideQuestions[0], sideQuestions[1]], 
+                    'hasCrossSectionViolation', 'high');
+      // Flag: side_1, side_2 → RED "Missing Data"
+    } else if (!side1Null && side2Null) {
+      markQuestions([sideQuestions[1]], 
+                    'hasCrossSectionViolation', 'medium');
+      // Flag: side_2 → YELLOW "Possible Missing Data"
+    }
+  }
+  
+  // Case 3: squ_1 = 1 (10-49% square) - MEDIUM confidence
+  else if (squ1 && allSideNull) {
+    markQuestions([sideQuestions[0]], 
+                  'hasCrossSectionViolation', 'medium');
+    // Flag: side_1 only → YELLOW "Possible Missing Data"
+  }
+}
+```
+
+**Hierarchical Consistency Validation:**
+
+```javascript
+function validateHierarchicalConsistency(questions, prefix) {
+  const vals = questions.map(q => q.studentAnswer === 1 ? 1 : 0);
+  
+  // Check if higher thresholds exist without lower ones
+  let violation = false;
+  
+  if (vals[2] === 1 && (vals[0] === 0 || vals[1] === 0)) {
+    violation = true; // threshold_3 requires threshold_1 AND threshold_2
+  } else if (vals[1] === 1 && vals[0] === 0) {
+    violation = true; // threshold_2 requires threshold_1
+  }
+  
+  if (violation) {
+    questions.forEach(q => q.hasHierarchicalViolation = true);
+    // Display: "Illogical Score" (YELLOW) on ALL questions in section
+  }
+}
+```
+
+**Task-Level Status Determination:**
+
+```javascript
+function getTaskStatus(validation) {
+  // Priority 1: Data quality issues → YELLOW
+  if (validation.questions.some(q => 
+    q.hasCrossSectionViolation || 
+    q.hasHierarchicalViolation || 
+    q.hasIncompleteData
+  )) {
+    return 'yellow'; // Data quality warning
+  }
+  
+  // Priority 2: Complete or terminated → GREEN
+  if (validation.answered === validation.total || 
+      validation.terminated) {
+    return 'green';
+  }
+  
+  // Priority 3: Partially answered → RED
+  if (validation.answered > 0) {
+    return 'red'; // Incomplete
+  }
+  
+  // Priority 4: Not started → GRAY
+  return 'gray';
+}
+```
+
+**Key Implementation Notes:**
+
+1. **RED "Missing Data" pill ≠ RED task:** High-confidence data quality issues trigger RED pills at question level but YELLOW task at task level
+2. **Graduated confidence:** Higher squ thresholds → more side questions flagged with higher confidence
+3. **Asymmetric validation:** squ success requires side answers, but NOT vice versa (first edge is only ~25% of perimeter)
+4. **Priority order matters:** Cross-section checked before null, hierarchical checked before success
 
 ### Termination Application
 
@@ -2562,7 +2730,7 @@ if (cached) {
 | ERV | Stage-based | ≥5 correct | 3 stages (Q1-Q12, Q13-Q24, Q25-Q36) |
 | CM | Stage-based | ≥4 correct | 4 stages (Q1-Q7, Q8-Q12, Q13-Q17, Q18-Q22) |
 | CWR | Consecutive incorrect | 10 consecutive | Resets on correct/skip |
-| FM | Threshold-based | ≥1 correct | 3 questions (FM_squ_1/2/3) |
+| FM | Threshold-based | ≥1 correct | 6 questions (FM_slide_1-3 + FM_squ_1-3) |
 | SYM | Timeout | 2 minutes | Consecutive gap to end |
 | NONSYM | Timeout | 2 minutes | Consecutive gap to end |
 
@@ -3665,3 +3833,4 @@ For questions or clarifications, refer to the actual source code files listed in
 - **v1.0** (January 2025) - Initial documentation
 - **v1.1** (October 2025) - Added status inconsistency fix and additional investigations
 - **v1.2** (October 2025) - Implemented conditional logic (showIf) fix - all issues resolved
+- **v1.3** (November 6, 2025) - Fixed unreached stage termination mismatch bug for CM and ERV tasks
