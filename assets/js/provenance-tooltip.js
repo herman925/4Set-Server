@@ -11,6 +11,10 @@
  */
 
 window.ProvenanceTooltip = (() => {
+  // Configuration constants
+  const FAR_FUTURE_DATE = '9999-12-31'; // Used for missing timestamps to sort them last
+  const MAX_DISPLAYED_SUBMISSION_IDS = 3; // Maximum submission IDs to show before truncating
+
   // Tooltip state
   let tooltipElement = null;
   let activeTarget = null;
@@ -120,8 +124,8 @@ window.ProvenanceTooltip = (() => {
         if (answer) {
           // Try to determine source from available data
           // Use far-future date for missing timestamps to sort them last
-          const jotformTimestamp = new Date(submission._meta?.jotformCreatedAt || submission._meta?.created_at || '9999-12-31');
-          const qualtricsTimestamp = new Date(submission._meta?.qualtricsStartDate || '9999-12-31');
+          const jotformTimestamp = new Date(submission._meta?.jotformCreatedAt || submission._meta?.created_at || FAR_FUTURE_DATE);
+          const qualtricsTimestamp = new Date(submission._meta?.qualtricsStartDate || FAR_FUTURE_DATE);
           
           provenance.finalWinner = {
             source: jotformTimestamp <= qualtricsTimestamp ? 'JotForm' : 'Qualtrics',
@@ -135,8 +139,8 @@ window.ProvenanceTooltip = (() => {
     } else {
       // No conflicts - both sources agree or only one had data
       // Use far-future date for missing timestamps to sort them last
-      const jotformTimestamp = new Date(submission._meta?.jotformCreatedAt || submission._meta?.created_at || '9999-12-31');
-      const qualtricsTimestamp = new Date(submission._meta?.qualtricsStartDate || '9999-12-31');
+      const jotformTimestamp = new Date(submission._meta?.jotformCreatedAt || submission._meta?.created_at || FAR_FUTURE_DATE);
+      const qualtricsTimestamp = new Date(submission._meta?.qualtricsStartDate || FAR_FUTURE_DATE);
       
       provenance.finalWinner = {
         source: jotformTimestamp <= qualtricsTimestamp ? 'JotForm' : 'Qualtrics',
@@ -223,7 +227,7 @@ window.ProvenanceTooltip = (() => {
           if (source.submissionIds && source.submissionIds.length > 0) {
             html += `<div class="provenance-source-detail">`;
             html += `<span class="provenance-detail-label">IDs:</span>`;
-            html += `<span class="provenance-detail-value font-mono text-xs">${source.submissionIds.slice(0, 3).join(', ')}${source.submissionIds.length > 3 ? '...' : ''}</span>`;
+            html += `<span class="provenance-detail-value font-mono text-xs">${source.submissionIds.slice(0, MAX_DISPLAYED_SUBMISSION_IDS).join(', ')}${source.submissionIds.length > MAX_DISPLAYED_SUBMISSION_IDS ? '...' : ''}</span>`;
             html += `</div>`;
           }
           
@@ -470,21 +474,25 @@ window.ProvenanceTooltip = (() => {
     }, true);
 
     // Touch support - tap to toggle tooltip
+    // Use capture phase for better performance with event delegation
     document.body.addEventListener('touchstart', (e) => {
+      // Quick check: only process if target or ancestor has provenance class
+      if (!e.target.closest('.has-provenance')) {
+        return;
+      }
+      
       const target = e.target.closest('.has-provenance');
-      if (target) {
-        // Only prevent default if we're actually showing/hiding tooltip
-        // This allows normal scrolling when not interacting with provenance badges
-        if (activeTarget === target || !activeTarget) {
-          e.preventDefault();
-          if (activeTarget === target) {
-            hideTooltip(true);
-          } else {
-            showTooltip(target);
-          }
+      // Only prevent default if we're actually showing/hiding tooltip
+      // This allows normal scrolling when not interacting with provenance badges
+      if (activeTarget === target || !activeTarget) {
+        e.preventDefault();
+        if (activeTarget === target) {
+          hideTooltip(true);
+        } else {
+          showTooltip(target);
         }
       }
-    }, { passive: false }); // passive: false needed for preventDefault() to work
+    }, { passive: false, capture: true }); // passive: false needed for preventDefault() to work
 
     // Prevent tooltip from hiding when hovering over it
     document.body.addEventListener('mouseenter', (e) => {
