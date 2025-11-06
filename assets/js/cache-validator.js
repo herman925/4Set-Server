@@ -1271,8 +1271,10 @@ window.CacheValidator = (() => {
               // Generate provenance button if available
               let provenanceButton = '';
               if (q.provenance && q.provenance.sources && q.provenance.sources.length > 0) {
-                const provenanceJson = JSON.stringify(q.provenance).replace(/"/g, '&quot;');
-                provenanceButton = `<button class="provenance-trigger" data-provenance="${provenanceJson}" title="Show data source provenance" aria-label="Show data source provenance for ${q.field}">
+                // Properly escape HTML attributes to prevent XSS
+                const provenanceJson = escapeHtmlAttribute(JSON.stringify(q.provenance));
+                const fieldEscaped = escapeHtml(q.field);
+                provenanceButton = `<button class="provenance-trigger" data-provenance="${provenanceJson}" title="Show data source provenance" aria-label="Show data source provenance for ${fieldEscaped}">
                   <i data-lucide="info" class="w-3 h-3"></i>
                 </button>`;
               }
@@ -1558,9 +1560,22 @@ window.CacheValidator = (() => {
       });
     });
     
-    // Hide on scroll or window events
-    window.addEventListener('scroll', () => hideTooltip(), true);
-    window.addEventListener('resize', () => hideTooltip());
+    // Hide on scroll or window events (with throttling for performance)
+    let scrollTimeout;
+    window.addEventListener('scroll', () => {
+      if (scrollTimeout) {
+        clearTimeout(scrollTimeout);
+      }
+      scrollTimeout = setTimeout(() => hideTooltip(), 100);
+    }, true);
+    
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+      if (resizeTimeout) {
+        clearTimeout(resizeTimeout);
+      }
+      resizeTimeout = setTimeout(() => hideTooltip(), 100);
+    });
     
     // Hide when clicking outside
     document.addEventListener('click', (e) => {
@@ -1581,6 +1596,24 @@ window.CacheValidator = (() => {
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML;
+  }
+  
+  /**
+   * Escape HTML attribute value to prevent XSS
+   * Properly handles quotes, ampersands, and other special characters
+   * @param {string} text - Text to escape
+   * @returns {string} Escaped text safe for use in HTML attributes
+   */
+  function escapeHtmlAttribute(text) {
+    if (text === null || text === undefined) {
+      return '';
+    }
+    return String(text)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
   }
   
   function exportResults(results) {

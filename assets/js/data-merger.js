@@ -12,9 +12,11 @@
   class DataMerger {
     constructor() {
       // Configuration - fields to exclude from merge
+      // Note: Fields starting with '_' are automatically excluded during iteration
+      // _fieldProvenance is preserved separately and merged explicitly
       this.excludeFields = new Set([
         '_recordId', 'responseId', '_meta', '_sources', 
-        '_orphaned', '_qualtricsConflicts', '_fieldProvenance'
+        '_orphaned', '_qualtricsConflicts'
       ]);
     }
 
@@ -75,11 +77,17 @@
      * @returns {Object} Provenance metadata
      */
     createFieldProvenance(fieldName, source, sourceRecord, winner) {
+      // Use descriptive fallback for missing grade to highlight data quality issues
+      const grade = sourceRecord.grade || 'Grade Not Detected';
+      if (!sourceRecord.grade) {
+        console.warn(`[DataMerger] Grade not detected for field ${fieldName} from ${source}`);
+      }
+      
       const provenance = {
         field: fieldName,
         sources: [],
         winner: winner,
-        grade: sourceRecord.grade || 'Unknown'
+        grade: grade
       };
 
       if (source === 'jotform') {
