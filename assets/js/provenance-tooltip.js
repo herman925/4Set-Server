@@ -119,8 +119,9 @@ window.ProvenanceTooltip = (() => {
         const answer = submission.answers?.[fieldId] || submission[fieldId];
         if (answer) {
           // Try to determine source from available data
-          const jotformTimestamp = new Date(submission._meta?.jotformCreatedAt || submission._meta?.created_at || 0);
-          const qualtricsTimestamp = new Date(submission._meta?.qualtricsStartDate || 0);
+          // Use far-future date for missing timestamps to sort them last
+          const jotformTimestamp = new Date(submission._meta?.jotformCreatedAt || submission._meta?.created_at || '9999-12-31');
+          const qualtricsTimestamp = new Date(submission._meta?.qualtricsStartDate || '9999-12-31');
           
           provenance.finalWinner = {
             source: jotformTimestamp <= qualtricsTimestamp ? 'JotForm' : 'Qualtrics',
@@ -133,8 +134,9 @@ window.ProvenanceTooltip = (() => {
       }
     } else {
       // No conflicts - both sources agree or only one had data
-      const jotformTimestamp = new Date(submission._meta?.jotformCreatedAt || submission._meta?.created_at || 0);
-      const qualtricsTimestamp = new Date(submission._meta?.qualtricsStartDate || 0);
+      // Use far-future date for missing timestamps to sort them last
+      const jotformTimestamp = new Date(submission._meta?.jotformCreatedAt || submission._meta?.created_at || '9999-12-31');
+      const qualtricsTimestamp = new Date(submission._meta?.qualtricsStartDate || '9999-12-31');
       
       provenance.finalWinner = {
         source: jotformTimestamp <= qualtricsTimestamp ? 'JotForm' : 'Qualtrics',
@@ -467,18 +469,22 @@ window.ProvenanceTooltip = (() => {
       }
     }, true);
 
-    // Touch support
+    // Touch support - tap to toggle tooltip
     document.body.addEventListener('touchstart', (e) => {
       const target = e.target.closest('.has-provenance');
       if (target) {
-        e.preventDefault();
-        if (activeTarget === target) {
-          hideTooltip(true);
-        } else {
-          showTooltip(target);
+        // Only prevent default if we're actually showing/hiding tooltip
+        // This allows normal scrolling when not interacting with provenance badges
+        if (activeTarget === target || !activeTarget) {
+          e.preventDefault();
+          if (activeTarget === target) {
+            hideTooltip(true);
+          } else {
+            showTooltip(target);
+          }
         }
       }
-    }, { passive: false });
+    }, { passive: false }); // passive: false needed for preventDefault() to work
 
     // Prevent tooltip from hiding when hovering over it
     document.body.addEventListener('mouseenter', (e) => {
