@@ -2504,6 +2504,55 @@ const filter = { "q3:matches": studentIdNumeric };
 3. Save to cache (submissions format preserved)
 4. Result: ✅ All 773 submissions preserved with TGMD data merged
 
+### Data Provenance Tooltips (November 2025)
+
+**Context**: Validators need visibility into which JotForm submission(s) or Qualtrics response(s) supplied each answer on the student detail page to debug merge behavior (grade-specific merges, earliest-non-empty wins).
+
+**Implementation**:
+- Added hover/focus/tap tooltips on question ID badges in `checking_system_4_student.html`
+- Created `provenance-tooltip.js` component with the following features:
+  - `extractProvenance()`: Extracts source metadata from submission
+  - `attachToElement()`: Attaches provenance data to question badges  
+  - `initialize()`: Sets up event handlers for hover/focus/touch
+  - Handles single-source (JotForm-only, Qualtrics-only) and merged cases
+
+**Displayed Information**:
+1. **Grade Context**: Shows which grade (K1/K2/K3) the data belongs to
+2. **Source Availability Counts**:
+   - JotForm: Shows submission count and IDs
+   - Qualtrics: Shows response count and response ID
+3. **Timestamps**: Displays earliest submission/response dates
+4. **Final Winner**: Indicates which source provided the final answer with reason:
+   - "Earliest non-empty" for merged cases
+   - "JotForm only" / "Qualtrics only" for single-source
+   - Shows conflict details when both sources had different values
+
+**Accessibility Features**:
+- Keyboard focusable (tab navigation)
+- Screen reader friendly (aria-label, role="tooltip")
+- Touch-friendly (tap-to-toggle on mobile)
+- Hover delay to prevent accidental triggers
+
+**Visual Design**:
+- Modern dark-themed tooltip with gradient background
+- Color-coded source sections (blue for both JotForm and Qualtrics)
+- Green highlight for final winner section
+- Yellow warning for conflicts
+- Info icon indicator on question IDs with provenance data
+
+**Use Cases**:
+1. **Grade-specific merge verification**: Confirm that K3 data wasn't mixed with K2 Qualtrics responses
+2. **Earliest-non-empty validation**: Verify which submission won when multiple submissions had different values
+3. **Data quality investigation**: Identify which specific submission/response contained questionable data
+4. **Conflict resolution transparency**: Understand why one source's value was chosen over another
+
+**Technical Details**:
+- Metadata extracted from `_sources`, `_meta`, `_qualtricsConflicts`, `submissionIds` fields
+- Works for all task types including TGMD grouped rows and SYM/NONSYM merged logic
+- Gracefully handles missing metadata (shows "N/A" for unavailable fields)
+- Automatically formats ISO timestamps to human-readable dates
+- Zero performance impact on page load (tooltips created on-demand)
+
 ### Cross-Grade Data Contamination Fix (October 30, 2025)
 
 **Critical Bug Discovered**: Students with data from multiple grade levels (K2 Qualtrics + K3 JotForm) showed incorrect merged records with cross-grade contamination.
