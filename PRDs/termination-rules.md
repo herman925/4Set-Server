@@ -495,16 +495,19 @@ Fourth edge contribution = 1/4 = 0.25 = 25% of total perimeter
 
 **Mathematical Relationship:**
 
-If a student achieves X% accuracy on the entire square perimeter, this accuracy is distributed across all 4 edges. The relationship between side accuracy and square accuracy is:
+If a student achieves X% accuracy on the entire square perimeter, this accuracy is distributed across all 4 edges. Since each edge represents 25% of the perimeter:
 
 ```
-Square_accuracy = (edge_1_accuracy + edge_2_accuracy + edge_3_accuracy + edge_4_accuracy) / 4
+Total square accuracy = (edge_1_contribution + edge_2_contribution + edge_3_contribution + edge_4_contribution)
+
+Where: edge_i_contribution = edge_i_accuracy × 0.25 (25% of perimeter)
 ```
 
-Or expressed per edge:
+Important constraint:
 
 ```
-edge_i_accuracy ≤ 4 × Square_accuracy (for any individual edge)
+Each edge_i_contribution ≤ 25% of total perimeter
+(Since each edge is only 25% of the perimeter, even perfect cutting contributes only 25%)
 ```
 
 ##### 2. Confidence Level Justification
@@ -699,12 +702,13 @@ Student Performance Scenario:
 - First edge (edge_1): 30% accuracy of its own length
   → side_1 = 1 (30% meets 10-49% threshold) ✓
 
-But first edge is only 25% of total perimeter:
-- First edge contributes to square: 30% (of edge) × 25% (of perimeter) = 7.5% to total
+Contribution to total square perimeter:
+- First edge is 25% of total perimeter
+- First edge contribution = 30% accuracy × 25% of perimeter = 0.30 × 0.25 = 0.075 = 7.5% of total perimeter
 
-If remaining 75% of perimeter (edges 2-4 + corners) averages only 2-3% accuracy:
-- Remaining contribution: 3% × 75% = 2.25%
-- Total square = 7.5% + 2.25% = 9.75% < 10%
+If remaining 75% of perimeter (edges 2-4 + corners) averages only 3% accuracy:
+- Remaining contribution = 3% accuracy × 75% of perimeter = 0.03 × 0.75 = 0.0225 = 2.25% of total perimeter
+- Total square accuracy = 7.5% + 2.25% = 9.75% < 10%
 - Therefore: squ_1 = 0 (below 10% threshold) ✗
 ```
 
@@ -857,7 +861,7 @@ When hierarchical violation is detected, we mark **ALL questions in the section*
 
 ```
 squ_1, squ_2, squ_3 also form nested sets with identical rules:
-S₁_sq ⊃ S₂_sq ⊃ S₃_sq
+S₃_sq ⊂ S₂_sq ⊂ S₁_sq
 
 Valid: [0,0,0], [1,0,0], [1,1,0], [1,1,1]
 Invalid: [0,1,0], [0,0,1], [1,0,1], [0,1,1]
