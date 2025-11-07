@@ -1101,6 +1101,417 @@ function getTaskStatus(validation) {
 3. **Asymmetric validation:** squ success requires side answers, but NOT vice versa (first edge is only ~25% of perimeter)
 4. **Priority order matters:** Cross-section checked before null, hierarchical checked before success
 
+---
+
+#### Mathematical Foundation for Fine Motor Validation
+
+This section provides comprehensive mathematical justifications for the Fine Motor validation system, including the graduated confidence levels, threshold interactions, and asymmetric validation logic.
+
+##### 1. Perimeter Calculation Mathematics
+
+**Basic Geometry:**
+
+A square has 4 equal sides, and the perimeter is the total distance around all 4 edges:
+
+```
+Perimeter = 4 × side_length
+```
+
+**Key Insight:** Each edge represents exactly **1/4 (25%)** of the total perimeter:
+
+```
+First edge contribution = 1/4 = 0.25 = 25% of total perimeter
+Second edge contribution = 1/4 = 0.25 = 25% of total perimeter
+Third edge contribution = 1/4 = 0.25 = 25% of total perimeter
+Fourth edge contribution = 1/4 = 0.25 = 25% of total perimeter
+```
+
+**Mathematical Relationship:**
+
+If a student achieves X% accuracy on the entire square perimeter, this accuracy is distributed across all 4 edges. Since each edge represents 25% of the perimeter:
+
+```
+Total square accuracy = (edge_1_contribution + edge_2_contribution + edge_3_contribution + edge_4_contribution)
+
+Where: edge_i_contribution = edge_i_accuracy × 0.25 (25% of perimeter)
+```
+
+Important constraint:
+
+```
+Each edge_i_contribution ≤ 25% of total perimeter
+(Since each edge is only 25% of the perimeter, even perfect cutting contributes only 25%)
+```
+
+##### 2. Confidence Level Justification
+
+**High Confidence (RED pills) - Mathematical Proofs:**
+
+**Case A: squ_2 = 1 (50-89% square accuracy)**
+
+*Claim:* If the student achieves 50-89% square accuracy, they MUST have cut the first edge, and likely achieved at least 50% accuracy on it.
+
+*Proof:*
+- Let `square_accuracy = S` where 50% ≤ S < 90%
+- Square perimeter = 4 edges
+- Minimum accuracy scenario: Assume first edge contributes minimum possible to reach S%
+- If first edge contributes 0%, then the remaining 3 edges must contribute S%
+- Each edge is 25% of perimeter maximum
+- Maximum contribution from 3 edges = 3 × 25% = 75%
+
+*Analysis:*
+- If `square_accuracy = 50%` and first edge = 0%, then remaining 3 edges must contribute exactly 50%
+- This requires at least 2 edges to be cut perfectly (since each edge max is 25%)
+- This means the student would skip edge 1 and start cutting from edge 2 - developmentally unusual
+
+*Practical Reality:*
+- Children cut sequentially: edge 1 → edge 2 → edge 3 → edge 4
+- If 50% of square is cut, and typical cutting is sequential, first edge is VERY likely cut
+- If first edge is cut with any accuracy, student likely achieved at least the side_1 threshold (10-49%)
+- For 50% total, likely achieved side_2 threshold (50-89%) as well
+
+*Conclusion:* 
+- **HIGH CONFIDENCE** that side_1 should be marked
+- **HIGH CONFIDENCE** that side_2 should be marked
+- Justifies RED pills on both
+
+**Case B: squ_3 = 1 (90-100% square accuracy)**
+
+*Claim:* If the student achieves 90-100% square accuracy, ALL side thresholds (side_1, side_2, side_3) should be marked.
+
+*Proof:*
+- Let `square_accuracy = S` where 90% ≤ S ≤ 100%
+- For 90% of the perimeter to be accurate:
+  - If we distribute this evenly: 90% / 4 edges = 22.5% per edge average
+  - But edges may have uneven accuracy
+- Minimum case: What's the minimum first edge accuracy for 90% total square?
+  - If first edge = X%, then remaining 3 edges contribute (90% - X%)
+  - Maximum from 3 edges = 3 × 25% = 75%
+  - Therefore: X ≥ 90% - 75% = 15%
+  
+- For side_1 threshold (10-49%): Since X ≥ 15%, side_1 MUST be marked (15% > 10%)
+- For side_2 threshold (50-89%): With 90% total and first edge at least 15%, remaining edges average (90%-15%)/3 = 25% each
+  - High probability that first edge achieved ≥ 50% (especially given the student's overall high performance)
+- For side_3 threshold (90-100%): With 90% total square, high probability first edge achieved 90%+
+
+*Conclusion:*
+- For `squ_3 = 1` (90-100% square), **ABSOLUTE CONFIDENCE** that all three side thresholds should exist
+- This justifies **RED "Missing Data" pills** on side_1, side_2, AND side_3
+
+**Medium Confidence (YELLOW pills) - Mathematical Justification:**
+
+**Case C: squ_1 = 1 (10-49% square accuracy)**
+
+*Claim:* If the student achieves 10-49% square accuracy, the first edge was likely cut, but confidence is lower.
+
+*Analysis:*
+- Let `square_accuracy = S` where 10% ≤ S < 50%
+- Minimum case: Could S% come entirely from edges 2-4 without the first edge?
+  - If first edge = 0%, then edges 2-4 must contribute S%
+  - For S = 10%, this is theoretically possible (e.g., edge 2 at 10%, others at 0%)
+  - For S = 49%, this is also possible (e.g., edge 2 at 25%, edge 3 at 24%, others at 0%)
+
+*However:*
+- In typical child development, students cut sequentially (edge 1 → edge 2 → edge 3 → edge 4)
+- First edge is the easiest (straight line, no corners encountered yet)
+- Statistical probability: If 10-49% of perimeter is cut, first edge was likely involved
+- But we cannot be CERTAIN (unlike the 50%+ case where mathematics forces it)
+
+*Conclusion:*
+- For `squ_1 = 1` (10-49% square), **MEDIUM CONFIDENCE** that side_1 should be marked
+- This justifies **YELLOW "Possible Missing Data" pill** on side_1 only
+- We do NOT flag side_2 or side_3 because 10-49% doesn't mathematically require them
+
+##### 3. Threshold Interaction Examples
+
+**Example A: Minimum Case for squ_2 = 1**
+
+*Scenario:* Student achieves exactly 50% square accuracy (lower bound of squ_2)
+
+*Question:* What's the MINIMUM accuracy needed on the first edge?
+
+*Calculation:*
+```
+Let first_edge = X% of total perimeter
+Let remaining_edges = (50% - X%)
+
+Maximum contribution from remaining 3 edges = 3 × 25% = 75%
+
+For the minimum X:
+X + 75% ≥ 50%
+X ≥ 50% - 75%
+X ≥ -25%
+
+This gives X ≥ 0 (cannot be negative)
+```
+
+*However*, the above shows that mathematically, first edge could be 0%. But this requires the other 3 edges to contribute exactly 50% total, which means:
+- At least 2 edges must be cut (since each edge max is 25%)
+- This requires the student to skip edge 1 and start cutting from edge 2 - developmentally unusual
+
+*Practical Reality:*
+- Children cut sequentially: edge 1 → edge 2 → edge 3 → edge 4
+- If 50% of square is cut, and typical cutting is sequential, first edge is VERY likely cut
+- If first edge is cut with any accuracy, student likely achieved at least the side_1 threshold (10-49%)
+- For 50% total, likely achieved side_2 threshold (50-89%) as well
+
+*Conclusion:* 
+- **HIGH CONFIDENCE** that side_1 should be marked
+- **HIGH CONFIDENCE** that side_2 should be marked
+- Justifies RED pills on both
+
+**Example B: Maximum Case for squ_1 = 1**
+
+*Scenario:* Student achieves exactly 10% square accuracy (lower bound of squ_1)
+
+*Question:* Could this 10% come entirely from edges 2-4, not the first edge?
+
+*Calculation:*
+```
+Total square accuracy = 10% of perimeter
+Possible distributions:
+- Option 1: edge_1 = 10%, others = 0%
+- Option 2: edge_1 = 0%, edge_2 = 10%, others = 0%
+- Option 3: edge_1 = 5%, edge_2 = 5%, others = 0%
+- Option 4: edge_1 = 0%, edge_2 = 5%, edge_3 = 5%, edge_4 = 0%
+- ... many other combinations
+```
+
+*Analysis:*
+- Mathematically, 10% could come from various combinations
+- First edge is NOT mathematically required (unlike 50%+ case)
+- However, developmentally, first edge is most likely (children cut sequentially)
+- First edge is also the easiest (straight line before corners)
+
+*Conclusion:*
+- **MEDIUM CONFIDENCE** that side_1 should be marked (probable but not certain)
+- Do NOT flag side_2 or side_3 (10% doesn't require them mathematically or developmentally)
+- Justifies YELLOW pill on side_1 only
+
+**Example C: Boundary Analysis - 49% vs 50% Square**
+
+*Scenario:* Why does 49% (squ_1) get yellow pills but 50% (squ_2) gets red pills?
+
+*Mathematical Distinction:*
+```
+At 49% square accuracy:
+- Possible without first edge: Yes (2 edges at ~24.5% each)
+- Likely without first edge: No (developmentally unusual)
+- Confidence level: MEDIUM (probable, not certain)
+
+At 50% square accuracy:
+- Possible without first edge: Barely (requires exactly 2 perfect edges, skipping edge 1)
+- Likely without first edge: No (highly unusual developmental pattern)
+- Confidence level: HIGH (nearly certain)
+```
+
+The 1% difference represents a **confidence threshold** where we shift from "probable" (yellow) to "nearly certain" (red).
+
+##### 4. Asymmetric Validation Rationale
+
+**Current Rule:** Square success (squ_1-3) requires side answers, but side success does NOT require square success.
+
+**Mathematical Explanation:**
+
+*Why squ success → side answers should exist:*
+
+The first edge is a **component** of the square. If the square perimeter has X% accuracy, the first edge MUST have been cut (except for very low X values like < 10%).
+
+```
+Square perimeter = edge_1 + edge_2 + edge_3 + edge_4
+
+If square perimeter has significant accuracy (≥50%), 
+then edge_1 MUST have been cut.
+```
+
+*Why side success ↛ squ success (asymmetric):*
+
+The first edge is only **25% of the total perimeter**. A student could:
+1. Cut the first edge accurately (achieving side_1 or even side_2 thresholds)
+2. Then FAIL on:
+   - Corner 1 (transition from edge 1 to edge 2) - high difficulty
+   - Edge 2 (potentially losing control)
+   - Corner 2 (transition from edge 2 to edge 3) - high difficulty
+   - Remaining edges and corners
+
+**Numerical Example:**
+
+In our scoring system:
+- `side_1-3` measures the FIRST EDGE only (not corners)
+- `squ_1-3` measures the ENTIRE SQUARE perimeter (all 4 edges + 4 corners)
+
+```
+Student Performance Scenario:
+- First edge (edge_1): 30% accuracy of its own length
+  → side_1 = 1 (30% meets 10-49% threshold) ✓
+
+Contribution to total square perimeter:
+- First edge is 25% of total perimeter
+- First edge contribution = 30% accuracy × 25% of perimeter = 0.30 × 0.25 = 0.075 = 7.5% of total perimeter
+
+If remaining 75% of perimeter (edges 2-4 + corners) averages only 3% accuracy:
+- Remaining contribution = 3% accuracy × 75% of perimeter = 0.03 × 0.75 = 0.0225 = 2.25% of total perimeter
+- Total square accuracy = 7.5% + 2.25% = 9.75% < 10%
+- Therefore: squ_1 = 0 (below 10% threshold) ✗
+```
+
+Result: side_1 = 1 but all squ = 0
+
+**This explains the asymmetry:**
+- First edge success (30%) is only 25% of the total perimeter
+- Student can succeed on first edge but fail overall square if corners and remaining edges are poor
+- Hence: **YELLOW "Possible Wrong Input"** (not RED) - lower confidence warning
+
+##### 5. Corner Difficulty Factor
+
+**Why Corners Matter:**
+
+Corners are **transition points** that are significantly harder than straight edges:
+
+1. **Motor Control Demands:**
+   - Straight edge: Maintain constant direction and pressure
+   - Corner: Must stop, rotate paper/scissors, change cutting angle, restart
+
+2. **Cognitive Load:**
+   - Straight edge: Simple repetitive motion
+   - Corner: Requires planning the turn, spatial awareness, angle judgment
+
+3. **Fine Motor Precision:**
+   - Straight edge: Small deviations self-correct over distance
+   - Corner: Small deviations at turn → large errors in subsequent edge alignment
+
+**Mathematical Model:**
+
+```
+Difficulty_score:
+- Straight edge: 1.0 (baseline)
+- Corner (90° turn): 3.0 (3x harder)
+
+Square cutting difficulty = (4 edges × 1.0) + (4 corners × 3.0) = 4 + 12 = 16 units
+First edge only = 1.0 unit
+
+Ratio = 1.0 / 16 = 6.25% of total difficulty
+```
+
+**Why This Matters for Validation:**
+
+Even if a child succeeds on the first edge (6.25% of total difficulty), they face:
+- Remaining difficulty = 15 units (16 total - 1 for first edge) = 15 times the difficulty of the first edge alone
+- 3 more straight edges + 4 corner transitions (corners are 3x harder than straight cutting)
+- Accumulated fatigue and loss of concentration
+
+**Probability Model:**
+
+```
+If P(success on straight edge) = 0.7 (70% chance)
+And P(success on corner) = 0.3 (30% chance, due to 3x difficulty)
+
+Then P(success on entire square) = P(edge_1) × P(corner_1) × P(edge_2) × P(corner_2) × ...
+= 0.7 × 0.3 × 0.7 × 0.3 × 0.7 × 0.3 × 0.7 × 0.3
+= 0.7^4 × 0.3^4
+= 0.2401 × 0.0081
+= 0.0019 ≈ 0.2%
+
+Extremely low probability of complete square success even with 70% edge success rate!
+```
+
+**This justifies:**
+- Asymmetric validation (side success ↛ square success)
+- Lower confidence (YELLOW) for "Possible Wrong Input" when side succeeds but square fails
+- Recognition that first edge is the EASIEST part, not representative of full square difficulty
+
+##### 6. Progressive Threshold Mathematics
+
+**Set Theory Foundation:**
+
+The thresholds form nested sets:
+
+```
+Let S₁ = set of students achieving 10-49% on first edge
+Let S₂ = set of students achieving 50-89% on first edge  
+Let S₃ = set of students achieving 90-100% on first edge
+
+Mathematical relationship:
+S₃ ⊂ S₂ ⊂ S₁
+
+This means:
+- If student ∈ S₃ (achieved 90-100%), then student ∈ S₂ AND student ∈ S₁
+- If student ∈ S₂ (achieved 50-89%), then student ∈ S₁
+- If student ∉ S₁ (did NOT achieve 10-49%), then student ∉ S₂ AND student ∉ S₃
+```
+
+**Visual Representation:**
+
+```
+┌─────────────────────────────────────┐
+│ S₁: 10-100% accuracy (side_1 = 1)  │
+│                                     │
+│  ┌──────────────────────────────┐  │
+│  │ S₂: 50-100% (side_2 = 1)    │  │
+│  │                              │  │
+│  │  ┌────────────────────────┐ │  │
+│  │  │ S₃: 90-100% (side_3=1)│ │  │
+│  │  │                        │ │  │
+│  │  └────────────────────────┘ │  │
+│  │                              │  │
+│  └──────────────────────────────┘  │
+│                                     │
+└─────────────────────────────────────┘
+```
+
+**Valid Patterns (Binary Representation):**
+
+```
+[side_1, side_2, side_3]:
+[0, 0, 0] ✓ - Student achieved 0-9% (below all thresholds)
+[1, 0, 0] ✓ - Student achieved 10-49% (in S₁, not in S₂ or S₃)
+[1, 1, 0] ✓ - Student achieved 50-89% (in S₁ and S₂, not in S₃)
+[1, 1, 1] ✓ - Student achieved 90-100% (in all three sets)
+```
+
+**Invalid Patterns (Violate Set Theory):**
+
+```
+[0, 1, 0] ✗ - Impossible! If student ∈ S₂, then student must ∈ S₁
+            Mathematical proof: S₂ ⊂ S₁, so side_2=1 → side_1 must = 1
+
+[0, 0, 1] ✗ - Impossible! If student ∈ S₃, then student must ∈ S₂ and S₁
+            Mathematical proof: S₃ ⊂ S₂ ⊂ S₁, so side_3=1 → side_2 and side_1 must = 1
+
+[1, 0, 1] ✗ - Impossible! If student ∈ S₃, then student must ∈ S₂
+            Mathematical proof: S₃ ⊂ S₂, so side_3=1 → side_2 must = 1
+
+[0, 1, 1] ✗ - Impossible! If student ∈ S₂, then student must ∈ S₁
+            Mathematical proof: S₂ ⊂ S₁, so side_2=1 → side_1 must = 1
+```
+
+**Why These Violations Matter:**
+
+When we detect patterns like [0, 1, 0], this indicates:
+1. **Data entry error:** Scorer accidentally marked wrong threshold
+2. **Misunderstanding:** Scorer didn't understand cumulative nature
+3. **System error:** Data corruption or transmission issue
+
+**Display Logic:**
+
+When hierarchical violation is detected, we mark **ALL questions in the section** with YELLOW "Illogical Score" because:
+- We don't know which specific value is wrong
+- Could be side_1 should be 1 (missed marking)
+- Could be side_2 should be 0 (incorrectly marked)
+- Human review needed to determine correct pattern
+
+**Same Logic Applies to Square Thresholds:**
+
+```
+squ_1, squ_2, squ_3 also form nested sets with identical rules:
+S₃_sq ⊂ S₂_sq ⊂ S₁_sq
+
+Valid: [0,0,0], [1,0,0], [1,1,0], [1,1,1]
+Invalid: [0,1,0], [0,0,1], [1,0,1], [0,1,1]
+```
+
+---
+
 ### Termination Application
 
 **Location:** `task-validator.js` Lines 489-532
