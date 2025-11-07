@@ -486,8 +486,8 @@ window.CacheValidator = (() => {
             // Examples: CCM (Chinese characters), FineMotor (Chinese text), MathPattern (numbers but same value=label)
             let cacheValueForDisplay = finalCacheAnswer;
             const questionDef = questionDefMap.get(cleanQuestionId);
-            if (questionDef && questionDef.type === 'radio-largechar' && questionDef.options && 
-                finalCacheAnswer !== null && finalCacheAnswer !== '') {
+            if (questionDef?.type === 'radio-largechar' && questionDef.options && 
+                finalCacheAnswer != null && finalCacheAnswer !== '') {
               // Find the option that matches the cache value (convert to string once for efficiency)
               const finalCacheAnswerStr = String(finalCacheAnswer);
               const option = questionDef.options.find(opt => String(opt.value) === finalCacheAnswerStr);
@@ -537,7 +537,7 @@ window.CacheValidator = (() => {
             let cacheValueForComparison;
             if (cleanQuestionId && cleanQuestionId.startsWith('TGMD_')) {
               cacheValueForComparison = finalCacheRaw;
-            } else if (questionDef && questionDef.type === 'radio-largechar') {
+            } else if (questionDef?.type === 'radio-largechar') {
               cacheValueForComparison = cacheValueForDisplay;
             } else {
               cacheValueForComparison = finalCacheAnswer;
