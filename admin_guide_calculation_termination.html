@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Administrator Guide: Calculation & Termination Rules - 4Set System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="assets/js/tailwind.config.js"></script>
+  <link rel="stylesheet" href="assets/css/theme_pantone_light_1.css">
+  <link rel="stylesheet" href="assets/css/global.css">
+  <link rel="stylesheet" href="assets/css/user-guides.css">
+  <link rel="stylesheet" href="assets/css/spotlight-system.css">
+  <link rel="stylesheet" href="assets/css/tooltip-styles.css">
+  <link rel="icon" type="image/x-icon" href="assets/favicon.ico">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <script src="assets/js/smart-navigation.js"></script>
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    }
+    .mermaid {
+      display: flex;
+      justify-content: center;
+      margin: 2rem 0;
+      background: white;
+      padding: 2rem;
+      border-radius: 0.5rem;
+    }
+    .code-block {
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      color: #1e293b;
+      padding: 1.5rem;
+      border-radius: 0.5rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.875rem;
+      overflow-x: auto;
+      margin: 1rem 0;
+      line-height: 1.6;
+    }
+    .code-block code {
+      color: #0f172a;
+      font-weight: 500;
+    }
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 2rem;
+      height: 2rem;
+      background: var(--primary);
+      color: white;
+      border-radius: 50%;
+      font-weight: bold;
+      margin-right: 0.75rem;
+    }
+    .screenshot-placeholder {
+      background: linear-gradient(135deg, #e0e7ff 0%, #f3f4f6 100%);
+      border: 2px dashed #9ca3af;
+      border-radius: 8px;
+      padding: 3rem 2rem;
+      text-align: center;
+      color: #6b7280;
+      font-style: italic;
+      margin: 1.5rem 0;
+    }
+    .warning-box {
+      background: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin: 1rem 0;
+    }
+    .info-box {
+      background: #dbeafe;
+      border-left: 4px solid #3b82f6;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin: 1rem 0;
+    }
+    .success-box {
+      background: #d1fae5;
+      border-left: 4px solid #10b981;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin: 1rem 0;
+    }
+    .critical-box {
+      background: #fee2e2;
+      border-left: 4px solid #ef4444;
+      padding: 1rem;
+      border-radius: 0.5rem;
+      margin: 1rem 0;
+    }
+  </style>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      mermaid.initialize({ 
+        startOnLoad: true,
+        theme: 'base',
+        themeVariables: {
+          primaryColor: '#4A90E2',
+          primaryTextColor: '#1F2937',
+          primaryBorderColor: '#2E5C8A',
+          lineColor: '#6B7280',
+          secondaryColor: '#E8F5E9',
+          tertiaryColor: '#FFF3E0',
+          edgeLabelBackground: '#ffffff',
+          textColor: '#1F2937',
+          mainBkg: '#ffffff',
+          nodeBorder: '#6B7280'
+        }
+      });
+    });
+  </script>
+</head>
+<body class="min-h-screen">
+  <!-- Header -->
+  <header class="bg-white shadow-md sticky top-0 z-50">
+    <div class="container mx-auto px-6 py-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-4">
+          <a href="index.html" class="text-2xl font-bold" style="color: var(--primary)">4Set System</a>
+          <span class="text-gray-400">|</span>
+          <h1 class="text-xl font-semibold text-gray-700">Administrator Guide: Calculation & Termination Rules</h1>
+        </div>
+        <div class="flex items-center gap-3">
+          <a href="user_guide_processor_setup.html" class="text-gray-600 hover:text-primary transition p-2 rounded-lg hover:bg-gray-100" title="Processor Agent Setup Guide">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"></circle>
+              <path d="M12 1v6m0 6v6"></path>
+              <path d="m4.93 4.93 4.24 4.24m5.66 5.66 4.24 4.24"></path>
+              <path d="m1 12 6 0m6 0 6 0"></path>
+              <path d="m4.93 19.07 4.24-4.24m5.66-5.66 4.24-4.24"></path>
+            </svg>
+          </a>
+          <a href="quick_start_guide.html" class="text-gray-600 hover:text-primary transition p-2 rounded-lg hover:bg-gray-100" title="Quick Start Guide">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 20V10"></path>
+              <path d="M18 20V4"></path>
+              <path d="M6 20v-4"></path>
+            </svg>
+          </a>
+          <a href="user_guide_checking_system.html" class="text-gray-600 hover:text-primary transition p-2 rounded-lg hover:bg-gray-100" title="Checking System Guide">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 3v18h18"></path>
+              <path d="m19 9-5 5-4-4-3 3"></path>
+            </svg>
+          </a>
+          <a href="guide_homepage.html" class="text-gray-600 hover:text-primary transition p-2 rounded-lg hover:bg-gray-100" title="Back to Guide Homepage">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+          </a>
+          <a href="index.html" class="text-gray-600 hover:text-primary transition p-2 rounded-lg hover:bg-gray-100" title="Back to System Home">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+          </a>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <div class="container mx-auto px-6 py-8">
+    <div class="flex gap-8">
+      <!-- Sidebar Navigation -->
+      <aside class="sidebar w-64 flex-shrink-0">
+        <div class="bg-white rounded-lg shadow-lg p-6 sticky top-24">
+          <h2 class="text-lg font-bold mb-4" style="color: var(--primary)">Table of Contents</h2>
+          <nav class="space-y-2">
+            <a href="#overview" class="toc-link block text-sm text-gray-700 py-1">Overview</a>
+            <a href="#purpose" class="toc-link block text-sm text-gray-700 py-1">Purpose</a>
+
+            <a href="#architecture" class="toc-link block text-sm text-gray-700 py-1 font-semibold mt-2">I. System Architecture</a>
+              <a href="#arch-overview" class="toc-link block text-sm text-gray-700 py-1 ml-5">1.1 Single Source of Truth</a>
+              <a href="#arch-components" class="toc-link block text-sm text-gray-700 py-1 ml-5">1.2 Key Components</a>
+              <a href="#arch-principles" class="toc-link block text-sm text-gray-700 py-1 ml-5">1.3 Critical Principles</a>
+
+            <a href="#termination-rules" class="toc-link block text-sm text-gray-700 py-1 font-semibold mt-2">II. Termination Rules</a>
+              <a href="#term-overview" class="toc-link block text-sm text-gray-700 py-1 ml-5">2.1 Overview</a>
+              <a href="#term-types" class="toc-link block text-sm text-gray-700 py-1 ml-5">2.2 Termination Types</a>
+              <a href="#term-erv" class="toc-link block text-sm text-gray-700 py-1 ml-5">2.3 ERV Rules</a>
+              <a href="#term-cm" class="toc-link block text-sm text-gray-700 py-1 ml-5">2.4 CM Rules</a>
+              <a href="#term-cwr" class="toc-link block text-sm text-gray-700 py-1 ml-5">2.5 CWR Rules</a>
+              <a href="#term-fm" class="toc-link block text-sm text-gray-700 py-1 ml-5">2.6 Fine Motor Rules</a>
+              <a href="#term-timeout" class="toc-link block text-sm text-gray-700 py-1 ml-5">2.7 Timeout Detection</a>
+
+            <a href="#calculation-logic" class="toc-link block text-sm text-gray-700 py-1 font-semibold mt-2">III. Calculation Logic</a>
+              <a href="#calc-question" class="toc-link block text-sm text-gray-700 py-1 ml-5">3.1 Question-Level</a>
+              <a href="#calc-task" class="toc-link block text-sm text-gray-700 py-1 ml-5">3.2 Task-Level</a>
+              <a href="#calc-set" class="toc-link block text-sm text-gray-700 py-1 ml-5">3.3 Set-Level</a>
+
+            <a href="#data-merging" class="toc-link block text-sm text-gray-700 py-1 font-semibold mt-2">IV. Data Merging</a>
+              <a href="#merge-flow" class="toc-link block text-sm text-gray-700 py-1 ml-5">4.1 Merge Flow</a>
+              <a href="#merge-grade" class="toc-link block text-sm text-gray-700 py-1 ml-5">4.2 Grade-Based Grouping</a>
+
+            <a href="#validation" class="toc-link block text-sm text-gray-700 py-1 font-semibold mt-2">V. Validation & Status</a>
+              <a href="#val-colors" class="toc-link block text-sm text-gray-700 py-1 ml-5">5.1 Status Color Mapping</a>
+              <a href="#val-mismatch" class="toc-link block text-sm text-gray-700 py-1 ml-5">5.2 Termination Mismatches</a>
+
+            <a href="#troubleshooting" class="toc-link block text-sm text-gray-700 py-1 font-semibold mt-2">VI. Troubleshooting</a>
+              <a href="#trouble-common" class="toc-link block text-sm text-gray-700 py-1 ml-5">6.1 Common Issues</a>
+              <a href="#trouble-debug" class="toc-link block text-sm text-gray-700 py-1 ml-5">6.2 Debugging Guide</a>
+          </nav>
+        </div>
+      </aside>
+
+      <!-- Main Content Area -->
+      <main class="flex-1">
+        <div class="bg-white rounded-lg shadow-lg p-8">
+          
+          <!-- Overview Section -->
+          <section id="overview" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-4" style="color: var(--primary)">
+              <span class="text-4xl mr-2">📐</span>
+              Overview
+            </h2>
+            <p class="text-gray-700 mb-4">
+              This administrator guide provides a comprehensive reference for the calculation and termination rules 
+              used throughout the 4Set assessment system. Understanding these rules is essential for administrators 
+              who need to validate data, debug issues, or modify system behavior.
+            </p>
+            <div class="info-box">
+              <p class="font-semibold text-blue-800 mb-2">What This Guide Covers:</p>
+              <ul class="list-disc list-inside text-blue-700 space-y-1">
+                <li>System architecture and calculation flow</li>
+                <li>Termination rules for all assessment tasks (ERV, CM, CWR, Fine Motor)</li>
+                <li>Task completion calculation logic</li>
+                <li>Data merging and grade-based grouping</li>
+                <li>Validation rules and status indicators</li>
+                <li>Troubleshooting common calculation issues</li>
+              </ul>
+            </div>
+          </section>
+
+          <!-- Purpose Section -->
+          <section id="purpose" class="content-section mb-12">
+            <h2 class="text-3xl font-bold mb-4" style="color: var(--primary)">
+              <span class="text-4xl mr-2">🎯</span>
+              Purpose
+            </h2>
+            <p class="text-gray-700 mb-4">
+              This document serves as the <strong>"Calculation Bible"</strong> for the 4Set system, providing:
+            </p>
+            <ul class="list-disc list-inside text-gray-700 space-y-2 mb-4">
+              <li><strong>Technical Reference:</strong> Complete documentation of all calculation, validation, and termination rules</li>
+              <li><strong>Implementation Guide:</strong> Based on actual implemented code, not design documents</li>
+              <li><strong>Troubleshooting Resource:</strong> Helps administrators diagnose and resolve data validation issues</li>
+              <li><strong>Training Material:</strong> Onboarding resource for new administrators and operators</li>
+            </ul>
+            <div class="critical-box">
+              <p class="font-semibold text-red-800 mb-2">⚠️ Critical Note:</p>
+              <p class="text-red-700 text-sm">
+                The rules documented here reflect the <strong>actual implementation</strong> in the codebase 
+                (specifically <code>task-validator.js</code> and <code>processor_agent.ps1</code>). Always verify 
+                against the source code if you encounter discrepancies.
+              </p>
+            </div>
+          </section>
+
+          <!-- Architecture Section -->
+          <section id="architecture" class="content-section mb-12">
+            <h2 class="text-4xl font-bold mb-6 pb-4 border-b-4 border-primary" style="color: var(--primary)">
+              Section I: System Architecture
+            </h2>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="arch-overview">
+              <span class="step-number">1.1</span>
+              Single Source of Truth
+            </h3>
+            
+            <p class="text-gray-700 mb-4">
+              The 4Set system uses a centralized validation architecture with <strong>task-validator.js</strong> as the 
+              single source of truth for all calculation and termination logic.
+            </p>
+
+            <div class="code-block">
+              <div class="text-gray-600 mb-2 font-semibold">Architecture Flow:</div>
+              <code>DataMerger.js (Data Integration Layer)
+    ↓
+TaskValidator.js (Validation Engine)
+    ↓
+    ├─→ Student Page (Direct validation)
+    ├─→ Class Page (Via JotFormCache)
+    ├─→ School Page (Via JotFormCache)
+    ├─→ District Page (Via JotFormCache)
+    ├─→ Group Page (Via JotFormCache)
+    └─→ Test Pipeline (Uses same logic)</code>
+            </div>
+
+            <div class="info-box mt-4">
+              <p class="text-sm"><strong>💡 Key Location:</strong> All core validation logic resides in <code>assets/js/task-validator.js</code> (Lines 1-708)</p>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="arch-components">
+              <span class="step-number">1.2</span>
+              Key Components
+            </h3>
+
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+              <ol class="list-decimal ml-6 space-y-3 text-gray-700">
+                <li><strong>DataMerger</strong> - Grade-aware data integration (JotForm + Qualtrics)</li>
+                <li><strong>GradeDetector</strong> - Grade level determination (K1/K2/K3)</li>
+                <li><strong>TaskValidator</strong> - Core validation engine</li>
+                <li><strong>JotFormCache</strong> - Caching layer for bulk operations</li>
+                <li><strong>Student UI Renderer</strong> - Presentation layer</li>
+                <li><strong>Processor Agent</strong> - Server-side pipeline (PowerShell)</li>
+              </ol>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="arch-principles">
+              <span class="step-number">1.3</span>
+              Critical Principles
+            </h3>
+
+            <div class="critical-box">
+              <p class="font-semibold text-red-800 mb-2">🔴 Critical Principle #1: Termination Exclusion</p>
+              <p class="text-red-700 text-sm mb-2">
+                When termination or timeout occurs, questions <strong>AFTER</strong> that point are 
+                <strong>COMPLETELY EXCLUDED</strong> from ALL calculations.
+              </p>
+              <div class="bg-white p-3 rounded mt-2 text-sm">
+                <strong>Examples:</strong>
+                <ul class="list-disc ml-5 mt-1 text-gray-700">
+                  <li>CWR terminated at Q24: total=24, answered=24 → 100% complete ✅</li>
+                  <li>SYM timed out at Q53: total=53, answered=53 → 100% complete ✅</li>
+                  <li>CM terminated at Q7: total=9 (P1,P2,Q1-Q7), answered=9 → 100% complete ✅</li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="critical-box mt-4">
+              <p class="font-semibold text-red-800 mb-2">🔴 Critical Principle #2: Grade-Based Grouping</p>
+              <p class="text-red-700 text-sm">
+                Data from different grades (K1/K2/K3) is <strong>NEVER merged together</strong>. 
+                Each grade level is processed separately to prevent cross-grade contamination.
+              </p>
+            </div>
+          </section>
+
+          <!-- Termination Rules Section -->
+          <section id="termination-rules" class="content-section mb-12">
+            <h2 class="text-4xl font-bold mb-6 pb-4 border-b-4 border-primary" style="color: var(--primary)">
+              Section II: Termination Rules
+            </h2>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="term-overview">
+              <span class="step-number">2.1</span>
+              Overview
+            </h3>
+            
+            <p class="text-gray-700 mb-4">
+              Termination rules determine when a task should end early based on student performance. 
+              This prevents unnecessary testing burden while ensuring valid assessment data.
+            </p>
+
+            <div class="warning-box">
+              <p class="font-semibold text-yellow-800 mb-2">⚠️ Important:</p>
+              <p class="text-yellow-700 text-sm">
+                When termination occurs, all questions <strong>after</strong> the termination point are 
+                <strong>completely excluded</strong> from completion calculations.
+              </p>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="term-types">
+              <span class="step-number">2.2</span>
+              Termination Types
+            </h3>
+
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+              <ul class="list-disc ml-6 space-y-2 text-gray-700">
+                <li><strong>Stage-Based:</strong> ERV, CM (must meet threshold in each stage)</li>
+                <li><strong>Consecutive Incorrect:</strong> CWR (terminates after 10 consecutive incorrect answers)</li>
+                <li><strong>Threshold-Based:</strong> Fine Motor (minimum score requirements)</li>
+                <li><strong>Timeout-Based:</strong> SYM/NONSYM (student ran out of time)</li>
+              </ul>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="term-erv">
+              <span class="step-number">2.3</span>
+              ERV (Expressive Vocabulary) Rules
+            </h3>
+
+            <p class="text-gray-700 mb-4">
+              ERV has 3 stages with specific thresholds. If a student fails to meet the threshold 
+              in any stage, the assessment terminates at that stage.
+            </p>
+
+            <table class="min-w-full bg-white border border-gray-200 rounded-lg overflow-hidden mb-4 text-sm">
+              <thead class="bg-gray-100 text-gray-700 uppercase">
+                <tr>
+                  <th class="px-4 py-2 text-left">Stage</th>
+                  <th class="px-4 py-2 text-left">Questions</th>
+                  <th class="px-4 py-2 text-left">Threshold</th>
+                  <th class="px-4 py-2 text-left">Action</th>
+                </tr>
+              </thead>
+              <tbody class="text-gray-700">
+                <tr class="border-t">
+                  <td class="px-4 py-2 font-medium">Stage 1</td>
+                  <td class="px-4 py-2">P1, P2, Q1-Q5 (7 questions)</td>
+                  <td class="px-4 py-2">≥ 5 correct</td>
+                  <td class="px-4 py-2">Continue to Stage 2 if met</td>
+                </tr>
+                <tr class="border-t">
+                  <td class="px-4 py-2 font-medium">Stage 2</td>
+                  <td class="px-4 py-2">Q6-Q13 (8 questions)</td>
+                  <td class="px-4 py-2">≥ 6 correct</td>
+                  <td class="px-4 py-2">Continue to Stage 3 if met</td>
+                </tr>
+                <tr class="border-t">
+                  <td class="px-4 py-2 font-medium">Stage 3</td>
+                  <td class="px-4 py-2">Q14-Q25 (12 questions)</td>
+                  <td class="px-4 py-2">≥ 10 correct</td>
+                  <td class="px-4 py-2">Complete if met</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="success-box">
+              <p class="font-semibold text-green-800 mb-2">✅ Example (Passed):</p>
+              <ul class="list-disc ml-5 text-green-700 text-sm">
+                <li>Stage 1: 6/7 correct → Passed (≥5) → ERV_Ter1=0 → Continue</li>
+                <li>Stage 2: 7/8 correct → Passed (≥6) → ERV_Ter2=0 → Continue</li>
+                <li>Stage 3: 11/12 correct → Passed (≥10) → ERV_Ter3=0 → Complete</li>
+              </ul>
+            </div>
+
+            <div class="warning-box">
+              <p class="font-semibold text-yellow-800 mb-2">⚠️ Example (Terminated at Stage 2):</p>
+              <ul class="list-disc ml-5 text-yellow-700 text-sm">
+                <li>Stage 1: 6/7 correct → Passed (≥5) → ERV_Ter1=0 → Continue</li>
+                <li>Stage 2: 4/8 correct → Failed (&lt;6) → ERV_Ter2=1 → Terminate</li>
+                <li>Stage 3: Not reached → ERV_Ter3 not recorded</li>
+              </ul>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="term-cm">
+              <span class="step-number">2.4</span>
+              CM (Cognitive Memory) Rules
+            </h3>
+
+            <p class="text-gray-700 mb-4">
+              CM has 4 stages with increasing difficulty. Similar to ERV, termination occurs if 
+              the threshold is not met in any stage.
+            </p>
+
+            <table class="min-w-full bg-white border border-gray-200 rounded-lg overflow-hidden mb-4 text-sm">
+              <thead class="bg-gray-100 text-gray-700 uppercase">
+                <tr>
+                  <th class="px-4 py-2 text-left">Stage</th>
+                  <th class="px-4 py-2 text-left">Questions</th>
+                  <th class="px-4 py-2 text-left">Threshold</th>
+                  <th class="px-4 py-2 text-left">Action</th>
+                </tr>
+              </thead>
+              <tbody class="text-gray-700">
+                <tr class="border-t">
+                  <td class="px-4 py-2 font-medium">Stage 1</td>
+                  <td class="px-4 py-2">P1, P2, Q1-Q5 (7 questions)</td>
+                  <td class="px-4 py-2">≥ 5 correct</td>
+                  <td class="px-4 py-2">Continue to Stage 2 if met</td>
+                </tr>
+                <tr class="border-t">
+                  <td class="px-4 py-2 font-medium">Stage 2</td>
+                  <td class="px-4 py-2">Q6-Q10 (5 questions)</td>
+                  <td class="px-4 py-2">≥ 4 correct</td>
+                  <td class="px-4 py-2">Continue to Stage 3 if met</td>
+                </tr>
+                <tr class="border-t">
+                  <td class="px-4 py-2 font-medium">Stage 3</td>
+                  <td class="px-4 py-2">Q11-Q15 (5 questions)</td>
+                  <td class="px-4 py-2">≥ 4 correct</td>
+                  <td class="px-4 py-2">Continue to Stage 4 if met</td>
+                </tr>
+                <tr class="border-t">
+                  <td class="px-4 py-2 font-medium">Stage 4</td>
+                  <td class="px-4 py-2">Q16-Q20 (5 questions)</td>
+                  <td class="px-4 py-2">≥ 4 correct</td>
+                  <td class="px-4 py-2">Complete if met</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="term-cwr">
+              <span class="step-number">2.5</span>
+              CWR (Cognitive Working Memory) Rules
+            </h3>
+
+            <p class="text-gray-700 mb-4">
+              CWR uses a <strong>consecutive incorrect</strong> rule. The assessment terminates 
+              after <strong>10 consecutive incorrect answers</strong>.
+            </p>
+
+            <div class="info-box">
+              <p class="font-semibold text-blue-800 mb-2">CWR Termination Logic:</p>
+              <ul class="list-disc ml-5 text-blue-700 text-sm space-y-1">
+                <li>Track consecutive incorrect answers as the student progresses</li>
+                <li>Reset counter to 0 when a correct answer is given</li>
+                <li>Terminate immediately when counter reaches 10</li>
+                <li>Questions after termination point are excluded</li>
+              </ul>
+            </div>
+
+            <div class="warning-box">
+              <p class="font-semibold text-yellow-800 mb-2">⚠️ Example (Terminated at Q24):</p>
+              <p class="text-yellow-700 text-sm">
+                Student answered Q15-Q24 all incorrectly (10 consecutive). The assessment terminates at Q24. 
+                Even if Q25-Q30 have answers (post-termination activity), only Q1-Q24 count toward completion.
+              </p>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="term-fm">
+              <span class="step-number">2.6</span>
+              Fine Motor Rules
+            </h3>
+
+            <p class="text-gray-700 mb-4">
+              Fine Motor assessment has minimum score requirements. If the student's performance 
+              falls below threshold, early termination may be indicated.
+            </p>
+
+            <div class="info-box">
+              <p class="text-sm"><strong>💡 Note:</strong> Fine Motor rules are score-based rather than stage-based. 
+              Specific thresholds vary by assessment type and are documented in <code>task-validator.js</code>.</p>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="term-timeout">
+              <span class="step-number">2.7</span>
+              Timeout Detection
+            </h3>
+
+            <p class="text-gray-700 mb-4">
+              SYM and NONSYM tasks are timed assessments. If the student runs out of time, 
+              the assessment is marked as timed out at the last answered question.
+            </p>
+
+            <div class="code-block">
+              <div class="text-gray-600 mb-2 font-semibold">Timeout Detection Logic:</div>
+              <code>// Check if timeout field is "1" (Yes)
+if (data['SYM_TimeOut'] === "1") {
+  // Find last answered question
+  // Mark as timed out
+  // Exclude unanswered questions from total
+}</code>
+            </div>
+          </section>
+
+          <!-- Calculation Logic Section -->
+          <section id="calculation-logic" class="content-section mb-12">
+            <h2 class="text-4xl font-bold mb-6 pb-4 border-b-4 border-primary" style="color: var(--primary)">
+              Section III: Calculation Logic
+            </h2>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="calc-question">
+              <span class="step-number">3.1</span>
+              Question-Level Calculations
+            </h3>
+
+            <p class="text-gray-700 mb-4">
+              Each question is evaluated individually to determine if it was answered correctly, 
+              incorrectly, or left blank.
+            </p>
+
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+              <p class="font-semibold text-gray-800 mb-2">Answer Value Interpretation:</p>
+              <ul class="list-disc ml-6 space-y-1 text-gray-700 text-sm">
+                <li><code>"1"</code> = Correct answer</li>
+                <li><code>"0"</code> = Incorrect answer</li>
+                <li><code>""</code> (empty) or <code>null</code> = Not answered</li>
+              </ul>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="calc-task">
+              <span class="step-number">3.2</span>
+              Task-Level Calculations
+            </h3>
+
+            <p class="text-gray-700 mb-4">
+              Task completion is calculated based on the number of answered questions relative 
+              to the expected total, accounting for termination and timeout.
+            </p>
+
+            <div class="code-block">
+              <div class="text-gray-600 mb-2 font-semibold">Task Completion Formula:</div>
+              <code>completionPercentage = (answeredCount / expectedTotal) * 100
+
+// Where:
+// - answeredCount = Number of questions with non-empty answers
+// - expectedTotal = Total questions up to termination/timeout point
+//                   (or all questions if no termination)</code>
+            </div>
+
+            <div class="success-box">
+              <p class="font-semibold text-green-800 mb-2">✅ Completion Examples:</p>
+              <ul class="list-disc ml-5 text-green-700 text-sm">
+                <li>CWR: 24 answered / 24 expected (terminated at Q24) = 100% complete</li>
+                <li>ERV: 15 answered / 15 expected (terminated at Stage 2) = 100% complete</li>
+                <li>SYM: 53 answered / 53 expected (timed out at Q53) = 100% complete</li>
+              </ul>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="calc-set">
+              <span class="step-number">3.3</span>
+              Set-Level Calculations
+            </h3>
+
+            <p class="text-gray-700 mb-4">
+              Each student's 4Set assessment consists of multiple tasks. Set-level completion 
+              is calculated as the average completion across all tasks.
+            </p>
+
+            <div class="code-block">
+              <div class="text-gray-600 mb-2 font-semibold">Set Completion Formula:</div>
+              <code>setCompletion = (sum of all task completions) / (number of tasks)
+
+// Example:
+// ERV: 100%, CM: 100%, CWR: 100%, FM: 80%, SYM: 100%
+// Set: (100+100+100+80+100) / 5 = 96% complete</code>
+            </div>
+          </section>
+
+          <!-- Data Merging Section -->
+          <section id="data-merging" class="content-section mb-12">
+            <h2 class="text-4xl font-bold mb-6 pb-4 border-b-4 border-primary" style="color: var(--primary)">
+              Section IV: Data Merging
+            </h2>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="merge-flow">
+              <span class="step-number">4.1</span>
+              Merge Flow
+            </h3>
+
+            <p class="text-gray-700 mb-4">
+              The system merges data from multiple sources (JotForm submissions and Qualtrics surveys) 
+              using a 4-step process:
+            </p>
+
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+              <ol class="list-decimal ml-6 space-y-3 text-gray-700">
+                <li><strong>JotForm Internal Merging:</strong> Merge multiple submissions for the same student</li>
+                <li><strong>Qualtrics Internal Merging:</strong> Merge multiple Qualtrics responses</li>
+                <li><strong>Cross-Source Merging:</strong> Combine JotForm and Qualtrics data per (coreId, grade) pair</li>
+                <li><strong>Grade Segregation:</strong> Keep K1, K2, K3 data completely separate</li>
+              </ol>
+            </div>
+
+            <div class="info-box">
+              <p class="font-semibold text-blue-800 mb-2">💡 Merge Strategy: "Earliest Non-Empty Wins"</p>
+              <p class="text-blue-700 text-sm">
+                When multiple values exist for the same field, the system uses the value from the 
+                <strong>earliest submission</strong> (by <code>created_at</code> timestamp). Empty values are 
+                never used if a non-empty value exists in another submission.
+              </p>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="merge-grade">
+              <span class="step-number">4.2</span>
+              Grade-Based Grouping
+            </h3>
+
+            <p class="text-gray-700 mb-4">
+              The system automatically detects grade level (K1/K2/K3) based on assessment dates 
+              and the school year calendar (August-July).
+            </p>
+
+            <div class="critical-box">
+              <p class="font-semibold text-red-800 mb-2">🔴 Critical: No Cross-Grade Merging</p>
+              <p class="text-red-700 text-sm">
+                Data from different grades is <strong>NEVER merged together</strong>. Each (coreId, grade) 
+                pair is treated as a unique student record. This prevents contamination and ensures 
+                longitudinal tracking accuracy.
+              </p>
+            </div>
+
+            <div class="bg-white border-2 border-blue-200 rounded-lg p-4 mt-4">
+              <p class="font-semibold text-gray-800 mb-2">Example: Student C10253</p>
+              <ul class="list-disc ml-6 text-gray-700 text-sm space-y-1">
+                <li>Sept 2024: Assessed as K1 → Record: (C10253, K1)</li>
+                <li>Sept 2025: Assessed as K2 → Record: (C10253, K2)</li>
+                <li>These are treated as <strong>separate student records</strong></li>
+              </ul>
+            </div>
+          </section>
+
+          <!-- Validation Section -->
+          <section id="validation" class="content-section mb-12">
+            <h2 class="text-4xl font-bold mb-6 pb-4 border-b-4 border-primary" style="color: var(--primary)">
+              Section V: Validation & Status
+            </h2>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="val-colors">
+              <span class="step-number">5.1</span>
+              Status Color Mapping
+            </h3>
+
+            <p class="text-gray-700 mb-4">
+              The system uses color-coded status indicators to show data quality at a glance:
+            </p>
+
+            <table class="min-w-full bg-white border border-gray-200 rounded-lg overflow-hidden mb-4 text-sm">
+              <thead class="bg-gray-100 text-gray-700 uppercase">
+                <tr>
+                  <th class="px-4 py-2 text-left">Status</th>
+                  <th class="px-4 py-2 text-left">Color</th>
+                  <th class="px-4 py-2 text-left">Meaning</th>
+                  <th class="px-4 py-2 text-left">Action Required</th>
+                </tr>
+              </thead>
+              <tbody class="text-gray-700">
+                <tr class="border-t">
+                  <td class="px-4 py-2 font-medium">Not Started</td>
+                  <td class="px-4 py-2"><span class="inline-block w-4 h-4 bg-gray-300 rounded"></span> Gray</td>
+                  <td class="px-4 py-2">No data submitted yet</td>
+                  <td class="px-4 py-2">Wait for assessment</td>
+                </tr>
+                <tr class="border-t">
+                  <td class="px-4 py-2 font-medium">Incomplete</td>
+                  <td class="px-4 py-2"><span class="inline-block w-4 h-4 bg-red-500 rounded"></span> Red</td>
+                  <td class="px-4 py-2">Missing required questions</td>
+                  <td class="px-4 py-2">Review and complete</td>
+                </tr>
+                <tr class="border-t">
+                  <td class="px-4 py-2 font-medium">Warning</td>
+                  <td class="px-4 py-2"><span class="inline-block w-4 h-4 bg-yellow-500 rounded"></span> Yellow</td>
+                  <td class="px-4 py-2">Post-termination activity or mismatch</td>
+                  <td class="px-4 py-2">Investigate issue</td>
+                </tr>
+                <tr class="border-t">
+                  <td class="px-4 py-2 font-medium">Complete</td>
+                  <td class="px-4 py-2"><span class="inline-block w-4 h-4 bg-green-500 rounded"></span> Green</td>
+                  <td class="px-4 py-2">All checks passed</td>
+                  <td class="px-4 py-2">No action needed</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="val-mismatch">
+              <span class="step-number">5.2</span>
+              Termination Mismatches
+            </h3>
+
+            <p class="text-gray-700 mb-4">
+              A termination mismatch occurs when the administrator's recorded termination value 
+              doesn't match the system's calculated value.
+            </p>
+
+            <div class="warning-box">
+              <p class="font-semibold text-yellow-800 mb-2">⚠️ Common Causes of Mismatches:</p>
+              <ul class="list-disc ml-5 text-yellow-700 text-sm space-y-1">
+                <li>Administrator didn't recognize the termination trigger</li>
+                <li>Counting or recording error in termination field</li>
+                <li>Continued testing beyond termination point</li>
+                <li>Post-termination answers were recorded</li>
+              </ul>
+            </div>
+
+            <div class="info-box mt-4">
+              <p class="font-semibold text-blue-800 mb-2">💡 How to Investigate:</p>
+              <ol class="list-decimal ml-5 text-blue-700 text-sm space-y-1">
+                <li>Review the student's answers for the specific task</li>
+                <li>Check the termination field value (e.g., CM_Ter2)</li>
+                <li>Recalculate manually to verify system logic</li>
+                <li>Determine if the mismatch is acceptable or requires correction</li>
+              </ol>
+            </div>
+
+            <div class="success-box mt-4">
+              <p class="font-semibold text-green-800 mb-2">✅ Note on Early Termination:</p>
+              <p class="text-green-700 text-sm">
+                Early termination (terminating before meeting the threshold) is often acceptable 
+                and may indicate appropriate assessment of struggling students. Only investigate 
+                if the pattern seems unusual.
+              </p>
+            </div>
+          </section>
+
+          <!-- Troubleshooting Section -->
+          <section id="troubleshooting" class="content-section mb-12">
+            <h2 class="text-4xl font-bold mb-6 pb-4 border-b-4 border-primary" style="color: var(--primary)">
+              Section VI: Troubleshooting
+            </h2>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="trouble-common">
+              <span class="step-number">6.1</span>
+              Common Issues
+            </h3>
+
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+              <h4 class="font-semibold text-gray-800 mb-3">Issue: Student shows 100% complete but still has yellow warning</h4>
+              <p class="text-gray-700 text-sm mb-2"><strong>Cause:</strong> Post-termination activity detected</p>
+              <p class="text-gray-700 text-sm mb-2"><strong>Solution:</strong> Review answers after the termination point. This may indicate data quality issues or that the administrator continued testing beyond the intended stopping point.</p>
+            </div>
+
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+              <h4 class="font-semibold text-gray-800 mb-3">Issue: Termination value shows mismatch for unreached stages</h4>
+              <p class="text-gray-700 text-sm mb-2"><strong>Cause:</strong> Bug was fixed in November 2025 (see termination-rules.md)</p>
+              <p class="text-gray-700 text-sm mb-2"><strong>Solution:</strong> Clear cache by running <code>await window.JotFormCache.clearCache()</code> in browser console and reload the page.</p>
+            </div>
+
+            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-4">
+              <h4 class="font-semibold text-gray-800 mb-3">Issue: Data not merging correctly across submissions</h4>
+              <p class="text-gray-700 text-sm mb-2"><strong>Cause:</strong> Grade mismatch or incorrect CoreID</p>
+              <p class="text-gray-700 text-sm mb-2"><strong>Solution:</strong> Verify that both submissions have the same CoreID and are from the same grade level (K1/K2/K3). Remember that data from different grades is never merged.</p>
+            </div>
+
+            <h3 class="text-xl font-semibold mb-3 mt-6 text-gray-800" id="trouble-debug">
+              <span class="step-number">6.2</span>
+              Debugging Guide
+            </h3>
+
+            <p class="text-gray-700 mb-4">
+              Use browser developer tools to debug calculation issues:
+            </p>
+
+            <div class="code-block">
+              <div class="text-gray-600 mb-2 font-semibold">Browser Console Commands:</div>
+              <code>// Clear cache and reload
+await window.JotFormCache.clearCache()
+location.reload()
+
+// Validate specific student
+const result = window.TaskValidator.validateAllTasks(studentData)
+console.log(result)
+
+// Check termination rules for a task
+const termRule = window.TaskValidator.TERMINATION_RULES.CM
+console.log(termRule)</code>
+            </div>
+
+            <div class="info-box mt-4">
+              <p class="font-semibold text-blue-800 mb-2">💡 Additional Resources:</p>
+              <ul class="list-disc ml-5 text-blue-700 text-sm space-y-1">
+                <li>Full technical reference: <code>PRDs/calculation_bible.md</code></li>
+                <li>Termination rules details: <code>PRDs/termination-rules.md</code></li>
+                <li>Source code: <code>assets/js/task-validator.js</code></li>
+                <li>Server pipeline: <code>processor_agent.ps1</code></li>
+              </ul>
+            </div>
+
+            <div class="critical-box mt-4">
+              <p class="font-semibold text-red-800 mb-2">🔴 When in Doubt:</p>
+              <p class="text-red-700 text-sm">
+                Always refer to the actual implementation in the source code 
+                (<code>task-validator.js</code>) rather than relying solely on documentation. 
+                The code is the ultimate source of truth.
+              </p>
+            </div>
+          </section>
+
+        </div>
+      </main>
+    </div>
+
+  <!-- Footer -->
+  <footer class="bg-white shadow-md mt-12">
+    <div class="container mx-auto px-6 py-6 text-center text-sm text-gray-600">
+      <p>© 2025 All rights reserved – Herman Chan</p>
+      <p class="mt-1">KeySteps@JC, The Education University of Hong Kong · System available on <a href="https://github.com/herman925/4Set-Server" class="text-blue-600 hover:underline">GitHub</a></p>
+    </div>
+  </footer>
+
+  <script>
+    // Add smooth scrolling for anchor links
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      });
+    });
+
+    // Highlight active section in TOC
+    const sections = document.querySelectorAll('section[id]');
+    const navLinks = document.querySelectorAll('.toc-link');
+
+    window.addEventListener('scroll', () => {
+      let current = '';
+      sections.forEach(section => {
+        const sectionTop = section.offsetTop;
+        const sectionHeight = section.clientHeight;
+        if (window.pageYOffset >= sectionTop - 100) {
+          current = section.getAttribute('id');
+        }
+      });
+
+      navLinks.forEach(link => {
+        link.classList.remove('text-primary', 'font-semibold');
+        if (link.getAttribute('href') === `#${current}`) {
+          link.classList.add('text-primary', 'font-semibold');
+        }
+      });
+    });
+  </script>
+</body>
+</html>
