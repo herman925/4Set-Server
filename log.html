@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Processing Agent Logs - 4Set Pipeline</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="assets/js/tailwind.config.js"></script>
+    <link rel="stylesheet" href="assets/css/theme_pantone_light_1.css" />
+    <link rel="stylesheet" href="assets/css/index.css" />
+    <link rel="stylesheet" href="assets/css/global.css" />
+    <link rel="icon" type="image/x-icon" href="assets/favicon.ico" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono&family=Noto+Sans+TC&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+    <style>
+        /* Log Level Pills */
+        .log-level-pill {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .log-level-INFO {
+            background-color: rgba(43, 57, 144, 0.1);
+            color: var(--primary);
+            border: 1px solid rgba(43, 57, 144, 0.2);
+        }
+        
+        .log-level-DEBUG {
+            background-color: rgba(70, 82, 117, 0.08);
+            color: var(--muted-foreground);
+            border: 1px solid rgba(70, 82, 117, 0.15);
+        }
+        
+        .log-level-WARN {
+            background-color: rgba(244, 208, 54, 0.15);
+            color: var(--warning);
+            border: 1px solid rgba(244, 208, 54, 0.3);
+        }
+        
+        .log-level-ERROR {
+            background-color: rgba(240, 78, 105, 0.1);
+            color: var(--destructive);
+            border: 1px solid rgba(240, 78, 105, 0.25);
+        }
+        
+        .log-level-REJECT {
+            background-color: rgba(240, 78, 105, 0.15);
+            color: var(--destructive);
+            border: 1px solid rgba(240, 78, 105, 0.3);
+            font-weight: 700;
+        }
+        
+        .log-level-UPLOAD {
+            background-color: rgba(141, 190, 80, 0.15);
+            color: var(--success);
+            border: 1px solid rgba(141, 190, 80, 0.3);
+        }
+        
+        .log-level-FILED {
+            background-color: rgba(141, 190, 80, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(141, 190, 80, 0.25);
+        }
+        
+        .log-level-DATA_OVERWRITE_DIFF {
+            background-color: rgba(249, 157, 51, 0.15);
+            color: var(--secondary);
+            border: 1px solid rgba(249, 157, 51, 0.3);
+            font-weight: 700;
+        }
+        
+        .log-row:hover { background-color: var(--muted); }
+        
+        .duration-badge {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+        }
+        
+        /* Ultra-Compact Calendar Styles */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            font-size: 0.6rem;
+        }
+        
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0.25rem;
+            cursor: pointer;
+            transition: all 0.15s;
+            font-size: 0.6rem;
+            padding: 1px;
+            min-height: 20px;
+        }
+        
+        .calendar-day.empty {
+            cursor: default;
+            color: #e5e7eb;
+        }
+        
+        .calendar-day.weekend {
+            background-color: #fef3e2;
+        }
+        
+        .calendar-day.no-log {
+            background-color: #f9fafb;
+            color: var(--muted-foreground);
+        }
+        
+        .calendar-day.no-log:hover {
+            background-color: #f3f4f6;
+        }
+        
+        .calendar-day.no-log.weekend {
+            background-color: #fef3e2;
+        }
+        
+        .calendar-day.has-log {
+            background-color: #dbeafe;
+            color: var(--primary);
+            font-weight: 600;
+        }
+        
+        .calendar-day.has-log:hover {
+            background-color: #bfdbfe;
+        }
+        
+        .calendar-day.has-log.weekend {
+            background-color: #fde1c3;
+            color: var(--secondary);
+        }
+        
+        .calendar-day.selected {
+            background-color: var(--primary);
+            color: white;
+        }
+        
+        .calendar-day.today {
+            border: 2px solid var(--secondary);
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .spinning {
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen hero-background">
+    <div class="relative overflow-hidden">
+        <!-- Decorative Background Elements -->
+        <div id="background-circles"></div>
+        <div class="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-white/70 to-transparent"></div>
+
+        <main class="relative z-10 mx-auto min-h-screen w-full max-w-6xl px-6 py-12 lg:py-16">
+            
+            <!-- Header Section -->
+            <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div class="flex flex-col gap-2">
+                    <h1 class="hero-title text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight text-[color:var(--foreground)]">
+                        <i data-lucide="file-text" class="w-8 h-8 sm:w-10 sm:h-10 inline-block mr-2 text-[color:var(--primary)]"></i>
+                        Processing Agent Logs
+                    </h1>
+                    <p class="hero-subtitle text-base sm:text-lg text-[color:var(--muted-foreground)] max-w-2xl">
+                        Monitor and analyse PDF processing activities
+                    </p>
+                </div>
+                <a href="upload.html" class="hero-button secondary-button flex items-center gap-2 px-6 py-3 text-sm font-semibold self-start">
+                    <i data-lucide="arrow-left" class="w-4 h-4"></i>
+                    <span>Back to Upload Page</span>
+                </a>
+            </div>
+
+            <!-- Two-Column Layout: Date Picker (20%) + Log Viewer (80%) -->
+            <div class="grid grid-cols-12 gap-6">
+                <!-- LEFT SIDEBAR: Date Picker (20%) -->
+                <div class="col-span-12 lg:col-span-3">
+                    <div class="entry-card p-4 sticky top-4">
+                        <h2 class="text-sm font-semibold text-[color:var(--foreground)] mb-3 flex items-center gap-2">
+                            <i data-lucide="calendar" class="w-4 h-4 text-[color:var(--primary)]"></i>
+                            Select Date
+                        </h2>
+                        
+                        <!-- Quick Actions -->
+                        <div class="flex flex-col gap-1.5 mb-3">
+                            <button 
+                                onclick="loadToday()"
+                                class="w-full px-2 py-1.5 text-xs font-medium rounded-lg transition-all text-left flex items-center gap-1.5"
+                                style="background-color: rgba(249, 157, 51, 0.1); color: var(--secondary); border: 1px solid rgba(249, 157, 51, 0.2);"
+                            >
+                                <i data-lucide="calendar-check" class="w-3 h-3"></i>
+                                Today
+                            </button>
+                            <button 
+                                onclick="refreshCurrentLog()"
+                                id="refreshBtn"
+                                class="w-full px-2 py-1.5 text-xs font-medium text-white rounded-lg transition-all flex flex-col items-start gap-0.5"
+                                style="background-color: var(--primary);"
+                                disabled
+                            >
+                                <div class="flex items-center gap-1.5">
+                                    <i data-lucide="refresh-cw" class="w-3 h-3"></i>
+                                    Refresh
+                                </div>
+                                <span id="lastRefreshTime" class="text-[0.6rem] opacity-75" style="display: none;"></span>
+                            </button>
+                            <button 
+                                onclick="scanLogFiles()"
+                                class="w-full px-2 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center gap-1.5"
+                                style="background-color: rgba(70, 82, 117, 0.1); color: var(--muted-foreground); border: 1px solid rgba(70, 82, 117, 0.2);"
+                            >
+                                <i data-lucide="search" class="w-3 h-3"></i>
+                                Scan Logs
+                            </button>
+                        </div>
+                        
+                        <!-- Calendar Navigation -->
+                        <div class="flex items-center justify-between mb-2">
+                            <button 
+                                onclick="changeMonth(-1)"
+                                class="p-1 rounded hover:bg-gray-100"
+                            >
+                                <i data-lucide="chevron-left" class="w-3.5 h-3.5" style="color: var(--primary);"></i>
+                            </button>
+                            <h3 class="text-xs font-semibold" style="color: var(--foreground);" id="calendarTitle">
+                                Loading...
+                            </h3>
+                            <button 
+                                onclick="changeMonth(1)"
+                                class="p-1 rounded hover:bg-gray-100"
+                            >
+                                <i data-lucide="chevron-right" class="w-3.5 h-3.5" style="color: var(--primary);"></i>
+                            </button>
+                        </div>
+                        
+                        <!-- Compact Calendar -->
+                        <div class="calendar-grid mb-1">
+                            <div class="text-center text-[0.6rem] font-medium text-[color:var(--muted-foreground)] py-0.5">S</div>
+                            <div class="text-center text-[0.6rem] font-medium text-[color:var(--muted-foreground)] py-0.5">M</div>
+                            <div class="text-center text-[0.6rem] font-medium text-[color:var(--muted-foreground)] py-0.5">T</div>
+                            <div class="text-center text-[0.6rem] font-medium text-[color:var(--muted-foreground)] py-0.5">W</div>
+                            <div class="text-center text-[0.6rem] font-medium text-[color:var(--muted-foreground)] py-0.5">T</div>
+                            <div class="text-center text-[0.6rem] font-medium text-[color:var(--muted-foreground)] py-0.5">F</div>
+                            <div class="text-center text-[0.6rem] font-medium text-[color:var(--muted-foreground)] py-0.5">S</div>
+                        </div>
+                        <div id="calendar" class="calendar-grid"></div>
+                    </div>
+                </div>
+
+                <!-- RIGHT MAIN CONTENT: Filters + Logs (80%) -->
+                <div class="col-span-12 lg:col-span-9">
+                    <!-- Filters Card -->
+                    <div class="entry-card p-4 mb-4">
+                        <h2 class="text-sm font-semibold text-[color:var(--foreground)] mb-3 flex items-center gap-2">
+                            <i data-lucide="filter" class="w-4 h-4 text-[color:var(--primary)]"></i>
+                            Filters
+                        </h2>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                            <!-- Session Key Filter -->
+                            <div>
+                                <label class="block text-xs font-medium text-[color:var(--foreground)] mb-1.5">
+                                    Session Key / Filename
+                                </label>
+                                <input 
+                                    type="text" 
+                                    id="fileFilter" 
+                                    placeholder="e.g., 12800_20251014_13_05"
+                                    class="w-full px-2.5 py-1.5 text-xs border rounded-lg focus:ring-2 focus:ring-[color:var(--primary)] focus:border-[color:var(--primary)]"
+                                    style="border-color: var(--border);"
+                                />
+                            </div>
+
+                            <!-- Level Filter -->
+                            <div>
+                                <label class="block text-xs font-medium text-[color:var(--foreground)] mb-1.5">
+                                    Log Level
+                                </label>
+                                <select 
+                                    id="levelFilter"
+                                    class="w-full px-2.5 py-1.5 text-xs border rounded-lg focus:ring-2 focus:ring-[color:var(--primary)] focus:border-[color:var(--primary)]"
+                                    style="border-color: var(--border);"
+                                >
+                                    <option value="">All Levels</option>
+                                    <option value="INFO">INFO</option>
+                                    <option value="DEBUG">DEBUG</option>
+                                    <option value="WARN">WARN</option>
+                                    <option value="ERROR">ERROR</option>
+                                    <option value="REJECT">REJECT</option>
+                                    <option value="UPLOAD">UPLOAD</option>
+                                    <option value="FILED">FILED</option>
+                                    <option value="DATA_OVERWRITE_DIFF">DATA_OVERWRITE_DIFF</option>
+                                </select>
+                            </div>
+
+                            <!-- Quick Filters -->
+                            <div>
+                                <label class="block text-xs font-medium text-[color:var(--foreground)] mb-1.5">
+                                    Quick Filters
+                                </label>
+                                <div class="flex gap-1.5">
+                                    <button 
+                                        onclick="showOnlyErrors()"
+                                        class="flex-1 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-1"
+                                        style="background-color: rgba(240, 78, 105, 0.1); color: var(--destructive); border: 1px solid rgba(240, 78, 105, 0.2);"
+                                    >
+                                        <i data-lucide="alert-circle" class="w-3 h-3"></i>
+                                        Errors
+                                    </button>
+                                    <button 
+                                        onclick="showOnlySuccess()"
+                                        class="flex-1 px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all flex items-center justify-center gap-1"
+                                        style="background-color: rgba(141, 190, 80, 0.1); color: var(--success); border: 1px solid rgba(141, 190, 80, 0.2);"
+                                    >
+                                        <i data-lucide="check-circle" class="w-3 h-3"></i>
+                                        Success
+                                    </button>
+                                    <button 
+                                        onclick="clearFilters()"
+                                        class="px-2.5 py-1.5 text-xs font-medium rounded-lg transition-all"
+                                        style="background-color: rgba(70, 82, 117, 0.08); color: var(--muted-foreground); border: 1px solid rgba(70, 82, 117, 0.15);"
+                                    >
+                                        Clear
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Log Table (directly below Filters) -->
+                    <div class="entry-card">
+                        <div class="p-4">
+                            <!-- Header with Stats in same row -->
+                            <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
+                                <h2 class="text-sm font-semibold text-[color:var(--foreground)] flex items-center gap-2">
+                                    <i data-lucide="list" class="w-4 h-4 text-[color:var(--primary)]"></i>
+                                    Log Entries
+                                </h2>
+                                <!-- Compact Stats -->
+                                <div class="flex items-center gap-3 text-xs" id="statsContainer">
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-[color:var(--muted-foreground)]">Total:</span>
+                                        <span class="font-semibold text-[color:var(--foreground)]" id="statTotal">0</span>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-[color:var(--muted-foreground)]">Files:</span>
+                                        <span class="font-semibold" style="color: var(--success);" id="statFiles">0</span>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-[color:var(--muted-foreground)]">Errors:</span>
+                                        <span class="font-semibold" style="color: var(--destructive);" id="statRejects">0</span>
+                                    </div>
+                                    <div class="flex items-center gap-1">
+                                        <span class="text-[color:var(--muted-foreground)]">Avg:</span>
+                                        <span class="font-semibold" style="color: var(--primary);" id="statAvgTime">0s</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- File Processing Times (collapsible) -->
+                            <div class="mb-3" id="timingsContainer" style="display: none;">
+                                <div class="text-xs font-medium text-[color:var(--muted-foreground)] mb-2 flex items-center gap-1">
+                                    <i data-lucide="clock" class="w-3 h-3"></i>
+                                    Processing Times
+                                </div>
+                                <div id="timingsTable"></div>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="min-w-full divide-y" style="border-color: var(--border);">
+                                    <thead>
+                                        <tr>
+                                            <th class="px-3 py-2 text-left text-xs font-medium text-[color:var(--muted-foreground)] uppercase">
+                                                Timestamp
+                                            </th>
+                                            <th class="px-3 py-2 text-left text-xs font-medium text-[color:var(--muted-foreground)] uppercase">
+                                                Level
+                                            </th>
+                                            <th class="px-3 py-2 text-left text-xs font-medium text-[color:var(--muted-foreground)] uppercase">
+                                                File
+                                            </th>
+                                            <th class="px-3 py-2 text-left text-xs font-medium text-[color:var(--muted-foreground)] uppercase">
+                                                Message
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="logTableBody" class="divide-y" style="border-color: var(--border);">
+                                        <tr>
+                                            <td colspan="4" class="px-3 py-6 text-center text-[color:var(--muted-foreground)] text-sm">
+                                                Select a log date to view entries
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- End of right column -->
+            </div>
+            <!-- End of grid layout -->
+        </main>
+    </div>
+
+    <script>
+        let allLogs = [];
+        let filteredLogs = [];
+        let currentDate = null;
+        let availableLogDates = new Set();
+        let currentMonth = new Date();
+        let logDirectory = './logs';
+        let scanDays = 90;
+
+        // Load configuration
+        async function loadConfig() {
+            try {
+                const response = await fetch('config/checking_system_config.json');
+                const config = await response.json();
+                
+                // Load log directory from agent.json
+                const agentResponse = await fetch('config/agent.json');
+                const agentConfig = await agentResponse.json();
+                logDirectory = agentConfig.logDirectory || './logs';
+                
+                // Load scan days from checking_system_config.json
+                if (config.logViewer && config.logViewer.scanDays) {
+                    scanDays = config.logViewer.scanDays;
+                }
+                
+                return logDirectory;
+            } catch (error) {
+                console.error('Failed to load config:', error);
+                logDirectory = './logs';
+                scanDays = 90;
+                return './logs';
+            }
+        }
+
+        // Scan log files directory
+        async function scanLogFiles() {
+            await loadConfig();
+            availableLogDates.clear();
+            
+            const today = new Date();
+            const promises = [];
+            
+            for (let i = 0; i < scanDays; i++) {
+                const date = new Date(today);
+                date.setDate(date.getDate() - i);
+                const dateStr = formatDateToYYYYMMDD(date);
+                promises.push(checkLogExists(dateStr));
+            }
+            
+            await Promise.all(promises);
+            renderCalendar();
+        }
+        
+        // Check if log file exists and has actual data (not just headers)
+        async function checkLogExists(dateStr) {
+            const filename = `${dateStr}_processing_agent.csv`;
+            const filepath = `${logDirectory}/${filename}`;
+            
+            try {
+                const response = await fetch(filepath);
+                if (response.ok) {
+                    const text = await response.text();
+                    const lines = text.trim().split('\n');
+                    // Only consider it a valid log if it has more than just the header row
+                    if (lines.length > 1) {
+                        availableLogDates.add(dateStr);
+                    }
+                }
+            } catch (error) {
+                // File doesn't exist or can't be read, ignore
+            }
+        }
+        
+        // Format date to YYYYMMDD
+        function formatDateToYYYYMMDD(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}${month}${day}`;
+        }
+        
+        // Parse YYYYMMDD to Date
+        function parseYYYYMMDD(dateStr) {
+            const year = parseInt(dateStr.substring(0, 4));
+            const month = parseInt(dateStr.substring(4, 6)) - 1;
+            const day = parseInt(dateStr.substring(6, 8));
+            return new Date(year, month, day);
+        }
+        
+        // Change month
+        function changeMonth(delta) {
+            currentMonth.setMonth(currentMonth.getMonth() + delta);
+            renderCalendar();
+        }
+        
+        // Load today's log
+        function loadToday() {
+            const today = formatDateToYYYYMMDD(new Date());
+            if (availableLogDates.has(today)) {
+                loadLogFile(today);
+            } else {
+                alert('No log file found for today.');
+            }
+        }
+        
+        // Render calendar
+        function renderCalendar() {
+            const calendar = document.getElementById('calendar');
+            const title = document.getElementById('calendarTitle');
+            
+            // Update title
+            const options = { month: 'long', year: 'numeric' };
+            title.textContent = currentMonth.toLocaleDateString(undefined, options);
+            
+            // Get first day of month and number of days
+            const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+            const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+            const firstDayOfWeek = firstDay.getDay();
+            const daysInMonth = lastDay.getDate();
+            
+            // Clear calendar (no headers in grid now)
+            calendar.innerHTML = '';
+            
+            // Add empty cells before first day
+            for (let i = 0; i < firstDayOfWeek; i++) {
+                const emptyCell = document.createElement('div');
+                emptyCell.className = 'calendar-day empty';
+                calendar.appendChild(emptyCell);
+            }
+            
+            // Add days
+            const today = new Date();
+            const todayStr = formatDateToYYYYMMDD(today);
+            
+            for (let day = 1; day <= daysInMonth; day++) {
+                const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+                const dateStr = formatDateToYYYYMMDD(date);
+                const dayOfWeek = date.getDay();
+                
+                const dayCell = document.createElement('div');
+                dayCell.className = 'calendar-day';
+                dayCell.textContent = day;
+                
+                // Add weekend class
+                if (dayOfWeek === 0 || dayOfWeek === 6) {
+                    dayCell.classList.add('weekend');
+                }
+                
+                // Check if this date has a log
+                if (availableLogDates.has(dateStr)) {
+                    dayCell.classList.add('has-log');
+                    dayCell.onclick = () => loadLogFile(dateStr);
+                    dayCell.title = `Log available for ${date.toLocaleDateString()}`;
+                } else {
+                    dayCell.classList.add('no-log');
+                    dayCell.title = `No log for ${date.toLocaleDateString()}`;
+                }
+                
+                // Highlight today
+                if (dateStr === todayStr) {
+                    dayCell.classList.add('today');
+                }
+                
+                // Highlight selected date
+                if (dateStr === currentDate) {
+                    dayCell.classList.add('selected');
+                }
+                
+                calendar.appendChild(dayCell);
+            }
+        }
+        
+        // Refresh current log
+        async function refreshCurrentLog() {
+            if (!currentDate) {
+                alert('No log file is currently loaded. Please select a date first.');
+                return;
+            }
+            
+            const refreshBtn = document.getElementById('refreshBtn');
+            const svg = refreshBtn.querySelector('svg');
+            
+            // Add spinning animation
+            svg.classList.add('spinning');
+            refreshBtn.disabled = true;
+            
+            try {
+                await loadLogFile(currentDate);
+                
+                // Update last refresh timestamp
+                const lastRefreshTime = document.getElementById('lastRefreshTime');
+                const now = new Date();
+                const timeStr = now.toLocaleString(undefined, {
+                    month: 'short',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
+                });
+                lastRefreshTime.textContent = `Last: ${timeStr}`;
+                lastRefreshTime.style.display = 'block';
+            } finally {
+                svg.classList.remove('spinning');
+                refreshBtn.disabled = false;
+            }
+        }
+
+        // Load log file
+        async function loadLogFile(dateStr) {
+            const filename = `${dateStr}_processing_agent.csv`;
+            const filepath = `${logDirectory}/${filename}`;
+            
+            currentDate = dateStr;
+            
+            // Enable refresh button
+            document.getElementById('refreshBtn').disabled = false;
+            
+            // Update calendar selection
+            renderCalendar();
+            
+            try {
+                const response = await fetch(filepath);
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+                
+                const text = await response.text();
+                parseLogs(text);
+                applyFilters();
+            } catch (error) {
+                console.error('Error loading log file:', error);
+                document.getElementById('logTableBody').innerHTML = `
+                    <tr>
+                        <td colspan="4" class="px-3 py-6 text-center text-red-500 text-sm">
+                            No log file found for this date (${filename})
+                        </td>
+                    </tr>
+                `;
+                allLogs = [];
+                filteredLogs = [];
+                updateStats();
+            }
+        }
+
+        // Parse CSV log file - REMOVE QUOTES
+        function parseLogs(csvText) {
+            const lines = csvText.trim().split('\n');
+            allLogs = [];
+            
+            // Skip header row
+            for (let i = 1; i < lines.length; i++) {
+                const line = lines[i];
+                if (!line.trim()) continue;
+                
+                // Parse CSV (handle quoted fields)
+                const matches = line.match(/(".*?"|[^,]+)(?=\s*,|\s*$)/g);
+                if (!matches || matches.length < 4) continue;
+                
+                const timestamp = matches[0].replace(/^"|"$/g, '').trim();
+                const level = matches[1].replace(/^"|"$/g, '').trim();
+                const file = matches[2].replace(/^"|"$/g, '').trim();
+                const message = matches.slice(3).join(',').replace(/^"|"$/g, '').trim();
+                
+                allLogs.push({
+                    timestamp: new Date(timestamp),
+                    timestampRaw: timestamp,
+                    level,
+                    file,
+                    message
+                });
+            }
+            
+            filteredLogs = [...allLogs];
+        }
+
+        // Apply filters
+        function applyFilters() {
+            const fileFilter = document.getElementById('fileFilter').value.toLowerCase();
+            const levelFilter = document.getElementById('levelFilter').value;
+            
+            filteredLogs = allLogs.filter(log => {
+                // File/session key filter
+                if (fileFilter && !log.file.toLowerCase().includes(fileFilter)) {
+                    return false;
+                }
+                
+                // Level filter
+                if (levelFilter && log.level !== levelFilter) {
+                    return false;
+                }
+                
+                return true;
+            });
+            
+            renderLogs();
+            updateStats();
+            calculateProcessingTimes();
+        }
+
+        // Render logs
+        function renderLogs() {
+            const tbody = document.getElementById('logTableBody');
+            
+            if (filteredLogs.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="px-3 py-6 text-center text-sm" style="color: var(--muted-foreground);">
+                            No log entries found matching filters
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = filteredLogs.map(log => {
+                const localTime = log.timestamp.toLocaleString();
+                const relativeTime = getRelativeTime(log.timestamp);
+                
+                return `
+                    <tr class="log-row">
+                        <td class="px-3 py-2 text-xs" style="color: var(--muted-foreground);" title="${escapeHtml(log.timestampRaw)}">
+                            <div class="text-xs">${localTime}</div>
+                            <div class="text-[0.65rem]" style="color: var(--muted-foreground); opacity: 0.7;">${relativeTime}</div>
+                        </td>
+                        <td class="px-3 py-2 text-xs">
+                            <span class="log-level-pill log-level-${log.level}">${log.level}</span>
+                        </td>
+                        <td class="px-3 py-2 text-xs font-mono" style="color: var(--foreground);">
+                            ${log.file || '<em style="color: var(--muted-foreground); font-style: italic;">system</em>'}
+                        </td>
+                        <td class="px-3 py-2 text-xs" style="color: var(--foreground);">
+                            ${escapeHtml(log.message)}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        // Update statistics
+        function updateStats() {
+            document.getElementById('statTotal').textContent = filteredLogs.length;
+            
+            // Count unique files (exclude empty file field)
+            const files = new Set(filteredLogs.filter(log => log.file).map(log => log.file));
+            document.getElementById('statFiles').textContent = files.size;
+            
+            // Count rejections
+            const rejects = filteredLogs.filter(log => log.level === 'REJECT').length;
+            document.getElementById('statRejects').textContent = rejects;
+        }
+
+        // Calculate processing times
+        function calculateProcessingTimes() {
+            const fileTimings = {};
+            
+            // Group logs by file
+            allLogs.forEach(log => {
+                if (!log.file) return;
+                
+                if (!fileTimings[log.file]) {
+                    fileTimings[log.file] = {
+                        filename: log.file,
+                        startTime: null,
+                        endTime: null,
+                        status: 'processing',
+                        logs: []
+                    };
+                }
+                
+                const timing = fileTimings[log.file];
+                timing.logs.push(log);
+                
+                // Track start time (first log entry)
+                if (!timing.startTime) {
+                    timing.startTime = log.timestamp;
+                }
+                
+                // Track end time and status - CHECK FOR SUCCESS MESSAGE
+                if (log.message.includes('Jotform upload completed successfully')) {
+                    timing.endTime = log.timestamp;
+                    timing.status = 'success';
+                } else if (log.level === 'REJECT' || log.level === 'ERROR') {
+                    timing.endTime = log.timestamp;
+                    timing.status = 'failed';
+                }
+            });
+            
+            // Calculate durations
+            const timings = Object.values(fileTimings).map(timing => {
+                if (timing.startTime && timing.endTime) {
+                    timing.duration = (timing.endTime - timing.startTime) / 1000; // seconds
+                }
+                return timing;
+            }).filter(t => t.duration !== undefined);
+            
+            // Sort by duration (longest first)
+            timings.sort((a, b) => b.duration - a.duration);
+            
+            // Calculate average
+            if (timings.length > 0) {
+                const avg = timings.reduce((sum, t) => sum + t.duration, 0) / timings.length;
+                document.getElementById('statAvgTime').textContent = avg.toFixed(2) + 's';
+            } else {
+                document.getElementById('statAvgTime').textContent = '0s';
+            }
+            
+            // Render timings table
+            renderTimings(timings);
+        }
+
+        // Render processing times table
+        function renderTimings(timings) {
+            const container = document.getElementById('timingsContainer');
+            const table = document.getElementById('timingsTable');
+            
+            if (timings.length === 0) {
+                container.style.display = 'none';
+                return;
+            }
+            
+            container.style.display = 'block';
+            
+            table.innerHTML = `
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead>
+                            <tr>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">File</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                                <th class="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            ${timings.map(timing => `
+                                <tr class="hover:bg-gray-50">
+                                    <td class="px-3 py-2 text-xs font-mono text-gray-900">${escapeHtml(timing.filename)}</td>
+                                    <td class="px-3 py-2 text-xs">
+                                        <span class="duration-badge text-white px-2 py-0.5 rounded-full text-xs">
+                                            ${timing.duration.toFixed(2)}s
+                                        </span>
+                                    </td>
+                                    <td class="px-3 py-2 text-xs">
+                                        ${timing.status === 'success' 
+                                            ? '<span class="text-green-600 font-medium">✓ Success</span>'
+                                            : '<span class="text-red-600 font-medium">✗ Failed</span>'
+                                        }
+                                    </td>
+                                    <td class="px-3 py-2 text-xs">
+                                        <button 
+                                            data-filename="${escapeHtml(timing.filename)}"
+                                            class="view-logs-btn text-blue-600 hover:text-blue-800 text-xs"
+                                        >
+                                            View Logs →
+                                        </button>
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            
+            // Attach event listeners to all View Logs buttons
+            table.querySelectorAll('.view-logs-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    filterByFile(btn.dataset.filename);
+                });
+            });
+        }
+
+        // Filter by specific file
+        function filterByFile(filename) {
+            document.getElementById('fileFilter').value = filename;
+            applyFilters();
+            // Scroll to logs table
+            document.querySelector('#logTableBody').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Quick filter functions
+        function showOnlyErrors() {
+            document.getElementById('levelFilter').value = '';
+            const fileFilter = document.getElementById('fileFilter').value.toLowerCase();
+            
+            filteredLogs = allLogs.filter(log => {
+                const isError = ['ERROR', 'REJECT', 'WARN', 'DATA_OVERWRITE_DIFF'].includes(log.level);
+                const matchesFile = !fileFilter || log.file.toLowerCase().includes(fileFilter);
+                return isError && matchesFile;
+            });
+            
+            renderLogs();
+            updateStats();
+            calculateProcessingTimes();
+        }
+
+        function showOnlySuccess() {
+            document.getElementById('levelFilter').value = '';
+            const fileFilter = document.getElementById('fileFilter').value.toLowerCase();
+            
+            filteredLogs = allLogs.filter(log => {
+                const isSuccess = log.message.includes('Jotform upload completed successfully');
+                const matchesFile = !fileFilter || log.file.toLowerCase().includes(fileFilter);
+                return isSuccess && matchesFile;
+            });
+            
+            renderLogs();
+            updateStats();
+            calculateProcessingTimes();
+        }
+
+        function clearFilters() {
+            document.getElementById('fileFilter').value = '';
+            document.getElementById('levelFilter').value = '';
+            applyFilters();
+        }
+
+        // Utility functions
+        function getRelativeTime(date) {
+            const seconds = Math.floor((new Date() - date) / 1000);
+            
+            if (seconds < 60) return `${seconds}s ago`;
+            if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+            if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+            return `${Math.floor(seconds / 86400)}d ago`;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Event listeners
+        document.getElementById('fileFilter').addEventListener('input', applyFilters);
+        document.getElementById('levelFilter').addEventListener('change', applyFilters);
+
+        // Refresh on F5
+        window.addEventListener('beforeunload', function() {
+            // Trigger scan on page reload
+            sessionStorage.setItem('shouldScanLogs', 'true');
+        });
+
+        // Initialize
+        async function init() {
+            // Initialize lucide icons
+            if (typeof lucide !== 'undefined') {
+                lucide.createIcons();
+            }
+            
+            // Create background circles
+            const bgCircles = document.getElementById('background-circles');
+            if (bgCircles) {
+                for (let i = 0; i < 15; i++) {
+                    const circle = document.createElement('div');
+                    circle.className = 'background-circle';
+                    bgCircles.appendChild(circle);
+                }
+            }
+            
+            await loadConfig();
+            await scanLogFiles();
+            
+            // Try to load today's log by default
+            const today = formatDateToYYYYMMDD(new Date());
+            if (availableLogDates.has(today)) {
+                loadLogFile(today);
+            }
+        }
+        
+        init();
+    </script>
+</body>
+</html>

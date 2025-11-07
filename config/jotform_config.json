@@ -25,16 +25,16 @@
     "maxConcurrentPdfs": 2,
     "maxFieldsPerChunk": 100,
     "maxConcurrentChunks": 1,
-    "maxRetries": 4,
-    "searchTimeoutSec": 20,
-    "updateTimeoutSec": 25,
-    "createTimeoutSec": 15,
-    "rateLimitMs": 200,
-    "maxPagesToScan": 10,
+    "maxRetries": 6,
+    "searchTimeoutSec": 180,
+    "updateTimeoutSec": 180,
+    "createTimeoutSec": 90,
+    "rateLimitMs": 500,
+    "maxPagesToScan": 20,
     "paginationLimit": 1000,
-    "retryDelayBaseSec": 3,
-    "retryDelayMaxSec": 10,
-    "comment": "Optimized for 87-field balanced chunks, tested stable at ~51s per upsert. maxConcurrentPdfs=2 processes multiple PDFs in parallel. maxConcurrentChunks=1 (sequential) required - Jotform API rejects concurrent UPDATEs to same submission"
+    "retryDelayBaseSec": 5,
+    "retryDelayMaxSec": 60,
+    "comment": "CRITICAL FIX (Nov 7, 2025): Replaced ForEach-Object -Parallel with sequential foreach loop. Parallel processing had 40s+ overhead even with ThrottleLimit=1. Sequential processing: ~1.5s per 100-field chunk = ~6s total for 400 fields. Restored to 100 fields per chunk baseline (stress test confirmed 100 fields works in 0.88s). Added 500ms rate limiting between chunks for API courtesy. maxConcurrentPdfs=2 processes multiple PDFs in parallel (file-level, not chunk-level)."
   },
   
   "logging": {

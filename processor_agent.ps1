@@ -1480,6 +1480,9 @@ function Invoke-JotformUpsert {
                             $sessionKeyValue = $sessionKeyValue.Trim() -replace '\s+', ' '
                         }
                         
+                        # DEBUG: Log what we're comparing
+                        Write-Log -Message "Comparing submission $($sub.id): '$sessionKeyValue' vs '$SessionKey'" -Level "DEBUG" -File $FileName
+                        
                         # Check for exact match
                         if ($sessionKeyValue -eq $SessionKey) {
                             $foundSubmission = $sub
@@ -1487,64 +1490,20 @@ function Invoke-JotformUpsert {
                             break
                         }
                     }
+                    
+                    # DEBUG: If no match found, log it
+                    if (-not $foundSubmission -and $filterResponse.content.Count -gt 0) {
+                        Write-Log -Message "No exact match found in $($filterResponse.content.Count) filtered submission(s) - will CREATE new" -Level "INFO" -File $FileName
+                    }
                 }
             } catch {
-                Write-Log -Message "Filter API search failed, falling back to pagination: $($_.Exception.Message)" -Level "INFO" -File $FileName
+                Write-Log -Message "Filter API search failed, will CREATE new submission: $($_.Exception.Message)" -Level "INFO" -File $FileName
             }
             
-            # METHOD 2: Fallback to pagination if filter failed or returned no results
-            if (-not $foundSubmission) {
-                $offset = 0
-                $limit = $script:JotformConfig.paginationLimit
-                $maxPages = $script:JotformConfig.maxPagesToScan
-                $pageNum = 1
-                
-                while ($pageNum -le $maxPages -and -not $foundSubmission) {
-                    $pageUri = "https://api.jotform.com/form/$formId/submissions?apiKey=$apiKey&limit=$limit&offset=$offset&orderby=created_at"
-                    $pageResponse = Invoke-RestMethod -Uri $pageUri -Method Get -TimeoutSec $script:JotformConfig.searchTimeoutSec
-                    
-                    $pageCount = 0
-                    if ($pageResponse.content) {
-                        $pageCount = $pageResponse.content.Count
-                    }
-                    
-                    # Scanning pages - no log (too verbose)
-                    
-                    if ($pageCount -eq 0) {
-                        break  # No more submissions
-                    }
-                    
-                    # Scan this page for matching sessionkey
-                    foreach ($sub in $pageResponse.content) {
-                        $sessionKeyValue = $null
-                        if ($sub.answers.$sessionkeyQid.answer) {
-                            $sessionKeyValue = $sub.answers.$sessionkeyQid.answer
-                        } elseif ($sub.answers.$sessionkeyQid.text) {
-                            $sessionKeyValue = $sub.answers.$sessionkeyQid.text
-                        }
-                        
-                        # Normalize whitespace
-                        if ($sessionKeyValue) {
-                            $sessionKeyValue = $sessionKeyValue.Trim() -replace '\s+', ' '
-                        }
-                        
-                        # Check for match
-                        if ($sessionKeyValue -eq $SessionKey) {
-                            $foundSubmission = $sub
-                            Write-Log -Message "Found existing submission via pagination (page $pageNum): $($sub.id)" -Level "INFO" -File $FileName
-                            break
-                        }
-                    }
-                    
-                    if ($pageCount -lt $limit) {
-                        break  # Last page
-                    }
-                    
-                    $offset += $limit
-                    $pageNum++
-                    Start-Sleep -Milliseconds 200  # Rate limiting
-                }
-            }
+            # REMOVED: Pagination fallback (Nov 7, 2025)
+            # Pagination was causing 40+ second timeouts when filter API didn't find exact match
+            # If filter doesn't find a match, we should CREATE new submission, not scan 500+ submissions
+            # Filter API with :matches already searches the entire form efficiently
             
             $submissionId = $null
             
@@ -1633,29 +1592,41 @@ function Invoke-JotformUpsert {
                 $rangesSummary = $chunkRanges -join ", "
                 Write-Log -Message "Split into $totalChunks chunks: $rangesSummary" -Level "INFO" -File $FileName
                 
-                # Upload chunks in parallel (max 2 concurrent)
-                $uploadResults = $chunks | ForEach-Object -ThrottleLimit $script:JotformConfig.maxConcurrentChunks -Parallel {
-                    $chunk = $_
-                    $submissionId = $using:submissionId
-                    $apiKey = $using:apiKey
-                    $timeout = $using:script:JotformConfig.updateTimeoutSec
-                    $totalChunks = $using:totalChunks
-                    
-                    $updateUri = "https://api.jotform.com/submission/$submissionId`?apiKey=$apiKey"
+                # Upload chunks sequentially (CRITICAL FIX: ForEach-Object -Parallel has massive overhead even with ThrottleLimit=1)
+                # Sequential processing takes ~1.5s per chunk vs 40s+ timeout with parallel infrastructure
+                $uploadResults = @()
+                $updateUri = "https://api.jotform.com/submission/$submissionId`?apiKey=$apiKey"
+                
+                foreach ($chunk in $chunks) {
                     try {
-                        # Log chunk upload start with field range
-                        $rangeInfo = "fields $($chunk.RangeStart)-$($chunk.RangeEnd)"
-                        Write-Host "[INFO] Uploading chunk $($chunk.Index + 1)/$totalChunks ($rangeInfo)..." -ForegroundColor Cyan
-                        $response = Invoke-RestMethod -Uri $updateUri -Method Post -Body $chunk.Body -ContentType "application/x-www-form-urlencoded" -TimeoutSec $timeout
-                        Write-Host "[INFO] Chunk $($chunk.Index + 1)/$totalChunks ($rangeInfo) ✓" -ForegroundColor Green
-                        return [PSCustomObject]@{ Success = $true; Index = $chunk.Index; Fields = $chunk.Count; RangeStart = $chunk.RangeStart; RangeEnd = $chunk.RangeEnd }
+                        # Log chunk upload start with field range and actual count
+                        $rangeInfo = "$($chunk.Count) fields (positions $($chunk.RangeStart)-$($chunk.RangeEnd))"
+                        Write-Log -Message "Uploading chunk $($chunk.Index + 1)/$totalChunks ($rangeInfo)..." -Level "INFO" -File $FileName
+                        
+                        $response = Invoke-RestMethod -Uri $updateUri -Method Post -Body $chunk.Body -ContentType "application/x-www-form-urlencoded" -TimeoutSec $script:JotformConfig.updateTimeoutSec
+                        
+                        Write-Log -Message "Chunk $($chunk.Index + 1)/$totalChunks uploaded successfully" -Level "INFO" -File $FileName
+                        
+                        $uploadResults += [PSCustomObject]@{ 
+                            Success = $true
+                            Index = $chunk.Index
+                            Fields = $chunk.Count
+                            RangeStart = $chunk.RangeStart
+                            RangeEnd = $chunk.RangeEnd
+                        }
+                        
+                        # Rate limiting between chunks
+                        if ($chunk.Index -lt ($totalChunks - 1) -and $script:JotformConfig.rateLimitMs -gt 0) {
+                            Start-Sleep -Milliseconds $script:JotformConfig.rateLimitMs
+                        }
                     } catch {
                         # Capture status code for adaptive retry
                         $statusCode = $null
                         if ($_.Exception.Response) {
                             $statusCode = [int]$_.Exception.Response.StatusCode.value__
                         }
-                        [PSCustomObject]@{
+                        
+                        $uploadResults += [PSCustomObject]@{
                             Success = $false
                             Index = $chunk.Index
                             Fields = $chunk.Count
@@ -1664,6 +1635,9 @@ function Invoke-JotformUpsert {
                             Error = $_.Exception.Message
                             StatusCode = $statusCode
                         }
+                        
+                        # Break on first failure (will trigger retry at outer level)
+                        break
                     }
                 }
                 
@@ -1692,6 +1666,18 @@ function Invoke-JotformUpsert {
                 # CREATE new submission
                 Write-Log -Message "No existing submission found, will CREATE new submission" -Level "INFO" -File $FileName
                 
+                # Count non-null fields (excluding sessionkey which is always included)
+                $fieldCount = 0
+                foreach ($key in $data.PSObject.Properties.Name) {
+                    if ($key -ne 'sessionkey' -and $JotformQuestions.ContainsKey($key)) {
+                        $value = $data.$key
+                        if ($null -ne $value -and $value -ne '' -and $value -ne 'null') {
+                            $fieldCount++
+                        }
+                    }
+                }
+                Write-Log -Message "Preparing to CREATE with $fieldCount fields (plus sessionkey)" -Level "INFO" -File $FileName
+                
                 # Build create payload (include sessionkey)
                 $createBody = Build-JotformPayload -Data $data -Mapping $JotformQuestions
                 
@@ -1700,7 +1686,7 @@ function Invoke-JotformUpsert {
                 
                 # Extract submission ID from response
                 $submissionId = $createResponse.content.submissionID
-                Write-Log -Message "Created new submission $submissionId" -Level "UPLOAD" -File $FileName
+                Write-Log -Message "Created new submission $submissionId with $fieldCount fields" -Level "UPLOAD" -File $FileName
             }
             
             # Write back jotformsubmissionid to JSON file
@@ -1717,7 +1703,12 @@ function Invoke-JotformUpsert {
                 $lastSuccessfulIndex = $reductionIndex
                 $consecutiveSuccesses++
                 
-                Write-Log -Message "Upload succeeded with chunk size $currentChunkSize fields (attempt $attempt)" -Level "INFO" -File $FileName
+                # Log appropriate success message based on operation type
+                if ($foundSubmission) {
+                    Write-Log -Message "Update succeeded (uploaded $($fieldsToUpdate.Count) fields in $totalChunks chunk(s), attempt $attempt)" -Level "INFO" -File $FileName
+                } else {
+                    Write-Log -Message "Create succeeded (uploaded $fieldCount fields, attempt $attempt)" -Level "INFO" -File $FileName
+                }
                 
                 # Gradually increase chunk size if we're below baseline and have multiple consecutive successes
                 if ($reductionIndex -gt 0 -and $consecutiveSuccesses -ge 2) {

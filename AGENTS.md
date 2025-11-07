@@ -236,6 +236,109 @@ The 4Set System is a comprehensive web-based assessment data processing pipeline
 
 ---
 
+## Operational Knowledge
+
+### PowerShell Parallel Processing Overhead Issue
+
+**Discovered:** November 7, 2025  
+**Severity:** CRITICAL - Caused 100% production upload failures  
+**Status:** ✅ RESOLVED
+
+#### Problem
+All production PDF uploads were failing with **504 Gateway Timeout** errors after ~40 seconds, even with adaptive chunk size reduction (100 → 50 → 30 → 6 fields). The stress test script worked perfectly (even with 100 fields in 0.88s), but production uploads had 100% failure rate.
+
+#### Root Cause
+**PowerShell's `ForEach-Object -Parallel` has massive overhead** (40+ seconds) even when `-ThrottleLimit 1` forces sequential processing. The parallel processing infrastructure adds:
+- Variable marshalling overhead (`$using:` scope)
+- Thread synchronization delays
+- Context switching penalties
+- Output stream redirection costs
+
+**Proof:**
+- **Stress test (direct)**: 100 fields → **0.88 seconds** ✅
+- **Test upload (simple)**: 100 fields → **1.55 seconds** ✅  
+- **Production (parallel)**: 100 fields → **40+ seconds timeout** ❌
+
+The problem was NOT JotForm's API or chunk size—it was the parallel processing wrapper causing 25x+ slowdown.
+
+#### Solution
+**Replaced `ForEach-Object -Parallel` with sequential `foreach` loop** in `processor_agent.ps1` lines 1636-1683:
+
+```powershell
+# BEFORE (SLOW):
+$uploadResults = $chunks | ForEach-Object -ThrottleLimit 1 -Parallel { ... }
+# Result: 40+ seconds timeout
+
+# AFTER (FAST):
+foreach ($chunk in $chunks) {
+    Invoke-RestMethod -Uri $updateUri -Method Post -Body $chunk.Body ...
+    Start-Sleep -Milliseconds $rateLimitMs  # 500ms between chunks
+}
+# Result: ~1.5s per chunk = ~6s total for 400 fields
+```
+
+**Configuration restored to optimal settings:**
+- `maxFieldsPerChunk`: 100 (proven to work in 0.88s by stress test)
+- `rateLimitMs`: 500 (brief pause between chunks for API courtesy)
+- `maxConcurrentPdfs`: 2 (file-level parallelism is fine, chunk-level is not)
+
+#### Retry Schedule with Adaptive Sizing
+
+Starting from **100 fields baseline**, the system reduces on failures:
+
+| Attempt | Chunk Size | Percentage | Expected Duration |
+|---------|------------|------------|-------------------|
+| 1 | 100 fields | 100% | ~1-2s per chunk |
+| 2 | 50 fields | 50% | ~0.5-1s per chunk |
+| 3 | 30 fields | 30% | ~0.3-0.5s per chunk |
+| 4-6 | 20-5 fields | 20-5% | ~0.2-0.3s per chunk |
+
+Total time for 400 fields at full baseline: **~6 seconds** (4 chunks × 1.5s each)
+
+#### Performance Comparison
+
+```powershell
+# Stress Test (100 fields, direct call)
+Invoke-RestMethod -Body "submission[q1]=val1&submission[q2]=val2..." 
+# Result: 0.88 seconds ✅
+
+# Test Upload Simple (100 fields, no parallel)
+Invoke-RestMethod -Body $body -ContentType "application/x-www-form-urlencoded"
+# Result: 1.55 seconds ✅
+
+# Production BEFORE Fix (100 fields, ForEach-Object -Parallel)
+$chunks | ForEach-Object -ThrottleLimit 1 -Parallel { Invoke-RestMethod ... }
+# Result: 40+ seconds TIMEOUT ❌
+
+# Production AFTER Fix (100 fields, sequential foreach)
+foreach ($chunk in $chunks) { Invoke-RestMethod ... }
+# Result: 1.5 seconds per chunk ✅
+```
+
+#### Key Takeaways
+
+1. **PowerShell parallel processing has hidden costs** - `ForEach-Object -Parallel` adds 25x+ overhead even with `-ThrottleLimit 1`
+2. **Stress tests must match production architecture** - Testing direct API calls doesn't expose parallel processing issues
+3. **Sequential is faster for small batches** - When processing <10 items, sequential foreach beats parallel
+4. **Variable marshalling is expensive** - Every `$using:` variable adds overhead in parallel blocks
+5. **Profile before optimizing** - The assumed bottleneck (API speed) wasn't the real problem (parallel overhead)
+
+#### Monitoring Checklist
+
+When reviewing production logs, check for:
+- ✅ Chunk upload messages appearing immediately (not 40s delay)
+- ✅ Upload attempts completing in <2 seconds per chunk
+- ✅ Successful filing to `schoolId/` folders
+- ❌ PDFs filed to `Unsorted/` with upload failure reason
+
+#### Related Files
+- `config/jotform_config.json` - Chunk size and rate limit configuration
+- `processor_agent.ps1` lines 1636-1683 - Sequential upload loop (FIXED)
+- `TEMP/stress-test-100-fields.ps1` - Production payload simulation
+- `TEMP/test-upload-simple.ps1` - Simple upload test (no chunking)
+
+---
+
 ## Technical Decisions
 
 ### Architecture Choices

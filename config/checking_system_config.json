@@ -41,6 +41,9 @@
       "completeMessage": "Database has been fetched successfully. JotForm submissions are now cached locally and ready for validation."
     }
   },
+  "logViewer": {
+    "scanDays": 90
+  },
   "classPageTaskView": {
     "defaultFilter": "all",
     "defaultExpandState": false,
