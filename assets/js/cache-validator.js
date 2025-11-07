@@ -481,6 +481,21 @@ window.CacheValidator = (() => {
             // For TGMD questions, we need special handling to compare trial data
             let expectedDisplay = displayAnswer;
             
+            // For CCM questions (radio-largechar), transform cache value to label for comparison
+            // CCM displays Chinese characters (labels), not numeric values
+            let cacheValueForDisplay = finalCacheAnswer;
+            if (cleanQuestionId && cleanQuestionId.startsWith('CCM_Q')) {
+              const questionDef = questionDefMap.get(cleanQuestionId);
+              if (questionDef && questionDef.options && finalCacheAnswer !== null) {
+                // Find the option that matches the cache value
+                const option = questionDef.options.find(opt => String(opt.value) === String(finalCacheAnswer));
+                if (option) {
+                  cacheValueForDisplay = option.label;
+                  console.log(`[CacheValidator] CCM transformation: ${cleanQuestionId} value "${finalCacheAnswer}" -> label "${option.label}"`);
+                }
+              }
+            }
+            
             if (cleanQuestionId && cleanQuestionId.startsWith('TGMD_')) {
               // Extract trial values from TGMD scoring data instead of display text
               // The display shows icons, but we need the actual trial values for comparison
@@ -515,7 +530,15 @@ window.CacheValidator = (() => {
             }
             
             // For TGMD, use raw trial data for comparison (not processed score)
-            const cacheValueForComparison = cleanQuestionId && cleanQuestionId.startsWith('TGMD_') ? finalCacheRaw : finalCacheAnswer;
+            // For CCM, use transformed label for comparison
+            let cacheValueForComparison;
+            if (cleanQuestionId && cleanQuestionId.startsWith('TGMD_')) {
+              cacheValueForComparison = finalCacheRaw;
+            } else if (cleanQuestionId && cleanQuestionId.startsWith('CCM_Q')) {
+              cacheValueForComparison = cacheValueForDisplay;
+            } else {
+              cacheValueForComparison = finalCacheAnswer;
+            }
             
             // Normalize values for comparison (null/"—"/empty all normalize to empty string)
             const normalizedCache = cacheValueForComparison === null || cacheValueForComparison === '—' ? '' : String(cacheValueForComparison).trim();
