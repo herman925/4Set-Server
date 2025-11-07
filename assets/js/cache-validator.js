@@ -481,18 +481,17 @@ window.CacheValidator = (() => {
             // For TGMD questions, we need special handling to compare trial data
             let expectedDisplay = displayAnswer;
             
-            // For CCM questions (radio-largechar), transform cache value to label for comparison
-            // CCM displays Chinese characters (labels), not numeric values
+            // For radio-largechar questions, transform cache value to label for comparison
+            // These questions display option labels (Chinese characters/text), not numeric values
+            // Examples: CCM (Chinese characters), FineMotor (Chinese text), MathPattern (numbers but same value=label)
             let cacheValueForDisplay = finalCacheAnswer;
-            if (cleanQuestionId && cleanQuestionId.startsWith('CCM_Q')) {
-              const questionDef = questionDefMap.get(cleanQuestionId);
-              if (questionDef && questionDef.options && finalCacheAnswer !== null) {
-                // Find the option that matches the cache value
-                const option = questionDef.options.find(opt => String(opt.value) === String(finalCacheAnswer));
-                if (option) {
-                  cacheValueForDisplay = option.label;
-                  console.log(`[CacheValidator] CCM transformation: ${cleanQuestionId} value "${finalCacheAnswer}" -> label "${option.label}"`);
-                }
+            const questionDef = questionDefMap.get(cleanQuestionId);
+            if (questionDef && questionDef.type === 'radio-largechar' && questionDef.options && finalCacheAnswer !== null) {
+              // Find the option that matches the cache value
+              const option = questionDef.options.find(opt => String(opt.value) === String(finalCacheAnswer));
+              if (option) {
+                cacheValueForDisplay = option.label;
+                console.log(`[CacheValidator] radio-largechar transformation: ${cleanQuestionId} value "${finalCacheAnswer}" -> label "${option.label}"`);
               }
             }
             
@@ -529,12 +528,14 @@ window.CacheValidator = (() => {
               }
             }
             
-            // For TGMD, use raw trial data for comparison (not processed score)
-            // For CCM, use transformed label for comparison
+            // Select appropriate cache value for comparison based on question type
+            // - TGMD: Use raw trial data (not processed score)
+            // - radio-largechar: Use transformed label (for CCM, FineMotor, etc.)
+            // - Others: Use mapped answer value
             let cacheValueForComparison;
             if (cleanQuestionId && cleanQuestionId.startsWith('TGMD_')) {
               cacheValueForComparison = finalCacheRaw;
-            } else if (cleanQuestionId && cleanQuestionId.startsWith('CCM_Q')) {
+            } else if (questionDef && questionDef.type === 'radio-largechar') {
               cacheValueForComparison = cacheValueForDisplay;
             } else {
               cacheValueForComparison = finalCacheAnswer;
