@@ -9,6 +9,7 @@
   let selectedGrade = null; // Currently selected grade (K1/K2/K3)
   let availableGrades = []; // Grades available for this student
   let cachedDataGlobal = null; // Store cached data for grade switching
+  let currentSubmission = null; // Store current student submission with metadata for provenance tooltips
   
   // System configuration (loaded from config/checking_system_config.json)
   let systemConfig = {
@@ -679,6 +680,15 @@
           if (submissions.length > 0) {
             console.log(`[StudentPage] ✅ Found ${submissions.length} submissions in global cache (includes Qualtrics data if merged)`);
             
+            // Store the first submission (merged record with metadata) for provenance tooltips
+            currentSubmission = submissions[0];
+            console.log('[StudentPage] Stored submission metadata for provenance tooltips:', {
+              grade: currentSubmission.grade,
+              sources: currentSubmission._sources,
+              hasMetadata: !!currentSubmission._meta,
+              hasConflicts: !!(currentSubmission._qualtricsConflicts && currentSubmission._qualtricsConflicts.length > 0)
+            });
+            
             // Check if any are Qualtrics-only records
             const qualtricsOnly = submissions.filter(s => s._orphaned || (s._sources && s._sources.length === 1 && s._sources[0] === 'qualtrics'));
             if (qualtricsOnly.length > 0) {
@@ -1262,7 +1272,7 @@
         
         row.innerHTML = `
           <td class="py-2 px-2 text-[color:var(--foreground)]">
-            <div class="text-xs text-[color:var(--muted-foreground)] font-mono">${criterion.id}</div>
+            <div class="text-xs text-[color:var(--muted-foreground)] font-mono question-id-badge" id="question-${escapeHtmlAttribute(criterion.id)}">${criterion.id}</div>
             <div class="text-sm mt-1">${criterion.description}</div>
           </td>
           <td class="py-2 px-2">
@@ -1284,6 +1294,17 @@
         `;
         
         tbody.appendChild(row);
+        
+        // Attach provenance tooltip to TGMD question ID badge
+        if (window.ProvenanceTooltip && currentSubmission) {
+          const questionBadge = row.querySelector('.question-id-badge');
+          if (questionBadge) {
+            const provenance = window.ProvenanceTooltip.extractProvenance(currentSubmission, criterion.id);
+            if (provenance) {
+              window.ProvenanceTooltip.attachToElement(questionBadge, provenance);
+            }
+          }
+        }
       }
     }
     
@@ -1678,9 +1699,12 @@
           </span>
         ` : '';
 
+        // Create question ID element with provenance tooltip support
+        let questionIdElement = `<span class="font-mono question-id-badge" id="question-${escapeHtmlAttribute(question.id)}">${question.id}</span>`;
+        
         const questionCellContent = branchBadge
-          ? `<div class="flex items-center gap-2"><span class="font-mono">${question.id}</span>${branchBadge}</div>`
-          : `<span class="font-mono">${question.id}</span>`;
+          ? `<div class="flex items-center gap-2">${questionIdElement}${branchBadge}</div>`
+          : questionIdElement;
         
         // Check if this is a special task that needs custom display logic
         const isHTKS = taskId === 'headtoekneeshoulder' || taskId === 'htks';
@@ -1796,6 +1820,17 @@
           }
         } else if (row.dataset.textAnswer) {
           attachTextAnswerInteraction(row);
+        }
+
+        // Attach provenance tooltip to question ID badge
+        if (window.ProvenanceTooltip && currentSubmission) {
+          const questionBadge = row.querySelector('.question-id-badge');
+          if (questionBadge) {
+            const provenance = window.ProvenanceTooltip.extractProvenance(currentSubmission, question.id);
+            if (provenance) {
+              window.ProvenanceTooltip.attachToElement(questionBadge, provenance);
+            }
+          }
         }
 
         tbody.appendChild(row);
@@ -3756,6 +3791,12 @@
       // No loading overlay shown - cache should be ready
       await init();
       setupUIHandlers();
+      
+      // Initialize provenance tooltip handlers
+      if (window.ProvenanceTooltip) {
+        window.ProvenanceTooltip.initialize();
+        console.log('[StudentPage] Provenance tooltip initialized');
+      }
       
       // Set up automatic section state tracking
       const urlParams = new URLSearchParams(window.location.search);

@@ -1,0 +1,255 @@
+/**
+ * Provenance Tooltip Styles
+ * 
+ * Styles for data source provenance tooltips showing:
+ * - Grade context
+ * - Source availability (JotForm/Qualtrics)
+ * - Submission IDs and timestamps
+ * - Final answer source and conflict resolution
+ */
+
+/* Tooltip container */
+.provenance-tooltip {
+  position: fixed;
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+  color: white;
+  padding: 16px;
+  border-radius: 10px;
+  font-size: 13px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4), 0 2px 8px rgba(0, 0, 0, 0.2);
+  z-index: 9999;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  max-width: 400px;
+  min-width: 280px;
+}
+
+.provenance-tooltip.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Content wrapper */
+.provenance-tooltip-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Section */
+.provenance-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.provenance-section:not(:last-child) {
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Labels */
+.provenance-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.provenance-value {
+  font-size: 14px;
+  font-weight: 500;
+  color: white;
+}
+
+/* Source display */
+.provenance-source {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  border-left: 3px solid rgba(59, 130, 246, 0.6);
+}
+
+.provenance-source + .provenance-source {
+  margin-top: 8px;
+}
+
+.provenance-source-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: rgba(147, 197, 253, 1);
+}
+
+.provenance-source-header i {
+  flex-shrink: 0;
+}
+
+.provenance-source-detail {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12px;
+  padding-left: 20px;
+}
+
+.provenance-detail-label {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
+  min-width: 70px;
+}
+
+.provenance-detail-value {
+  color: rgba(255, 255, 255, 0.95);
+  flex: 1;
+  word-break: break-word;
+}
+
+/* Final winner section */
+.provenance-winner {
+  background: rgba(16, 185, 129, 0.15);
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.provenance-winner-content {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.provenance-winner-source {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: rgba(167, 243, 208, 1);
+}
+
+.provenance-winner-source i {
+  color: rgba(16, 185, 129, 1);
+}
+
+.provenance-winner-reason {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.8);
+  padding-left: 24px;
+}
+
+.provenance-winner-timestamp {
+  font-size: 11px;
+  font-family: 'JetBrains Mono', monospace;
+  color: rgba(255, 255, 255, 0.6);
+  padding-left: 24px;
+}
+
+.provenance-conflict {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 8px;
+  background: rgba(251, 191, 36, 0.15);
+  border-radius: 6px;
+  border-left: 2px solid rgba(251, 191, 36, 0.6);
+  font-size: 11px;
+  color: rgba(254, 243, 199, 1);
+}
+
+.provenance-conflict i {
+  flex-shrink: 0;
+  color: rgba(251, 191, 36, 1);
+}
+
+/* Element with provenance data */
+.has-provenance {
+  cursor: help;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.has-provenance:hover,
+.has-provenance:focus {
+  outline: none;
+}
+
+.has-provenance.provenance-active {
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 4px;
+  padding: 2px 4px;
+  margin: -2px -4px;
+}
+
+/* Provenance indicator icon */
+.provenance-indicator {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  color: rgba(59, 130, 246, 0.6);
+  transition: color 0.2s ease;
+}
+
+.has-provenance:hover .provenance-indicator,
+.has-provenance:focus .provenance-indicator,
+.has-provenance.provenance-active .provenance-indicator {
+  color: rgba(59, 130, 246, 1);
+}
+
+/* Accessibility */
+.has-provenance:focus {
+  outline: 2px solid rgba(59, 130, 246, 0.5);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.provenance-tooltip.visible {
+  animation: fadeIn 0.2s ease;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .provenance-tooltip {
+    max-width: 90vw;
+    min-width: 260px;
+    font-size: 12px;
+  }
+  
+  .provenance-source-detail {
+    flex-direction: column;
+    gap: 2px;
+  }
+  
+  .provenance-detail-label {
+    min-width: unset;
+  }
+}
+
+/* Dark mode compatibility */
+@media (prefers-color-scheme: dark) {
+  .provenance-tooltip {
+    background: linear-gradient(135deg, #0f172a 0%, #020617 100%);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6), 0 2px 8px rgba(0, 0, 0, 0.4);
+  }
+}
