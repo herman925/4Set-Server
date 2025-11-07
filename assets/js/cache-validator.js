@@ -486,12 +486,14 @@ window.CacheValidator = (() => {
             // Examples: CCM (Chinese characters), FineMotor (Chinese text), MathPattern (numbers but same value=label)
             let cacheValueForDisplay = finalCacheAnswer;
             const questionDef = questionDefMap.get(cleanQuestionId);
-            if (questionDef && questionDef.type === 'radio-largechar' && questionDef.options && finalCacheAnswer !== null) {
-              // Find the option that matches the cache value
-              const option = questionDef.options.find(opt => String(opt.value) === String(finalCacheAnswer));
+            if (questionDef && questionDef.type === 'radio-largechar' && questionDef.options && 
+                finalCacheAnswer !== null && finalCacheAnswer !== '') {
+              // Find the option that matches the cache value (convert to string once for efficiency)
+              const finalCacheAnswerStr = String(finalCacheAnswer);
+              const option = questionDef.options.find(opt => String(opt.value) === finalCacheAnswerStr);
               if (option) {
                 cacheValueForDisplay = option.label;
-                console.log(`[CacheValidator] radio-largechar transformation: ${cleanQuestionId} value "${finalCacheAnswer}" -> label "${option.label}"`);
+                console.log(`[CacheValidator] radio-largechar: ${cleanQuestionId} value "${finalCacheAnswer}" → label "${option.label}"`);
               }
             }
             
