@@ -429,12 +429,39 @@
                 return false;
             }
             
+            // Show instructions before opening picker
+            const proceed = confirm(
+                '📁 Select Logs Folder\n\n' +
+                'Please navigate to and select the "logs" folder:\n\n' +
+                'Path: OneDrive/.../4Set-Server/logs/\n\n' +
+                'This folder contains files like:\n' +
+                '• 20251107_processing_agent.csv\n' +
+                '• 20251106_processing_agent.csv\n\n' +
+                'Click OK to open folder picker.'
+            );
+            
+            if (!proceed) return false;
+            
             try {
                 logsDirectoryHandle = await window.showDirectoryPicker({
                     mode: 'read',
                     startIn: 'documents'
                 });
                 console.log('Logs directory access granted:', logsDirectoryHandle.name);
+                
+                // Verify it's the correct folder by checking for expected files
+                if (logsDirectoryHandle.name !== 'logs') {
+                    const confirmWrong = confirm(
+                        `⚠️ Warning: You selected "${logsDirectoryHandle.name}"\n\n` +
+                        'Expected folder name: "logs"\n\n' +
+                        'Continue anyway?'
+                    );
+                    if (!confirmWrong) {
+                        logsDirectoryHandle = null;
+                        return false;
+                    }
+                }
+                
                 return true;
             } catch (error) {
                 if (error.name !== 'AbortError') {
@@ -512,25 +539,6 @@
             }
             
             await Promise.all(promises);
-            
-            // If no logs found via fetch and File System Access API is available, prompt for access
-            if (availableLogDates.size === 0 && !logsDirectoryHandle && 'showDirectoryPicker' in window) {
-                console.log('No logs found via fetch, requesting File System Access...');
-                const granted = await requestLogsDirectoryAccess();
-                if (granted) {
-                    // Re-scan with File System Access API
-                    availableLogDates.clear();
-                    const rescanPromises = [];
-                    for (let i = 0; i < scanDays; i++) {
-                        const date = new Date(today);
-                        date.setDate(date.getDate() - i);
-                        const dateStr = formatDateToYYYYMMDD(date);
-                        rescanPromises.push(checkLogExists(dateStr));
-                    }
-                    await Promise.all(rescanPromises);
-                }
-            }
-            
             renderCalendar();
         }
         
