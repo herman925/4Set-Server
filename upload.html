@@ -727,7 +727,7 @@
             const hasPCNumber = state.pcNumber && state.pcNumber !== '000';
             const hasDestination = state.directoryHandle !== null;
             
-            // Check if PC number and destination are set
+            // Check if PC number and destination are set (BOTH REQUIRED for web uploader)
             if (!hasPCNumber || !hasDestination) {
                 // Show configuration warning modal with spotlight
                 showConfigWarningModal(!hasPCNumber, !hasDestination);
@@ -1009,7 +1009,7 @@
                 // Write directly to the selected folder (don't navigate to subfolder)
                 const targetHandle = state.directoryHandle;
                 
-                // Create metadata (only computer number needed)
+                // Create metadata (PC number is guaranteed to be set by handleFiles() validation)
                 const metadata = {
                     uploadedFrom: state.pcNumber
                 };

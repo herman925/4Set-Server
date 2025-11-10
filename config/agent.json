@@ -1,4 +1,5 @@
 {
+  "$comment": "4Set Processor Agent Configuration - Computer number enforcement can be toggled via validation.requireComputerNumber",
   "oneDrive": {
     "autoDetect": true,
     "relativePath": "\\The Education University of Hong Kong\\o365grp_KeySteps@JC - General\\97 - Project RAW Data\\PDF Form Data",
@@ -28,6 +29,8 @@
     "debounceWindowSeconds": 15,
     "sizeDriftBytes": 1024,
     "metadataRetries": 5,
-    "metadataRetryDelaySeconds": 10
+    "metadataRetryDelaySeconds": 10,
+    "$comment_requireComputerNumber": "When true: Files without PC number metadata are rejected and filed to Unsorted/ without JotForm upload. When false: Files without PC number metadata still proceed to JotForm upload (computer number will be null/empty).",
+    "requireComputerNumber": false
   }
 }

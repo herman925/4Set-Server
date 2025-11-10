@@ -2190,14 +2190,21 @@ function Process-IncomingFile {
             Write-Log -Message ("Renamed {0} → {1}" -f $originalName, $fileName) -Level "RENAME" -File $fileName
         }
 
-        # Check if metadata was missing after retries - file to Unsorted with reason code
+        # Check if metadata was missing after retries
         if ($missingMetadata) {
-            Set-ManifestStatus -Path $script:QueueManifestPath -Id $fileName -FileName $fileName -Status "Rejected"
-            Write-Log -Message "metadata_not_found: Computer number metadata file not found after $maxRetries retry attempts" -Level "REJECT" -File $fileName
-            $rejectTarget = Ensure-UniquePath -Directory $script:UnsortedRoot -FileName $fileName
-            Move-Item -Path $stagingTarget -Destination $rejectTarget -Force
-            Remove-ManifestEntry -Path $script:QueueManifestPath -Id $fileName
-            return
+            if ($script:RequireComputerNumber) {
+                # Enforcement enabled - reject and file to Unsorted without upload
+                Set-ManifestStatus -Path $script:QueueManifestPath -Id $fileName -FileName $fileName -Status "Rejected"
+                Write-Log -Message "metadata_not_found: Computer number metadata file not found after $maxRetries retry attempts (enforcement enabled)" -Level "REJECT" -File $fileName
+                $rejectTarget = Ensure-UniquePath -Directory $script:UnsortedRoot -FileName $fileName
+                Move-Item -Path $stagingTarget -Destination $rejectTarget -Force
+                Remove-ManifestEntry -Path $script:QueueManifestPath -Id $fileName
+                return
+            } else {
+                # Enforcement disabled - proceed with upload but log warning
+                Write-Log -Message "metadata_not_found: Computer number metadata file not found after $maxRetries retry attempts (proceeding without computer number - enforcement disabled)" -Level "WARN" -File $fileName
+                # Continue processing - uploadComputerNo will be null/empty
+            }
         }
 
         Set-ManifestStatus -Path $script:QueueManifestPath -Id $fileName -FileName $fileName -Status "Parsing"
@@ -2361,6 +2368,10 @@ if ($config.validation -and $config.validation.metadataRetries) {
 $script:MetadataRetryDelay = 2
 if ($config.validation -and $config.validation.metadataRetryDelaySeconds) {
     $script:MetadataRetryDelay = [int]$config.validation.metadataRetryDelaySeconds
+}
+$script:RequireComputerNumber = $true
+if ($config.validation -and $null -ne $config.validation.requireComputerNumber) {
+    $script:RequireComputerNumber = [bool]$config.validation.requireComputerNumber
 }
 $pollSeconds = 5
 if ($config.worker -and $config.worker.pollIntervalSeconds) {

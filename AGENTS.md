@@ -68,6 +68,11 @@ The 4Set System is a comprehensive web-based assessment data processing pipeline
 - **PDF Parser Integration**: Extracts form fields using Python tools
 - **Data Enrichment**: Adds sessionkey, computerno, child-name, class-id
 - **Termination Calculation**: Applies threshold rules (ERV, CM, CWR, FM)
+- **Computer Number Enforcement**: Configurable requirement for PC tracking
+  - Retries metadata file with OneDrive sync delay tolerance (5 attempts, 10s intervals)
+  - Enforcement ON: Reject files without PC number → file to Unsorted/
+  - Enforcement OFF: Proceed to JotForm upload without PC number
+  - Toggle via `config/agent.json` → `validation.requireComputerNumber`
 - **Data Overwrite Protection**: Prevents accidental data corruption on re-uploads
   - Validates that existing assessment answers won't be overwritten
   - Exception list allows administrative fields to be updated
@@ -522,14 +527,68 @@ Documented in `PRDs/processor_agent_runbook_prd.md`:
   "oneDrive": {
     "autoDetect": true,
     "relativePath": "\\The Education University of Hong Kong\\...",
-    "fallbackRoot": "C:\\Users\\[Username]"
+    "fallbackRoot": "C:\\Users\\KeySteps"
   },
-  "watchFolders": ["incoming"],
-  "pollingIntervalSeconds": 5,
-  "maxConcurrentWorkers": 2,
-  "logRetentionDays": 30
+  "watchPath": "./incoming",
+  "stagingPath": "./processing",
+  "filingRoot": "",
+  "unsortedRoot": "./Unsorted",
+  "logDirectory": "./logs",
+  "queueManifest": "./queue_manifest.json",
+  "hostIdentity": {
+    "computerNameFallback": true,
+    "overrideFile": "./config/host_identity.json"
+  },
+  "telemetry": {
+    "endpoint": "http://localhost:48500",
+    "enableSse": true,
+    "apiKey": ""
+  },
+  "worker": {
+    "maxConcurrent": 2,
+    "perMinuteQuota": 60,
+    "pollIntervalSeconds": 5
+  },
+  "validation": {
+    "debounceWindowSeconds": 15,
+    "sizeDriftBytes": 1024,
+    "metadataRetries": 5,
+    "metadataRetryDelaySeconds": 10,
+    "requireComputerNumber": true
+  }
 }
 ```
+
+**Key Configuration Options:**
+
+- **`validation.requireComputerNumber`** (boolean, default: `true`)  
+  **Purpose**: Controls whether computer number tracking is mandatory for PDF processing
+  
+  - **When `true` (Enforced - Default)**:
+    - PDFs without `.meta.json` file containing computer number are **rejected**
+    - Filed to `Unsorted/` folder for manual review
+    - **No JotForm upload** occurs
+    - Log message: `metadata_not_found: ... (enforcement enabled)`
+    
+  - **When `false` (Optional)**:
+    - PDFs without `.meta.json` file still **proceed to processing**
+    - Computer number field in JotForm will be `null`/empty
+    - **JotForm upload still occurs**
+    - Log message: `metadata_not_found: ... (proceeding without computer number - enforcement disabled)`
+  
+  **Use Cases**:
+  - Set to `true`: Production environments requiring audit trail
+  - Set to `false`: Testing environments, development, or when computer tracking is not needed
+  
+  **Upload Paths**:
+  - **Web Uploader (`upload.html`)**: Always requires PC number (strict enforcement)
+  - **Manual Upload (OneDrive/Teams/SharePoint)**: Subject to `requireComputerNumber` toggle
+    - Users can place PDFs directly in OneDrive folder without using web uploader
+    - Processor agent applies configured enforcement policy
+  
+  **Related Components**:
+  - `upload.html`: Always enforces PC number requirement (cannot bypass)
+  - `processor_agent.ps1`: Retries metadata file (5 attempts, 10s intervals), then applies enforcement logic
 
 ### JotForm Configuration (`config/jotform_config.json`)
 ```json
