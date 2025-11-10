@@ -126,18 +126,19 @@
         }
         
         .calendar-day.has-log {
-            background-color: #dbeafe;
-            color: var(--primary);
-            font-weight: 600;
+            background-color: #1e40af;
+            color: white;
+            font-weight: 700;
         }
         
         .calendar-day.has-log:hover {
-            background-color: #bfdbfe;
+            background-color: #1e3a8a;
         }
         
         .calendar-day.has-log.weekend {
-            background-color: #fde1c3;
-            color: var(--secondary);
+            background-color: #c2410c;
+            color: white;
+            font-weight: 700;
         }
         
         .calendar-day.selected {
@@ -522,27 +523,126 @@
             }
         }
 
-        // Scan log files directory
+        // Scan log files directory - Smart scan: only check files that exist
         async function scanLogFiles() {
             await loadConfig();
             
             availableLogDates.clear();
             
+            // Strategy 1: Try to get list from server API (no 404 spam!)
+            const foundFiles = await fetchLogListFromServer();
+            
+            // Strategy 2: If API not available, fallback to scanning (old method)
+            if (!foundFiles || foundFiles.length === 0) {
+                await scanRecentDates();
+            }
+            
+            renderCalendar();
+        }
+        
+        // Fetch list of available log files from server API
+        async function fetchLogListFromServer() {
+            try {
+                const response = await fetch('/api/logs/list', { 
+                    method: 'GET',
+                    cache: 'no-cache'
+                });
+                
+                if (response.ok) {
+                    const dateArray = await response.json();
+                    
+                    // Add all dates from server response
+                    dateArray.forEach(dateStr => {
+                        availableLogDates.add(dateStr);
+                    });
+                    
+                    console.log(`[LOG VIEWER] Loaded ${dateArray.length} log files from server API (no 404 spam!)`);
+                    return dateArray;
+                }
+            } catch (error) {
+                console.log('[LOG VIEWER] Server API not available, falling back to file scanning');
+            }
+            return null;
+        }
+        
+        // Scan recent dates (fallback method - may cause 404s in console)
+        async function scanRecentDates() {
+            console.warn('[LOG VIEWER] Using fallback scanning method - may see 404 errors in console');
             const today = new Date();
             const promises = [];
             
+            // Only scan last 90 days
             for (let i = 0; i < scanDays; i++) {
                 const date = new Date(today);
                 date.setDate(date.getDate() - i);
                 const dateStr = formatDateToYYYYMMDD(date);
-                promises.push(checkLogExists(dateStr));
+                
+                promises.push(checkLogExistsQuietly(dateStr));
             }
             
             await Promise.all(promises);
-            renderCalendar();
+            return Array.from(availableLogDates);
         }
         
-        // Check if log file exists and has actual data (not just headers)
+        // Quiet version that suppresses 404 errors in console (still may log fetch errors)
+        async function checkLogExistsQuietly(dateStr) {
+            const filename = `${dateStr}_processing_agent.csv`;
+            const filepath = `${logDirectory}/${filename}`;
+            
+            try {
+                const response = await fetch(filepath, { cache: 'no-cache' });
+                
+                if (response.ok) {
+                    const text = await response.text();
+                    const lines = text.trim().split('\n');
+                    
+                    // Filter out logs that only contain "Rolled log file" message
+                    if (lines.length > 1) {
+                        let hasRealLogs = false;
+                        for (let i = 1; i < lines.length; i++) {
+                            const line = lines[i].trim();
+                            if (line && !line.includes('Rolled log file to')) {
+                                hasRealLogs = true;
+                                break;
+                            }
+                        }
+                        
+                        if (hasRealLogs) {
+                            availableLogDates.add(dateStr);
+                        }
+                    }
+                }
+            } catch (error) {
+                // Silently ignore all errors
+                // Still try File System Access API if available
+                if (logsDirectoryHandle) {
+                    try {
+                        const text = await readFileFromHandle(filename);
+                        if (text) {
+                            const lines = text.trim().split('\n');
+                            if (lines.length > 1) {
+                                let hasRealLogs = false;
+                                for (let i = 1; i < lines.length; i++) {
+                                    const line = lines[i].trim();
+                                    if (line && !line.includes('Rolled log file to')) {
+                                        hasRealLogs = true;
+                                        break;
+                                    }
+                                }
+                                
+                                if (hasRealLogs) {
+                                    availableLogDates.add(dateStr);
+                                }
+                            }
+                        }
+                    } catch (fsError) {
+                        // Silently ignore
+                    }
+                }
+            }
+        }
+        
+        // Check if log file exists and has actual data (not just headers or "Rolled" messages)
         async function checkLogExists(dateStr) {
             const filename = `${dateStr}_processing_agent.csv`;
             const filepath = `${logDirectory}/${filename}`;
@@ -553,9 +653,23 @@
                 if (response.ok) {
                     const text = await response.text();
                     const lines = text.trim().split('\n');
+                    
                     // Only consider it a valid log if it has more than just the header row
+                    // AND has real log entries (not just "Rolled log file" message)
                     if (lines.length > 1) {
-                        availableLogDates.add(dateStr);
+                        let hasRealLogs = false;
+                        for (let i = 1; i < lines.length; i++) {
+                            const line = lines[i].trim();
+                            // Ignore empty lines and "Rolled log file" messages
+                            if (line && !line.includes('Rolled log file to')) {
+                                hasRealLogs = true;
+                                break;
+                            }
+                        }
+                        
+                        if (hasRealLogs) {
+                            availableLogDates.add(dateStr);
+                        }
                     }
                     return; // Success via fetch, no need to try File System Access API
                 }
@@ -570,7 +684,18 @@
                     if (text) {
                         const lines = text.trim().split('\n');
                         if (lines.length > 1) {
-                            availableLogDates.add(dateStr);
+                            let hasRealLogs = false;
+                            for (let i = 1; i < lines.length; i++) {
+                                const line = lines[i].trim();
+                                if (line && !line.includes('Rolled log file to')) {
+                                    hasRealLogs = true;
+                                    break;
+                                }
+                            }
+                            
+                            if (hasRealLogs) {
+                                availableLogDates.add(dateStr);
+                            }
                         }
                     }
                 } catch (error) {

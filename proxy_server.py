@@ -180,6 +180,76 @@ def index():
     return app.send_static_file('index.html')
 
 
+@app.route('/api/logs/list', methods=['GET'])
+def list_log_files():
+    """
+    List available log files by scanning the logs directory
+    Returns JSON array of dates (YYYYMMDD format) that have valid log files
+    """
+    import os
+    import re
+    from datetime import datetime
+    
+    try:
+        logs_dir = os.path.join(os.getcwd(), 'logs')
+        available_dates = []
+        
+        if not os.path.exists(logs_dir):
+            return jsonify([]), 200
+        
+        # Pattern: YYYYMMDD_processing_agent.csv
+        pattern = re.compile(r'^(\d{8})_processing_agent\.csv$')
+        
+        for filename in os.listdir(logs_dir):
+            match = pattern.match(filename)
+            if not match:
+                continue
+            
+            date_str = match.group(1)
+            filepath = os.path.join(logs_dir, filename)
+            
+            # Check if file has real logs (not just "Rolled log file" entries)
+            try:
+                with open(filepath, 'r', encoding='utf-8') as f:
+                    lines = f.readlines()
+                    has_real_logs = False
+                    
+                    for i, line in enumerate(lines):
+                        line = line.strip()
+                        
+                        # Skip empty lines
+                        if not line:
+                            continue
+                        
+                        # Skip header line (first line or lines starting with timestamp,level,file,message)
+                        if i == 0 or line.lower().startswith('timestamp,'):
+                            continue
+                        
+                        # This is a data line - check if it's NOT just a "Rolled log file" entry
+                        if 'Rolled log file to' not in line:
+                            has_real_logs = True
+                            break
+                    
+                    if has_real_logs:
+                        available_dates.append(date_str)
+            except Exception as e:
+                logger.warning(f'[LOGS] Error reading {filename}: {str(e)}')
+                continue
+        
+        # Sort dates in descending order (newest first)
+        available_dates.sort(reverse=True)
+        
+        logger.info(f'[LOGS] Found {len(available_dates)} valid log files')
+        return jsonify(available_dates), 200
+        
+    except Exception as e:
+        logger.error(f'[LOGS] Error listing log files: {str(e)}')
+        return jsonify({
+            'error': 'server_error',
+            'message': str(e)
+        }), 500
+
+
 @app.route('/<path:path>')
 def serve_static(path):
     """
