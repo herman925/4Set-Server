@@ -1028,6 +1028,7 @@
         // Calculate processing times
         function calculateProcessingTimes() {
             const fileTimings = {};
+            const fileFilter = document.getElementById('fileFilter').value.toLowerCase();
             
             // Group logs by file
             allLogs.forEach(log => {
@@ -1061,18 +1062,27 @@
                 }
             });
             
-            // Calculate durations
-            const timings = Object.values(fileTimings).map(timing => {
-                if (timing.startTime && timing.endTime) {
-                    timing.duration = (timing.endTime - timing.startTime) / 1000; // seconds
-                }
-                return timing;
-            }).filter(t => t.duration !== undefined);
+            // Calculate durations and apply file filter
+            const timings = Object.values(fileTimings)
+                .filter(timing => {
+                    // Apply file filter to timings table
+                    if (fileFilter && !timing.filename.toLowerCase().includes(fileFilter)) {
+                        return false;
+                    }
+                    return true;
+                })
+                .map(timing => {
+                    if (timing.startTime && timing.endTime) {
+                        timing.duration = (timing.endTime - timing.startTime) / 1000; // seconds
+                    }
+                    return timing;
+                })
+                .filter(t => t.duration !== undefined);
             
             // Sort by duration (longest first)
             timings.sort((a, b) => b.duration - a.duration);
             
-            // Calculate average
+            // Calculate average (only from filtered results)
             if (timings.length > 0) {
                 const avg = timings.reduce((sum, t) => sum + t.duration, 0) / timings.length;
                 document.getElementById('statAvgTime').textContent = avg.toFixed(2) + 's';
