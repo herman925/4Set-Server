@@ -879,6 +879,41 @@ for (let i = 0; i < taskResult.questions.length; i++) {
 - Q22-Q25: Incorrect (4 consecutive)
 - Result: Counter reset at Q21, only 4 consecutive → **NOT TERMINATED**
 
+#### ⚠️ CRITICAL: CWR Termination Mismatch Handling
+
+**Issue:** CWR_10Incorrect is a **LEGACY field** that is NEVER recorded in JotForm submissions.
+
+**Background:** 
+- Field exists in jotformquestions.json (ID: 334)
+- But it's never populated during data collection
+- Value always defaults to '0' or empty
+
+**Previous Behavior (BUG):**
+- System compared JotForm recorded value (always 0) vs. system calculated termination
+- When termination occurred, mismatch was ALWAYS detected
+- Result: Termination card was ALWAYS orange/yellow, never green
+- This made it impossible to verify correct terminations
+
+**Current Behavior (FIXED - Nov 12, 2025):**
+- Termination mismatch detection is **SKIPPED** for CWR
+- Status logic simplified to:
+  - 🟢 **GREEN**: Proper termination (10 consecutive incorrect, no post-termination answers) OR no termination
+  - 🟡 **YELLOW/ORANGE**: Post-termination answers detected (data quality issue)
+
+**Code Locations:**
+- `task-validator.js` Lines 1006-1014: Mismatch check skipped
+- `checking-system-student-page.js` Lines 2364-2391: Display logic simplified
+
+**Yellow/Orange Conditions for CWR (ONLY 2 scenarios):**
+1. **Post-termination answers**: Student answered questions AFTER hitting 10 consecutive incorrect
+2. **Mis-termination detection**: Handled by incomplete status (red circle), not termination card
+   - Detected when: answered > 0 BUT not complete AND not terminated
+   - Example: Stopped at Q30 with only 7 consecutive incorrect
+
+**Verification Message:**
+- When no issues: "✅ No data quality issues" (green)
+- When post-term data: "⚠️ Data quality issue detected" (orange)
+
 ### Type 3: Threshold-Based Termination (Fine Motor)
 
 **Location:** `task-validator.js` Lines 439-466
@@ -2103,7 +2138,7 @@ getTaskStatus(taskValidation) {
 | 🟢 Green | `status-green` | `answeredPercent === 100` | Task complete (all questions answered) | Highest |
 | 🟢 Green | `status-green` | `hasTerminated && answered > 0` | Properly terminated (no post-term answers) | Highest |
 | 🟢 Green | `status-green` | `timedOut && answered > 0` | Properly timed out (no gaps after timeout) | Highest |
-| 🟡 Yellow | `status-yellow` | `hasPostTerminationAnswers` OR termination mismatch | Post-termination data OR termination mismatch | Medium-High |
+| 🟡 Yellow | `status-yellow` | `hasPostTerminationAnswers` OR `hasTerminationMismatch` | Post-termination data OR termination mismatch | Medium-High |
 | 🔴 Red | `status-red` | `answered > 0 && answeredPercent < 100` | Incomplete (some progress) | Medium |
 | ⚪ Grey | `status-grey` | `total === 0 || answered === 0` | Not started | Lowest |
 
@@ -2112,6 +2147,12 @@ getTaskStatus(taskValidation) {
 2. Green applies when properly complete/terminated
 3. Red indicates incomplete work
 4. Grey indicates no work started
+
+**⚠️ Special Case - CWR Termination:**
+- CWR does NOT check for termination mismatch (CWR_10Incorrect is a legacy field)
+- Yellow ONLY occurs for post-termination answers
+- Mis-termination (stopped early without 10 consecutive incorrect) shows as RED (incomplete), not yellow
+- This is the only task where `hasTerminationMismatch` will never be true
 
 ### Question Row States
 
@@ -4245,3 +4286,4 @@ For questions or clarifications, refer to the actual source code files listed in
 - **v1.1** (October 2025) - Added status inconsistency fix and additional investigations
 - **v1.2** (October 2025) - Implemented conditional logic (showIf) fix - all issues resolved
 - **v1.3** (November 6, 2025) - Fixed unreached stage termination mismatch bug for CM and ERV tasks
+- **v1.4** (November 12, 2025) - Fixed CWR termination mismatch false positives - CWR_10Incorrect is legacy field, mismatch detection now skipped

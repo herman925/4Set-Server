@@ -2361,15 +2361,11 @@
       // Update checklist title
       checklistDiv.querySelector('span').textContent = 'Termination checklist · Chinese Word Reading';
       
-      // Get recorded termination value (from uploaded data)
-      const cwrTermField = 'CWR_10Incorrect';
-      const recordedValue = mergedAnswers[cwrTermField];
-      const recordedTerminated = recordedValue === '1' || recordedValue === 1;
-      
-      // Calculate termination based on actual consecutive incorrect (validation logic)
+      // CWR_10Incorrect is a LEGACY field that is NEVER recorded in JotForm
+      // We SKIP mismatch detection and ONLY check for post-termination answers
       const calculatedTerminated = terminated; // validation.terminated already calculated this
       
-      // Check for post-termination questions (mismatch indicator)
+      // Check for post-termination questions (the ONLY yellow/orange condition for CWR)
       let hasPostTerminationAnswers = false;
       if (calculatedTerminated) {
         for (let i = terminationIndex + 1; i < validation.questions.length; i++) {
@@ -2380,22 +2376,17 @@
         }
       }
       
-      // Normalize to boolean
-      const recordedBool = Boolean(recordedTerminated);
-      const calculatedBool = Boolean(calculatedTerminated);
-      const mismatch = recordedBool !== calculatedBool;
-      
-      // Card styling: GREEN when both agree, ORANGE when mismatch, YELLOW when post-termination or termination mismatch
+      // Card styling: ORANGE only for post-termination answers, GREEN otherwise
+      // Note: Mis-termination (stopped early without 10 consecutive wrongs) is detected
+      // by incomplete status (red circle) rather than termination card
       let statusClass;
       let statusColor;
       if (hasPostTerminationAnswers) {
-        statusClass = 'border-orange-400 bg-orange-50';
-        statusColor = 'text-orange-600';
-      } else if (mismatch) {
+        // Data quality issue: Answered questions AFTER termination point
         statusClass = 'border-orange-400 bg-orange-50';
         statusColor = 'text-orange-600';
       } else {
-        // Both agree (either both terminated OR both not terminated) - GREEN
+        // Proper termination (10 consecutive wrongs, no post-answers) OR no termination - GREEN
         statusClass = 'border-green-400 bg-green-50';
         statusColor = 'text-green-600';
       }
@@ -2425,9 +2416,9 @@
             </div>
             
             <!-- Verification Status -->
-            <div class="flex items-center gap-1.5 ${hasPostTerminationAnswers ? 'text-orange-600' : 'text-blue-600'}">
+            <div class="flex items-center gap-1.5 ${hasPostTerminationAnswers ? 'text-orange-600' : 'text-green-600'}">
               <i data-lucide="${hasPostTerminationAnswers ? 'alert-triangle' : 'check-circle'}" class="w-3.5 h-3.5"></i>
-              <span>${hasPostTerminationAnswers ? 'Data quality issue detected' : 'Termination Verified.'}</span>
+              <span>${hasPostTerminationAnswers ? 'Data quality issue detected' : 'No data quality issues'}</span>
             </div>
           </div>
         </div>

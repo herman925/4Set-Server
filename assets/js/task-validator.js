@@ -1004,15 +1004,14 @@ window.TaskValidator = (() => {
         }
       }
     } else if (config.type === 'consecutive_incorrect') {
-      // For CWR: check CWR_10Incorrect field
-      const terminationField = mergedAnswers['CWR_10Incorrect'];
-      const recordedValue = terminationField?.answer || terminationField?.text || '0';
-      const recordedTriggered = recordedValue === '1' || recordedValue === 1;
+      // For CWR: CWR_10Incorrect is a LEGACY field that is NEVER recorded in JotForm
+      // Therefore, we SKIP termination mismatch detection for CWR
+      // Yellow/Orange status will ONLY be triggered by post-termination answers (hasPostTerminationAnswers)
+      // This allows proper terminations to show GREEN
+      console.log(`[TaskValidator] CWR termination mismatch check skipped (CWR_10Incorrect is legacy field, never recorded)`);
       
-      if (recordedTriggered !== calculatedTerminated) {
-        hasTerminationMismatch = true;
-        console.log(`[TaskValidator] CWR TERMINATION MISMATCH: JotForm=${recordedTriggered}, System=${calculatedTerminated}`);
-      }
+      // Note: Mis-termination (stopped early without hitting 10 consecutive wrongs) will be detected
+      // by the incomplete status logic (answered > 0 but not complete and not terminated)
     } else if (config.type === 'threshold_based') {
       // For Fine Motor: check FM_Ter field
       const terminationField = mergedAnswers['FM_Ter'];
