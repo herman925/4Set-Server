@@ -857,11 +857,21 @@
       if (!set || !set.tasks) continue;
       
       for (const searchId of searchTaskIds) {
-        const foundTask = set.tasks.find(t => 
-          t.taskId === searchId || 
-          t.taskId.includes(searchId) || 
-          searchId.includes(t.taskId)
-        );
+        const foundTask = set.tasks.find(t => {
+          // Exact match first
+          if (t.taskId === searchId) return true;
+          
+          // Fuzzy match: only if one is a complete substring at word boundaries
+          // This prevents "cm" from matching "ccm" or "tgmd"
+          const taskIdLower = t.taskId.toLowerCase();
+          const searchIdLower = searchId.toLowerCase();
+          
+          // Allow match if searchId is the entire taskId or vice versa
+          if (taskIdLower === searchIdLower) return true;
+          
+          // Don't use includes() to avoid false positives like cm→ccm
+          return false;
+        });
         
         if (foundTask) {
           // Post-term detection or termination mismatch (yellow): Data quality issue
