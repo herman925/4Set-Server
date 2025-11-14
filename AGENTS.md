@@ -73,10 +73,13 @@ The 4Set System is a comprehensive web-based assessment data processing pipeline
   - Enforcement ON: Reject files without PC number → file to Unsorted/
   - Enforcement OFF: Proceed to JotForm upload without PC number
   - Toggle via `config/agent.json` → `validation.requireComputerNumber`
-- **Data Overwrite Protection**: Prevents accidental data corruption on re-uploads
-  - Validates that existing assessment answers won't be overwritten
-  - Exception list allows administrative fields to be updated
-  - Conflicts logged with `DATA_OVERWRITE_DIFF` and filed to Unsorted/
+- **Data Overwrite Protection** (Optional - Configurable): Prevents accidental data corruption on re-uploads
+  - Can be enabled/disabled via `config/agent.json` → `dataProtection.enableDataOverwriteProtection` (default: `true`)
+  - When enabled: Validates that existing assessment answers won't be overwritten
+  - Exception list allows administrative fields to be updated (student-id, child-name, etc.)
+  - Conflicts logged with `DATA_OVERWRITE_DIFF` and filed to Unsorted/ when protection is enabled
+  - When disabled: Allows full data overwrites during processor agent uploads to JotForm
+  - File validation workflow is preserved regardless of this setting
 - **JotForm Upload**: Idempotent upsert with exponential backoff retry
 - **Filing Protocol**: Archives to `schoolId/` or `Unsorted/` folder
 - **Telemetry API**: Exposes queue status via localhost:48500
@@ -928,11 +931,13 @@ All user guides moved to PRDs folder for centralized documentation:
 - Created comprehensive documentation suite
 
 **Phase 3 Enhancements (October 22, 2025):**
-- ✅ **Data Overwrite Protection**: Implemented conflict detection for update operations
-  - Prevents accidental data corruption from re-uploaded PDFs
+- ✅ **Data Overwrite Protection** (Configurable): Implemented optional conflict detection for update operations
+  - Prevents accidental data corruption from re-uploaded PDFs when enabled
+  - Can be toggled via `config/agent.json` → `dataProtection.enableDataOverwriteProtection` (default: `true`)
   - Exception list allows administrative fields (student-id, child-name, etc.) to be updated
-  - Protected fields (assessment answers) reject overwrites of existing non-empty values
-  - Conflicts logged with `DATA_OVERWRITE_DIFF` level and filed to Unsorted/
+  - Protected fields (assessment answers) reject overwrites of existing non-empty values when enabled
+  - Conflicts logged with `DATA_OVERWRITE_DIFF` level and filed to Unsorted/ when protection is enabled
+  - When disabled: Allows full data overwrites, relying on human due diligence
   - Comprehensive test suite: `tools/test_data_overwrite_protection.ps1` (10/10 tests passing)
   - Performance impact: < 1% (uses existing search result, no additional API calls)
 - ✅ **Radio_text Validation Logic**: Implemented priority-based scoring for ToM questions
