@@ -1,16 +1,32 @@
 # Operator Guide: Handling Data Overwrite Conflicts
 
-**Document Version:** 1.0  
-**Last Updated:** October 2025  
+**Document Version:** 1.1  
+**Last Updated:** November 2025  
 **Target Audience:** System Operators, Data Administrators
 
 ---
 
 ## Overview
 
-The 4Set Processor Agent includes **Data Overwrite Protection** to prevent accidental corruption of existing assessment data. When a PDF is uploaded for a student who already has data in the system, the agent validates that no existing assessment answers will be overwritten.
+The 4Set Processor Agent includes **Data Overwrite Protection** to prevent accidental corruption of existing assessment data. This feature can be **enabled or disabled** by administrators based on their workflow preferences.
 
-### What Gets Protected?
+### Configuration Option
+
+Data Overwrite Protection is **optional and configurable** via `config/agent.json`:
+
+```json
+{
+  "dataProtection": {
+    "enableDataOverwriteProtection": true  // Set to false to disable
+  }
+}
+```
+
+- **When ENABLED (default):** Protects against accidental data overwrites (as described below)
+- **When DISABLED:** Allows full data overwrites during processor agent uploads to JotForm
+- This setting applies to processor agent uploads only - file validation workflow is preserved regardless
+
+### What Gets Protected? (When Protection is Enabled)
 
 ✅ **Protected Fields** (Cannot Overwrite):
 - All assessment answers (ERV, CM, CWR, TEC, etc.)
@@ -28,7 +44,9 @@ The 4Set Processor Agent includes **Data Overwrite Protection** to prevent accid
 
 ---
 
-## Conflict Detection
+## Conflict Detection (When Protection is Enabled)
+
+**Note:** This section applies only when `enableDataOverwriteProtection` is set to `true` in the configuration. When disabled, conflict detection is skipped and all fields can be overwritten.
 
 ### What Triggers a Conflict?
 

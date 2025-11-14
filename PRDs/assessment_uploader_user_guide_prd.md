@@ -390,9 +390,25 @@ flowchart TD
   - ✓ Value ranges valid
 - **Sources:** assets/*.enc mapping files
 
-#### Data Overwrite Protection
+#### Data Overwrite Protection (Optional - Configurable)
 
-##### 🔒 Why Data Overwrite Protection is Critical
+##### ⚙️ Configuration Option
+
+Data Overwrite Protection can be **enabled or disabled** by administrators via `config/agent.json`:
+
+```json
+{
+  "dataProtection": {
+    "enableDataOverwriteProtection": true  // Set to false to disable
+  }
+}
+```
+
+- **When ENABLED (default):** Protects against accidental data overwrites (as described below)
+- **When DISABLED:** Allows full data overwrites during processor agent uploads to JotForm, relying on human due diligence
+- This setting applies to processor agent uploads only - file validation workflow is preserved regardless
+
+##### 🔒 Why Data Overwrite Protection Matters (When Enabled)
 
 **Assessment data integrity is paramount.** Once test administrators record student responses and upload PDFs, that data becomes the official record of the child's performance. Any accidental overwrite could:
 
@@ -459,14 +475,16 @@ flowchart TD
 ```
 
 **Key Decision Points:**
-1. **New vs Existing:** New students always allowed; existing students trigger protection checks
+1. **New vs Existing:** New students always allowed; existing students trigger protection checks (when protection is enabled)
 2. **Field Type:** Administrative info (student details, school assignment) vs Test Answers (actual assessment responses)
 3. **Admin Info:** Can be updated to correct administrative errors (typos in names, wrong school assignment, PC number, etc.)
-4. **Test Answers:** Once recorded, cannot be changed - protects scientific integrity of the assessment data
+4. **Test Answers:** Once recorded, cannot be changed - protects scientific integrity of the assessment data (when protection is enabled)
 5. **Empty Fields:** Can always be filled, whether admin info or test data
 6. **Logging:** All decisions logged to daily CSV file (YYYYMMDD_processing_agent.csv) for audit trail
 
-##### Conflict Detection Rules
+##### Conflict Detection Rules (When Protection is Enabled)
+
+**Note:** These rules apply only when `enableDataOverwriteProtection` is set to `true` in the configuration. When disabled, conflict detection is skipped and all fields can be overwritten.
 
 **✅ ALLOWED Updates:**
 - Filling blank/null fields

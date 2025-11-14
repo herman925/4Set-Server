@@ -118,10 +118,28 @@
             </div>
             
             <p class="text-gray-700 mb-6 text-lg leading-relaxed">
-              The 4Set Processor Agent includes <strong>Data Overwrite Protection</strong> to prevent accidental corruption of existing assessment data.
+              The 4Set Processor Agent includes <strong>Data Overwrite Protection</strong> to prevent accidental corruption of existing assessment data. This feature can be <strong>enabled or disabled</strong> by administrators based on their workflow preferences.
             </p>
 
-            <h3 class="text-2xl font-semibold mb-4">What Gets Protected?</h3>
+            <!-- Configuration Notice -->
+            <div class="diagram-box bg-blue-50 border-blue-300 mb-6">
+              <h4 class="font-semibold mb-3">⚙️ Configuration Option</h4>
+              <p class="text-sm text-gray-700 mb-2">
+                Data Overwrite Protection is <strong>optional and configurable</strong> via <code>config/agent.json</code>:
+              </p>
+              <pre class="bg-gray-800 text-green-400 p-3 rounded text-xs overflow-x-auto">{
+  "dataProtection": {
+    "enableDataOverwriteProtection": true  // Set to false to disable
+  }
+}</pre>
+              <ul class="space-y-2 text-sm text-gray-700 mt-3">
+                <li>• <strong>When ENABLED (default):</strong> Protects against accidental data overwrites (as described below)</li>
+                <li>• <strong>When DISABLED:</strong> Allows full data overwrites during processor agent uploads to JotForm</li>
+                <li>• This setting applies to processor agent uploads only - file validation workflow is preserved regardless</li>
+              </ul>
+            </div>
+
+            <h3 class="text-2xl font-semibold mb-4">What Gets Protected? (When Protection is Enabled)</h3>
 
             <div class="grid md:grid-cols-2 gap-6">
               <div class="diagram-box bg-green-50 border-green-300">
@@ -151,8 +169,14 @@
           <section id="conflict-detection" class="content-section mb-12">
             <h2 class="text-3xl font-bold mb-6" style="color: var(--primary)">
               <span class="step-number">2</span>
-              Conflict Detection
+              Conflict Detection (When Protection is Enabled)
             </h2>
+
+            <div class="diagram-box bg-yellow-50 border-yellow-300 mb-4">
+              <p class="text-sm text-gray-700">
+                ⚠️ <strong>Note:</strong> This section applies only when <code>enableDataOverwriteProtection</code> is set to <code>true</code> in the configuration. When disabled, conflict detection is skipped and all fields can be overwritten.
+              </p>
+            </div>
 
             <h3 class="text-2xl font-semibold mb-4">What Triggers a Conflict?</h3>
             
