@@ -23,7 +23,7 @@ $form.Controls.Add($labelRepo)
 
 $groupEnc = New-Object System.Windows.Forms.GroupBox
 $groupEnc.Text = ".enc file mover"
-$groupEnc.Location = New-Object System.Drawing.Point(10,40)
+$groupEnc.Location = New-Object System.Drawing.Point(10,55)
 $groupEnc.Size = New-Object System.Drawing.Size(700,120)
 $form.Controls.Add($groupEnc)
 
