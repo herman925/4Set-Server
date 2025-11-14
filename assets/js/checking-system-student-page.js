@@ -595,25 +595,11 @@
         const hasExpiry = ttlHours > 0;
         const now = new Date();
 
-        // HTKS VALUE MAPPING FIX: Transform cached data that has raw choice values
-        // PDF sends choice indices (1, 2, 3) but we need scores (2, 1, 0)
-        // This fixes cached data from before the transformation was added
-        let htksFixCount = 0;
-        if (cachedData.mergedAnswers) {
-          for (const [fieldName, answerObj] of Object.entries(cachedData.mergedAnswers)) {
-            if (fieldName.startsWith('HTKS_Q')) {
-              const choiceToScore = { '1': '2', '2': '1', '3': '0' };
-              if (choiceToScore[answerObj.answer]) {
-                console.log(`[StudentPage] HTKS fix: ${fieldName} ${answerObj.answer} → ${choiceToScore[answerObj.answer]}`);
-                answerObj.answer = choiceToScore[answerObj.answer];
-                htksFixCount++;
-              }
-            }
-          }
-        }
-        if (htksFixCount > 0) {
-          console.log(`[StudentPage] ✅ Fixed ${htksFixCount} HTKS values in cached data`);
-        }
+        // HTKS VALUE MAPPING: No transformation needed here
+        // JotFormCache already handles choice→score mapping (1→2, 2→1, 3→0) when building
+        // the merged dataset. Applying the transformation again here causes double-mapping,
+        // incorrectly downgrading fully correct answers (score 2) to partially correct (score 1).
+        // All data in sessionStorage cache has already been normalized by the cache layer.
 
         if (!hasExpiry) {
           console.log('[StudentPage] ✅ CACHE HIT - Using cached data (no expiry configured)');
@@ -880,17 +866,14 @@
         
         if (!fieldName || !answer.answer) continue;
 
-        // HTKS VALUE MAPPING: PDF sends choice indices (1, 2, 3) but we need scores (2, 1, 0)
-        // This handles direct API fetch when cache is not available
-        // Mapping: PDF choice 1 → Score 2 (fully correct)
-        //          PDF choice 2 → Score 1 (partially correct)
-        //          PDF choice 3 → Score 0 (incorrect)
-        if (fieldName.startsWith('HTKS_Q')) {
-          const choiceToScore = { '1': '2', '2': '1', '3': '0' };
-          if (choiceToScore[answer.answer]) {
-            answer.answer = choiceToScore[answer.answer];
-          }
-        }
+        // HTKS VALUE MAPPING: No transformation needed here
+        // JotFormCache already handles choice→score mapping (1→2, 2→1, 3→0) during:
+        // 1. Cache building (fixUntransformedSubmissions) - transforms legacy cache entries
+        // 2. Data fetching (transformSubmissionsToRecords) - transforms fresh API data
+        // 3. Student validation (validateStudent) - transforms during merge
+        // Applying the transformation again here causes double-mapping, incorrectly downgrading
+        // fully correct answers (score 2) to partially correct (score 1).
+        // All submissions flowing through this merge function have already been normalized.
 
         if (!merged[fieldName]) {
           // NEW FIELD - fill missing data

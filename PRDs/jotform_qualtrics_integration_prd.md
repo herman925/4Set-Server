@@ -65,6 +65,20 @@ All three paths converge on the same JotForm API endpoints and follow the same u
 │     "ERV_Q1_Sc": "1",  // Score helper                          │
 │     ...                                                          │
 │   }                                                              │
+│                                                                   │
+│ #### HTKS Value Normalization (Choice → Score)                  │
+│                                                                   │
+│ For the **Head-Toe-Knee-Shoulder (HTKS)** task, PDF fields store **choice indices** rather than final scores:│
+│   - `1` = fully correct                                          │
+│   - `2` = partially correct                                      │
+│   - `3` = incorrect                                              │
+│                                                                   │
+│ Normalization is performed **only in `jotform-cache.js`** when building the merged dataset:│
+│   - `1 → 2` (fully correct, score 2)                             │
+│   - `2 → 1` (partially correct, score 1)                        │
+│   - `3 → 0` (incorrect, score 0)                                │
+│                                                                   │
+│ Downstream components (validation cache and all checking-system pages) must treat HTKS answers as **already-normalized scores (0/1/2)** and **must not re-apply** this mapping. This prevents double-mapping bugs where a fully correct score (`2`) would otherwise be downgraded to `1` at display time.│
 └────────────────────────────┬────────────────────────────────────┘
                              ↓
 ┌─────────────────────────────────────────────────────────────────┐

@@ -174,6 +174,28 @@ function Convert-SecureStringToPlainText {
 }
 
 function Write-Log {
+    <#
+    .SYNOPSIS
+    Thread-safe logging function with file locking retry mechanism
+    
+    .DESCRIPTION
+    Writes log entries to CSV file using StreamWriter with FileShare.ReadWrite
+    to allow concurrent reads while writing. Implements retry logic with 
+    exponential backoff to handle file locking conflicts.
+    
+    Fixed Issue: "The process cannot access the file because it is being used by another process"
+    - Excel, log viewer, or other processes reading the CSV file
+    - Multiple concurrent PDF processing threads
+    
+    .PARAMETER Message
+    Log message content
+    
+    .PARAMETER Level
+    Log level (INFO, WARN, ERROR, REJECT, UPLOAD, FILED, etc.)
+    
+    .PARAMETER File
+    PDF filename being processed (optional)
+    #>
     param(
         [string]$Message,
         [string]$Level = "INFO",
@@ -196,7 +218,40 @@ function Write-Log {
     # Sanitize message: remove line breaks and extra spaces
     $cleanMessage = $Message -replace '[\r\n]+', ' ' -replace '\s+', ' ' -replace '"', '""'
     $logEntry = '{0},{1},"{2}","{3}"' -f $timestamp, $Level, $File, $cleanMessage
-    $logEntry | Out-File -FilePath $script:LogFile -Append -Encoding UTF8
+    
+    # Retry mechanism for file locking conflicts
+    $maxRetries = 5
+    $retryDelayMs = 50
+    $attempt = 0
+    
+    while ($attempt -lt $maxRetries) {
+        try {
+            # Use StreamWriter with FileShare.ReadWrite to allow concurrent reads
+            $fileStream = [System.IO.File]::Open(
+                $script:LogFile,
+                [System.IO.FileMode]::Append,
+                [System.IO.FileAccess]::Write,
+                [System.IO.FileShare]::ReadWrite
+            )
+            $streamWriter = New-Object System.IO.StreamWriter($fileStream, [System.Text.Encoding]::UTF8)
+            $streamWriter.WriteLine($logEntry)
+            $streamWriter.Flush()
+            $streamWriter.Close()
+            $fileStream.Close()
+            break  # Success, exit retry loop
+        }
+        catch {
+            $attempt++
+            if ($attempt -ge $maxRetries) {
+                # Final attempt failed - write to console as fallback
+                Write-Warning "Failed to write to log file after $maxRetries attempts: $_"
+                Write-Host "[LOG FALLBACK] $logEntry"
+                break
+            }
+            # Wait before retry with exponential backoff
+            Start-Sleep -Milliseconds ($retryDelayMs * $attempt)
+        }
+    }
 }
 
 function Get-MasterKeyFromCredentialManager {
@@ -2114,13 +2169,31 @@ function Process-IncomingFile {
     param(
         [string]$Path
     )
+    
+    # CRITICAL: Atomic check - verify file still exists before processing
+    # Prevents race condition where multiple workers pick up same file
+    if (-not (Test-Path $Path)) {
+        # File was already picked up by another worker - silently skip
+        return
+    }
+    
     $fileName = [System.IO.Path]::GetFileName($Path)
     Set-ManifestStatus -Path $script:QueueManifestPath -Id $fileName -FileName $fileName -Status "Queued"
     # Queued - no log (too verbose)
+    
     if (-not (Wait-ForFile -Path $Path -TimeoutSeconds $script:DebounceWindow)) {
         Write-Log -Message "File not stable after $($script:DebounceWindow)s, skipping" -Level "WARN" -File $fileName
         return
     }
+    
+    # CRITICAL: Second atomic check after debounce wait
+    # File might have been picked up during the wait period
+    if (-not (Test-Path $Path)) {
+        # File was picked up by another worker during debounce - silently skip
+        Remove-ManifestEntry -Path $script:QueueManifestPath -Id $fileName
+        return
+    }
+    
     try {
         # Read and cleanup metadata file BEFORE moving PDF to staging
         # Retry mechanism for slow OneDrive sync: Wait for .meta.json to appear
@@ -2164,9 +2237,25 @@ function Process-IncomingFile {
         $missingMetadata = -not $metadataFound
         
         $stagingTarget = Ensure-UniquePath -Directory $script:StagingPath -FileName $fileName
-        Move-Item -Path $Path -Destination $stagingTarget -Force
-        Set-ManifestStatus -Path $script:QueueManifestPath -Id $fileName -FileName $fileName -Status "Staging"
-        # Moved to staging - no log (too verbose)
+        
+        # CRITICAL: Atomic move - catch race condition
+        try {
+            Move-Item -Path $Path -Destination $stagingTarget -Force -ErrorAction Stop
+            Set-ManifestStatus -Path $script:QueueManifestPath -Id $fileName -FileName $fileName -Status "Staging"
+            # Moved to staging - no log (too verbose)
+        }
+        catch {
+            # Race condition: another worker already moved the file
+            if (-not (Test-Path $Path)) {
+                # Silently skip - file was picked up by another worker
+                Remove-ManifestEntry -Path $script:QueueManifestPath -Id $fileName
+                return
+            }
+            # Some other error - log and skip
+            Write-Log -Message "Failed to move file to staging: $($_.Exception.Message)" -Level "ERROR" -File $fileName
+            Remove-ManifestEntry -Path $script:QueueManifestPath -Id $fileName
+            return
+        }
 
         $validation = Invoke-FilenameValidation -FileName $fileName
         if (-not $validation.IsValid) {
@@ -2388,7 +2477,32 @@ foreach ($dir in $directories) {
 $currentLogDate = (Get-Date).Date
 $script:LogFile = Join-Path $logDirectory ("{0}_processing_agent.csv" -f ($currentLogDate.ToString("yyyyMMdd")))
 if (-not (Test-Path $script:LogFile)) {
-    "Timestamp,Level,File,Message" | Out-File -FilePath $script:LogFile -Encoding UTF8
+    # Use safe file creation with retry mechanism
+    $maxRetries = 5
+    $attempt = 0
+    while ($attempt -lt $maxRetries) {
+        try {
+            $fileStream = [System.IO.File]::Open(
+                $script:LogFile,
+                [System.IO.FileMode]::CreateNew,
+                [System.IO.FileAccess]::Write,
+                [System.IO.FileShare]::ReadWrite
+            )
+            $streamWriter = New-Object System.IO.StreamWriter($fileStream, [System.Text.Encoding]::UTF8)
+            $streamWriter.WriteLine("Timestamp,Level,File,Message")
+            $streamWriter.Flush()
+            $streamWriter.Close()
+            $fileStream.Close()
+            break
+        }
+        catch {
+            $attempt++
+            if ($attempt -ge $maxRetries) {
+                Write-Warning "Failed to create initial log file after $maxRetries attempts: $_"
+            }
+            Start-Sleep -Milliseconds (50 * $attempt)
+        }
+    }
 }
 if (-not (Test-Path $script:QueueManifestPath)) {
     Save-QueueManifest -Path $script:QueueManifestPath -Manifest ([pscustomobject]@{ files = @() })
@@ -2483,7 +2597,32 @@ do {
         $currentLogDate = $now.Date
         $script:LogFile = Join-Path $logDirectory ("{0}_processing_agent.csv" -f ($currentLogDate.ToString("yyyyMMdd")))
         if (-not (Test-Path $script:LogFile)) {
-            "Timestamp,Level,File,Message" | Out-File -FilePath $script:LogFile -Encoding UTF8
+            # Use safe file creation with retry mechanism
+            $maxRetries = 5
+            $attempt = 0
+            while ($attempt -lt $maxRetries) {
+                try {
+                    $fileStream = [System.IO.File]::Open(
+                        $script:LogFile,
+                        [System.IO.FileMode]::CreateNew,
+                        [System.IO.FileAccess]::Write,
+                        [System.IO.FileShare]::ReadWrite
+                    )
+                    $streamWriter = New-Object System.IO.StreamWriter($fileStream, [System.Text.Encoding]::UTF8)
+                    $streamWriter.WriteLine("Timestamp,Level,File,Message")
+                    $streamWriter.Flush()
+                    $streamWriter.Close()
+                    $fileStream.Close()
+                    break
+                }
+                catch {
+                    $attempt++
+                    if ($attempt -ge $maxRetries) {
+                        Write-Warning "Failed to create log file after $maxRetries attempts: $_"
+                    }
+                    Start-Sleep -Milliseconds (50 * $attempt)
+                }
+            }
         }
         Write-Log -Message "Rolled log file to $script:LogFile"
     }

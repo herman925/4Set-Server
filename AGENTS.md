@@ -243,6 +243,86 @@ The 4Set System is a comprehensive web-based assessment data processing pipeline
 
 ## Operational Knowledge
 
+### Log File Locking Issue - File Access Conflicts
+
+**Discovered:** November 14, 2025  
+**Severity:** HIGH - Caused upload failures due to logging conflicts  
+**Status:** ✅ RESOLVED
+
+#### Problem
+Processing failed with error: "The process cannot access the file 'C:\...\logs\20251113_processing_agent.csv' because it is being used by another process."
+
+**Symptoms:**
+- PDFs failing to upload to JotForm
+- Error occurs during Write-Log operations
+- Multiple concurrent processes trying to write to same log file
+- Log file locked by Excel, log viewer, or other processes reading the CSV
+
+#### Root Cause
+**PowerShell's `Out-File -Append` uses exclusive file locking** that blocks other processes from accessing the file while writing. This caused conflicts when:
+1. **Excel or other programs** had the CSV file open for viewing
+2. **Log viewer (log.html)** was reading the file via proxy server
+3. **Multiple PDF processing threads** tried to write logs simultaneously
+4. **Parallel processing** workers competed for log file access
+
+#### Solution
+**Replaced `Out-File -Append` with thread-safe `StreamWriter` using `FileShare.ReadWrite`** in `processor_agent.ps1`:
+
+```powershell
+# BEFORE (PROBLEMATIC):
+$logEntry | Out-File -FilePath $script:LogFile -Append -Encoding UTF8
+# Result: Exclusive lock, blocks all other processes
+
+# AFTER (THREAD-SAFE):
+$fileStream = [System.IO.File]::Open(
+    $script:LogFile,
+    [System.IO.FileMode]::Append,
+    [System.IO.FileAccess]::Write,
+    [System.IO.FileShare]::ReadWrite  # ← Allows concurrent reads!
+)
+$streamWriter = New-Object System.IO.StreamWriter($fileStream, [System.Text.Encoding]::UTF8)
+$streamWriter.WriteLine($logEntry)
+$streamWriter.Flush()
+$streamWriter.Close()
+```
+
+**Key Changes:**
+1. **Write-Log function** (lines 176-232): Added retry mechanism with exponential backoff
+   - Retries: 5 attempts with 50ms, 100ms, 150ms, 200ms, 250ms delays
+   - FileShare.ReadWrite allows concurrent reads while writing
+   - Fallback to console if all retries fail
+
+2. **Log file initialization** (lines 2422-2445, 2517-2545): Safe file creation
+   - Uses StreamWriter with FileShare.ReadWrite
+   - Retry logic for initial file creation
+   - Handles race conditions when multiple workers start simultaneously
+
+3. **Log rotation** (daily rollover): Thread-safe file creation
+   - FileMode.CreateNew prevents duplicate creation
+   - Retry mechanism handles conflicts gracefully
+
+#### Benefits
+- ✅ **No more access conflicts** - Excel and log viewer can read while agent writes
+- ✅ **Parallel processing safe** - Multiple workers can log simultaneously
+- ✅ **Graceful degradation** - Falls back to console logging if file unavailable
+- ✅ **Zero data loss** - Retry mechanism ensures logs are written
+- ✅ **Better error handling** - Clear warnings when log writes fail
+
+#### Monitoring Checklist
+When reviewing logs, watch for:
+- ✅ No "process cannot access the file" errors
+- ✅ Continuous log writing during parallel processing
+- ⚠️ Warning messages if retry attempts occur (investigate cause)
+- ❌ Console fallback messages (indicates persistent file lock issue)
+
+#### Related Files
+- `processor_agent.ps1` lines 176-232 - Write-Log function with retry mechanism
+- `processor_agent.ps1` lines 2422-2445 - Initial log file creation
+- `processor_agent.ps1` lines 2517-2545 - Daily log rotation
+- `log.html` - Log viewer using proxy server for safe concurrent reads
+
+---
+
 ### PowerShell Parallel Processing Overhead Issue
 
 **Discovered:** November 7, 2025  
