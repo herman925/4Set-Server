@@ -248,6 +248,12 @@ Multi-level monitoring dashboards:
 - Applies two-phase validation (filename format + cross-field consistency)
 - Extracts form fields and generates enriched JSON
 - Calculates termination rules based on threshold logic
+- **Data Overwrite Protection** (optional, configurable): Prevents accidental corruption of existing assessment data
+  - Can be enabled/disabled via `config/agent.json` → `dataProtection.enableDataOverwriteProtection`
+  - When enabled (default): Validates that existing non-empty assessment answers won't be overwritten
+  - When disabled: Allows full data overwrites, relying on human due diligence
+  - Exception fields (student-id, child-name, school-id, etc.) are always allowed to be updated
+  - See `user_guide_conflicts.html` for detailed conflict resolution procedures
 - Uploads to JotForm with idempotent upsert pattern
 - Files successfully processed PDFs by school ID
 - Moves failed uploads to `Unsorted/` for manual review
@@ -264,7 +270,10 @@ Multi-level monitoring dashboards:
   "watchFolders": ["incoming"],
   "pollingIntervalSeconds": 5,
   "maxConcurrentWorkers": 2,
-  "logRetentionDays": 30
+  "logRetentionDays": 30,
+  "dataProtection": {
+    "enableDataOverwriteProtection": true
+  }
 }
 ```
 
@@ -1240,7 +1249,13 @@ Complete configuration example with explanations:
   "maxConcurrentWorkers": 2,
   "logRetentionDays": 30,
   "telemetryPort": 48500,
-  "queueManifestPath": "./queue_manifest.json"
+  "queueManifestPath": "./queue_manifest.json",
+  "validation": {
+    "requireComputerNumber": false
+  },
+  "dataProtection": {
+    "enableDataOverwriteProtection": true
+  }
 }
 ```
 
@@ -1254,6 +1269,8 @@ Complete configuration example with explanations:
 - `logRetentionDays` - Auto-delete logs older than N days
 - `telemetryPort` - Local HTTP API port for dashboard queries
 - `queueManifestPath` - Persistent queue state file location
+- `validation.requireComputerNumber` - When false, allows uploads without computer number metadata
+- `dataProtection.enableDataOverwriteProtection` - When true (default), prevents overwriting existing non-empty assessment data; when false, allows full data overwrites
 
 ### JotForm Configuration (`config/jotform_config.json`)
 

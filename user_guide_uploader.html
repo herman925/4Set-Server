@@ -548,11 +548,28 @@ flowchart TD
             </div>
 
             <!-- Data Overwrite Protection -->
-            <h3 class="text-2xl font-semibold mb-4">Data Overwrite Protection</h3>
+            <h3 class="text-2xl font-semibold mb-4">Data Overwrite Protection (Optional - Configurable)</h3>
+
+            <!-- Configuration Notice -->
+            <div class="bg-yellow-50 p-4 rounded-lg border-2 border-yellow-300 mb-4">
+              <h4 class="font-semibold mb-2 text-yellow-900">⚙️ This Feature is Configurable</h4>
+              <p class="text-sm text-gray-700">
+                Data Overwrite Protection can be <strong>enabled or disabled</strong> by administrators via <code>config/agent.json</code>:
+              </p>
+              <pre class="bg-gray-800 text-green-400 p-2 rounded text-xs mt-2 overflow-x-auto">{
+  "dataProtection": {
+    "enableDataOverwriteProtection": true  // Set to false to disable
+  }
+}</pre>
+              <ul class="text-sm text-gray-700 mt-2 space-y-1">
+                <li>• <strong>When ENABLED (default):</strong> Protects against accidental data overwrites (as described below)</li>
+                <li>• <strong>When DISABLED:</strong> Allows full data overwrites, relying on human due diligence</li>
+              </ul>
+            </div>
 
             <!-- Why This Matters -->
             <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border-2 border-blue-300 mb-6">
-              <h4 class="font-semibold mb-3 text-blue-900">🔒 Why Data Overwrite Protection is Critical</h4>
+              <h4 class="font-semibold mb-3 text-blue-900">🔒 Why Data Overwrite Protection Matters (When Enabled)</h4>
               <div class="text-sm text-gray-700 space-y-2">
                 <p><strong>Assessment data integrity is paramount.</strong> Once test administrators record student responses and upload PDFs, that data becomes the official record of the child's performance. Any accidental overwrite could:</p>
                 <ul class="list-disc ml-6 space-y-1 mt-2">
@@ -636,7 +653,13 @@ flowchart TD
             </div>
             
             <div class="bg-gradient-to-r from-pink-50 to-red-50 p-6 rounded-lg border-2 border-pink-300 mb-6">
-              <h4 class="font-semibold mb-4 text-center">Conflict Detection Rules</h4>
+              <h4 class="font-semibold mb-4 text-center">Conflict Detection Rules (When Protection is Enabled)</h4>
+              
+              <div class="bg-yellow-50 p-3 rounded border border-yellow-300 mb-4">
+                <p class="text-sm text-gray-700">
+                  ⚠️ <strong>Note:</strong> These rules apply only when <code>enableDataOverwriteProtection</code> is set to <code>true</code>. When disabled, all fields can be overwritten.
+                </p>
+              </div>
               
               <div class="grid md:grid-cols-2 gap-4">
                 <div class="bg-white rounded p-4 shadow-sm border-l-4 border-green-500">
