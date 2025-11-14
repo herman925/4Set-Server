@@ -1567,32 +1567,36 @@ function Invoke-JotformUpsert {
                 $submissionId = $foundSubmission.id
                 Write-Log -Message "Will UPDATE existing submission $submissionId" -Level "INFO" -File $FileName
                 
-                # CRITICAL: Check for data overwrite conflicts BEFORE updating
-                Write-Log -Message "Checking for data overwrite conflicts..." -Level "INFO" -File $FileName
-                $conflictResult = Test-DataOverwriteConflict -NewData $data -ExistingSubmission $foundSubmission -JotformQuestions $JotformQuestions -FileName $FileName
-                
-                if ($conflictResult.HasConflicts) {
-                    # Build detailed conflict message
-                    $conflictDetails = @()
-                    foreach ($conflict in $conflictResult.Conflicts) {
-                        $conflictDetails += "$($conflict.FieldName) (QID $($conflict.QID)): existing='$($conflict.ExistingValue)' → new='$($conflict.NewValue)'"
-                    }
-                    $conflictMessage = "Data overwrite conflict detected ($($conflictResult.ConflictCount) field(s)): " + ($conflictDetails -join "; ")
+                # Check for data overwrite conflicts BEFORE updating (if protection is enabled)
+                if ($script:EnableDataOverwriteProtection) {
+                    Write-Log -Message "Checking for data overwrite conflicts..." -Level "INFO" -File $FileName
+                    $conflictResult = Test-DataOverwriteConflict -NewData $data -ExistingSubmission $foundSubmission -JotformQuestions $JotformQuestions -FileName $FileName
                     
-                    Write-Log -Message $conflictMessage -Level "DATA_OVERWRITE_DIFF" -File $FileName
-                    Write-Log -Message "Update rejected - file will be moved to Unsorted/ for manual review" -Level "WARN" -File $FileName
-                    
-                    # Return failure - this will cause the file to be moved to Unsorted/
-                    return @{ 
-                        Success = $false
-                        Error = "Data overwrite conflict: $($conflictResult.ConflictCount) field(s) would be changed"
-                        ConflictDetails = $conflictDetails
-                        Retryable = $false
-                        OverwriteConflict = $true
+                    if ($conflictResult.HasConflicts) {
+                        # Build detailed conflict message
+                        $conflictDetails = @()
+                        foreach ($conflict in $conflictResult.Conflicts) {
+                            $conflictDetails += "$($conflict.FieldName) (QID $($conflict.QID)): existing='$($conflict.ExistingValue)' → new='$($conflict.NewValue)'"
+                        }
+                        $conflictMessage = "Data overwrite conflict detected ($($conflictResult.ConflictCount) field(s)): " + ($conflictDetails -join "; ")
+                        
+                        Write-Log -Message $conflictMessage -Level "DATA_OVERWRITE_DIFF" -File $FileName
+                        Write-Log -Message "Update rejected - file will be moved to Unsorted/ for manual review" -Level "WARN" -File $FileName
+                        
+                        # Return failure - this will cause the file to be moved to Unsorted/
+                        return @{ 
+                            Success = $false
+                            Error = "Data overwrite conflict: $($conflictResult.ConflictCount) field(s) would be changed"
+                            ConflictDetails = $conflictDetails
+                            Retryable = $false
+                            OverwriteConflict = $true
+                        }
                     }
+                    
+                    Write-Log -Message "No overwrite conflicts detected - proceeding with update" -Level "INFO" -File $FileName
+                } else {
+                    Write-Log -Message "Data overwrite protection disabled - allowing full data overwrite" -Level "INFO" -File $FileName
                 }
-                
-                Write-Log -Message "No overwrite conflicts detected - proceeding with update" -Level "INFO" -File $FileName
                 
                 # Get all fields excluding sessionkey, and filter out nulls
                 $fieldsToUpdate = @()
@@ -2461,6 +2465,10 @@ if ($config.validation -and $config.validation.metadataRetryDelaySeconds) {
 $script:RequireComputerNumber = $true
 if ($config.validation -and $null -ne $config.validation.requireComputerNumber) {
     $script:RequireComputerNumber = [bool]$config.validation.requireComputerNumber
+}
+$script:EnableDataOverwriteProtection = $true
+if ($config.validation -and $null -ne $config.validation.enableDataOverwriteProtection) {
+    $script:EnableDataOverwriteProtection = [bool]$config.validation.enableDataOverwriteProtection
 }
 $pollSeconds = 5
 if ($config.worker -and $config.worker.pollIntervalSeconds) {

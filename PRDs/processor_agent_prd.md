@@ -82,17 +82,21 @@ Define the autonomous Windows-based agent that ingests PDFs from a watched OneDr
 
 4. **Upload Engine**
    - Batch requests to the Jotform proxy with retries/backoff (3 attempts, jitter).
-   - **Data Overwrite Protection**: Before updating existing submissions, validate that no non-exception fields would be overwritten with different values:
-     - **Exception Fields** (allowed to overwrite): `student-id`, `child-name`, `school-id`, `district`, `class-id`, `class-name`, `computerno` (administrative/metadata fields)
-     - **Protected Fields**: All other assessment data fields (ERV, CM, CWR, etc.)
-     - **Conflict Detection**: Compares incoming JSON against existing JotForm submission
+   - **Data Overwrite Protection** (Configurable): Before updating existing submissions, optionally validate that no non-exception fields would be overwritten with different values:
+     - **Configuration**: Controlled via `config/agent.json` → `validation.enableDataOverwriteProtection` (default: `true` for backward compatibility)
+       - When `true`: Enforces data overwrite protection (original behavior)
+       - When `false`: Allows full data overwrites without conflict checks
+     - **Exception Fields** (allowed to overwrite when protection is enabled): `student-id`, `child-name`, `school-id`, `district`, `class-id`, `class-name`, `computerno` (administrative/metadata fields)
+     - **Protected Fields** (when protection is enabled): All other assessment data fields (ERV, CM, CWR, etc.)
+     - **Conflict Detection** (when protection is enabled): Compares incoming JSON against existing JotForm submission
        - ✅ **Allowed**: Inserting data into blank/null fields
        - ✅ **Allowed**: Updating exception fields with any value
        - ✅ **Allowed**: Same value (no change)
        - ❌ **Rejected**: Changing existing non-empty protected field values
-     - **Conflict Handling**: Files with data overwrite conflicts are logged with `DATA_OVERWRITE_DIFF` level and moved to `Unsorted/` for manual review
+     - **Conflict Handling** (when protection is enabled): Files with data overwrite conflicts are logged with `DATA_OVERWRITE_DIFF` level and moved to `Unsorted/` for manual review
+     - **When protection is disabled**: All data updates proceed without conflict validation, allowing full overwrites. Useful for data correction workflows where human operators take responsibility for data integrity.
    - On success, apply filing protocol (implemented in `processor_agent.ps1`) and move original artefacts into the OneDrive hierarchy `...\97 - Project RAW Data\PDF Form Data\{schoolId}` with collision-safe naming; log the `jotformsubmissionid`.
-   - On failure (including overwrite conflicts), relocate files to `PDF Form Data\Unsorted\` with diagnostic JSON and queue remediation telemetry.
+   - On failure (including overwrite conflicts when protection is enabled), relocate files to `PDF Form Data\Unsorted\` with diagnostic JSON and queue remediation telemetry.
    - Instrument each processed file with the host identifier captured at validation time: on Windows read `COMPUTERNAME`; on Synology/container deployments require `agent.json`/environment `hostName` override. Persist the resolved value in telemetry events and include it in the payload posted to the Jotform proxy using the mapped field `computerno` (ID `647`) from `assets/id_mapping/jotformquestions.json`.
 
 6. **Jotform Upload Configuration**

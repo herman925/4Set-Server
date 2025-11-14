@@ -8,7 +8,34 @@
 
 ## Overview
 
-The 4Set Processor Agent includes **Data Overwrite Protection** to prevent accidental corruption of existing assessment data. When a PDF is uploaded for a student who already has data in the system, the agent validates that no existing assessment answers will be overwritten.
+The 4Set Processor Agent includes **Data Overwrite Protection** (configurable) to prevent accidental corruption of existing assessment data. When enabled, if a PDF is uploaded for a student who already has data in the system, the agent validates that no existing assessment answers will be overwritten.
+
+### Configuration
+
+Data overwrite protection can be **enabled or disabled** via the agent configuration file:
+
+**File**: `config/agent.json`  
+**Setting**: `validation.enableDataOverwriteProtection`  
+**Default**: `true` (protection enabled)
+
+```json
+{
+  "validation": {
+    "enableDataOverwriteProtection": true
+  }
+}
+```
+
+- **When `true` (default)**: Files that would overwrite existing assessment data are rejected and moved to `Unsorted/` for manual review
+- **When `false`**: Files are allowed to overwrite existing data without conflict checks (full data overwrite mode)
+
+⚠️ **Important**: Disabling protection should only be done when human operators take full responsibility for data integrity, such as during supervised data correction workflows.
+
+### When This Guide Applies
+
+**This guide applies ONLY when `enableDataOverwriteProtection: true`**
+
+If protection is disabled, PDFs will update JotForm submissions without conflict detection. In that mode, operators must ensure data correctness before uploading.
 
 ### What Gets Protected?
 
@@ -167,7 +194,7 @@ If you need to completely replace the data:
 ### ❌ DON'T:
 - **Don't blindly delete submissions** without verification
 - **Don't ignore conflicts** - they indicate data quality issues
-- **Don't disable the protection** (requires code change anyway)
+- **Don't disable protection without approval** - requires configuration change and should only be done for supervised correction workflows
 - **Don't re-upload the same PDF** repeatedly - it will keep conflicting
 
 ---
@@ -217,10 +244,25 @@ OneDrive/
 ```
 
 ### Configuration
-- Log level can be disabled in `config/jotform_config.json`:
-  ```json
-  "DATA_OVERWRITE_DIFF": false  // To disable conflict logging (not recommended)
-  ```
+Current configuration in `config/agent.json`:
+```json
+{
+  "validation": {
+    "enableDataOverwriteProtection": true  // Set to false to allow full data overwrites
+  }
+}
+```
+
+Log level for conflicts can be controlled in `config/jotform_config.json`:
+```json
+{
+  "logging": {
+    "DATA_OVERWRITE_DIFF": false  // To disable conflict logging (not recommended)
+  }
+}
+```
+
+**Note**: When `enableDataOverwriteProtection` is `false`, conflict detection is completely bypassed and files update submissions directly.
 
 ---
 

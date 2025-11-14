@@ -31,6 +31,8 @@
     "metadataRetries": 5,
     "metadataRetryDelaySeconds": 10,
     "$comment_requireComputerNumber": "When true: Files without PC number metadata are rejected and filed to Unsorted/ without JotForm upload. When false: Files without PC number metadata still proceed to JotForm upload (computer number will be null/empty).",
-    "requireComputerNumber": false
+    "requireComputerNumber": false,
+    "$comment_enableDataOverwriteProtection": "When true: Files that would overwrite existing non-empty assessment data are rejected and moved to Unsorted/ for manual review. When false: Files are allowed to overwrite existing data (full data overwrite mode). Default: true for backward compatibility.",
+    "enableDataOverwriteProtection": true
   }
 }

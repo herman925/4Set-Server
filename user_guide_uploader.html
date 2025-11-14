@@ -550,9 +550,31 @@ flowchart TD
             <!-- Data Overwrite Protection -->
             <h3 class="text-2xl font-semibold mb-4">Data Overwrite Protection</h3>
 
+            <!-- Configuration Note -->
+            <div class="bg-gradient-to-r from-yellow-50 to-amber-50 p-6 rounded-lg border-2 border-yellow-400 mb-6">
+              <h4 class="font-semibold mb-3 text-yellow-900">⚙️ Configurable Feature</h4>
+              <div class="text-sm text-gray-700 space-y-2">
+                <p>Data overwrite protection can be <strong>enabled or disabled</strong> via the agent configuration:</p>
+                <div class="bg-gray-800 text-green-400 p-3 rounded font-mono text-xs mt-2">
+<span class="text-gray-400">// File: config/agent.json</span>
+{
+  "validation": {
+    "enableDataOverwriteProtection": <span class="text-yellow-300">true</span>  <span class="text-gray-400">// Default: enabled</span>
+  }
+}</div>
+                <ul class="mt-3 space-y-1">
+                  <li>✅ <strong>When <code class="bg-gray-200 px-1 rounded">true</code> (default):</strong> Protection is enforced - conflicts block uploads</li>
+                  <li>⚠️ <strong>When <code class="bg-gray-200 px-1 rounded">false</code>:</strong> Protection is disabled - allows full data overwrites without checks</li>
+                </ul>
+                <p class="mt-3 text-xs text-gray-600 italic">
+                  <strong>Note:</strong> Disabling protection should only be done during supervised data correction workflows where human operators take full responsibility for data integrity. The sections below describe behavior when protection is <strong>enabled</strong> (default).
+                </p>
+              </div>
+            </div>
+
             <!-- Why This Matters -->
             <div class="bg-gradient-to-r from-blue-50 to-indigo-50 p-6 rounded-lg border-2 border-blue-300 mb-6">
-              <h4 class="font-semibold mb-3 text-blue-900">🔒 Why Data Overwrite Protection is Critical</h4>
+              <h4 class="font-semibold mb-3 text-blue-900">🔒 Why Data Overwrite Protection is Critical (When Enabled)</h4>
               <div class="text-sm text-gray-700 space-y-2">
                 <p><strong>Assessment data integrity is paramount.</strong> Once test administrators record student responses and upload PDFs, that data becomes the official record of the child's performance. Any accidental overwrite could:</p>
                 <ul class="list-disc ml-6 space-y-1 mt-2">
@@ -676,7 +698,10 @@ flowchart TD
               
               <div class="mt-4 p-3 bg-yellow-50 border border-yellow-300 rounded text-center">
                 <p class="text-sm text-gray-800">
-                  <strong>🛡️ Protection Goal:</strong> Prevent accidental data corruption while allowing metadata corrections
+                  <strong>🛡️ Protection Goal (When Enabled):</strong> Prevent accidental data corruption while allowing metadata corrections
+                </p>
+                <p class="text-xs text-gray-600 mt-1">
+                  This protection can be disabled via <code class="bg-gray-200 px-1 rounded">config/agent.json</code> for supervised correction workflows
                 </p>
               </div>
             </div>
