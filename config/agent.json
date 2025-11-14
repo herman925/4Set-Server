@@ -35,6 +35,6 @@
   },
   "dataProtection": {
     "$comment_enableDataOverwriteProtection": "When true: Prevents overwriting existing non-empty assessment data fields during updates (DATA_OVERWRITE_DIFF conflicts). When false: Allows full data overwrites during processor agent uploads to JotForm. Exception fields (student-id, child-name, school-id, district, class-id, class-name, computerno) are always allowed to be overwritten regardless of this setting.",
-    "enableDataOverwriteProtection": true
+    "enableDataOverwriteProtection": false
   }
 }
