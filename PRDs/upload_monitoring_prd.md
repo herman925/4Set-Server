@@ -12,7 +12,8 @@ Defines how the processor agent handles Jotform upload failures with retry logic
 ## Overview
 
 The processor agent implements a robust upload pipeline with automatic retry logic and clear failure handling. Monitoring is achieved through:
-- **CSV Logs** - Single source of truth for all events (errors, retries, successes)
+- **CSV Logs** - Canonical on-disk audit trail for all events (errors, retries, successes), written as `YYYYMMDD_processing_agent.csv`
+- **Supabase Log Mirror** (optional) - Central, queryable mirror of the same log entries in `public.pdf_upload_log` (per-entry rows), populated best-effort by the processor agent when Supabase credentials are present
 - **Unsorted Folder** - Automatic filing destination for failed uploads
 - **Optional Dashboard** - Future enhancement for visual monitoring
 
@@ -21,7 +22,7 @@ The processor agent implements a robust upload pipeline with automatic retry log
 Jotform upload may fail for various reasons (network issues, API downtime, rate limiting). The system handles this by:
 
 1. ✅ **Retry** uploads with exponential backoff (3 attempts)
-2. ✅ **Log failures** as `REJECT`/`ERROR` entries in CSV logs (configurable per level)
+2. ✅ **Log failures** as `REJECT`/`ERROR` entries in CSV logs (configurable per level) and, when configured, mirror the same entries into Supabase `public.pdf_upload_log` for central querying
 3. ✅ **File to Unsorted** folder for easy identification
 4. ⚙️ **Configurable Logging** via `config/jotform_config.json`
 5. ⏳ **Optional Dashboard** for visual monitoring (future enhancement)

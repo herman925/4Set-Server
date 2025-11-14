@@ -6,16 +6,22 @@
 
 ## Table of Contents
 
-1. [Executive Summary](#executive-summary)
-2. [Purpose and Scope](#purpose-and-scope)
-3. [System Architecture](#system-architecture)
-4. [Functional Requirements](#functional-requirements)
-5. [Technical Specifications](#technical-specifications)
-6. [Configuration Guide](#configuration-guide)
-7. [Operational Workflows](#operational-workflows)
-8. [Monitoring and Maintenance](#monitoring-and-maintenance)
-9. [Troubleshooting](#troubleshooting)
-10. [Security Considerations](#security-considerations)
+- [4Set Processor Agent - Comprehensive PRD](#4set-processor-agent---comprehensive-prd)
+  - [Table of Contents](#table-of-contents)
+  - [Executive Summary](#executive-summary)
+    - [Key Capabilities](#key-capabilities)
+    - [Processing Statistics](#processing-statistics)
+  - [Purpose and Scope](#purpose-and-scope)
+  - [Goals](#goals)
+  - [System Context](#system-context)
+  - [Functional Requirements](#functional-requirements)
+  - [Non-Functional Requirements](#non-functional-requirements)
+  - [Operational Workflow](#operational-workflow)
+  - [Credential Storage \& Secrets](#credential-storage--secrets)
+  - [Host Design Considerations](#host-design-considerations)
+    - [Optional Enhancements (Future)](#optional-enhancements-future)
+  - [Monitoring \& Alerts](#monitoring--alerts)
+  - [Open Questions](#open-questions)
 
 ---
 
@@ -122,7 +128,11 @@ Define the autonomous Windows-based agent that ingests PDFs from a watched OneDr
      - Health information (last successful run, service uptime, OneDrive sync status).
    - **Alternative for static hosting (GitHub Pages)**: Write `status/upload_status.json` every 60 seconds with aggregated upload statistics, failures, and pending retries. File can be synced via OneDrive and served as static JSON.
    - Persist daily CSV audit logs named `YYYYMMDD_processing_agent.csv`, rotating automatically at midnight while retaining prior files for historical analysis. Each row captures `Timestamp, Level, File, Message` to tie telemetry back to individual PDFs.
-   - See `PRDs/upload_monitoring_prd.md` for detailed upload failure detection, retry logic, and dashboard integration options.
+   - Mirror each log entry to a central Supabase table (when configured) to enable cross-day, cross-host queries:
+     - Table: `public.pdf_upload_log` (see `AGENTS.md` for schema details).
+     - Payload per entry: `timestamp`, `level`, `file`, `message`, `host_name`, optional `sessionkey`.
+     - Supabase logging is **best-effort** and non-blocking; failures never interrupt processing.
+   - See `PRDs/upload_monitoring_prd.md` for detailed upload failure detection, retry logic, and dashboard/log integration options.
 
 ## Non-Functional Requirements
 - **Reliability**: Recover gracefully on restart by replaying the processing queue and resuming unfinished files.
@@ -166,10 +176,12 @@ Define the autonomous Windows-based agent that ingests PDFs from a watched OneDr
   - Store the bundle's master decryption key in Windows Credential Manager (Generic Credential) under the service account; agent retrieves it via GUID at startup and unlocks `credentials.enc` in-memory.
   - Bundle payload (AES-256-GCM + PBKDF2 as derived in the agent) must include:
     - `supabaseUrl`
-    - `supabaseKey` (publishable key)
+    - `supabaseKey` (publishable/anon key for browser clients)
+    - `supabaseServiceKey` (service role key for processor agent Supabase writes)
+    - `supabaseUploadLogTable` (e.g., `pdf_upload_log` for processor log mirror)
     - `supabaseProjectId`
-    - `supabaseTable`
-    - `uploadTable`
+    - `supabaseTable` (Qualtrics credentials table)
+    - `uploadTable` (Qualtrics uploads table)
     - `qualtricsDatacenter`
     - `qualtricsSurveyId`
     - `systemPassword` (passphrase used to decrypt survey mappings)

@@ -157,6 +157,10 @@ function Get-OneDriveBasePath {
 # Get-ComputerNumber function removed - computer number now comes from web upload metadata
 
 $script:AgentSecrets = $null
+$script:SupabaseUrl = $null
+$script:SupabaseServiceKey = $null
+$script:SupabaseLogTable = $null
+$script:HostName = [Environment]::MachineName
 
 function Convert-SecureStringToPlainText {
     param([System.Security.SecureString]$SecureString)
@@ -238,6 +242,7 @@ function Write-Log {
             $streamWriter.Flush()
             $streamWriter.Close()
             $fileStream.Close()
+            Write-SupabaseLog -Timestamp $timestamp -Level $Level -File $File -Message $cleanMessage
             break  # Success, exit retry loop
         }
         catch {
@@ -2517,6 +2522,18 @@ if (-not (Test-Path $script:QueueManifestPath)) {
 }
 
 $script:AgentSecrets = Load-AgentSecrets -SecretsPath (Join-Path $rootDirectory "assets/credentials.enc") -KeyIdentifier "4set-processor-master"
+if ($script:AgentSecrets -and $script:AgentSecrets.Bundle) {
+    $bundle = $script:AgentSecrets.Bundle
+    if ($bundle.supabaseUrl) {
+        $script:SupabaseUrl = $bundle.supabaseUrl
+    }
+    if ($bundle.supabaseServiceKey) {
+        $script:SupabaseServiceKey = $bundle.supabaseServiceKey
+    }
+    if ($bundle.supabaseUploadLogTable) {
+        $script:SupabaseLogTable = $bundle.supabaseUploadLogTable
+    }
+}
 
 # Load Jotform and Logging configuration
 $jotformConfigPath = Join-Path $rootDirectory "config/jotform_config.json"

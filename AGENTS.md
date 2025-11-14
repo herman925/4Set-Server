@@ -326,6 +326,126 @@ When reviewing logs, watch for:
 
 ---
 
+### Supabase-Backed Log Mirror
+
+**Discovered:** November 14, 2025  
+**Severity:** MEDIUM - Operational observability enhancement (dual log sinks)  
+**Status:** ✅ IMPLEMENTED
+
+#### Problem
+CSV log files are:
+- Stored **locally per day** (`logs/YYYYMMDD_processing_agent.csv`)
+- Easy for Excel / local inspection, but
+- Hard to query across days, machines, or deployments.
+
+We needed a **central, queryable log store** to support:
+- Remote monitoring
+- Cross-day investigations
+- Future dashboards without introducing more moving parts to the agent.
+
+#### Solution
+Mirror every `Write-Log` entry to **Supabase** while keeping CSV as the primary on-disk log.
+
+1. **Dual-sink logging in `processor_agent.ps1`**
+   - `Write-Log` still writes CSV rows:
+     - `Timestamp,Level,File,Message`
+   - After each successful file write, it calls `Write-SupabaseLog` with the same fields.
+
+2. **Supabase helper (`Write-SupabaseLog`)**
+   - Uses values loaded from `assets/credentials.enc` via `Load-AgentSecrets`:
+     - `supabaseUrl`
+     - `supabaseServiceKey` (service role key, server-side only)
+     - `supabaseUploadLogTable` (currently `pdf_upload_log`)
+   - Sends a POST to Supabase REST API:
+     - URL: `supabaseUrl/rest/v1/pdf_upload_log`
+     - Headers: `apikey` + `Authorization: Bearer <serviceKey>`
+     - Body (per log entry):
+       - `timestamp` – ISO string, same as CSV `Timestamp`
+       - `level` – log level (`INFO`, `WARN`, `ERROR`, `REJECT`, `UPLOAD`, `FILED`, ...)
+       - `file` – filename / sessionkey source (same as CSV `File`)
+       - `message` – sanitized log message (same as CSV `Message`)
+       - `host_name` – `[Environment]::MachineName`
+       - `sessionkey` – currently populated with the `file` value for quick correlation
+   - Best-effort only:
+     - If Supabase is misconfigured or offline, the helper silently returns after a failed HTTP call.
+     - **Failure to log to Supabase never affects PDF processing.**
+
+3. **Supabase table schema (`public.pdf_upload_log`)**
+
+```sql
+create table public.pdf_upload_log (
+  jotformsubmissionid text null,
+  sessionkey          text null,
+  uploaded_at         timestamptz null,
+  computername        text null,
+  "timestamp"        timestamptz null default timezone('Asia/Singapore', now()),
+  level               text null,
+  file                text null,
+  message             text null,
+  host_name           text null,
+  extra               jsonb null,
+  id                  bigserial not null,
+  constraint pdf_upload_log_pkey primary key (id)
+);
+
+create index if not exists idx_pdf_upload_log_timestamp on public.pdf_upload_log ("timestamp" desc);
+create index if not exists idx_pdf_upload_log_level     on public.pdf_upload_log (level);
+create index if not exists idx_pdf_upload_log_file      on public.pdf_upload_log (file);
+```
+
+**Key points:**
+- One row **per log entry** (mirrors CSV semantics).
+- Primary key is `id` (surrogate key) to allow multiple rows per file/sessionkey.
+- Columns used today:
+  - Agent writes: `timestamp`, `level`, `file`, `message`, `host_name`, `sessionkey`.
+  - `log.html` (Supabase mode) reads: `timestamp`, `level`, `file`, `message`.
+- Remaining fields (`jotformsubmissionid`, `uploaded_at`, `computername`, `extra`) are reserved for future enrichment.
+
+4. **Frontend config and source switch (`log.html`)**
+
+`log.html` can now read logs from either **local CSVs** or **Supabase**, controlled via `config/log_check_config.json`:
+
+```json
+{
+  "$comment_logSource": "Valid values: 'local' (read CSV logs from logDirectory) or 'supabase' (read logs from Supabase pdf_upload_log)",
+  "logSource": "local",
+  "supabase": {
+    "url": "https://<project>.supabase.co",
+    "anonKey": "<ANON_PUBLIC_KEY>",
+    "uploadLogTable": "pdf_upload_log",
+    "scanDays": 90
+  }
+}
+```
+
+- **`logSource`:**
+  - `"local"` (default):
+    - Calendar and log table load from daily CSV files in `logDirectory`.
+    - Existing proxy / File System Access API behaviours unchanged.
+  - `"supabase"`:
+    - Calendar builds available days from Supabase by scanning `timestamp` over the last `scanDays`.
+    - For a selected date, `log.html` queries:
+      - `select=timestamp,level,file,message`
+      - `timestamp` between **00:00–24:00** local (converted via ISO range).
+    - Results are mapped to the same in-memory structure used for CSV logs, so filtering/stats UI is identical.
+- **Keys:**
+  - `supabase.anonKey` is the **anon public key**, safe for browser use under RLS.
+  - The **service key** used by the agent is **only** stored in `credentials.enc` and never exposed in static assets.
+
+#### Benefits
+- ✅ Centralised, queryable log history without losing local CSV convenience.
+- ✅ No behavioural change for existing CSV-based workflows (`logSource = "local"`).
+- ✅ Low risk: Supabase logging is optional and non-blocking.
+- ✅ Future-ready: extra columns allow per-file summary or JotForm linkage without schema changes.
+
+#### Related Files
+- `processor_agent.ps1` – `Write-Log` and `Write-SupabaseLog` implementations
+- `assets/credentials.enc` – encrypted bundle containing `supabaseUrl`, `supabaseUploadLogTable`, `supabaseServiceKey`
+- `config/log_check_config.json` – log source switch and Supabase anon key for frontend
+- `log.html` – calendar + log viewer with local/Supabase source selection
+
+---
+
 ### PowerShell Parallel Processing Overhead Issue
 
 **Discovered:** November 7, 2025  
