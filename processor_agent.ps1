@@ -259,6 +259,87 @@ function Write-Log {
     }
 }
 
+function Write-SupabaseLog {
+    <#
+    .SYNOPSIS
+    Writes log entries to Supabase (conditional on enableSupabaseLogging config)
+    
+    .DESCRIPTION
+    Uploads log entries to Supabase pdf_upload_log table if enabled in config/log_check_config.json.
+    Silently skips if disabled or if Supabase credentials are not configured.
+    
+    .PARAMETER Timestamp
+    ISO 8601 timestamp
+    
+    .PARAMETER Level
+    Log level (INFO, WARN, ERROR, etc.)
+    
+    .PARAMETER File
+    PDF filename being processed
+    
+    .PARAMETER Message
+    Log message content
+    #>
+    param(
+        [string]$Timestamp,
+        [string]$Level,
+        [string]$File,
+        [string]$Message
+    )
+    
+    # Check if Supabase logging is enabled in config
+    $logCheckConfigPath = Join-Path $PSScriptRoot "config/log_check_config.json"
+    $supabaseEnabled = $true  # Default to true for backward compatibility
+    
+    if (Test-Path $logCheckConfigPath) {
+        try {
+            $logCheckConfig = Get-Content $logCheckConfigPath -Raw | ConvertFrom-Json
+            if ($logCheckConfig.PSObject.Properties['enableSupabaseLogging']) {
+                $supabaseEnabled = $logCheckConfig.enableSupabaseLogging
+            }
+        } catch {
+            # Silently continue if config can't be read
+        }
+    }
+    
+    # Exit early if disabled
+    if (-not $supabaseEnabled) {
+        return
+    }
+    
+    # Exit early if required variables not set
+    if (-not $script:SupabaseUrl -or -not $script:SupabaseServiceKey -or -not $script:SupabaseLogTable) {
+        return
+    }
+    
+    try {
+        # Prepare log entry for Supabase
+        $logEntry = @{
+            timestamp = $Timestamp
+            level = $Level
+            file = $File
+            message = $Message
+            hostname = $script:HostName
+        }
+        
+        $headers = @{
+            "apikey" = $script:SupabaseServiceKey
+            "Authorization" = "Bearer $script:SupabaseServiceKey"
+            "Content-Type" = "application/json"
+            "Prefer" = "return=minimal"
+        }
+        
+        $body = $logEntry | ConvertTo-Json -Compress
+        $url = "$script:SupabaseUrl/rest/v1/$script:SupabaseLogTable"
+        
+        # Fire and forget - don't wait for response or handle errors
+        # Use -TimeoutSec 2 to avoid blocking too long
+        Invoke-RestMethod -Uri $url -Method Post -Headers $headers -Body $body -TimeoutSec 2 -ErrorAction SilentlyContinue | Out-Null
+    } catch {
+        # Silently ignore any Supabase upload errors to avoid impacting main processing
+    }
+}
+
 function Get-MasterKeyFromCredentialManager {
     param([string]$Target)
 
@@ -2205,44 +2286,67 @@ function Process-IncomingFile {
     
     try {
         # Read and cleanup metadata file BEFORE moving PDF to staging
-        # Retry mechanism for slow OneDrive sync: Wait for .meta.json to appear
+        # When RequireComputerNumber is enabled, use a retry mechanism for slow OneDrive sync.
+        # When it is disabled, perform a single immediate check with no waiting.
         $uploadComputerNo = $null
         $metadataFile = [System.IO.Path]::ChangeExtension($Path, '.meta.json')
         $metadataFound = $false
         $maxRetries = $script:MetadataRetries
         $retryDelaySeconds = $script:MetadataRetryDelay
-        
-        # Try to find metadata file with retries
-        for ($attempt = 1; $attempt -le $maxRetries; $attempt++) {
+
+        if ($script:RequireComputerNumber) {
+            # Try to find metadata file with retries (enforcement enabled)
+            for ($attempt = 1; $attempt -le $maxRetries; $attempt++) {
+                if (Test-Path $metadataFile) {
+                    $metadataFound = $true
+                    try {
+                        $metadata = Get-Content -Path $metadataFile -Raw | ConvertFrom-Json
+                        if ($metadata.uploadedFrom) {
+                            $uploadComputerNo = $metadata.uploadedFrom
+                            Write-Log -Message "Read computer number from metadata: $uploadComputerNo" -Level "INFO" -File $fileName
+                        }
+                        # Delete metadata file immediately after reading
+                        Remove-Item -Path $metadataFile -Force -ErrorAction Stop
+                        Write-Log -Message "Cleaned up metadata file from incoming folder" -Level "INFO" -File $fileName
+                    } catch {
+                        Write-Log -Message "Failed to read/remove metadata file: $($_.Exception.Message)" -Level "WARN" -File $fileName
+                        # Try to delete anyway
+                        try { Remove-Item -Path $metadataFile -Force -ErrorAction SilentlyContinue } catch { }
+                    }
+                    break  # Found and processed, exit retry loop
+                } else {
+                    # Metadata file not found yet
+                    if ($attempt -lt $maxRetries) {
+                        Write-Log -Message "Metadata file not found (attempt $attempt/$maxRetries), waiting ${retryDelaySeconds}s for OneDrive sync..." -Level "INFO" -File $fileName
+                        Start-Sleep -Seconds $retryDelaySeconds
+                    } else {
+                        Write-Log -Message "Metadata file not found after $maxRetries attempts - proceeding without computer number" -Level "WARN" -File $fileName
+                    }
+                }
+            }
+        } else {
+            # Enforcement disabled: single immediate check, no waiting/retries
             if (Test-Path $metadataFile) {
                 $metadataFound = $true
                 try {
                     $metadata = Get-Content -Path $metadataFile -Raw | ConvertFrom-Json
                     if ($metadata.uploadedFrom) {
                         $uploadComputerNo = $metadata.uploadedFrom
-                        Write-Log -Message "Read computer number from metadata: $uploadComputerNo" -Level "INFO" -File $fileName
+                        Write-Log -Message "Read computer number from metadata (enforcement disabled): $uploadComputerNo" -Level "INFO" -File $fileName
                     }
-                    # Delete metadata file immediately after reading
                     Remove-Item -Path $metadataFile -Force -ErrorAction Stop
-                    Write-Log -Message "Cleaned up metadata file from incoming folder" -Level "INFO" -File $fileName
+                    Write-Log -Message "Cleaned up metadata file from incoming folder (enforcement disabled)" -Level "INFO" -File $fileName
                 } catch {
-                    Write-Log -Message "Failed to read/remove metadata file: $($_.Exception.Message)" -Level "WARN" -File $fileName
-                    # Try to delete anyway
+                    Write-Log -Message "Failed to read/remove metadata file (enforcement disabled): $($_.Exception.Message)" -Level "WARN" -File $fileName
                     try { Remove-Item -Path $metadataFile -Force -ErrorAction SilentlyContinue } catch { }
                 }
-                break  # Found and processed, exit retry loop
             } else {
-                # Metadata file not found yet
-                if ($attempt -lt $maxRetries) {
-                    Write-Log -Message "Metadata file not found (attempt $attempt/$maxRetries), waiting ${retryDelaySeconds}s for OneDrive sync..." -Level "INFO" -File $fileName
-                    Start-Sleep -Seconds $retryDelaySeconds
-                } else {
-                    Write-Log -Message "Metadata file not found after $maxRetries attempts - proceeding without computer number" -Level "WARN" -File $fileName
-                }
+                # No metadata present; proceed without logging verbose wait messages
+                Write-Log -Message "Metadata file not found - proceeding without computer number (enforcement disabled, no wait)." -Level "WARN" -File $fileName
             }
         }
-        
-        # If metadata was never found after all retries, mark for special handling
+
+        # If metadata was never found, mark for special handling
         $missingMetadata = -not $metadataFound
         
         $stagingTarget = Ensure-UniquePath -Directory $script:StagingPath -FileName $fileName
@@ -2288,7 +2392,7 @@ function Process-IncomingFile {
             Write-Log -Message ("Renamed {0} → {1}" -f $originalName, $fileName) -Level "RENAME" -File $fileName
         }
 
-        # Check if metadata was missing after retries
+        # Check if metadata was missing after retries / immediate check
         if ($missingMetadata) {
             if ($script:RequireComputerNumber) {
                 # Enforcement enabled - reject and file to Unsorted without upload
@@ -2299,8 +2403,7 @@ function Process-IncomingFile {
                 Remove-ManifestEntry -Path $script:QueueManifestPath -Id $fileName
                 return
             } else {
-                # Enforcement disabled - proceed with upload but log warning
-                Write-Log -Message "metadata_not_found: Computer number metadata file not found after $maxRetries retry attempts (proceeding without computer number - enforcement disabled)" -Level "WARN" -File $fileName
+                # Enforcement disabled - proceed with upload; warning already logged above if needed
                 # Continue processing - uploadComputerNo will be null/empty
             }
         }

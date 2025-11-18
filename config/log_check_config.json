@@ -1,6 +1,8 @@
 {
   "$comment_logSource": "Valid values: 'local' (read CSV logs from logDirectory) or 'supabase' (read logs from Supabase pdf_upload_log)",
   "logSource": "local",
+  "$comment_enableSupabaseLogging": "Set to false to completely disable writing logs to Supabase (processor_agent.ps1). Set to true to enable live Supabase log uploads.",
+  "enableSupabaseLogging": false,
   "supabase": {
     "url": "https://pscoohsotnsvkdfeksug.supabase.co",
     "anonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBzY29vaHNvdG5zdmtkZmVrc3VnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM3NDI3NDQsImV4cCI6MjA2OTMxODc0NH0.Il15n8VH-lonPnezxyTyl5NRqchezgOtwtMym6cgjCo",

@@ -28,8 +28,8 @@
   "validation": {
     "debounceWindowSeconds": 15,
     "sizeDriftBytes": 1024,
-    "metadataRetries": 5,
-    "metadataRetryDelaySeconds": 10,
+    "metadataRetries": 3,
+    "metadataRetryDelaySeconds": 5,
     "$comment_requireComputerNumber": "When true: Files without PC number metadata are rejected and filed to Unsorted/ without JotForm upload. When false: Files without PC number metadata still proceed to JotForm upload (computer number will be null/empty).",
     "requireComputerNumber": false
   },

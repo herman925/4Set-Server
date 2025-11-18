@@ -69,9 +69,12 @@ The 4Set System is a comprehensive web-based assessment data processing pipeline
 - **Data Enrichment**: Adds sessionkey, computerno, child-name, class-id
 - **Termination Calculation**: Applies threshold rules (ERV, CM, CWR, FM)
 - **Computer Number Enforcement**: Configurable requirement for PC tracking
-  - Retries metadata file with OneDrive sync delay tolerance (5 attempts, 10s intervals)
-  - Enforcement ON: Reject files without PC number → file to Unsorted/
-  - Enforcement OFF: Proceed to JotForm upload without PC number
+  - When enforcement **ON** (`validation.requireComputerNumber = true`):
+    - Agent retries the metadata file with OneDrive sync delay tolerance (configurable attempts/delay).
+    - After all retries, files without PC number are rejected and filed to `Unsorted/` without JotForm upload.
+  - When enforcement **OFF** (`validation.requireComputerNumber = false`):
+    - Agent performs a **single immediate metadata check only** (no wait/retry loop).
+    - If metadata is missing, it proceeds to JotForm upload without computer number and logs a single warning.
   - Toggle via `config/agent.json` → `validation.requireComputerNumber`
 - **Data Overwrite Protection** (Optional - Configurable): Prevents accidental data corruption on re-uploads
   - Can be enabled/disabled via `config/agent.json` → `dataProtection.enableDataOverwriteProtection` (default: `true`)
@@ -424,9 +427,11 @@ create index if not exists idx_pdf_upload_log_file      on public.pdf_upload_log
     - Existing proxy / File System Access API behaviours unchanged.
   - `"supabase"`:
     - Calendar builds available days from Supabase by scanning `timestamp` over the last `scanDays`.
+    - **Calendar day calculation:** the log viewer derives the day from the raw `timestamp` string (`YYYY-MM-DD` portion) before falling back to JS `Date` parsing, to avoid timezone conversions shifting entries to the wrong calendar day.
     - For a selected date, `log.html` queries:
       - `select=timestamp,level,file,message`
       - `timestamp` between **00:00–24:00** local (converted via ISO range).
+      - Uses paging with `limit`/`offset` (1000 rows per request) to work around the Supabase REST API's per-request max row limit and ensure all logs for that day are loaded into the viewer.
     - Results are mapped to the same in-memory structure used for CSV logs, so filtering/stats UI is identical.
 - **Keys:**
   - `supabase.anonKey` is the **anon public key**, safe for browser use under RLS.
