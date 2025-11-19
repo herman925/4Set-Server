@@ -443,6 +443,9 @@ create index if not exists idx_pdf_upload_log_file      on public.pdf_upload_log
 - ✅ Low risk: Supabase logging is optional and non-blocking.
 - ✅ Future-ready: extra columns allow per-file summary or JotForm linkage without schema changes.
 
+#### 2025-11-19 Update
+- `TEMP/supabase_log_upload_test.ps1` now uses `System.UriBuilder` for Supabase duplicate-cleanup queries (`select=` fetch + `id=in(...)` deletes) to eliminate malformed-host errors encountered when appending query strings manually.
+
 #### Related Files
 - `processor_agent.ps1` – `Write-Log` and `Write-SupabaseLog` implementations
 - `assets/credentials.enc` – encrypted bundle containing `supabaseUrl`, `supabaseUploadLogTable`, `supabaseServiceKey`
