@@ -23,7 +23,6 @@
 
     // Clear old/invalid cache
     if (appData && (!appData.credentials || appData.version !== '1.4')) {
-      console.log('Cache outdated or missing credentials, clearing...');
       sessionStorage.removeItem('checking_system_data');
       appData = null;
     }
@@ -179,10 +178,6 @@
 
     // Update system health badge
     updateSystemHealthBadge();
-
-    // Show success message
-    console.log('Checking System initialized successfully');
-    console.log(`Loaded: ${appData.metadata.recordCounts.schools} schools, ${appData.metadata.recordCounts.classes} classes, ${appData.metadata.recordCounts.students} students`);
   }
 
   /**

@@ -13,9 +13,10 @@
   let surveyStructure = null;
   let taskToSetMap = new Map();
   let currentViewMode = 'class'; // 'class' or 'student'
-  let currentStudentViewMode = 'set'; // 'set' or 'task' (only used when currentViewMode is 'student')
+  let currentStudentViewMode = 'set'; // 'set', 'task', or 'missing' (only used when currentViewMode is 'student')
   let systemConfig = null; // Checking system config for column names
   let studentSubmissionData = new Map(); // coreId -> { submissions: [], setStatus: {}, outstanding: 0 }
+  let jotformQuestions = null; // JotForm field name to QID mapping
 
   /**
    * Load system configuration
@@ -26,7 +27,6 @@
     try {
       const response = await fetch('config/checking_system_config.json');
       systemConfig = await response.json();
-      console.log('[SchoolPage] System config loaded');
       return systemConfig;
     } catch (error) {
       console.error('[SchoolPage] Failed to load system config:', error);
@@ -36,11 +36,67 @@
   }
 
   /**
+   * Load JotForm questions mapping (field name -> QID)
+   */
+  async function loadJotformQuestions() {
+    if (jotformQuestions) return jotformQuestions;
+    
+    try {
+      const response = await fetch('assets/jotformquestions.json');
+      jotformQuestions = await response.json();
+      return jotformQuestions;
+    } catch (error) {
+      console.error('[SchoolPage] Failed to load JotForm questions:', error);
+      jotformQuestions = {};
+      return jotformQuestions;
+    }
+  }
+
+  /**
+   * Get E-Prime completion status for a student
+   * Returns { completed: number, total: number, tasks: Array<{id, name, done}> }
+   */
+  function getEPrimeStatus(studentData) {
+    const eprimeTasks = systemConfig?.eprime?.tasks || [];
+    const total = eprimeTasks.length;
+    
+    if (!studentData?.validationCache?.mergedAnswers || !jotformQuestions) {
+      return { completed: 0, total, tasks: eprimeTasks.map(t => ({ ...t, done: false })) };
+    }
+    
+    const mergedAnswers = studentData.validationCache.mergedAnswers;
+    let completed = 0;
+    const tasks = [];
+    
+    for (const task of eprimeTasks) {
+      const qid = jotformQuestions[task.doneField];
+      // mergedAnswers stores objects: { name: "EPrime_NL_Done", answer: "1" }
+      const answerObj = mergedAnswers[task.doneField] || (qid ? mergedAnswers[`q${qid}`] : null);
+      const value = answerObj?.answer || answerObj; // Handle both object and raw value formats
+      const done = value === '1' || value === 1 || value === true || value === 'true';
+      
+      if (done) completed++;
+      tasks.push({ ...task, done });
+    }
+    
+    return { completed, total, tasks };
+  }
+
+  /**
+   * Get E-Prime status color based on completion
+   * Green = 7/7, Red = 1-6/7, Grey = 0/7
+   */
+  function getEPrimeStatusColor(eprimeStatus) {
+    if (!eprimeStatus || eprimeStatus.total === 0) return 'grey';
+    if (eprimeStatus.completed === eprimeStatus.total) return 'green';
+    if (eprimeStatus.completed > 0) return 'red';
+    return 'grey';
+  }
+
+  /**
    * Initialize the page
    */
   async function init() {
-    console.log('[SchoolPage] Initializing...');
-    
     // Get schoolId from URL
     const urlParams = new URLSearchParams(window.location.search);
     const schoolId = urlParams.get('schoolId');
@@ -51,8 +107,9 @@
       return;
     }
 
-    // Load system config
+    // Load system config and JotForm questions mapping
     await loadSystemConfig();
+    await loadJotformQuestions();
 
     // Load cached data
     cachedData = window.CheckingSystemData?.getCachedData();
@@ -90,17 +147,6 @@
     // Count valid classes (excluding 無班級 placeholder classes)
     const validClasses = classes.filter(c => !c.actualClassName.includes('無班級'));
     
-    // Debug: Check if there are K1 students without a 無班級 (K1) class
-    const k1StudentsInUnclassified = students.filter(s => {
-      const cls = classes.find(c => c.classId === s.classId);
-      return cls && cls.actualClassName.includes('無班級') && cls.grade === 1;
-    });
-    
-    console.log(`[SchoolPage] Found ${validClasses.length} valid classes (${classes.length} total), ${students.length} unique students (${allStudentRecords.length} total records)`);
-    if (k1StudentsInUnclassified.length === 0) {
-      console.log(`[SchoolPage] Note: No K1 students in 無班級 classes - this school may not have unclassified K1 students`);
-    }
-
     // Load survey structure
     await loadSurveyStructure();
 
@@ -119,7 +165,6 @@
     // Set up automatic section state tracking
     if (window.CheckingSystemPreferences) {
       window.CheckingSystemPreferences.autoTrackSectionStates(schoolId);
-      console.log('[SchoolPage] Enabled section state tracking');
     }
 
     lucide.createIcons();
@@ -127,11 +172,26 @@
 
   /**
    * Load survey structure and build task-to-set mapping
+   * Filters out hidden tasks from systemConfig.hiddenTasks
    */
   async function loadSurveyStructure() {
     try {
       const response = await fetch('assets/tasks/survey-structure.json');
       surveyStructure = await response.json();
+      
+      // Get hidden tasks from config (case-insensitive)
+      const hiddenTasks = (systemConfig?.hiddenTasks || []).map(t => t.toLowerCase());
+      
+      // Filter out hidden tasks from survey structure
+      if (hiddenTasks.length > 0) {
+        surveyStructure.sets = surveyStructure.sets.map(set => ({
+          ...set,
+          sections: set.sections.filter(section => {
+            const taskName = section.file.replace('.json', '').toLowerCase();
+            return !hiddenTasks.includes(taskName);
+          })
+        }));
+      }
       
       // Build task-to-set mapping
       surveyStructure.sets.forEach(set => {
@@ -151,8 +211,6 @@
       });
       
       taskToSetMap.set('nonsym', 'set1');
-      
-      console.log('[SchoolPage] Task-to-set mapping loaded:', taskToSetMap.size, 'tasks');
     } catch (error) {
       console.error('[SchoolPage] Failed to load survey structure:', error);
       throw error;
@@ -164,13 +222,10 @@
    */
   async function fetchAndAggregateData() {
     if (!window.JotFormCache) {
-      console.warn('[SchoolPage] JotForm cache not available');
       return;
     }
 
     try {
-      console.log('[SchoolPage] Building validation cache for all students...');
-      
       // VALIDATION ARCHITECTURE NOTE:
       // The school page uses JotFormCache.buildStudentValidationCache() which internally
       // calls TaskValidator.validateAllTasks() for each student. This ensures that
@@ -185,8 +240,10 @@
       //
       // School-level metrics are then aggregated by class from these individual
       // student validations, ensuring consistency across all hierarchical levels.
+      // Pass ALL student records (not deduplicated) to get separate validation for each grade
+      // This ensures K1, K2, K3 records for the same student are validated independently
       const validationCache = await window.JotFormCache.buildStudentValidationCache(
-        students,
+        allStudentRecords,
         surveyStructure,
         {
           formId: cachedData.credentials?.jotformFormId,
@@ -194,16 +251,15 @@
         }
       );
       
-      console.log(`[SchoolPage] Validation cache built for ${validationCache.size} students`);
-      
       // Store student submission data for By Student view
-      for (const [coreId, cache] of validationCache.entries()) {
+      // Cache now uses composite keys (coreId_grade) for grade-aware lookups
+      for (const [cacheKey, cache] of validationCache.entries()) {
         if (cache.error) {
-          console.warn(`[SchoolPage] Validation error for ${coreId}:`, cache.error);
           continue;
         }
         
-        studentSubmissionData.set(coreId, {
+        // Store with composite key to preserve grade distinction
+        studentSubmissionData.set(cacheKey, {
           submissions: cache.submissions,
           setStatus: convertSetStatus(cache.setStatus),
           outstanding: calculateOutstanding(cache.setStatus),
@@ -226,8 +282,10 @@
         };
 
         // Aggregate completion status from validation cache
+        // Use composite key (coreId_grade) for grade-aware lookup
         for (const student of classStudents) {
-          const cache = validationCache.get(student.coreId);
+          const cacheKey = `${student.coreId}_${student.year || 'Unknown'}`;
+          const cache = validationCache.get(cacheKey);
           
           // Count all students in total, regardless of whether they have data
           for (const setId of ['set1', 'set2', 'set3', 'set4']) {
@@ -250,8 +308,6 @@
 
         classMetrics.set(cls.classId, classData);
       }
-
-      console.log('[SchoolPage] Aggregated data for', classes.length, 'classes');
     } catch (error) {
       console.error('[SchoolPage] Failed to fetch and aggregate data:', error);
     }
@@ -585,6 +641,8 @@
     
     if (currentStudentViewMode === 'set') {
       renderStudentsTableBySet(container, filteredStudents);
+    } else if (currentStudentViewMode === 'missing') {
+      renderStudentsTableByMissing(container, filteredStudents);
     } else {
       renderStudentsTableByTask(container, filteredStudents);
     }
@@ -596,6 +654,8 @@
    * Render students table in Set-by-Set view
    */
   function renderStudentsTableBySet(container, filteredStudents) {
+    const eprimeColumnName = systemConfig?.eprime?.columnName || 'E-Prime';
+    
     let html = `
       <table class="min-w-full text-sm">
         <thead class="bg-[color:var(--muted)]/30 text-xs text-[color:var(--muted-foreground)]">
@@ -608,6 +668,7 @@
             <th class="px-4 py-3 text-left font-medium">Set 2</th>
             <th class="px-4 py-3 text-left font-medium">Set 3</th>
             <th class="px-4 py-3 text-left font-medium">Set 4</th>
+            <th class="px-4 py-3 text-left font-medium" style="background-color: rgba(236, 72, 153, 0.08);">${eprimeColumnName}</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-[color:var(--border)]">
@@ -616,16 +677,19 @@
     if (filteredStudents.length === 0) {
       html += `
         <tr>
-          <td colspan="8" class="px-4 py-8 text-center text-[color:var(--muted-foreground)]">
+          <td colspan="9" class="px-4 py-8 text-center text-[color:var(--muted-foreground)]">
             <p>No students match the current filter</p>
           </td>
         </tr>
       `;
     } else {
       filteredStudents.forEach(student => {
-        const data = studentSubmissionData.get(student.coreId);
+        const cacheKey = `${student.coreId}_${student.year || 'Unknown'}`;
+        const data = studentSubmissionData.get(cacheKey);
         const setStatus = data?.validationCache?.setStatus;
         const classInfo = classes.find(c => c.classId === student.classId);
+        const eprimeStatus = getEPrimeStatus(data);
+        const eprimeColor = getEPrimeStatusColor(eprimeStatus);
         
         html += `
           <tr class="hover:bg-[color:var(--muted)]/20 transition-colors" data-student-row data-grade="${String(classInfo?.grade || 0)}" data-has-data="${data ? 'true' : 'false'}">
@@ -642,6 +706,7 @@
             ${renderSetStatus(getSetStatusColor(setStatus, 'set2'))}
             ${renderSetStatus(getSetStatusColor(setStatus, 'set3'))}
             ${renderSetStatus(getSetStatusColor(setStatus, 'set4'))}
+            ${renderEPrimeStatus(eprimeStatus, eprimeColor)}
           </tr>
         `;
       });
@@ -780,7 +845,8 @@
       `;
     } else {
       filteredStudents.forEach(student => {
-        const data = studentSubmissionData.get(student.coreId);
+        const cacheKey = `${student.coreId}_${student.year || 'Unknown'}`;
+        const data = studentSubmissionData.get(cacheKey);
         const setStatus = data?.validationCache?.setStatus;
         const classInfo = classes.find(c => c.classId === student.classId);
         
@@ -897,6 +963,221 @@
   }
 
   /**
+   * Render students table in "By Missing" view
+   * Shows a single column with comma-separated list of all missing question IDs
+   * This view calls TaskValidator for each student to get question-level details
+   */
+  async function renderStudentsTableByMissing(container, filteredStudents) {
+    const missingViewConfig = systemConfig?.schoolPageTaskView?.missingView || {};
+    const studentNameColumnWidth = missingViewConfig.studentNameColumnWidth || '160px';
+    const coreIdColumnWidth = missingViewConfig.coreIdColumnWidth || '60px';
+    const classColumnWidth = missingViewConfig.classColumnWidth || '100px';
+    const gradeColumnWidth = missingViewConfig.gradeColumnWidth || '50px';
+    const missingColumnWidth = missingViewConfig.missingColumnWidth || 'auto';
+    
+    // Filter to only students who have partial data (not all complete, not all 0/n)
+    const studentsWithPartialData = filteredStudents.filter(student => {
+      const cacheKey = `${student.coreId}_${student.year || 'Unknown'}`;
+      const data = studentSubmissionData.get(cacheKey);
+      if (!data || !data.validationCache?.setStatus) return false;
+      
+      const setStatus = data.validationCache.setStatus;
+      let hasAnyAnswered = false;
+      let hasAnyIncomplete = false;
+      
+      for (const setId of ['set1', 'set2', 'set3', 'set4']) {
+        const set = setStatus[setId];
+        if (!set?.tasks) continue;
+        
+        for (const task of set.tasks) {
+          if (!task || task.ignoredForIncompleteChecks) continue;
+          if (task.answered > 0) hasAnyAnswered = true;
+          if (!task.complete && task.answered > 0) hasAnyIncomplete = true;
+        }
+      }
+      
+      // Include only if they have started AND have incomplete tasks
+      return hasAnyAnswered && hasAnyIncomplete;
+    });
+    
+    // Show loading state
+    container.innerHTML = `
+      <div class="px-4 py-8 text-center">
+        <div class="inline-flex items-center gap-2 text-[color:var(--muted-foreground)]">
+          <i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i>
+          <span>Loading missing questions for ${studentsWithPartialData.length} students...</span>
+        </div>
+        <p class="text-xs text-[color:var(--muted-foreground)] mt-2">
+          (Skipped ${filteredStudents.length - studentsWithPartialData.length} students with all complete or no data)
+        </p>
+      </div>
+    `;
+    lucide.createIcons();
+    
+    // If no students need processing, show empty state
+    if (studentsWithPartialData.length === 0) {
+      container.innerHTML = `
+        <div class="px-4 py-8 text-center text-[color:var(--muted-foreground)]">
+          <i data-lucide="check-circle" class="w-12 h-12 mx-auto mb-2 text-emerald-500"></i>
+          <p>No students with missing questions</p>
+          <p class="text-xs mt-1">All students are either complete or haven't started yet</p>
+        </div>
+      `;
+      lucide.createIcons();
+      return;
+    }
+    
+    // Load hidden tasks from config to exclude them
+    const hiddenTasks = new Set((systemConfig?.hiddenTasks || []).map(t => t.toLowerCase()));
+    
+    // Build a set of incomplete task IDs from the validation cache
+    // This is more reliable than re-running TaskValidator
+    const studentMissingData = [];
+    
+    for (const student of studentsWithPartialData) {
+      try {
+        const cacheKey = `${student.coreId}_${student.year || 'Unknown'}`;
+        const data = studentSubmissionData.get(cacheKey);
+        if (!data?.submissions?.length) continue;
+        
+        // Get the list of incomplete tasks from the validation cache
+        const incompleteTaskIds = new Set();
+        const setStatus = data.validationCache?.setStatus;
+        if (setStatus) {
+          for (const setId of ['set1', 'set2', 'set3', 'set4']) {
+            const set = setStatus[setId];
+            if (!set?.tasks) continue;
+            for (const task of set.tasks) {
+              if (!task || task.ignoredForIncompleteChecks) continue;
+              // Skip hidden tasks
+              if (hiddenTasks.has(task.taskId?.toLowerCase())) continue;
+              // Only include tasks that are incomplete (started but not complete)
+              if (!task.complete && task.answered > 0) {
+                incompleteTaskIds.add(task.taskId?.toLowerCase());
+              }
+            }
+          }
+        }
+        
+        // If no incomplete tasks, skip this student
+        if (incompleteTaskIds.size === 0) continue;
+        
+        // Merge answers from all submissions BY FIELD NAME (not QID)
+        const sortedSubmissions = [...data.submissions].sort((a, b) => 
+          new Date(a.created_at) - new Date(b.created_at)
+        );
+        
+        const mergedAnswers = {};
+        for (const submission of sortedSubmissions) {
+          if (submission.answers) {
+            for (const [qid, answerObj] of Object.entries(submission.answers)) {
+              if (!answerObj.name || !answerObj.answer) continue;
+              if (!mergedAnswers[answerObj.name]) {
+                mergedAnswers[answerObj.name] = answerObj;
+              }
+            }
+          }
+        }
+        
+        // Call TaskValidator to get question-level details
+        const taskValidation = await window.TaskValidator.validateAllTasks(mergedAnswers);
+        
+        // Extract missing question IDs ONLY from tasks that the cache says are incomplete
+        const missingQuestions = [];
+        for (const [taskId, taskResult] of Object.entries(taskValidation)) {
+          if (!taskResult.questions) continue;
+          
+          // Skip hidden tasks
+          if (hiddenTasks.has(taskId.toLowerCase())) continue;
+          
+          // CRITICAL: Only process tasks that the CACHE says are incomplete
+          // The cache has the authoritative complete/incomplete status
+          if (!incompleteTaskIds.has(taskId.toLowerCase())) continue;
+          
+          // For incomplete tasks, find questions that should have been answered
+          for (const question of taskResult.questions) {
+            // Skip _TEXT display fields
+            if (question.isTextDisplay) continue;
+            
+            // Skip questions that don't apply due to showIf conditions
+            if (question.excludedByShowIf) continue;
+            
+            // Question is missing if studentAnswer is null
+            if (question.studentAnswer === null) {
+              missingQuestions.push(question.id);
+            }
+          }
+        }
+        
+        if (missingQuestions.length > 0) {
+          studentMissingData.push({
+            student,
+            missingQuestions
+          });
+        }
+      } catch (error) {
+        console.error(`[SchoolPage] Error validating ${student.coreId}:`, error);
+      }
+    }
+    
+    // Render the table
+    let html = `
+      <table class="min-w-full text-sm">
+        <thead class="bg-[color:var(--muted)]/30 text-xs text-[color:var(--muted-foreground)]">
+          <tr>
+            <th class="px-4 py-3 text-left font-medium" style="width: ${studentNameColumnWidth}; min-width: ${studentNameColumnWidth};">Student Name</th>
+            <th class="px-4 py-3 text-left font-medium" style="width: ${coreIdColumnWidth}; min-width: ${coreIdColumnWidth};">Core ID</th>
+            <th class="px-4 py-3 text-left font-medium" style="width: ${classColumnWidth}; min-width: ${classColumnWidth};">Class</th>
+            <th class="px-4 py-3 text-left font-medium" style="width: ${gradeColumnWidth}; min-width: ${gradeColumnWidth};">Grade</th>
+            <th class="px-4 py-3 text-left font-medium" style="width: ${missingColumnWidth};">Missing Questions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-[color:var(--border)]">
+    `;
+    
+    if (studentMissingData.length === 0) {
+      html += `
+        <tr>
+          <td colspan="5" class="px-4 py-8 text-center text-[color:var(--muted-foreground)]">
+            <p>No missing questions found after validation</p>
+          </td>
+        </tr>
+      `;
+    } else {
+      for (const { student, missingQuestions } of studentMissingData) {
+        const missingDisplay = `<span class="text-amber-700 font-mono text-xs">${missingQuestions.join(', ')}</span>`;
+        const gradeLabel = student.grade === 1 ? 'K1' : student.grade === 2 ? 'K2' : student.grade === 3 ? 'K3' : '—';
+        
+        html += `
+          <tr class="hover:bg-[color:var(--muted)]/20 transition-colors">
+            <td class="px-4 py-3">
+              <a href="checking_system_4_student.html?coreId=${encodeURIComponent(student.coreId)}&year=${encodeURIComponent(gradeLabel)}" 
+                 class="font-medium text-[color:var(--primary)] hover:underline font-noto">
+                ${student.studentName || '—'}
+              </a>
+            </td>
+            <td class="px-4 py-3 text-xs font-mono text-[color:var(--muted-foreground)]">${student.coreId}</td>
+            <td class="px-4 py-3 text-xs font-noto">${student.actualClassName || '—'}</td>
+            <td class="px-4 py-3 text-xs">${gradeLabel}</td>
+            <td class="px-4 py-3">${missingDisplay}</td>
+          </tr>
+        `;
+      }
+    }
+    
+    html += `
+        </tbody>
+      </table>
+      <div class="px-4 py-2 text-xs text-[color:var(--muted-foreground)] border-t border-[color:var(--border)]">
+        Showing ${studentMissingData.length} students with missing questions
+      </div>
+    `;
+    
+    container.innerHTML = html;
+    lucide.createIcons();
+  }
+
+  /**
    * Get set status color based on validation cache
    * Status values from validation: 'complete', 'incomplete', 'notstarted'
    */
@@ -936,6 +1217,31 @@
   }
 
   /**
+   * Render E-Prime status indicator with X/7 count
+   * Green = 7/7, Red = 1-6/7, Grey = 0/7
+   */
+  function renderEPrimeStatus(eprimeStatus, color) {
+    const statusConfig = {
+      green: { class: 'status-green', textClass: 'text-emerald-600' },
+      red: { class: 'status-red', textClass: 'text-red-600' },
+      grey: { class: 'status-grey', textClass: 'text-[color:var(--muted-foreground)]' }
+    };
+    
+    const config = statusConfig[color] || statusConfig.grey;
+    const countText = `${eprimeStatus.completed}/${eprimeStatus.total}`;
+    const tooltipText = eprimeStatus.tasks.map(t => `${t.name}: ${t.done ? '✓' : '✗'}`).join('\n');
+    
+    return `
+      <td class="px-4 py-3" style="background-color: rgba(236, 72, 153, 0.08);">
+        <span class="inline-flex items-center gap-2 text-xs ${config.textClass}" title="${tooltipText}">
+          <span class="status-circle ${config.class}"></span>
+          <span class="font-mono">${countText}</span>
+        </span>
+      </td>
+    `;
+  }
+
+  /**
    * Setup export button - exports Markdown validation report
    * Uses centralized ExportUtils.exportReport orchestrator
    */
@@ -955,8 +1261,6 @@
     const validateButton = document.getElementById('validate-button');
     if (validateButton) {
       validateButton.addEventListener('click', async () => {
-        console.log('[SchoolPage] Running cache validation...');
-        
         // Get schoolId from URL
         const urlParams = new URLSearchParams(window.location.search);
         const schoolId = urlParams.get('schoolId');
@@ -991,7 +1295,6 @@
           lucide.createIcons();
         }
       });
-      console.log('[SchoolPage] Validate button handler attached');
     }
   }
 
@@ -1030,6 +1333,16 @@
       
       studentViewByTaskBtn.addEventListener('click', () => {
         currentStudentViewMode = 'task';
+        updateStudentViewMode();
+        renderMainView();
+      });
+    }
+    
+    // Setup "By Missing" toggle button
+    const studentViewByMissingBtn = document.getElementById('student-view-by-missing-btn');
+    if (studentViewByMissingBtn) {
+      studentViewByMissingBtn.addEventListener('click', () => {
+        currentStudentViewMode = 'missing';
         updateStudentViewMode();
         renderMainView();
       });
@@ -1126,8 +1439,15 @@
   function updateStudentViewMode() {
     const studentViewBySetBtn = document.getElementById('student-view-by-set-btn');
     const studentViewByTaskBtn = document.getElementById('student-view-by-task-btn');
+    const studentViewByMissingBtn = document.getElementById('student-view-by-missing-btn');
+    const missingViewToggle = document.getElementById('missing-view-toggle');
     
     if (!studentViewBySetBtn || !studentViewByTaskBtn) return;
+    
+    // Show/hide the "By Missing" toggle based on whether By Task is active
+    if (missingViewToggle) {
+      missingViewToggle.style.display = (currentStudentViewMode === 'task' || currentStudentViewMode === 'missing') ? 'inline-flex' : 'none';
+    }
     
     if (currentStudentViewMode === 'set') {
       // By Set active - blue (primary)
@@ -1137,6 +1457,26 @@
       // By Task inactive - grey
       studentViewByTaskBtn.classList.remove('bg-[color:var(--primary)]', 'text-white', 'shadow-sm', 'bg-[color:var(--secondary)]', 'text-[color:var(--secondary-foreground)]');
       studentViewByTaskBtn.classList.add('text-[color:var(--muted-foreground)]', 'hover:bg-[color:var(--secondary)]', 'hover:text-[color:var(--secondary-foreground)]');
+      
+      // By Missing inactive
+      if (studentViewByMissingBtn) {
+        studentViewByMissingBtn.classList.remove('bg-amber-500', 'text-white', 'shadow-sm');
+        studentViewByMissingBtn.classList.add('text-[color:var(--muted-foreground)]', 'hover:bg-amber-100', 'hover:text-amber-700');
+      }
+    } else if (currentStudentViewMode === 'missing') {
+      // By Missing active - amber
+      if (studentViewByMissingBtn) {
+        studentViewByMissingBtn.classList.add('bg-amber-500', 'text-white', 'shadow-sm');
+        studentViewByMissingBtn.classList.remove('text-[color:var(--muted-foreground)]', 'hover:bg-amber-100', 'hover:text-amber-700');
+      }
+      
+      // By Task semi-active (secondary) since Missing is a sub-view of Task
+      studentViewByTaskBtn.classList.add('bg-[color:var(--secondary)]', 'text-[color:var(--secondary-foreground)]', 'shadow-sm');
+      studentViewByTaskBtn.classList.remove('text-[color:var(--muted-foreground)]', 'hover:bg-[color:var(--secondary)]', 'hover:text-[color:var(--secondary-foreground)]');
+      
+      // By Set inactive
+      studentViewBySetBtn.classList.remove('bg-[color:var(--primary)]', 'text-white', 'shadow-sm');
+      studentViewBySetBtn.classList.add('text-[color:var(--muted-foreground)]', 'hover:bg-[color:var(--primary)]', 'hover:text-white');
     } else {
       // By Task active - orange (secondary)
       studentViewByTaskBtn.classList.add('bg-[color:var(--secondary)]', 'text-[color:var(--secondary-foreground)]', 'shadow-sm');
@@ -1145,6 +1485,12 @@
       // By Set inactive - grey
       studentViewBySetBtn.classList.remove('bg-[color:var(--primary)]', 'text-white', 'shadow-sm');
       studentViewBySetBtn.classList.add('text-[color:var(--muted-foreground)]', 'hover:bg-[color:var(--primary)]', 'hover:text-white');
+      
+      // By Missing inactive
+      if (studentViewByMissingBtn) {
+        studentViewByMissingBtn.classList.remove('bg-amber-500', 'text-white', 'shadow-sm');
+        studentViewByMissingBtn.classList.add('text-[color:var(--muted-foreground)]', 'hover:bg-amber-100', 'hover:text-amber-700');
+      }
     }
     
     // Update legend
@@ -1174,6 +1520,14 @@
         <span class="inline-flex items-center gap-1.5">
           <span class="status-circle status-grey"></span>
           <span>Not Started</span>
+        </span>
+      `;
+    } else if (currentStudentViewMode === 'missing') {
+      // By Missing view: simple text explanation
+      legendHtml = `
+        <span class="inline-flex items-center gap-1.5 text-amber-700">
+          <i data-lucide="list" class="w-3.5 h-3.5"></i>
+          <span>Shows actual missing question IDs after validation (termination rules applied)</span>
         </span>
       `;
     } else {
@@ -1213,7 +1567,8 @@
     const currentGradeFilter = window.currentGradeFilter || 'all';
     
     return studentList.filter(student => {
-      const data = studentSubmissionData.get(student.coreId);
+      const cacheKey = `${student.coreId}_${student.year || 'Unknown'}`;
+      const data = studentSubmissionData.get(cacheKey);
       const classInfo = classes.find(c => c.classId === student.classId);
       const studentGrade = String(classInfo?.grade || 0);
       

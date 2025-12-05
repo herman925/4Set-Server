@@ -79,7 +79,6 @@
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
       config = await response.json();
-      console.log('[CacheUI] Config loaded successfully');
       
       // Update status pill now that config is loaded
       // This handles the case where updateStatusPill was called before config loaded
@@ -97,45 +96,28 @@
    * - Validation cache (TaskValidator results)
    */
   async function isCacheReady() {
-    const checkStartTime = Date.now();
-    console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Starting check at ${new Date(checkStartTime).toISOString()}`);
-    
     if (!window.JotFormCache) {
-      console.log('[CacheUI] JotFormCache not available');
       return false;
     }
     
     try {
       // Check submissions cache
-      const submissionsCheckStart = Date.now();
       const submissionsStats = await window.JotFormCache.getCacheStats();
-      const submissionsCheckEnd = Date.now();
-      console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Submissions check took ${submissionsCheckEnd - submissionsCheckStart}ms`);
       
       if (!submissionsStats.exists || !submissionsStats.valid) {
-        console.log('[CacheUI] Submissions cache not ready');
-        console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Total time ${Date.now() - checkStartTime}ms, result: FALSE (submissions missing)`);
         return false;
       }
       
       // Check validation cache
-      const validationCheckStart = Date.now();
       const validationCache = await window.JotFormCache.loadValidationCache();
-      const validationCheckEnd = Date.now();
-      console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Validation check took ${validationCheckEnd - validationCheckStart}ms`);
       
       if (!validationCache || validationCache.size === 0) {
-        console.log('[CacheUI] Validation cache not ready');
-        console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Total time ${Date.now() - checkStartTime}ms, result: FALSE (validation missing)`);
         return false;
       }
       
-      console.log('[CacheUI] Both caches ready: submissions + validation');
-      console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Total time ${Date.now() - checkStartTime}ms, result: TRUE ✅`);
       return true;
     } catch (error) {
       console.error('[CacheUI] Error in isCacheReady:', error);
-      console.log(`[SYNC-TIMING] ⏱️ isCacheReady: Total time ${Date.now() - checkStartTime}ms, result: FALSE (error)`);
       return false;
     }
   }
@@ -253,15 +235,10 @@
         badge.title = config.cache.statusLabels?.checking || 'Checking cache status';
         badge.style.cursor = 'default';
         
-        const checkStartTime = Date.now();
-        console.log(`[SYNC-TIMING] ⏱️ updateStatusPill: Starting cache readiness check at ${new Date(checkStartTime).toISOString()}`);
-        console.log('[CacheUI] updateStatusPill checking cache readiness...');
-        
         try {
           // Add timeout to prevent hanging (5 seconds max)
           const timeoutPromise = new Promise((resolve) => {
             setTimeout(() => {
-              console.warn('[CacheUI] Cache check timed out after 5 seconds, defaulting to not ready');
               resolve(false); // Resolve with false instead of reject
             }, 5000);
           });
@@ -270,18 +247,10 @@
             isCacheReady(),
             timeoutPromise
           ]);
-          
-          const checkEndTime = Date.now();
-          console.log(`[SYNC-TIMING] ⏱️ updateStatusPill: Cache check took ${checkEndTime - checkStartTime}ms`);
-          console.log('[CacheUI] isCacheReady returned:', isReady);
         } catch (error) {
           console.error('[CacheUI] Error checking cache readiness:', error);
           isReady = false; // Default to not ready on error
-          const checkEndTime = Date.now();
-          console.log(`[SYNC-TIMING] ⏱️ updateStatusPill: Cache check failed after ${checkEndTime - checkStartTime}ms`);
         }
-      } else {
-        console.log('[CacheUI] Skipping cache check (skipCheck=true), directly setting to GREEN');
       }
       
       // Remove all status classes before applying the final state
@@ -289,18 +258,12 @@
       
       if (isReady) {
         // Green: System Ready (clickable to show cache info)
-        const pillGreenTime = Date.now();
-        console.log(`[SYNC-TIMING] ⏱️ updateStatusPill: Setting pill to GREEN at ${new Date(pillGreenTime).toISOString()}`);
-        console.log('[CacheUI] Setting pill to GREEN (System Ready)');
         badge.classList.add('badge-success');
         statusText.textContent = config.cache.statusLabels?.ready || 'System Ready';
         badge.title = 'Cache is ready (click for options)';
         badge.style.cursor = 'pointer';
       } else {
         // Red: System Not Ready
-        const pillRedTime = Date.now();
-        console.log(`[SYNC-TIMING] ⏱️ updateStatusPill: Setting pill to RED at ${new Date(pillRedTime).toISOString()}`);
-        console.log('[CacheUI] Setting pill to RED (System Not Ready)');
         badge.classList.add('badge-error');
         statusText.textContent = config.cache.statusLabels?.notReady || 'System Not Ready';
         badge.title = 'Click to build cache';
@@ -480,7 +443,7 @@
     `;
 
     document.body.appendChild(modal);
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 
     // Show spotlight
     const { spotlight, highlightBox } = showSpotlight();
@@ -496,8 +459,6 @@
    * Show cache ready modal (when cache is already built)
    */
   async function showCacheReadyModal() {
-    console.log('[CacheUI] showCacheReadyModal called');
-    
     ensureModalCSS();
     
     if (!config) {
@@ -513,7 +474,7 @@
     try {
       qualtricsStats = await window.JotFormCache.getQualtricsStats();
     } catch (e) {
-      console.log('[CacheUI] Qualtrics stats not available:', e.message);
+      // Qualtrics stats not available
     }
     
     // Build Qualtrics section
@@ -580,7 +541,7 @@
     `;
     
     document.body.appendChild(modal);
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
     
     const deleteBtn = document.getElementById('cache-delete-btn');
     const closeBtn = document.getElementById('cache-close-btn');
@@ -589,9 +550,7 @@
     // Deletes ALL three IndexedDB stores: submissions, validation, Qualtrics
     deleteBtn.addEventListener('click', async () => {
       if (confirm('⚠️ DELETE ALL CACHED DATA?\n\nThis will remove the following IndexedDB stores:\n• Merged submissions cache (JotForm + Qualtrics)\n• Student validation cache (task results)\n• Qualtrics TGMD cache (raw responses)\n\nAfter deletion the system returns to "System Not Ready" and requires a full Fetch Database run (about 60-90 seconds).\n\nContinue?')) {
-        console.log('[CacheUI] User confirmed comprehensive cache deletion');
         await window.JotFormCache.clearCache();
-        console.log('[CacheUI] ✅ Comprehensive cache purge complete');
         modal.remove();
         updateStatusPill(); // Update pill to red
       }
@@ -667,7 +626,7 @@
     `;
     
     document.body.appendChild(modal);
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
   }
 
   /**
@@ -771,7 +730,7 @@
     `;
     
     document.body.appendChild(modal);
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
     
     const closeBtn = document.getElementById('qualtrics-complete-close');
     closeBtn.addEventListener('click', () => {
@@ -826,7 +785,7 @@
     `;
     
     document.body.appendChild(modal);
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
     
     const closeBtn = document.getElementById('qualtrics-error-close');
     closeBtn.addEventListener('click', () => {
@@ -849,14 +808,12 @@
       try {
         const data = JSON.parse(cachedData);
         if (data.credentials) {
-          console.log('[CacheUI] Credentials found in checking_system_data');
           return data.credentials;
         }
       } catch (error) {
         console.error('[CacheUI] Error parsing checking_system_data:', error);
       }
     }
-    console.warn('[CacheUI] No credentials found in sessionStorage');
     return null;
   }
 
@@ -864,13 +821,9 @@
    * Show sync modal (for building cache)
    */
   async function showSyncModal(showProgressNow = false) {
-    console.log('[CacheUI] showSyncModal called');
-    console.trace('[CacheUI] showSyncModal call stack:');
-    
     // Remove any existing modal first
     const existingModal = document.getElementById('cache-sync-modal');
     if (existingModal) {
-      console.log('[CacheUI] Removing existing modal');
       existingModal.remove();
     }
     
@@ -891,7 +844,6 @@
     if (showProgressNow === false && isSyncing) {
       showProgressNow = true;
     }
-    console.log('[CacheUI] Creating modal, showProgressNow:', showProgressNow);
     
     modal.innerHTML = `
       <div class="modal-backdrop" style="background: rgba(0, 0, 0, 0.5);"></div>
@@ -946,8 +898,7 @@
     `;
 
     document.body.appendChild(modal);
-    console.log('[CacheUI] Modal appended to body');
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 
     const cancelBtn = document.getElementById('sync-modal-cancel');
     const confirmBtn = document.getElementById('sync-modal-confirm');
@@ -960,17 +911,6 @@
     const qualtricsStatus = document.getElementById('sync-qualtrics-status');
     const modalTitle = document.getElementById('sync-modal-title');
     const modalMessage = document.getElementById('sync-modal-message');
-    
-    console.log('[CacheUI] Modal elements:', {
-      cancelBtn: !!cancelBtn,
-      confirmBtn: !!confirmBtn,
-      progressSection: !!progressSection,
-      jotformBar: !!jotformBar,
-      jotformStatus: !!jotformStatus,
-      qualtricsBar: !!qualtricsBar,
-      qualtricsStatus: !!qualtricsStatus,
-      modalTitle: !!modalTitle
-    });
 
     // Cancel button - can close during sync
     if (!cancelBtn) {
@@ -1091,8 +1031,6 @@
         // If Qualtrics credentials are available, use PARALLEL fetch (JotForm + Qualtrics simultaneously)
         // Otherwise, fetch JotForm only
         if (hasQualtricsCredentials) {
-          console.log('[CacheUI] Qualtrics credentials found, using PARALLEL fetch...');
-          
           try {
             // Check if modules are loaded
             if (typeof window.QualtricsAPI !== 'undefined' && 
@@ -1102,7 +1040,6 @@
               // refreshWithQualtrics will handle PARALLEL fetch and dual progress bars
               // JotForm and Qualtrics will fetch simultaneously using Promise.all
               const qualtricsResult = await window.JotFormCache.refreshWithQualtrics(credentials);
-              console.log('[CacheUI] Parallel fetch and merge complete');
               
               // Ensure we're at 70% after parallel fetch
               if (maxProgress < 70) {
@@ -1110,7 +1047,7 @@
                 if (modalMessage) modalMessage.textContent = 'Parallel fetch complete - data merged successfully!';
               }
             } else {
-              console.warn('[CacheUI] Qualtrics modules not loaded, falling back to JotForm only');
+              // Qualtrics modules not loaded, fallback to JotForm only
               
               // Reset progress tracking for fallback
               maxProgress = 0;
@@ -1122,7 +1059,6 @@
                 formId: credentials.jotformFormId || credentials.formId,
                 apiKey: credentials.jotformApiKey || credentials.apiKey
               });
-              console.log('[CacheUI] getAllSubmissions returned:', result ? result.length : 0, 'submissions');
               
               maxProgress = 70;
               if (modalMessage) modalMessage.textContent = 'JotForm data cached (Qualtrics modules not loaded)';
@@ -1150,14 +1086,11 @@
             }
           }
         } else {
-          console.log('[CacheUI] No Qualtrics credentials found, using JotForm only');
-          
           // Fetch JotForm only (sequential, no parallel fetch needed)
           const result = await window.JotFormCache.getAllSubmissions({
             formId: credentials.jotformFormId || credentials.formId,
             apiKey: credentials.jotformApiKey || credentials.apiKey
           });
-          console.log('[CacheUI] getAllSubmissions returned:', result ? result.length : 0, 'submissions');
           
           maxProgress = 70;
           if (modalMessage) modalMessage.textContent = 'JotForm data cached';
@@ -1176,12 +1109,7 @@
         // Get student data from CheckingSystemData
         const cachedSystemData = window.CheckingSystemData?.getCachedData();
         
-        console.log('[CacheUI] CheckingSystemData available?', !!window.CheckingSystemData);
-        console.log('[CacheUI] Students available?', !!cachedSystemData?.students);
-        
         if (!cachedSystemData?.students) {
-          console.warn('[CacheUI] Student data not available, skipping validation cache build');
-          console.warn('[CacheUI] Validation cache will be built when class page loads');
           
           // Still mark as complete - submissions are cached
           if (jotformBar) jotformBar.style.width = '100%';
@@ -1209,10 +1137,8 @@
         }
         
         // Load survey structure
-        console.log('[CacheUI] Loading survey structure...');
         const surveyResponse = await fetch('assets/tasks/survey-structure.json');
         const surveyStructure = await surveyResponse.json();
-        console.log('[CacheUI] Survey structure loaded');
         
         if (modalMessage) modalMessage.textContent = 'Validating student task completion...';
         
@@ -1223,7 +1149,6 @@
         window.JotFormCache.setProgressCallback((message, progress, details = {}) => {
           // Prevent regression
           if (progress < maxProgress) {
-            console.warn(`[CacheUI] Validation progress regression prevented: ${progress}% < ${maxProgress}%`);
             return;
           }
           maxProgress = progress;
@@ -1255,44 +1180,30 @@
           }
         });
         
-        console.log('[CacheUI] Building validation cache...');
         const validationCache = await window.JotFormCache.buildStudentValidationCache(
           cachedSystemData.students,
           surveyStructure,
           true, // Force rebuild
           credentials // Pass credentials
         );
-        console.log('[CacheUI] Validation cache built:', validationCache.size, 'students');
         
         // Clear progress callback
         window.JotFormCache.setProgressCallback(null);
         
         // Step 3: All done (100%)
-        const progressBar100Time = Date.now();
         if (jotformBar) jotformBar.style.width = '100%';
         if (jotformPercent) jotformPercent.textContent = '100%';
         updateStatusText(jotformStatus, 100, 'jotform', 'Complete!');
         if (qualtricsBar) qualtricsBar.style.width = '100%';
         if (qualtricsPercent) qualtricsPercent.textContent = '100%';
         updateStatusText(qualtricsStatus, 100, 'qualtrics', 'Complete!');
-        console.log(`[SYNC-TIMING] ⏱️ Progress bars set to 100% at: ${new Date(progressBar100Time).toISOString()}`);
         
         // Mark sync complete and update pill
         isSyncing = false;
         currentSyncProgress = 100;
         
-        const pillUpdateStartTime = Date.now();
-        console.log(`[SYNC-TIMING] ⏱️ Starting pill update at: ${new Date(pillUpdateStartTime).toISOString()}`);
-        console.log(`[SYNC-TIMING] ⏱️ Time between progress bars 100% and pill update start: ${pillUpdateStartTime - progressBar100Time}ms`);
-        
         // Skip cache check - we KNOW it's ready (we just built it!)
         await updateStatusPill(null, true);
-        
-        const pillUpdateEndTime = Date.now();
-        console.log(`[SYNC-TIMING] ⏱️ Pill update completed at: ${new Date(pillUpdateEndTime).toISOString()}`);
-        console.log(`[SYNC-TIMING] ⏱️ Pill update took: ${pillUpdateEndTime - pillUpdateStartTime}ms`);
-        console.log(`[SYNC-TIMING] ⏱️ Total time from progress 100% to pill green: ${pillUpdateEndTime - progressBar100Time}ms`);
-        console.log('[CacheUI] ✅ Both caches complete, pill updated to green');
         
         // NOW show success message (cache is confirmed saved)
         if (modalMessage) modalMessage.textContent = 'Complete!';
@@ -1316,7 +1227,6 @@
         if (confirmBtn.syncHandler) {
           confirmBtn.removeEventListener('click', confirmBtn.syncHandler);
           confirmBtn.syncHandler = null;
-          console.log('[CacheUI] Removed sync handler, setting close handler');
         }
         
         confirmBtn.onclick = () => {
@@ -1428,7 +1338,7 @@
     `;
     
     document.body.appendChild(modal);
-    lucide.createIcons();
+    if (typeof lucide !== 'undefined') lucide.createIcons();
     
     const passwordInput = document.getElementById('emergency-password');
     const errorText = document.getElementById('emergency-error');
@@ -1468,7 +1378,6 @@
       }
       
       // Verify password against stored credentials
-      console.log('[EmergencyReset] Verifying password...');
       confirmBtn.disabled = true;
       confirmBtn.textContent = 'Verifying...';
       
@@ -1490,8 +1399,6 @@
         if (password !== storedPassword) {
           throw new Error('Incorrect password');
         }
-        
-        console.log('[EmergencyReset] Password verified successfully');
         
       } catch (e) {
         console.error('[EmergencyReset] Password verification failed:', e);
@@ -1527,31 +1434,23 @@
       }
       
       // Execute comprehensive purge
-      console.log('[EmergencyReset] 🚨 EXECUTING COMPREHENSIVE PURGE...');
-      
       try {
         // Step 1: Clear IndexedDB stores
-        console.log('[EmergencyReset] Clearing IndexedDB stores...');
         if (window.JotFormCache) {
           await window.JotFormCache.clearCache(); // Clears all 3 stores
         }
         
         // Step 2: Clear localStorage
-        console.log('[EmergencyReset] Clearing localStorage...');
         localStorage.clear();
         
         // Step 3: Clear sessionStorage
-        console.log('[EmergencyReset] Clearing sessionStorage...');
         sessionStorage.clear();
         
         // Step 4: Clear any service worker caches (if present)
         if ('caches' in window) {
-          console.log('[EmergencyReset] Clearing service worker caches...');
           const cacheNames = await caches.keys();
           await Promise.all(cacheNames.map(name => caches.delete(name)));
         }
-        
-        console.log('[EmergencyReset] ✅ COMPREHENSIVE PURGE COMPLETE');
         
         // Close modal
         modal.remove();
@@ -1593,8 +1492,6 @@
    * Initialize cache manager UI
    */
   async function init() {
-    console.log('[CacheUI] Initializing cache manager UI');
-
     // Load configuration
     await loadConfig();
 
@@ -1614,7 +1511,6 @@
    */
   function setup() {
     if (isSetupComplete) {
-      console.warn('[CacheUI] Setup already complete, skipping');
       return;
     }
     
@@ -1633,11 +1529,9 @@
         
         if (isGreen && isSystemReady) {
           // Fast path: Pill is green, cache is already confirmed ready
-          console.log('[CacheUI] Pill is green, showing modal immediately (no cache check)');
           showCacheReadyModal();
         } else {
           // Slow path: Verify cache status before showing appropriate modal
-          console.log('[CacheUI] Pill state unknown, checking cache readiness...');
           const ready = await isCacheReady();
           if (!ready) {
             showSyncModal();
@@ -1652,7 +1546,6 @@
     const emergencyBadge = document.getElementById('emergency-reset-badge');
     if (emergencyBadge) {
       emergencyBadge.addEventListener('click', () => {
-        console.log('[CacheUI] Emergency Reset clicked');
         showEmergencyResetModal();
       });
     }
@@ -1666,11 +1559,8 @@
         e.stopPropagation();
         e.stopImmediatePropagation();
         
-        console.log('[CacheUI] Start Checking clicked, checking cache...');
-        
         // Check cache asynchronously
         isCacheReady().then(ready => {
-          console.log('[CacheUI] Cache ready:', ready);
           if (!ready) {
             showBlockingModal();
           } else {
@@ -1690,7 +1580,6 @@
     }
 
     isSetupComplete = true;
-    console.log('[CacheUI] Setup complete');
   }
 
   // Export for manual control

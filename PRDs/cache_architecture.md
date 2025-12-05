@@ -1,7 +1,7 @@
 # Cache Architecture PRD
 
 **Project:** KeySteps@JC - 4Set System 2025/26  
-**Last Updated:** November 12, 2025  
+**Last Updated:** December 5, 2025  
 **Status:** Active
 
 ---
@@ -27,7 +27,8 @@ JotFormCacheDB
 ├── jotform_cache (Layer 1: Raw + Merged Submissions)
 │   └── Stores: Array of submission objects with JotForm + Qualtrics data
 ├── validation_cache (Layer 2: Validated Task Results) 
-│   └── Stores: Map<coreId, studentData> with taskValidation + setStatus
+│   └── Stores: Map<coreId_grade, studentData> with taskValidation + setStatus
+│   └── CRITICAL: Uses composite key (coreId_grade) to separate K1/K2/K3 data
 └── qualtrics_cache (Separate Qualtrics Tracking)
     └── Stores: Raw Qualtrics responses for debugging
 ```
@@ -55,13 +56,19 @@ JotFormCacheDB
 ### Layer 2: Validation Cache
 
 **Storage Format:** Plain JavaScript Object (converted to/from Map)
+
+**CRITICAL: Grade-Aware Composite Key**
+The validation cache uses `coreId_grade` as the key (e.g., `"C10720_K3"`) to ensure
+K1/K2/K3 data for the same student are stored and validated separately. This prevents
+the bug where school/class pages showed identical status lights for all three grades.
+
 ```javascript
 {
   timestamp: 1699776000000,
   count: 427,
   version: "1.0",
-  validations: {  // Object (serialized Map)
-    "C10720": {
+  validations: {  // Object (serialized Map with composite keys)
+    "C10720_K3": {  // Composite key: coreId_grade
       coreId: "C10720",
       mergedAnswers: {...},
       taskValidation: {...},
@@ -72,12 +79,18 @@ JotFormCacheDB
           ]
         }
       }
+    },
+    "C10720_K2": {  // Same student, different grade = separate entry
+      coreId: "C10720",
+      mergedAnswers: {...},
+      taskValidation: {...},
+      setStatus: {...}
     }
   }
 }
 ```
 
-**Access:** `loadValidationCache()` → returns Map<coreId, studentData>
+**Access:** `loadValidationCache()` → returns Map<coreId_grade, studentData>
 
 ---
 
@@ -113,11 +126,12 @@ JotFormCacheDB
 │ 3. Build setStatus per set         │
 └────────────────┬───────────────────┘
                  ▼
-┌────────────────────────────────────┐
-│ Layer 2: VALIDATION CACHE          │
-│ Format: Map<coreId, studentData>   │
-│ Size: ~10MB (500 students)         │
-└────────────────┬───────────────────┘
+┌─────────────────────────────────────────┐
+│ Layer 2: VALIDATION CACHE               │
+│ Format: Map<coreId_grade, studentData>  │
+│ Key: Composite (e.g., "C10720_K3")      │
+│ Size: ~10MB (500 students)              │
+└────────────────────┬────────────────────┘
                  │
      ┌───────────┴───────────┐
      ▼                       ▼
