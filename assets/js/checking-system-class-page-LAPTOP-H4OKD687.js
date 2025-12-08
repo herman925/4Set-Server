@@ -13,6 +13,7 @@
   let taskToSetMap = new Map(); // taskKey -> setId
   let currentViewMode = 'set'; // 'set' or 'task'
   let systemConfig = null; // Checking system config for column names
+  let jotformQuestions = null; // JotForm field name to QID mapping
 
   /**
    * Initialize the page
@@ -36,8 +37,9 @@
       }
     }
 
-    // Load system config
+    // Load system config and JotForm questions mapping
     await loadSystemConfig();
+    await loadJotformQuestions();
     
     // Load cached data
   cachedData = window.CheckingSystemData?.getCachedData();
@@ -66,7 +68,6 @@
     // GRADE-AWARE FILTERING: Filter students by grade to match class grade
     // Class has numeric grade (1=K1, 2=K2, 3=K3), students have year label (K1/K2/K3)
     const classGradeLabel = getGradeLabel(classData.grade);
-    const studentsBeforeGradeFilter = students.length;
     students = students.filter(s => s.year === classGradeLabel);
 
     // Load survey structure for task-to-set mapping
@@ -107,6 +108,64 @@
       systemConfig = { classPageTaskView: { taskColumnNames: {}, equalWidthColumns: false } };
       return systemConfig;
     }
+  }
+
+  /**
+   * Load JotForm questions mapping (field name -> QID)
+   */
+  async function loadJotformQuestions() {
+    if (jotformQuestions) return jotformQuestions;
+    
+    try {
+      const response = await fetch('assets/jotformquestions.json');
+      jotformQuestions = await response.json();
+      return jotformQuestions;
+    } catch (error) {
+      console.error('[ClassPage] Failed to load JotForm questions:', error);
+      jotformQuestions = {};
+      return jotformQuestions;
+    }
+  }
+
+  /**
+   * Get E-Prime completion status for a student
+   * Returns { completed: number, total: number, tasks: Array<{id, name, done}> }
+   */
+  function getEPrimeStatus(studentData) {
+    const eprimeTasks = systemConfig?.eprime?.tasks || [];
+    const total = eprimeTasks.length;
+    
+    if (!studentData?.validationCache?.mergedAnswers || !jotformQuestions) {
+      return { completed: 0, total, tasks: eprimeTasks.map(t => ({ ...t, done: false })) };
+    }
+    
+    const mergedAnswers = studentData.validationCache.mergedAnswers;
+    let completed = 0;
+    const tasks = [];
+    
+    for (const task of eprimeTasks) {
+      const qid = jotformQuestions[task.doneField];
+      // mergedAnswers stores objects: { name: "EPrime_NL_Done", answer: "1" }
+      const answerObj = mergedAnswers[task.doneField] || (qid ? mergedAnswers[`q${qid}`] : null);
+      const value = answerObj?.answer || answerObj; // Handle both object and raw value formats
+      const done = value === '1' || value === 1 || value === true || value === 'true';
+      
+      if (done) completed++;
+      tasks.push({ ...task, done });
+    }
+    
+    return { completed, total, tasks };
+  }
+
+  /**
+   * Get E-Prime status color based on completion
+   * Green = 7/7, Red = 1-6/7, Grey = 0/7
+   */
+  function getEPrimeStatusColor(eprimeStatus) {
+    if (!eprimeStatus || eprimeStatus.total === 0) return 'grey';
+    if (eprimeStatus.completed === eprimeStatus.total) return 'green';
+    if (eprimeStatus.completed > 0) return 'red';
+    return 'grey';
   }
 
   /**
@@ -151,11 +210,11 @@
    */
   async function fetchStudentSubmissions() {
     if (!window.JotFormCache) {
-      console.warn('[ClassPage] JotForm cache not available');
       return;
     }
 
     try {
+      
       // VALIDATION ARCHITECTURE NOTE:
       // The class page uses JotFormCache.buildStudentValidationCache() which internally
       // calls TaskValidator.validateAllTasks() for each student. This ensures that
@@ -180,13 +239,14 @@
       );
       
       // Convert validation cache to studentSubmissionData format
-      for (const [coreId, cache] of validationCache.entries()) {
+      // Cache uses composite keys (coreId_grade) for grade-aware lookups
+      for (const [cacheKey, cache] of validationCache.entries()) {
         if (cache.error) {
-          console.warn(`[ClassPage] Validation error for ${coreId}:`, cache.error);
           continue;
         }
         
-        studentSubmissionData.set(coreId, {
+        // Store with composite key to preserve grade distinction
+        studentSubmissionData.set(cacheKey, {
           submissions: cache.submissions,
           setStatus: convertSetStatus(cache.setStatus),
           outstanding: calculateOutstanding(cache.setStatus),
@@ -333,17 +393,16 @@
       set1: { complete: 0, total: 0 },
       set2: { complete: 0, total: 0 },
       set3: { complete: 0, total: 0 },
-      set4: { complete: 0, total: 0 },
-      set5: { complete: 0, total: 0 }
+      set4: { complete: 0, total: 0 }
     };
 
     // Aggregate completion status from student submission data
     for (const student of students) {
-      const data = studentSubmissionData.get(student.coreId);
+      const data = studentSubmissionData.get(`${student.coreId}_${student.year || 'Unknown'}`);
       if (!data || data.validationCache?.error) continue;
 
       // Count set completion for each student
-      for (const setId of ['set1', 'set2', 'set3', 'set4', 'set5']) {
+      for (const setId of ['set1', 'set2', 'set3', 'set4']) {
         metrics[setId].total++;
         const setStatus = data.validationCache?.setStatus[setId];
         if (setStatus && setStatus.status === 'complete') {
@@ -397,7 +456,6 @@
     // Setup view mode toggle buttons
     const viewBySetBtn = document.getElementById('view-by-set-btn');
     const viewByTaskBtn = document.getElementById('view-by-task-btn');
-    const viewByMissingBtn = document.getElementById('view-by-missing-btn');
     
     if (viewBySetBtn && viewByTaskBtn) {
       // Extract classId once for both event handlers
@@ -425,73 +483,9 @@
           window.CheckingSystemPreferences.saveViewMode(classId, 'task');
         }
       });
-
-      if (viewByMissingBtn && filterSelect) {
-        viewByMissingBtn.addEventListener('click', () => {
-            // Toggle 'incomplete' filter
-            const isCurrentlyMissing = filterSelect.value === 'incomplete';
-            filterSelect.value = isCurrentlyMissing ? 'all' : 'incomplete';
-            
-            // Trigger change event manually to update table
-            filterSelect.dispatchEvent(new Event('change'));
-            updateViewModeButtons();
-        });
-      }
     }
   }
   
-  /**
-   * Update view mode button styles
-   */
-  function updateViewModeButtons() {
-    const viewBySetBtn = document.getElementById('view-by-set-btn');
-    const viewByTaskBtn = document.getElementById('view-by-task-btn');
-    const missingViewToggle = document.getElementById('missing-view-toggle');
-    const viewByMissingBtn = document.getElementById('view-by-missing-btn');
-    const filterSelect = document.getElementById('student-view-filter');
-    
-    if (!viewBySetBtn || !viewByTaskBtn) return;
-    
-    if (currentViewMode === 'set') {
-      // By Set active - blue (primary)
-      viewBySetBtn.classList.add('bg-[color:var(--primary)]', 'text-white', 'shadow-sm');
-      viewBySetBtn.classList.remove('text-[color:var(--muted-foreground)]', 'hover:bg-[color:var(--secondary)]', 'hover:text-[color:var(--secondary-foreground)]');
-      
-      // By Task inactive - grey with orange hover
-      viewByTaskBtn.classList.remove('bg-[color:var(--primary)]', 'text-white', 'shadow-sm', 'bg-[color:var(--secondary)]', 'text-[color:var(--secondary-foreground)]');
-      viewByTaskBtn.classList.add('text-[color:var(--muted-foreground)]', 'hover:bg-[color:var(--secondary)]', 'hover:text-[color:var(--secondary-foreground)]');
-      
-      // Hide missing view toggle
-      if (missingViewToggle) missingViewToggle.style.display = 'none';
-    } else {
-      // By Task active - orange (secondary)
-      viewByTaskBtn.classList.add('bg-[color:var(--secondary)]', 'text-[color:var(--secondary-foreground)]', 'shadow-sm');
-      viewByTaskBtn.classList.remove('text-[color:var(--muted-foreground)]', 'hover:bg-[color:var(--secondary)]', 'hover:text-[color:var(--secondary-foreground)]');
-      
-      // By Set inactive - grey with blue hover
-      viewBySetBtn.classList.remove('bg-[color:var(--primary)]', 'text-white', 'shadow-sm', 'bg-[color:var(--secondary)]', 'text-[color:var(--secondary-foreground)]');
-      viewBySetBtn.classList.add('text-[color:var(--muted-foreground)]', 'hover:bg-[color:var(--primary)]', 'hover:text-white');
-      
-      // Show missing view toggle
-      if (missingViewToggle) missingViewToggle.style.display = 'inline-flex';
-      
-      // Update By Missing button style based on filter state
-      if (viewByMissingBtn && filterSelect) {
-          const isMissingActive = filterSelect.value === 'incomplete';
-          if (isMissingActive) {
-              viewByMissingBtn.classList.add('bg-amber-100', 'text-amber-700', 'border-amber-200');
-              viewByMissingBtn.classList.remove('text-[color:var(--muted-foreground)]');
-          } else {
-              viewByMissingBtn.classList.remove('bg-amber-100', 'text-amber-700', 'border-amber-200');
-              viewByMissingBtn.classList.add('text-[color:var(--muted-foreground)]');
-          }
-      }
-    }
-    
-    // Update legend after button styles
-    renderLegend();
-  }
-
   /**
    * Render dynamic legend based on current view mode
    */
@@ -543,13 +537,44 @@
   }
 
   /**
+   * Update view mode button styles
+   */
+  function updateViewModeButtons() {
+    const viewBySetBtn = document.getElementById('view-by-set-btn');
+    const viewByTaskBtn = document.getElementById('view-by-task-btn');
+    
+    if (!viewBySetBtn || !viewByTaskBtn) return;
+    
+    if (currentViewMode === 'set') {
+      // By Set active - blue (primary)
+      viewBySetBtn.classList.add('bg-[color:var(--primary)]', 'text-white', 'shadow-sm');
+      viewBySetBtn.classList.remove('text-[color:var(--muted-foreground)]', 'hover:bg-[color:var(--secondary)]', 'hover:text-[color:var(--secondary-foreground)]');
+      
+      // By Task inactive - grey with orange hover
+      viewByTaskBtn.classList.remove('bg-[color:var(--primary)]', 'text-white', 'shadow-sm', 'bg-[color:var(--secondary)]', 'text-[color:var(--secondary-foreground)]');
+      viewByTaskBtn.classList.add('text-[color:var(--muted-foreground)]', 'hover:bg-[color:var(--secondary)]', 'hover:text-[color:var(--secondary-foreground)]');
+    } else {
+      // By Task active - orange (secondary)
+      viewByTaskBtn.classList.add('bg-[color:var(--secondary)]', 'text-[color:var(--secondary-foreground)]', 'shadow-sm');
+      viewByTaskBtn.classList.remove('text-[color:var(--muted-foreground)]', 'hover:bg-[color:var(--secondary)]', 'hover:text-[color:var(--secondary-foreground)]');
+      
+      // By Set inactive - grey with blue hover
+      viewBySetBtn.classList.remove('bg-[color:var(--primary)]', 'text-white', 'shadow-sm', 'bg-[color:var(--secondary)]', 'text-[color:var(--secondary-foreground)]');
+      viewBySetBtn.classList.add('text-[color:var(--muted-foreground)]', 'hover:bg-[color:var(--primary)]', 'hover:text-white');
+    }
+    
+    // Update legend after button styles
+    renderLegend();
+  }
+
+  /**
    * Calculate outstanding task count from setStatus
    */
   function calculateOutstandingCount(setStatus) {
     if (!setStatus) return 0;
     
     let count = 0;
-    ['set1', 'set2', 'set3', 'set4', 'set5'].forEach(setId => {
+    ['set1', 'set2', 'set3', 'set4'].forEach(setId => {
       if (setStatus[setId]?.status === 'incomplete') {
         count += setStatus[setId].outstandingTasks?.length || 0;
       }
@@ -570,23 +595,23 @@
     switch (filterValue) {
       case 'with-data':
         // Only show students with submission data
-        filteredStudents = filteredStudents.filter(s => studentSubmissionData.has(s.coreId));
+        filteredStudents = filteredStudents.filter(s => studentSubmissionData.has(`${s.coreId}_${s.year || 'Unknown'}`));
         break;
       case 'incomplete':
-        // Show ALL students that don't have Complete status across all 5 sets (1-4 + E-Prime)
+        // Show ALL students that don't have Complete status across all 4 sets
         // This includes: students without data (not started) AND students with incomplete data
         filteredStudents = filteredStudents.filter(s => {
-          const data = studentSubmissionData.get(s.coreId);
+          const data = studentSubmissionData.get(`${s.coreId}_${s.year || 'Unknown'}`);
           
           // No data = incomplete (not started = incomplete)
           if (!data) return true;
           
-          // Has data - check if all 5 sets are complete
+          // Has data - check if all 4 sets are complete
           const setStatus = data.validationCache?.setStatus;
           if (!setStatus) return true;
           
-          // All sets (1-5) must be complete for student to NOT be shown
-          const allSetsComplete = ['set1', 'set2', 'set3', 'set4', 'set5'].every(setId => 
+          // All 4 sets must be complete for student to NOT be shown
+          const allSetsComplete = ['set1', 'set2', 'set3', 'set4'].every(setId => 
             setStatus[setId] && setStatus[setId].status === 'complete'
           );
           
@@ -638,6 +663,8 @@
    * Render student table in Set-by-Set view
    */
   function renderStudentTableBySet(container, filteredStudents) {
+    const eprimeColumnName = systemConfig?.eprime?.columnName || 'E-Prime';
+    
     let html = `
       <table class="min-w-full text-sm">
         <thead class="bg-[color:var(--muted)]/30 text-xs text-[color:var(--muted-foreground)]">
@@ -649,7 +676,7 @@
             <th class="px-4 py-3 text-left font-medium">Set 2</th>
             <th class="px-4 py-3 text-left font-medium">Set 3</th>
             <th class="px-4 py-3 text-left font-medium">Set 4</th>
-            <th class="px-4 py-3 text-left font-medium">E-Prime</th>
+            <th class="px-4 py-3 text-left font-medium" style="background-color: rgba(236, 72, 153, 0.08);">${eprimeColumnName}</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-[color:var(--border)]">
@@ -665,8 +692,10 @@
       `;
     } else {
       filteredStudents.forEach(student => {
-        const data = studentSubmissionData.get(student.coreId);
+        const data = studentSubmissionData.get(`${student.coreId}_${student.year || 'Unknown'}`);
         const setStatus = data?.validationCache?.setStatus;
+        const eprimeStatus = getEPrimeStatus(data);
+        const eprimeColor = getEPrimeStatusColor(eprimeStatus);
         
         html += `
           <tr class="hover:bg-[color:var(--muted)]/20 transition-colors">
@@ -682,7 +711,7 @@
             ${renderSetStatus(getSetStatusColor(setStatus, 'set2'))}
             ${renderSetStatus(getSetStatusColor(setStatus, 'set3'))}
             ${renderSetStatus(getSetStatusColor(setStatus, 'set4'))}
-            ${renderSetStatus(getSetStatusColor(setStatus, 'set5'))}
+            ${renderEPrimeStatus(eprimeStatus, eprimeColor)}
           </tr>
         `;
       });
@@ -746,22 +775,6 @@
         });
       });
     }
-
-    // Add E-Prime tasks if configured
-    if (systemConfig && systemConfig.eprime && systemConfig.eprime.tasks) {
-      const eprimeSetId = 'set5';
-      systemConfig.eprime.tasks.forEach((task, index) => {
-        allTasks.push({
-          name: task.id, // e.g. "NL", "SRT"
-          originalNames: [task.id],
-          displayName: task.name, // Full name for tooltip
-          setId: eprimeSetId,
-          order: 1000 + index, // High order to put at end
-          isGenderConditional: false,
-          isEPrime: true
-        });
-      });
-    }
     
     // Get column width settings from config
     const taskColumnWidth = systemConfig?.classPageTaskView?.taskColumnWidth || '120px';
@@ -784,8 +797,7 @@
       'set1': 'rgba(43, 57, 144, 0.06)',      // Light blue (primary)
       'set2': 'rgba(141, 190, 80, 0.08)',     // Light green (success)
       'set3': 'rgba(147, 51, 234, 0.06)',     // Light purple
-      'set4': 'rgba(249, 157, 51, 0.08)',     // Light orange (secondary)
-      'set5': 'rgba(236, 72, 153, 0.08)'      // Light pink (E-Prime)
+      'set4': 'rgba(249, 157, 51, 0.08)'      // Light orange (secondary)
     };
     
     let html = `
@@ -837,7 +849,7 @@
       `;
     } else {
       filteredStudents.forEach(student => {
-        const data = studentSubmissionData.get(student.coreId);
+        const data = studentSubmissionData.get(`${student.coreId}_${student.year || 'Unknown'}`);
         const setStatus = data?.validationCache?.setStatus;
         
         html += `
@@ -906,7 +918,7 @@
     }
     
     // Search through all sets for this task
-    for (const setId of ['set1', 'set2', 'set3', 'set4', 'set5']) {
+    for (const setId of ['set1', 'set2', 'set3', 'set4']) {
       const set = setStatus[setId];
       if (!set || !set.tasks) continue;
       
@@ -1111,18 +1123,40 @@
   }
 
   /**
+   * Render E-Prime status indicator with X/7 count
+   * Green = 7/7, Red = 1-6/7, Grey = 0/7
+   */
+  function renderEPrimeStatus(eprimeStatus, color) {
+    const statusConfig = {
+      green: { class: 'status-green', textClass: 'text-emerald-600' },
+      red: { class: 'status-red', textClass: 'text-red-600' },
+      grey: { class: 'status-grey', textClass: 'text-[color:var(--muted-foreground)]' }
+    };
+    
+    const config = statusConfig[color] || statusConfig.grey;
+    const countText = `${eprimeStatus.completed}/${eprimeStatus.total}`;
+    const tooltipText = eprimeStatus.tasks.map(t => `${t.name}: ${t.done ? '✓' : '✗'}`).join('\n');
+    
+    return `
+      <td class="px-4 py-3" style="background-color: rgba(236, 72, 153, 0.08);">
+        <span class="inline-flex items-center gap-2 text-xs ${config.textClass}" title="${tooltipText}">
+          <span class="status-circle ${config.class}"></span>
+          <span class="font-mono">${countText}</span>
+        </span>
+      </td>
+    `;
+  }
+
+  /**
    * Show modal with outstanding tasks for a student
    */
   function showOutstandingModal(coreId) {
-    const data = studentSubmissionData.get(coreId);
-    if (!data) return;
-    
     const student = students.find(s => s.coreId === coreId);
     if (!student) return;
     
-    const modal = document.getElementById('outstanding-modal');
-    const studentNameEl = document.getElementById('modal-student-name');
-    const tasksListEl = document.getElementById('modal-tasks-list');
+    const cacheKey = `${coreId}_${student.year || 'Unknown'}`;
+    const data = studentSubmissionData.get(cacheKey);
+    if (!data) return;
     
     if (!modal || !studentNameEl || !tasksListEl) return;
     

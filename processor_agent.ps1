@@ -2255,6 +2255,448 @@ function Invoke-FilenameValidation {
     return $result
 }
 
+# ============================================================================
+# EDAT3 (E-Prime) File Processing Functions
+# ============================================================================
+
+# Known E-Prime task names for validation warnings
+$script:KnownEPrimeTasks = @('NL', 'SimpleReactionTime', 'AnimalNumber', 'GoNoGo', 'Simon', 'CorsiForward', 'CorsiBackward')
+
+function Invoke-Edat3FilenameValidation {
+    param(
+        [string]$FileName
+    )
+    
+    $result = [pscustomobject]@{
+        IsValid = $false
+        CanonicalName = $FileName
+        Reason = ""
+        ReasonCode = ""
+        TaskName = ""
+        SchoolId = ""
+        CoreId = ""
+        ComputerNo = ""
+    }
+    
+    if ([string]::IsNullOrWhiteSpace($FileName)) {
+        $result.Reason = "Filename is missing."
+        $result.ReasonCode = "INVALID_EDAT3_FILENAME"
+        return $result
+    }
+    
+    $extension = [System.IO.Path]::GetExtension($FileName)
+    if (-not $extension -or $extension.ToLowerInvariant() -ne ".edat3") {
+        $result.Reason = "Expected .edat3 extension."
+        $result.ReasonCode = "INVALID_EDAT3_EXTENSION"
+        return $result
+    }
+    
+    # Pattern: {task}-{schoolid}-{coreid}-{computerno}.edat3
+    # Example: NL-59-11603-51.edat3
+    $baseName = [System.IO.Path]::GetFileNameWithoutExtension($FileName)
+    $pattern = '^([A-Za-z0-9]+)-(\d{1,3})-(\d{5})-(\d{1,3})$'
+    
+    if ($baseName -match $pattern) {
+        $taskName = $Matches[1]
+        $schoolId = "S" + $Matches[2].PadLeft(3, '0')  # Normalize with S prefix: 59 → S059
+        $coreId = "C" + $Matches[3]                    # Add C prefix: 11603 → C11603
+        $computerNo = $Matches[4].PadLeft(3, '0')      # Normalize to 3 digits: 51 → 051
+        
+        $result.IsValid = $true
+        $result.TaskName = $taskName
+        $result.SchoolId = $schoolId
+        $result.CoreId = $coreId
+        $result.ComputerNo = $computerNo
+        $result.CanonicalName = "$taskName-$schoolId-$($Matches[3])-$computerNo.edat3"
+        
+        # Warn if task name is unknown (but still valid)
+        if ($taskName -notin $script:KnownEPrimeTasks) {
+            Write-Log -Message "Unknown E-Prime task name: '$taskName' (file will still be processed)" -Level "WARN" -File $FileName
+        }
+        
+        return $result
+    }
+    
+    $result.Reason = "Filename does not match pattern: {task}-{schoolid}-{coreid}-{computerno}.edat3"
+    $result.ReasonCode = "INVALID_EDAT3_FILENAME"
+    return $result
+}
+
+function Invoke-Edat3CrossValidation {
+    param(
+        [string]$CoreId,        # e.g., "C11603"
+        [string]$SchoolId,      # e.g., "059" (from filename, already normalized)
+        [hashtable]$CoreIdMap,
+        [string]$FileName
+    )
+    
+    $result = @{
+        IsValid = $true
+        ReasonCode = $null
+        Reason = $null
+        StudentRecord = $null
+        MappedSchoolId = $null
+    }
+    
+    # 1. Check Core ID exists in mapping
+    $studentRecord = $CoreIdMap.$CoreId
+    if (-not $studentRecord) {
+        $result.IsValid = $false
+        $result.ReasonCode = "coreid_missing_in_mapping"
+        $result.Reason = "Core ID '$CoreId' not found in mapping data."
+        return $result
+    }
+    
+    # 2. Cross-validate School ID
+    $mappedSchoolId = $studentRecord.'School ID'
+    if (-not $mappedSchoolId) { $mappedSchoolId = $studentRecord.schoolId }
+    if (-not $mappedSchoolId) { $mappedSchoolId = $studentRecord.SchoolId }
+    
+    # Normalize mapped school ID to Sxxx format for comparison
+    # Handle cases where mapping might have "S059", "059", or "59"
+    $normalizedMapped = $mappedSchoolId.ToString()
+    if ($normalizedMapped -notmatch '^S') {
+        $normalizedMapped = "S" + $normalizedMapped.PadLeft(3, '0')
+    }
+    
+    if ($normalizedMapped -ne $SchoolId) {
+        $result.IsValid = $false
+        $result.ReasonCode = "coreid_schoolid_mismatch"
+        $result.Reason = "School ID mismatch: Filename='$SchoolId' vs Mapping='$normalizedMapped' for Core ID '$CoreId'"
+        return $result
+    }
+    
+    # 3. Return success with student record for enrichment
+    $result.StudentRecord = $studentRecord
+    $result.MappedSchoolId = $normalizedMapped
+    return $result
+}
+
+function Invoke-JotformUpsertByStudentId {
+    param(
+        [string]$CoreId,           # e.g., "C11603" (with C prefix from filename validation)
+        [string]$TaskName,         # e.g., "NL"
+        [string]$ComputerNo,       # e.g., "051"
+        [PSCustomObject]$ApiCredentials,
+        [hashtable]$JotformQuestions,
+        [string]$FileName,
+        [int]$MaxRetries = 3,
+        [int[]]$RetryDelaySeconds = @(10, 30, 90)
+    )
+    
+    # 1. Get Jotform credentials
+    $apiKey = $ApiCredentials.jotformApiKey
+    $formId = $ApiCredentials.jotformFormId
+    
+    if ([string]::IsNullOrWhiteSpace($apiKey) -or [string]::IsNullOrWhiteSpace($formId)) {
+        Write-Log -Message "Jotform credentials missing (apiKey or formId)" -Level "WARN" -File $FileName
+        return @{ Success = $false; Error = "Missing credentials"; Retryable = $false }
+    }
+    
+    # CRITICAL: JotForm stores student-id as digits only (e.g., "11603"), not with C prefix
+    # The PDF pipeline strips the C prefix before storing in JotForm
+    # We must do the same for matching
+    $studentIdDigits = $CoreId -replace '^C', ''
+    
+    # 2. Get QIDs for the fields we need
+    $studentIdQid = $JotformQuestions['student-id']  # QID 20
+    $doneFieldName = "EPrime_${TaskName}_Done"
+    $computerNoFieldName = "EPrime_${TaskName}_ComputerNo"
+    
+    $doneQid = $JotformQuestions[$doneFieldName]
+    $computerNoQid = $JotformQuestions[$computerNoFieldName]
+    
+    if (-not $doneQid -or -not $computerNoQid) {
+        Write-Log -Message "E-Prime field QIDs not found for task '$TaskName' (Done: $doneQid, ComputerNo: $computerNoQid)" -Level "ERROR" -File $FileName
+        return @{ Success = $false; Error = "Missing E-Prime field mappings for task '$TaskName'"; Retryable = $false }
+    }
+    
+    $attempt = 0
+    $lastError = $null
+    
+    while ($attempt -lt $MaxRetries) {
+        $attempt++
+        
+        try {
+            # 3. Search for existing submission by student-id (digits only, no C prefix)
+            Write-Log -Message "Searching for submission with student-id: $studentIdDigits" -Level "INFO" -File $FileName
+            
+            Add-Type -AssemblyName System.Web -ErrorAction SilentlyContinue
+            
+            # Use :matches filter on student-id field (QID 20)
+            $filter = "{`"q${studentIdQid}:matches`":`"${studentIdDigits}`"}"
+            $encodedFilter = [System.Web.HttpUtility]::UrlEncode($filter)
+            $filterUri = "https://api.jotform.com/form/$formId/submissions?apiKey=$apiKey&filter=$encodedFilter&limit=100&orderby=created_at&direction=ASC"
+            
+            $filterResponse = Invoke-RestMethod -Uri $filterUri -Method Get -TimeoutSec $script:JotformConfig.searchTimeoutSec
+            
+            $foundSubmission = $null
+            
+            if ($filterResponse.content -and $filterResponse.content.Count -gt 0) {
+                Write-Log -Message "Filter API returned $($filterResponse.content.Count) submission(s), finding exact match..." -Level "DEBUG" -File $FileName
+                
+                # Filter to exact matches only
+                $exactMatches = @()
+                foreach ($sub in $filterResponse.content) {
+                    $studentIdValue = $null
+                    if ($sub.answers.$studentIdQid.answer) {
+                        $studentIdValue = $sub.answers.$studentIdQid.answer
+                    } elseif ($sub.answers.$studentIdQid.text) {
+                        $studentIdValue = $sub.answers.$studentIdQid.text
+                    }
+                    
+                    if ($studentIdValue) {
+                        $studentIdValue = $studentIdValue.Trim()
+                    }
+                    
+                    if ($studentIdValue -eq $studentIdDigits) {
+                        $exactMatches += $sub
+                    }
+                }
+                
+                # Sort by created_at ourselves (JotForm ignores direction parameter)
+                # Take the EARLIEST submission
+                if ($exactMatches.Count -gt 0) {
+                    $sorted = $exactMatches | Sort-Object { [datetime]$_.created_at }
+                    $foundSubmission = $sorted | Select-Object -First 1
+                    Write-Log -Message "Found $($exactMatches.Count) exact match(es), selected earliest: $($foundSubmission.id) (created: $($foundSubmission.created_at))" -Level "INFO" -File $FileName
+                }
+            }
+            
+            $submissionId = $null
+            
+            if ($foundSubmission) {
+                # 4a. UPDATE existing submission
+                $submissionId = $foundSubmission.id
+                Write-Log -Message "Will UPDATE submission $submissionId with E-Prime data for task '$TaskName'" -Level "INFO" -File $FileName
+                
+                # Check for data overwrite conflicts if protection is enabled
+                if ($script:EnableDataOverwriteProtection) {
+                    $existingDoneValue = $null
+                    $existingComputerNoValue = $null
+                    
+                    if ($foundSubmission.answers.$doneQid) {
+                        $existingDoneValue = $foundSubmission.answers.$doneQid.answer
+                        if (-not $existingDoneValue) { $existingDoneValue = $foundSubmission.answers.$doneQid.text }
+                    }
+                    if ($foundSubmission.answers.$computerNoQid) {
+                        $existingComputerNoValue = $foundSubmission.answers.$computerNoQid.answer
+                        if (-not $existingComputerNoValue) { $existingComputerNoValue = $foundSubmission.answers.$computerNoQid.text }
+                    }
+                    
+                    # Check if either field has existing non-empty data
+                    if ((-not [string]::IsNullOrWhiteSpace($existingDoneValue)) -or (-not [string]::IsNullOrWhiteSpace($existingComputerNoValue))) {
+                        $conflictMsg = "E-Prime data overwrite conflict for task '$TaskName': Done='$existingDoneValue', ComputerNo='$existingComputerNoValue'"
+                        Write-Log -Message $conflictMsg -Level "DATA_OVERWRITE_DIFF" -File $FileName
+                        return @{
+                            Success = $false
+                            Error = "Data overwrite conflict: E-Prime fields for task '$TaskName' already have data"
+                            Retryable = $false
+                            OverwriteConflict = $true
+                        }
+                    }
+                }
+                
+                # Build update payload
+                $updateBody = @{
+                    "submission[$doneQid]" = "1"
+                    "submission[$computerNoQid]" = $ComputerNo
+                }
+                
+                $updateUri = "https://api.jotform.com/submission/$submissionId`?apiKey=$apiKey"
+                $response = Invoke-RestMethod -Uri $updateUri -Method Post -Body $updateBody -ContentType "application/x-www-form-urlencoded" -TimeoutSec $script:JotformConfig.updateTimeoutSec
+                
+                Write-Log -Message "Updated submission $submissionId with E-Prime task '$TaskName' (Done=true, ComputerNo=$ComputerNo)" -Level "UPLOAD" -File $FileName
+                
+            } else {
+                # 4b. CREATE new submission (EDAT3 arrived before PDF)
+                Write-Log -Message "No existing submission found for $studentIdDigits, will CREATE new submission" -Level "INFO" -File $FileName
+                
+                # Build create payload with student-id and E-Prime fields (digits only, no C prefix)
+                $createBody = @{
+                    "submission[$studentIdQid]" = $studentIdDigits
+                    "submission[$doneQid]" = "1"
+                    "submission[$computerNoQid]" = $ComputerNo
+                }
+                
+                $createUri = "https://api.jotform.com/form/$formId/submissions?apiKey=$apiKey"
+                $createResponse = Invoke-RestMethod -Uri $createUri -Method Post -Body $createBody -ContentType "application/x-www-form-urlencoded" -TimeoutSec $script:JotformConfig.createTimeoutSec
+                
+                $submissionId = $createResponse.content.submissionID
+                Write-Log -Message "Created new submission $submissionId with E-Prime task '$TaskName' for $studentIdDigits" -Level "UPLOAD" -File $FileName
+            }
+            
+            return @{
+                Success = $true
+                SubmissionId = $submissionId
+                Attempts = $attempt
+                IsNew = ($null -eq $foundSubmission)
+            }
+            
+        } catch {
+            $lastError = $_.Exception.Message
+            Write-Log -Message "E-Prime upload attempt $attempt failed: $lastError" -Level "WARN" -File $FileName
+            
+            if ($attempt -lt $MaxRetries) {
+                $delay = $RetryDelaySeconds[([Math]::Min($attempt - 1, $RetryDelaySeconds.Count - 1))]
+                Write-Log -Message "Retrying in ${delay}s..." -Level "INFO" -File $FileName
+                Start-Sleep -Seconds $delay
+            }
+        }
+    }
+    
+    Write-Log -Message "E-Prime upload failed after $MaxRetries attempts: $lastError" -Level "ERROR" -File $FileName
+    return @{
+        Success = $false
+        Error = $lastError
+        Attempts = $attempt
+        Retryable = $true
+    }
+}
+
+function Process-IncomingEdat3 {
+    param(
+        [string]$Path
+    )
+    
+    # CRITICAL: Atomic check - verify file still exists before processing
+    if (-not (Test-Path $Path)) {
+        return
+    }
+    
+    $fileName = [System.IO.Path]::GetFileName($Path)
+    Set-ManifestStatus -Path $script:QueueManifestPath -Id $fileName -FileName $fileName -Status "Queued"
+    
+    # Debounce wait for file stability
+    if (-not (Wait-ForFile -Path $Path -TimeoutSeconds $script:DebounceWindow)) {
+        Write-Log -Message "EDAT3 file not stable after $($script:DebounceWindow)s, skipping" -Level "WARN" -File $fileName
+        return
+    }
+    
+    # Second atomic check after debounce
+    if (-not (Test-Path $Path)) {
+        Remove-ManifestEntry -Path $script:QueueManifestPath -Id $fileName
+        return
+    }
+    
+    try {
+        # Move to staging
+        $stagingTarget = Ensure-UniquePath -Directory $script:StagingPath -FileName $fileName
+        
+        try {
+            Move-Item -Path $Path -Destination $stagingTarget -Force -ErrorAction Stop
+            Set-ManifestStatus -Path $script:QueueManifestPath -Id $fileName -FileName $fileName -Status "Staging"
+        } catch {
+            if (-not (Test-Path $Path)) {
+                Remove-ManifestEntry -Path $script:QueueManifestPath -Id $fileName
+                return
+            }
+            Write-Log -Message "Failed to move EDAT3 to staging: $($_.Exception.Message)" -Level "ERROR" -File $fileName
+            Remove-ManifestEntry -Path $script:QueueManifestPath -Id $fileName
+            return
+        }
+        
+        # 1. Filename validation
+        Set-ManifestStatus -Path $script:QueueManifestPath -Id $fileName -FileName $fileName -Status "Validating"
+        
+        $validation = Invoke-Edat3FilenameValidation -FileName $fileName
+        if (-not $validation.IsValid) {
+            Set-ManifestStatus -Path $script:QueueManifestPath -Id $fileName -FileName $fileName -Status "Rejected"
+            Write-Log -Message "$($validation.ReasonCode): $($validation.Reason)" -Level "REJECT" -File $fileName
+            $rejectTarget = Ensure-UniquePath -Directory $script:UnsortedRoot -FileName $fileName
+            Move-Item -Path $stagingTarget -Destination $rejectTarget -Force
+            Remove-ManifestEntry -Path $script:QueueManifestPath -Id $fileName
+            return
+        }
+        
+        # 2. Cross-validation with coreid.enc mapping
+        $bundle = $script:AgentSecrets.Bundle
+        $coreMap = $null
+        if ($bundle.coreIdMap) {
+            $coreMap = $bundle.coreIdMap
+        } elseif ($bundle.coreMappings) {
+            $coreMap = $bundle.coreMappings
+        }
+        
+        if (-not $coreMap) {
+            Write-Log -Message "No mapping data available, skipping cross-validation" -Level "WARN" -File $fileName
+        } else {
+            $crossValidation = Invoke-Edat3CrossValidation -CoreId $validation.CoreId -SchoolId $validation.SchoolId -CoreIdMap $coreMap -FileName $fileName
+            
+            if (-not $crossValidation.IsValid) {
+                Set-ManifestStatus -Path $script:QueueManifestPath -Id $fileName -FileName $fileName -Status "Rejected"
+                Write-Log -Message "$($crossValidation.ReasonCode): $($crossValidation.Reason)" -Level "REJECT" -File $fileName
+                $rejectTarget = Ensure-UniquePath -Directory $script:UnsortedRoot -FileName $fileName
+                Move-Item -Path $stagingTarget -Destination $rejectTarget -Force
+                Remove-ManifestEntry -Path $script:QueueManifestPath -Id $fileName
+                return
+            }
+        }
+        
+        # 3. Upload to JotForm
+        $uploadSuccess = $false
+        if (-not $script:AgentSecrets.Bundle.jotformQuestions) {
+            Write-Log -Message "Jotform upload skipped: jotformquestions.json not loaded" -Level "WARN" -File $fileName
+        } else {
+            $uploadResult = Invoke-JotformUpsertByStudentId `
+                -CoreId $validation.CoreId `
+                -TaskName $validation.TaskName `
+                -ComputerNo $validation.ComputerNo `
+                -ApiCredentials $script:AgentSecrets.Bundle `
+                -JotformQuestions $script:AgentSecrets.Bundle.jotformQuestions `
+                -FileName $fileName `
+                -MaxRetries 3 `
+                -RetryDelaySeconds @(10, 30, 90)
+            
+            if ($uploadResult.Success) {
+                Write-Log -Message "E-Prime upload completed: $($uploadResult.SubmissionId) (task: $($validation.TaskName), attempts: $($uploadResult.Attempts))" -Level "INFO" -File $fileName
+                $uploadSuccess = $true
+            } else {
+                Write-Log -Message "E-Prime upload failed: $($uploadResult.Error)" -Level "ERROR" -File $fileName
+            }
+        }
+        
+        Set-ManifestStatus -Path $script:QueueManifestPath -Id $fileName -FileName $fileName -Status "Processed"
+        
+        # 4. Filing - school folder uses Sxxx format (e.g., S059)
+        $schoolFolder = $validation.SchoolId  # Already normalized with S prefix (e.g., "S059")
+        
+        if ([string]::IsNullOrWhiteSpace($schoolFolder)) {
+            $schoolFolder = "Unsorted"
+            Write-Log -Message "No School ID found, filing to Unsorted" -Level "WARN" -File $fileName
+        } elseif (-not $uploadSuccess) {
+            Write-Log -Message "Upload failed, filing to Unsorted (original: $schoolFolder)" -Level "WARN" -File $fileName
+            $schoolFolder = "Unsorted"
+        }
+        
+        $schoolFolderPath = Join-Path $script:FilingRoot $schoolFolder
+        if (-not (Test-Path $schoolFolderPath)) {
+            New-Item -ItemType Directory -Path $schoolFolderPath -Force | Out-Null
+            Write-Log -Message "Created school folder: $schoolFolderPath" -Level "INFO" -File $fileName
+        }
+        
+        $finalTarget = Join-Path $schoolFolderPath $fileName
+        Move-Item -Path $stagingTarget -Destination $finalTarget -Force
+        
+        Write-Log -Message "Filed EDAT3 to $schoolFolder/" -Level "FILED" -File $fileName
+        Remove-ManifestEntry -Path $script:QueueManifestPath -Id $fileName
+        
+    } catch {
+        Write-Log -Message "Unexpected error processing EDAT3: $($_.Exception.Message)" -Level "ERROR" -File $fileName
+        
+        # Try to move to Unsorted on error
+        if (Test-Path $stagingTarget) {
+            try {
+                $rejectTarget = Ensure-UniquePath -Directory $script:UnsortedRoot -FileName $fileName
+                Move-Item -Path $stagingTarget -Destination $rejectTarget -Force
+            } catch {
+                Write-Log -Message "Failed to move EDAT3 to Unsorted: $($_.Exception.Message)" -Level "ERROR" -File $fileName
+            }
+        }
+        Remove-ManifestEntry -Path $script:QueueManifestPath -Id $fileName
+    }
+}
+
 function Process-IncomingFile {
     param(
         [string]$Path
@@ -2763,11 +3205,24 @@ do {
         Write-Log -Message "Rolled log file to $script:LogFile"
     }
 
-    $pending = @()
+    # Scan for both PDF and EDAT3 files
+    $pendingPdfs = @()
+    $pendingEdat3 = @()
     if (Test-Path $script:WatchPath) {
-        $pending = Get-ChildItem -Path $script:WatchPath -File -Filter "*.pdf" -ErrorAction SilentlyContinue
+        $pendingPdfs = @(Get-ChildItem -Path $script:WatchPath -File -Filter "*.pdf" -ErrorAction SilentlyContinue)
+        $pendingEdat3 = @(Get-ChildItem -Path $script:WatchPath -File -Filter "*.edat3" -ErrorAction SilentlyContinue)
     }
     
+    # Process EDAT3 files first (sequential only - simpler pipeline)
+    if ($pendingEdat3.Count -gt 0) {
+        Write-Host "Processing $($pendingEdat3.Count) EDAT3 file(s)..." -ForegroundColor Cyan
+        foreach ($item in $pendingEdat3) {
+            Process-IncomingEdat3 -Path $item.FullName
+        }
+    }
+    
+    # Process PDF files
+    $pending = $pendingPdfs
     if ($pending.Count -gt 0) {
         $maxConcurrent = $script:JotformConfig.maxConcurrentPdfs
         

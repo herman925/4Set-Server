@@ -207,10 +207,8 @@
         taskView: { ...systemConfig.taskView, ...config.taskView }
       };
       
-      console.log('[Config] ✅ Loaded checking system config:', systemConfig);
     } catch (error) {
       console.warn('[Config] ⚠️ Failed to load config, using defaults:', error);
-      console.log('[Config] Default config:', systemConfig);
     }
   }
   
@@ -223,8 +221,6 @@
       const surveyStructure = await response.json();
       taskRegistry = surveyStructure.taskMetadata || {};
       
-      const taskCount = Object.keys(taskRegistry).length;
-      console.log('[StudentPage] Task metadata loaded from survey-structure:', taskCount, 'tasks');
     } catch (error) {
       console.error('[StudentPage] Failed to load task metadata:', error);
       taskRegistry = {}; // Fallback to empty registry
@@ -287,30 +283,17 @@
    * @param {string} yearParam - Optional year parameter from URL (K1/K2/K3)
    */
   async function loadStudentFromCache(coreId, cachedData, yearParam = null) {
-    console.log('[StudentPage] ========== LOADING FROM CACHE ==========');
-    console.log('[StudentPage] Looking for Core ID:', coreId);
-    console.log('[StudentPage] Year parameter:', yearParam || 'none (will auto-select)');
-    console.log('[StudentPage] Total students in cache:', cachedData.students.length);
-    
     // Find all student records with this Core ID (may have multiple grades)
     const studentRecords = cachedData.students.filter(s => s.coreId === coreId);
     
     if (studentRecords.length === 0) {
       console.error('[StudentPage] ❌ Student NOT FOUND in cache');
-      console.log('[StudentPage] Available Core IDs (first 10):', 
-        cachedData.students.slice(0, 10).map(s => s.coreId));
       showError(`Student with Core ID ${coreId} not found in cached data`);
       return;
     }
 
     // Get available grades for this student
     availableGrades = [...new Set(studentRecords.map(s => s.year))].filter(y => y).sort().reverse(); // K3, K2, K1
-    console.log('[StudentPage] Available grades for this student:', availableGrades);
-    console.log('[StudentPage] Student records with grades:', studentRecords.map(s => ({ 
-      coreId: s.coreId, 
-      year: s.year, 
-      studentId: s.studentId 
-    })));
 
     // Determine which grade to display
     if (yearParam && availableGrades.includes(yearParam)) {
@@ -320,7 +303,6 @@
       const savedGrade = window.CheckingSystemPreferences.getGradeSelection(coreId);
       if (savedGrade && availableGrades.includes(savedGrade)) {
         selectedGrade = savedGrade;
-        console.log(`[StudentPage] Restored saved grade preference: ${savedGrade}`);
       } else if (availableGrades.length > 0) {
         // Default to K3 if available, otherwise the highest grade
         selectedGrade = availableGrades.includes('K3') ? 'K3' : availableGrades[0];
@@ -340,8 +322,6 @@
       return;
     }
 
-    console.log('[StudentPage] Selected grade:', selectedGrade);
-
     // Get the student record for the selected grade
     studentData = studentRecords.find(s => s.year === selectedGrade);
     
@@ -350,15 +330,6 @@
       showError(`Student data not found for grade ${selectedGrade}`);
       return;
     }
-
-    console.log('[StudentPage] ✅ Student found:', {
-      coreId: studentData.coreId,
-      studentId: studentData.studentId,
-      studentName: studentData.studentName,
-      schoolId: studentData.schoolId,
-      classId: studentData.classId,
-      year: studentData.year
-    });
 
     // Update grade selector UI
     updateGradeSelector();
@@ -372,10 +343,6 @@
       classData = cachedData.classIdMap.get(studentData.classId);
     }
 
-    console.log('[StudentPage] School found:', schoolData ? schoolData.schoolNameChinese : 'NOT FOUND');
-    console.log('[StudentPage] Class found:', classData ? classData.actualClassName : 'NOT FOUND');
-    console.log('[StudentPage] ==========================================');
-
     // Populate student profile
     populateStudentProfile();
     
@@ -384,8 +351,6 @@
     
     // Build dynamic Task Progress section (now that we have student gender)
     await buildTaskProgressSection();
-
-    console.log('Student data loaded:', studentData);
   }
 
   /**
@@ -425,10 +390,6 @@
       return;
     }
 
-    console.log('[StudentPage] ========== POPULATING PROFILE ==========');
-    console.log('[StudentPage] Student Name:', studentData.studentName);
-    console.log('[StudentPage] Student ID:', studentData.studentId);
-
     // Update page elements
     updateTextContent('student-core-id', studentData.coreId);
     updateTextContent('student-student-id', studentData.studentId);
@@ -455,9 +416,6 @@
       const academicYear = yearMapping[yearLabel] || yearLabel;
       updateTextContent('student-class-label', `Class (${academicYear} - ${yearLabel})`);
     }
-
-    console.log('[StudentPage] Profile population complete');
-    console.log('[StudentPage] ==========================================');
   }
 
   /**
@@ -555,7 +513,6 @@
     const element = document.getElementById(id);
     if (element) {
       element.textContent = value || 'N/A';
-      console.log(`[StudentPage] ✅ Updated ${id}:`, value);
     } else {
       console.warn(`[StudentPage] ❌ Element not found: ${id}`);
     }
@@ -587,9 +544,6 @@
       const cached = sessionStorage.getItem(cacheKey);
       
       if (cached) {
-        console.log('[StudentPage] ========== CACHE LOOKUP ==========');
-        console.log('[StudentPage] Cache key:', cacheKey);
-
         const cachedData = JSON.parse(cached);
         const ttlHours = Number(systemConfig?.cache?.ttlHours ?? 0);
         const hasExpiry = ttlHours > 0;
@@ -602,12 +556,6 @@
         // All data in sessionStorage cache has already been normalized by the cache layer.
 
         if (!hasExpiry) {
-          console.log('[StudentPage] ✅ CACHE HIT - Using cached data (no expiry configured)');
-          console.log(`[StudentPage]   Cached at: ${cachedData.timestamp}`);
-          console.log(`[StudentPage]   Submissions merged: ${cachedData.submissionCount}`);
-          console.log(`[StudentPage]   Fields: ${Object.keys(cachedData.mergedAnswers).length}`);
-          console.log('[StudentPage] ==========================================');
-
           populateJotformData(cachedData);
           return;
         }
@@ -616,29 +564,12 @@
         const timeRemaining = expiresAt ? Math.round((expiresAt - now) / 1000 / 60) : null; // minutes
         
         if (expiresAt && now < expiresAt) {
-          console.log('[StudentPage] ✅ CACHE HIT - Using cached data');
-          console.log(`[StudentPage]   Cached at: ${cachedData.timestamp}`);
-          console.log(`[StudentPage]   Expires at: ${cachedData.expiresAt} (${timeRemaining} minutes remaining)`);
-          console.log(`[StudentPage]   Submissions merged: ${cachedData.submissionCount}`);
-          console.log(`[StudentPage]   Fields: ${Object.keys(cachedData.mergedAnswers).length}`);
-          console.log('[StudentPage] ==========================================');
-          
           populateJotformData(cachedData);
           return;
         } else {
-          console.log('[StudentPage] ❌ CACHE EXPIRED - Fetching fresh data');
-          if (timeRemaining !== null) {
-            console.log(`[StudentPage]   Expired ${Math.abs(timeRemaining)} minutes ago`);
-          } else {
-            console.log('[StudentPage]   Expiration timestamp missing; treating as expired');
-          }
-          console.log('[StudentPage] ==========================================');
+          // Cache expired - continue to fetch fresh data
         }
-      } else {
-        console.log('[StudentPage] ========== CACHE LOOKUP ==========');
-        console.log('[StudentPage] ❌ CACHE MISS - No cached data found');
-        console.log('[StudentPage] ==========================================');
-      }
+      } // No cached data - continue to fetch
 
       // Load question mappings for sessionkey QID
       await updateLoadingStatus('Loading question mappings...');
@@ -648,11 +579,7 @@
       // Get sessionkey QID (needed for submission processing)
       const sessionKeyQid = questionsData['sessionkey'] || '3'; // Default to QID 3
 
-      // ✅ FIRST: Try to get data from global cache (includes merged Qualtrics data)
-      console.log('[StudentPage] ========== CHECKING GLOBAL CACHE ==========');
-      console.log('[StudentPage] Looking for Core ID:', coreId);
-      console.log('[StudentPage] Selected grade:', selectedGrade || 'none (will return all grades)');
-      
+      // Try to get data from global cache (includes merged Qualtrics data)
       let submissions = [];
       
       if (window.JotFormCache && typeof window.JotFormCache.getStudentSubmissions === 'function') {
@@ -664,52 +591,39 @@
           submissions = await window.JotFormCache.getStudentSubmissions(coreId, selectedGrade);
           
           if (submissions.length > 0) {
-            console.log(`[StudentPage] ✅ Found ${submissions.length} submissions in global cache (includes Qualtrics data if merged)`);
-            
             // Store the first submission (merged record with metadata) for provenance tooltips
             currentSubmission = submissions[0];
-            console.log('[StudentPage] Stored submission metadata for provenance tooltips:', {
-              grade: currentSubmission.grade,
-              sources: currentSubmission._sources,
-              hasMetadata: !!currentSubmission._meta,
-              hasConflicts: !!(currentSubmission._qualtricsConflicts && currentSubmission._qualtricsConflicts.length > 0)
-            });
             
-            // Check if any are Qualtrics-only records
             const qualtricsOnly = submissions.filter(s => s._orphaned || (s._sources && s._sources.length === 1 && s._sources[0] === 'qualtrics'));
-            if (qualtricsOnly.length > 0) {
-              console.log(`[StudentPage] ℹ️  ${qualtricsOnly.length} submission(s) are from Qualtrics only (no JotForm data)`);
-            }
-            
-            console.log('[StudentPage] ==========================================');
           } else {
-            console.log('[StudentPage] No submissions found in global cache, will try API');
-            console.log('[StudentPage] ==========================================');
+            // No submissions in cache
           }
         } catch (cacheError) {
           console.warn('[StudentPage] Error reading from global cache:', cacheError);
         }
       } else {
-        console.log('[StudentPage] Global cache not available, will use API');
-        console.log('[StudentPage] ==========================================');
+        // Global cache not available
       }
 
       // ✅ FALLBACK: If no cached data, fetch from API
+      // BUT: Only fall back to API if no specific grade is selected
+      // If a grade IS selected (K1/K2/K3) and no data exists, show "No Data" instead
+      // This prevents showing K3 data when K1 is selected but has no data
       if (submissions.length === 0) {
-        console.log('[StudentPage] ========== FETCHING JOTFORM DATA ==========');
-        console.log('[StudentPage] Using :matches filter on sessionkey field (QID ' + sessionKeyQid + ')');
-        console.log('[StudentPage] Fetching Jotform data for Core ID:', coreId);
-        
-        await updateLoadingStatus('Connecting to Jotform API with :matches filter...');
-        
-        // fetchStudentSubmissionsDirectly uses the working :matches operator
-        // Returns only submissions where sessionkey contains the student ID
-        submissions = await window.JotformAPI.fetchStudentSubmissionsDirectly(coreId, sessionKeyQid);
-        
-        console.log(`[StudentPage] ✅ API returned: ${submissions.length} validated submissions`);
-        console.log('[StudentPage] Filter accuracy: 100% (server-side :matches filter working!)');
-        await updateLoadingStatus(`Found ${submissions.length} matching submissions`);
-        console.log('[StudentPage] ==========================================');
+        if (selectedGrade) {
+          // Grade is selected but no data exists for this grade in cache
+          // Do NOT fall back to API - it would return wrong grade's data
+          // submissions stays empty, will trigger showNoDataMessage below
+        } else {
+          // No grade selected - safe to fetch all from API
+          await updateLoadingStatus('Connecting to Jotform API with :matches filter...');
+          
+          // fetchStudentSubmissionsDirectly uses the working :matches operator
+          // Returns only submissions where sessionkey contains the student ID
+          submissions = await window.JotformAPI.fetchStudentSubmissionsDirectly(coreId, sessionKeyQid);
+          
+          await updateLoadingStatus(`Found ${submissions.length} matching submissions`);
+        }
       }
 
       if (submissions.length === 0) {
@@ -717,18 +631,14 @@
         return;
       }
 
-      // Extract and log sessionkeys
-      console.log('[StudentPage] ========== SESSIONKEY EXTRACTION ==========');
-      console.log(`[StudentPage] Found ${submissions.length} submissions for Core ID ${coreId}`);
+      // Extract sessionkeys
       await updateLoadingStatus(`Processing ${submissions.length} submissions...`);
       
       const sessionKeys = submissions.map((sub, index) => {
         const sessionKeyQid = questionsData['sessionkey'];
         const sessionKey = sub.answers?.[sessionKeyQid]?.answer || sub.answers?.[sessionKeyQid]?.text || 'UNKNOWN';
-        console.log(`[StudentPage]   Submission ${index + 1}: ${sessionKey} (ID: ${sub.id}, Created: ${sub.created_at})`);
         return sessionKey;
       });
-      console.log('[StudentPage] ==========================================');
 
       // Merge submissions (prefer earliest for overlaps, fill missing from later)
       await updateLoadingStatus(`Merging ${submissions.length} submissions...`);
@@ -739,7 +649,6 @@
       const metrics = calculateCompletionMetrics(mergedData, questionsData);
 
       // Cache the results (merged data only, not all 517 raw submissions!)
-      console.log('[StudentPage] ========== CACHING MERGED DATA ==========');
       const ttlHours = Number(systemConfig?.cache?.ttlHours ?? 0);
       const expiresAt = ttlHours > 0
         ? new Date(Date.now() + ttlHours * 60 * 60 * 1000).toISOString()
@@ -755,48 +664,18 @@
         ttlHours
       };
       
-      console.log('[StudentPage] Cache key:', cacheKey);
-      console.log('[StudentPage] Cache contents:');
-      console.log(`[StudentPage]   Core ID: ${cacheData.coreId}`);
-      console.log(`[StudentPage]   Submissions merged: ${cacheData.submissionCount}`);
-      console.log(`[StudentPage]   Unique fields in merged data: ${Object.keys(cacheData.mergedAnswers).length}`);
-      console.log(`[StudentPage]   Completion: ${cacheData.metrics.completionPercentage}%`);
-      console.log(`[StudentPage]   Cached at: ${cacheData.timestamp}`);
-      if (expiresAt) {
-        console.log(`[StudentPage]   Expires at: ${cacheData.expiresAt}`);
-      } else {
-        console.log('[StudentPage]   Expires at: ∞ (no automatic expiration)');
-      }
-      
-      // Show sample of merged fields
-      const sampleFields = Object.keys(cacheData.mergedAnswers).slice(0, 5);
-      if (sampleFields.length > 0) {
-        console.log('[StudentPage]   Sample merged fields (first 5):');
-        sampleFields.forEach(field => {
-          const value = cacheData.mergedAnswers[field].answer || cacheData.mergedAnswers[field].text || '—';
-          console.log(`[StudentPage]     - ${field}: ${value}`);
-        });
-      }
-      
       try {
         const cacheString = JSON.stringify(cacheData);
-        const cacheSizeKB = (cacheString.length / 1024).toFixed(2);
-        console.log(`[StudentPage]   Cache size: ${cacheSizeKB} KB`);
-        
         sessionStorage.setItem(cacheKey, cacheString);
-        console.log('[StudentPage] ✅ Successfully cached merged data');
       } catch (e) {
         console.warn('[StudentPage] ❌ Failed to cache (quota exceeded):', e.message);
         // Continue without caching - not critical
       }
-      
-      console.log('[StudentPage] ==========================================');
 
       // Set last sync timestamp in localStorage (global for this student)
       const syncKey = `jotform_last_sync_${coreId}`;
       try {
         localStorage.setItem(syncKey, new Date().toISOString());
-        console.log(`[StudentPage] ✅ Updated sync timestamp in localStorage: ${syncKey}`);
       } catch (storageError) {
         console.warn('[StudentPage] Could not access localStorage:', storageError.message);
         // Continue without localStorage - functionality should still work
@@ -815,21 +694,12 @@
    * Merge multiple submissions (prefer earliest for overlaps, fill missing from later)
    */
   function mergeSubmissions(submissions, questionsData) {
-    console.log('[StudentPage] ========== MERGING SUBMISSIONS ==========');
-    console.log(`[StudentPage] Input: ${submissions.length} submissions to merge`);
-    
     // Sort by created_at (earliest first)
     const sorted = submissions.sort((a, b) => 
       new Date(a.created_at) - new Date(b.created_at)
     );
 
-    // Log sorted order with sessionkey timestamps
-    console.log('[StudentPage] Sorted by created_at (EARLIEST FIRST):');
     const sessionKeyQid = questionsData['sessionkey'];
-    sorted.forEach((sub, index) => {
-      const sessionKey = sub.answers?.[sessionKeyQid]?.answer || sub.answers?.[sessionKeyQid]?.text || 'UNKNOWN';
-      console.log(`[StudentPage]   ${index + 1}. ${sessionKey} (Created: ${sub.created_at})`);
-    });
 
     // Create reverse mapping: QID -> field name
     const qidToFieldName = {};
@@ -838,28 +708,11 @@
     }
 
     const merged = {};
-    const mergeStats = {
-      totalFields: 0,
-      filledFromSubmission: {},
-      overlaps: 0,
-      overlapsKeptOldest: []
-    };
-
-    // Initialize stats counters
-    sorted.forEach((sub, index) => {
-      const sessionKey = sub.answers?.[sessionKeyQid]?.answer || sub.answers?.[sessionKeyQid]?.text || `Submission${index + 1}`;
-      mergeStats.filledFromSubmission[sessionKey] = 0;
-    });
-
-    console.log('[StudentPage] Merge Logic: a) Fill missing fields from ANY record, b) Keep OLDEST for overlaps');
-    console.log('[StudentPage] Processing fields...');
 
     // Merge answers - iterate through sorted (earliest first)
     // This ensures EARLIEST submission "wins" for any field
     for (let i = 0; i < sorted.length; i++) {
       const submission = sorted[i];
-      const sessionKey = submission.answers?.[sessionKeyQid]?.answer || submission.answers?.[sessionKeyQid]?.text || `Submission${i + 1}`;
-      let fieldsAddedFromThisSubmission = 0;
 
       for (const [qid, answer] of Object.entries(submission.answers || {})) {
         const fieldName = qidToFieldName[qid];
@@ -878,52 +731,10 @@
         if (!merged[fieldName]) {
           // NEW FIELD - fill missing data
           merged[fieldName] = answer;
-          fieldsAddedFromThisSubmission++;
-          mergeStats.totalFields++;
-        } else {
-          // OVERLAP DETECTED - already have this field from earlier submission
-          mergeStats.overlaps++;
-          mergeStats.overlapsKeptOldest.push({
-            field: fieldName,
-            keptFrom: Object.keys(mergeStats.filledFromSubmission)[0], // First submission
-            skippedFrom: sessionKey
-          });
         }
-      }
-
-      mergeStats.filledFromSubmission[sessionKey] = fieldsAddedFromThisSubmission;
-      
-      if (fieldsAddedFromThisSubmission > 0) {
-        console.log(`[StudentPage]   ✅ ${sessionKey}: Added ${fieldsAddedFromThisSubmission} fields`);
-      } else {
-        console.log(`[StudentPage]   ⏭️  ${sessionKey}: No new fields (all overlaps)`);
+        // OVERLAP DETECTED - already have this field from earlier submission (keep oldest)
       }
     }
-
-    console.log('[StudentPage] ');
-    console.log('[StudentPage] MERGE STATISTICS:');
-    console.log(`[StudentPage]   Total unique fields: ${mergeStats.totalFields}`);
-    console.log(`[StudentPage]   Overlaps detected: ${mergeStats.overlaps}`);
-    console.log('[StudentPage]   Fields contributed by each submission:');
-    for (const [sessionKey, count] of Object.entries(mergeStats.filledFromSubmission)) {
-      console.log(`[StudentPage]     - ${sessionKey}: ${count} fields`);
-    }
-
-    if (mergeStats.overlaps > 0) {
-      console.log(`[StudentPage]   Overlap handling: Kept OLDEST value for ${mergeStats.overlaps} fields`);
-      if (mergeStats.overlapsKeptOldest.length <= 5) {
-        mergeStats.overlapsKeptOldest.forEach(overlap => {
-          console.log(`[StudentPage]     - ${overlap.field}: Kept from ${overlap.keptFrom}, skipped ${overlap.skippedFrom}`);
-        });
-      } else {
-        console.log(`[StudentPage]     (First 3 examples shown)`);
-        mergeStats.overlapsKeptOldest.slice(0, 3).forEach(overlap => {
-          console.log(`[StudentPage]     - ${overlap.field}: Kept from ${overlap.keptFrom}, skipped ${overlap.skippedFrom}`);
-        });
-      }
-    }
-
-    console.log('[StudentPage] ==========================================');
 
     return merged;
   }
@@ -961,7 +772,6 @@
    */
   async function populateJotformData(data) {
     try {
-      console.log('[StudentPage] ========== POPULATING UI ==========');
       await updateLoadingStatus('Populating task data...');
       
       // Update completion percentage if element exists
@@ -984,15 +794,12 @@
       // - Question exclusion after termination (PRD-mandated)
       // - Post-termination answer detection (data quality flags)
       // - Timeout detection with gap analysis
-      console.log('[StudentPage] Validating tasks with TaskValidator...');
       
       if (!window.TaskValidator) {
         throw new Error('TaskValidator not loaded');
       }
       
       const taskValidation = await window.TaskValidator.validateAllTasks(data.mergedAnswers);
-      
-      console.log('[StudentPage] Task validation complete:', taskValidation);
       
       // Store validation results globally for cache validator access
       window.StudentPage.currentValidation = taskValidation;
@@ -1009,8 +816,8 @@
       // Update task status overview
       updateTaskStatusOverview();
       
-      console.log('[StudentPage] UI population complete');
-      console.log('[StudentPage] ==========================================');
+      // Re-render E-Prime section now that we have merged data
+      await updateEPrimeSection(data.mergedAnswers);
     } catch (error) {
       console.error('[StudentPage] ❌ Error populating UI:', error);
       showError(`Failed to populate task data: ${error.message}`);
@@ -1134,7 +941,6 @@
    * @param {HTMLElement} taskElement - Task details element for styling
    */
   function renderTGMDResults(tbody, tgmdScoring, taskElement, validation) {
-    console.log('[StudentPage] Rendering TGMD grouped results');
     
     // Validate tgmdScoring object
     if (!tgmdScoring || !tgmdScoring.byTask) {
@@ -1168,7 +974,6 @@
       return;
     }
     
-    console.log(`[StudentPage] Rendering ${taskCount} TGMD motor tasks`);
     
     // First, display TGMD_Leg (preferred foot/hand) if available
     if (validation && validation.questions) {
@@ -1381,7 +1186,6 @@
    * Populate task tables with validated question data
    */
   function populateTaskTables(taskValidation, mergedAnswers) {
-    console.log('[StudentPage] Populating task tables...');
     
     // No need for taskIdMap - use the actual filename from metadata
     // The data-task attribute will be set to the filename (e.g., "HeadToeKneeShoulder")
@@ -1427,7 +1231,6 @@
       });
       
       if (!taskElement) {
-        console.log(`[StudentPage] No HTML element for task: ${taskId}`);
         continue;
       }
       
@@ -1443,7 +1246,6 @@
       const table = taskElement.querySelector('table');
       const tbody = table?.querySelector('tbody');
       if (!table || !tbody) {
-        console.log(`[StudentPage] No table found for task: ${taskId}`);
         continue;
       }
       
@@ -1483,7 +1285,6 @@
       if (taskId === 'tgmd') {
         if (!validation.tgmdScoring) {
           console.warn('[StudentPage] ⚠️ TGMD task found but tgmdScoring is missing!');
-          console.log('[StudentPage] Validation object:', validation);
           // Show error message in table using helper
           showTableError(tbody, {
             title: 'TGMD Data Not Available',
@@ -1492,7 +1293,6 @@
           continue;
         }
         
-        console.log('[StudentPage] ✅ TGMD scoring data found:', validation.tgmdScoring);
         
         // Render TGMD with grouped task display
         renderTGMDResults(tbody, validation.tgmdScoring, taskElement, validation);
@@ -1528,7 +1328,6 @@
           timedOut: false
         });
         
-        console.log(`[StudentPage] ✅ Populated TGMD with grouped scoring: ${validation.tgmdScoring.totalScore}/${validation.tgmdScoring.maxScore}`);
         
         // Skip standard rendering for TGMD
         continue;
@@ -1831,7 +1630,6 @@
       // Populate termination checklist if task has termination points
       populateTerminationChecklist(taskElement, taskId, validation, mergedAnswers);
       
-      console.log(`[StudentPage] ✅ Populated ${taskId}: ${orderedQuestions.length} questions`);
     }
     
     // Reinitialize Lucide icons
@@ -1845,7 +1643,6 @@
    * UPDATED: Keep grade selector visible to allow switching between grades
    */
   function showNoDataMessage() {
-    console.log('[StudentPage] No submissions - showing message but keeping grade selector visible');
     
     // Hide Task Status Overview section
     const taskOverview = Array.from(document.querySelectorAll('details')).find(el => 
@@ -1853,7 +1650,6 @@
     );
     if (taskOverview) {
       taskOverview.style.display = 'none';
-      console.log('[StudentPage] Hidden: Task Status Overview');
     }
     
     // Find Task Progress section - but DON'T hide it entirely
@@ -1897,28 +1693,39 @@
           </div>
         `;
         if (typeof lucide !== 'undefined') lucide.createIcons();
-        console.log('[StudentPage] Replaced task list with "No Submissions" message');
       }
       
-      console.log('[StudentPage] Task Progress section modified - grade selector remains visible');
     }
   }
 
   /**
    * Build Task Progress section dynamically from survey-structure.json
+   * Filters out hidden tasks from systemConfig.hiddenTasks
    */
   async function buildTaskProgressSection() {
-    console.log('[StudentPage] ========== BUILDING TASK PROGRESS ==========');
     
     try {
       // Load survey structure
       const structureResponse = await fetch('assets/tasks/survey-structure.json');
       const surveyStructure = await structureResponse.json();
       
+      // Get hidden tasks from config (case-insensitive)
+      const hiddenTasks = (systemConfig?.hiddenTasks || []).map(t => t.toLowerCase());
+      
+      // Filter out hidden tasks from survey structure
+      if (hiddenTasks.length > 0) {
+        surveyStructure.sets = surveyStructure.sets.map(set => ({
+          ...set,
+          sections: set.sections.filter(section => {
+            const taskName = section.file.replace('.json', '').toLowerCase();
+            return !hiddenTasks.includes(taskName);
+          })
+        }));
+      }
+      
       // Sort sets by order
       const sortedSets = surveyStructure.sets.sort((a, b) => a.order - b.order);
       
-      console.log(`[StudentPage] Found ${sortedSets.length} sets to render`);
       
       // Get student gender for conditional visibility (TEC_Male vs TEC_Female)
       // Normalize gender values: "M" / "m" / "Male" -> "male", "F" / "f" / "Female" -> "female"
@@ -1926,7 +1733,6 @@
       if (studentGender === 'm') studentGender = 'male';
       if (studentGender === 'f') studentGender = 'female';
       
-      console.log(`[StudentPage] Student gender: ${studentGender || 'unknown'}`);
       
       // Find the Task Progress section (now a section element, not details)
       const allCards = document.querySelectorAll('.entry-card');
@@ -1946,7 +1752,6 @@
         return;
       }
       
-      console.log('[StudentPage] ✅ Found Task Progress section');
       
       // Get the content container (the div with divide-y class, or create selector for section structure)
       let taskProgressContainer = taskProgressSection.querySelector('.divide-y');
@@ -1961,12 +1766,9 @@
         return;
       }
       
-      console.log('[StudentPage] ✅ Found Task Progress container:', taskProgressContainer);
-      console.log('[StudentPage] Container has', taskProgressContainer.children.length, 'existing children');
       
       // Clear existing hardcoded content (including "Set 1: 第一組" header)
       taskProgressContainer.innerHTML = '';
-      console.log('[StudentPage] ✅ Cleared container');
       
       // Create a NEW divide-y container for our dynamic content
       const dynamicContainer = document.createElement('div');
@@ -1975,7 +1777,6 @@
       
       // Build each set
       for (const set of sortedSets) {
-        console.log(`[StudentPage] Building ${set.name} (${set.id})...`);
         
         // Sort sections within set
         const sortedSections = set.sections.sort((a, b) => a.order - b.order);
@@ -1988,7 +1789,6 @@
           // Check visibility conditions (e.g., gender-based)
           if (section.showIf) {
             if (section.showIf.gender && section.showIf.gender !== studentGender) {
-              console.log(`[StudentPage]   Skipping ${section.file} (gender mismatch)`);
               continue;
             }
           }
@@ -2000,7 +1800,6 @@
           // Check if this task should be merged with another (e.g., NONSYM with SYM)
           if (taskMetadata.displayWith) {
             // Skip this task as it will be merged with its parent
-            console.log(`[StudentPage]   ${taskId} will be merged with ${taskMetadata.displayWith}`);
             mergedTasks.add(taskId);
             continue;
           }
@@ -2011,7 +1810,6 @@
           });
         }
         
-        console.log(`[StudentPage]   ${visibleSections.length} visible tasks in ${set.name}`);
         
         // Skip empty sets
         if (visibleSections.length === 0) {
@@ -2066,8 +1864,9 @@
         });
       }
       
-      console.log('[StudentPage] Task Progress structure built successfully');
-      console.log('[StudentPage] ==========================================');
+      // Add E-Prime section (Set 5)
+      await renderEPrimeSection(dynamicContainer);
+      
       
       // Reinitialize Lucide icons
       if (typeof lucide !== 'undefined') {
@@ -2076,6 +1875,222 @@
       
     } catch (error) {
       console.error('[StudentPage] Failed to build Task Progress:', error);
+    }
+  }
+
+  /**
+   * Render E-Prime section showing individual task completion status
+   */
+  async function renderEPrimeSection(container) {
+    try {
+      // Load E-Prime config from system config
+      const configResponse = await fetch('config/checking_system_config.json');
+      const config = await configResponse.json();
+      const eprimeTasks = config?.eprime?.tasks || [];
+      
+      if (eprimeTasks.length === 0) {
+        return;
+      }
+      
+      // Load jotform questions for field mapping
+      const questionsResponse = await fetch('assets/jotformquestions.json');
+      const jotformQuestions = await questionsResponse.json();
+      
+      // Get merged answers from sessionStorage cache (where student page stores them)
+      // The cache key format is: student_jotform_{coreId}
+      const urlParams = new URLSearchParams(window.location.search);
+      const coreId = urlParams.get('coreId');
+      const cacheKey = `${systemConfig?.cache?.sessionStorageKeyPrefix || 'student_jotform_'}${coreId}`;
+      let mergedAnswers = {};
+      
+      try {
+        const cachedData = sessionStorage.getItem(cacheKey);
+        if (cachedData) {
+          const parsed = JSON.parse(cachedData);
+          mergedAnswers = parsed.mergedAnswers || {};
+        }
+      } catch (e) {
+        console.warn('[StudentPage] E-Prime: Failed to load from cache:', e);
+      }
+      
+      // Calculate E-Prime status for each task
+      let completedCount = 0;
+      const taskStatuses = eprimeTasks.map(task => {
+        const qid = jotformQuestions[task.doneField];
+        // mergedAnswers stores objects: { name: "EPrime_NL_Done", answer: "1" }
+        const answerObj = mergedAnswers[task.doneField] || (qid ? mergedAnswers[`q${qid}`] : null);
+        const value = answerObj?.answer || answerObj; // Handle both object and raw value formats
+        const done = value === '1' || value === 1 || value === true || value === 'true';
+        if (done) completedCount++;
+        return { ...task, done };
+      });
+      
+      // Create E-Prime set container
+      const setContainer = document.createElement('details');
+      setContainer.className = 'set-group border-b border-[color:var(--border)]';
+      setContainer.setAttribute('data-set-id', 'set5');
+      
+      // Determine status color
+      let statusColor = 'status-grey';
+      let statusText = 'Not Started';
+      if (completedCount === eprimeTasks.length) {
+        statusColor = 'status-green';
+        statusText = 'Complete';
+      } else if (completedCount > 0) {
+        statusColor = 'status-red';
+        statusText = 'Incomplete';
+      }
+      
+      // Create set header - match Set 1-4 styling
+      const setHeader = document.createElement('summary');
+      setHeader.className = 'set-header px-4 py-3 bg-[color:var(--muted)]/40 cursor-pointer hover:bg-[color:var(--muted)]/60 transition-colors flex items-center justify-between';
+      
+      setHeader.innerHTML = `
+        <div class="flex items-center gap-3">
+          <i data-lucide="chevron-right" class="w-4 h-4 text-[color:var(--muted-foreground)] transition-transform set-chevron"></i>
+          <h3 class="text-sm font-semibold text-[color:var(--foreground)]">E-Prime</h3>
+          <span class="set-task-count text-xs text-[color:var(--muted-foreground)] font-mono">${completedCount}/${eprimeTasks.length} tasks</span>
+        </div>
+        <div class="flex items-center gap-2">
+           <span class="status-circle ${statusColor}" title="${statusText}"></span>
+        </div>
+      `;
+      setContainer.appendChild(setHeader);
+      
+      // Create tasks container
+      const tasksContainer = document.createElement('div');
+      tasksContainer.className = 'set-tasks divide-y divide-[color:var(--border)] bg-white';
+      
+      // Add each E-Prime task - MATCHING STANDARD TASK LAYOUT (Flex)
+      for (const task of taskStatuses) {
+        const taskElement = document.createElement('div');
+        taskElement.className = 'eprime-task task-item px-4 py-3 flex items-center justify-between hover:bg-slate-50 transition-colors';
+        
+        const taskStatusColor = task.done ? 'status-green' : 'status-grey';
+        const taskStatusText = task.done ? 'Complete' : 'Not Started';
+        
+        taskElement.innerHTML = `
+          <div class="flex items-center gap-3">
+            <span class="status-circle ${taskStatusColor}" title="${taskStatusText}"></span>
+            <span class="text-sm font-medium text-[color:var(--foreground)]">${task.name}</span>
+          </div>
+          <div class="flex items-center gap-2">
+             <span class="badge-pill ${task.done ? 'bg-emerald-100 text-emerald-700' : 'bg-[color:var(--muted)] text-[color:var(--muted-foreground)]'}">${task.done ? '✓ Complete' : 'Not Started'}</span>
+          </div>
+        `;
+        
+        tasksContainer.appendChild(taskElement);
+      }
+      
+      setContainer.appendChild(tasksContainer);
+      container.appendChild(setContainer);
+      
+      // Add toggle listener for chevron
+      setContainer.addEventListener('toggle', () => {
+        const chevron = setHeader.querySelector('.set-chevron');
+        if (chevron) {
+          chevron.style.transform = setContainer.open ? 'rotate(90deg)' : 'rotate(0deg)';
+        }
+      });
+      
+    } catch (error) {
+      console.error('[StudentPage] Failed to render E-Prime section:', error);
+    }
+  }
+
+  /**
+   * Update E-Prime section with actual merged data (called after JotForm data loads)
+   */
+  async function updateEPrimeSection(mergedAnswers) {
+    try {
+      // Load E-Prime config
+      const configResponse = await fetch('config/checking_system_config.json');
+      const config = await configResponse.json();
+      const eprimeTasks = config?.eprime?.tasks || [];
+      
+      if (eprimeTasks.length === 0) return;
+      
+      // Load jotform questions for field mapping
+      const questionsResponse = await fetch('assets/jotformquestions.json');
+      const jotformQuestions = await questionsResponse.json();
+      
+      // Calculate completion status
+      let completedCount = 0;
+      const taskStatuses = eprimeTasks.map(task => {
+        const qid = jotformQuestions[task.doneField];
+        const answerObj = mergedAnswers[task.doneField] || (qid ? mergedAnswers[`q${qid}`] : null);
+        const value = answerObj?.answer || answerObj;
+        const done = value === '1' || value === 1 || value === true || value === 'true';
+        if (done) completedCount++;
+        return { ...task, done };
+      });
+      
+      
+      // Find existing E-Prime section
+      const existingSection = document.querySelector('[data-set-id="set5"]');
+      if (!existingSection) {
+        console.warn('[StudentPage] E-Prime section not found for update');
+        return;
+      }
+      
+      // Determine set status color
+      let statusColor = 'status-grey';
+      let statusText = 'Not Started';
+      if (completedCount === eprimeTasks.length) {
+        statusColor = 'status-green';
+        statusText = 'Complete';
+      } else if (completedCount > 0) {
+        statusColor = 'status-red';
+        statusText = 'Incomplete';
+      }
+
+      // Update header status circle
+      // The header HTML structure was updated in renderEPrimeSection to include a status circle div
+      // We need to find it or recreate it if structure mismatches (though render and update should match)
+      const headerStatusContainer = existingSection.querySelector('.set-header > div:last-child');
+      if (headerStatusContainer) {
+         const headerStatusCircle = headerStatusContainer.querySelector('.status-circle');
+         if (headerStatusCircle) {
+             headerStatusCircle.className = `status-circle ${statusColor}`;
+             headerStatusCircle.title = statusText;
+         }
+      }
+
+      // Update task count in header
+      const taskCountSpan = existingSection.querySelector('.set-task-count');
+      if (taskCountSpan) {
+        taskCountSpan.textContent = `${completedCount}/${eprimeTasks.length} tasks`;
+      }
+      
+      // Re-render task list completely to ensure structure match (simpler than DOM patching for structure change)
+      const tasksContainer = existingSection.querySelector('.set-tasks');
+      if (tasksContainer) {
+          tasksContainer.innerHTML = ''; // Clear current tasks
+          
+          for (const task of taskStatuses) {
+            const taskElement = document.createElement('div');
+            // Match the Flex layout from renderEPrimeSection
+            taskElement.className = 'eprime-task task-item px-4 py-3 flex items-center justify-between hover:bg-slate-50 transition-colors';
+            
+            const taskStatusColor = task.done ? 'status-green' : 'status-grey';
+            const taskStatusText = task.done ? 'Complete' : 'Not Started';
+            
+            taskElement.innerHTML = `
+              <div class="flex items-center gap-3">
+                <span class="status-circle ${taskStatusColor}" title="${taskStatusText}"></span>
+                <span class="text-sm font-medium text-[color:var(--foreground)]">${task.name}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                 <span class="badge-pill ${task.done ? 'bg-emerald-100 text-emerald-700' : 'bg-[color:var(--muted)] text-[color:var(--muted-foreground)]'}">${task.done ? '✓ Complete' : 'Not Started'}</span>
+              </div>
+            `;
+            
+            tasksContainer.appendChild(taskElement);
+          }
+      }
+      
+    } catch (error) {
+      console.error('[StudentPage] Failed to update E-Prime section:', error);
     }
   }
   
@@ -2202,7 +2217,6 @@
    * not calculated. They document whether termination happened during assessment.
    */
   function populateTerminationChecklist(taskElement, taskId, validation, mergedAnswers) {
-    console.log(`[StudentPage] Checking termination/timeout rules for task: ${taskId}`);
     
     // Special handling for SYM: show timeout status instead of termination rules
     if (taskId === 'sym') {
@@ -2215,8 +2229,6 @@
       const symAnalysis = validation.symAnalysis || {};
       const nonsymAnalysis = validation.nonsymAnalysis || {};
       
-      console.log(`[StudentPage] SYM analysis:`, symAnalysis);
-      console.log(`[StudentPage] NONSYM analysis:`, nonsymAnalysis);
       
       // Update checklist title
       checklistDiv.querySelector('span').textContent = 'Timeout Status · SYM/NONSYM (2-minute timer each)';
@@ -2324,7 +2336,7 @@
         buildTimeoutCard('NONSYM (Non-symbolic)', nonsymAnalysis, validation.nonsymResult);
       
       checklistDiv.classList.remove('hidden');
-      lucide.createIcons(); // Re-render icons
+      if (typeof lucide !== 'undefined') lucide.createIcons(); // Re-render icons
       return; // Exit early for SYM
     }
     
@@ -2408,7 +2420,7 @@
       `;
       
       checklistDiv.classList.remove('hidden');
-      lucide.createIcons(); // Re-render icons
+      if (typeof lucide !== 'undefined') lucide.createIcons(); // Re-render icons
       return; // Exit early for CWR
     }
     
@@ -2443,11 +2455,9 @@
     
     const rules = terminationRules[taskId];
     if (!rules || rules.length === 0) {
-      console.log(`[StudentPage] No termination rules defined for ${taskId}`);
       return; // No termination rules for this task
     }
     
-    console.log(`[StudentPage] Found ${rules.length} termination rules for ${taskId}`);
     
     const checklistDiv = taskElement.querySelector('.termination-checklist');
     const rulesContainer = taskElement.querySelector('.termination-rules');
@@ -2460,7 +2470,6 @@
       return;
     }
     
-    console.log(`[StudentPage] Populating termination checklist for ${taskId}`);
     
     // Clear and populate rules
     rulesContainer.innerHTML = '';
@@ -2480,7 +2489,6 @@
       const recordedTriggered = recordedValue === '1' || recordedValue === 1;
       
       if (!terminationField) {
-        console.log(`[StudentPage] Termination field not found in data: ${rule.id}, using calculated values only`);
       }
       
       const priorTerminationActive = earliestTerminationIndex !== null && index > earliestTerminationIndex;
@@ -2600,7 +2608,6 @@
     // This ensures consistency with class page and avoids redundant calculation
     const hasPostTerminationAnswers = validation?.hasPostTerminationAnswers || false;
     if (hasPostTerminationAnswers) {
-      console.log(`[StudentPage] ⚠️ Post-termination answers/Termination Mismatch detected in ${taskId} (from task-validator.js)`);
     }
     
     // CASCADE RULE: If a termination triggered, mark ALL subsequent questions as ignored
@@ -2618,15 +2625,12 @@
         }
       }
       
-      console.log(`[StudentPage] Cascade rule applied: All questions after ${lastQuestionInTerminationRange} are ignored (${ignoredQuestionIds.size} questions)`);
     }
     
     if (ignoredQuestionIds.size > 0) {
-      console.log(`[StudentPage] Marking ${ignoredQuestionIds.size} questions as ignored after termination for ${taskId}`);
       markQuestionsBeyondTermination(taskElement, ignoredQuestionIds);
       
       // CRITICAL: Recalculate statistics after marking questions as ignored
-      console.log(`[StudentPage] Recalculating stats for ${taskId} after termination rules applied`);
       const updatedStats = calculateTaskStatistics(validation, taskElement, taskId);
       updateTaskSummary(taskElement, taskId, updatedStats);
       updateTaskLightingStatus(taskElement, updatedStats);
@@ -2634,7 +2638,6 @@
     
     // Show the checklist
     checklistDiv.classList.remove('hidden');
-    console.log(`[StudentPage] ✅ Termination checklist displayed for ${taskId} with ${rules.length} rules`);
     
     // Reinitialize Lucide icons for the new elements
     if (typeof lucide !== 'undefined') {
@@ -2837,7 +2840,6 @@
       // Total stat keeps its default grey color (no gradient)
     }
     
-    console.log(`[StudentPage] ✅ Updated stats for ${taskId}: Answered ${stats.answered}/${stats.total} (${stats.answeredPercent}%), Correct ${stats.correct}/${stats.scoredTotal} (${stats.correctPercent}%)`);
   }
 
   /**
@@ -2882,17 +2884,14 @@
       // For TGMD: This includes questions answered with "0" (Not-Observed) - these are complete assessments
       statusCircle.classList.add('status-green');
       statusCircle.title = 'Complete';
-      console.log(`[StudentPage] ✅ ${taskId} status: GREEN (Complete) - ${stats.answered}/${stats.total} (${stats.answeredPercent}%)`);
     } else if (stats.answered > 0) {
       // Red: Incomplete - has some answers but not complete
       statusCircle.classList.add('status-red');
       statusCircle.title = 'Incomplete';
-      console.log(`[StudentPage] ⚠️ ${taskId} status: RED (Incomplete) - ${stats.answered}/${stats.total} (${stats.answeredPercent}%)`);
     } else {
       // Grey: Not started
       statusCircle.classList.add('status-grey');
       statusCircle.title = 'Not started';
-      console.log(`[StudentPage] ℹ️ ${taskId} status: GREY (Not started)`);
     }
   }
 
@@ -2930,7 +2929,6 @@
     if (incompleteEl) incompleteEl.textContent = incompleteCount;
     if (notstartedEl) notstartedEl.textContent = notstartedCount;
     
-    console.log(`[StudentPage] Task Status Overview: Complete=${completeCount}, Warning=${posttermCount}, Incomplete=${incompleteCount}, Not started=${notstartedCount}`);
   }
 
   /**
@@ -3021,7 +3019,6 @@
         });
         
         if (studentSubmissions.length === 0) {
-          console.log('[StudentPage] No submissions found for timestamp');
           timestampElement.textContent = 'Last Updated: No data';
           return;
         }
@@ -3053,7 +3050,6 @@
           const formattedDate = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
           timestampElement.textContent = `Last Updated: ${formattedDate}`;
           
-          console.log(`[StudentPage] Updated header timestamp: ${formattedDate} (from ${studentSubmissions.length} submissions)`);
         } else {
           timestampElement.textContent = 'Last Updated: Invalid date';
         }
@@ -3111,7 +3107,6 @@
       }
     });
     
-    console.log(`[StudentPage] Marked ${markedCount} questions as ignored due to termination`);
     
     // Reinitialize Lucide icons for the new icons
     if (typeof lucide !== 'undefined') {
@@ -3160,7 +3155,6 @@
     // Update Set task counts dynamically
     updateSetTaskCounts();
     
-    console.log(`[StudentPage] Applied task filter: ${filterValue}, affected ${allTasks.length} tasks`);
   }
   
   /**
@@ -3172,6 +3166,14 @@
     const currentFilter = taskFilter ? taskFilter.value : 'all';
     
     allSets.forEach(setElement => {
+      // Skip E-Prime section (set5) - it uses .task-item not .task-expand
+      // and should always be visible
+      const setId = setElement.getAttribute('data-set-id');
+      if (setId === 'set5') {
+        setElement.style.display = ''; // Always show E-Prime
+        return;
+      }
+      
       const tasksInSet = setElement.querySelectorAll('.task-expand');
       const visibleTasks = Array.from(tasksInSet).filter(task => task.style.display !== 'none');
       
@@ -3352,7 +3354,6 @@
           taskConfigModal.classList.remove('flex');
         }
         
-        console.log('[StudentPage] Task visibility updated');
       };
     }
   }
@@ -3373,7 +3374,6 @@
    * @deprecated No longer used with IndexedDB cache system. Use home page cache management instead.
    */
   function clearJotformCache() {
-    console.log('[StudentPage] ========== CLEARING JOTFORM CACHE ==========');
     
     const urlParams = new URLSearchParams(window.location.search);
     const coreId = urlParams.get('coreId');
@@ -3388,13 +3388,9 @@
     
     if (cached) {
       sessionStorage.removeItem(cacheKey);
-      console.log(`[StudentPage] ✅ Cleared Jotform cache: ${cacheKey}`);
     } else {
-      console.log('[StudentPage] ℹ️ No Jotform cache found to clear');
     }
     
-    console.log('[StudentPage] ℹ️ Student/School/Class cache preserved');
-    console.log('[StudentPage] ==========================================');
   }
 
   /**
@@ -3410,7 +3406,6 @@
     const backButton = document.getElementById('back-button');
     if (backButton) {
       backButton.addEventListener('click', () => {
-        console.log('[StudentPage] Back button clicked - navigating to previous page');
         window.history.back();
       });
     }
@@ -3425,19 +3420,16 @@
         if (savedFilter) {
           taskFilter.value = savedFilter;
           applyTaskFilter(savedFilter);
-          console.log(`[StudentPage] Restored saved task filter: ${savedFilter}`);
         }
       }
       
       taskFilter.addEventListener('change', (e) => {
         const filterValue = e.target.value;
-        console.log(`[StudentPage] Task filter changed to: ${filterValue}`);
         applyTaskFilter(filterValue);
         
         // Save filter preference
         if (window.CheckingSystemPreferences && coreId) {
           window.CheckingSystemPreferences.saveTaskFilter(coreId, filterValue);
-          console.log(`[StudentPage] Saved task filter preference: ${filterValue}`);
         }
       });
     }
@@ -3458,15 +3450,12 @@
           // Level 1: Expand all Sets only (keep tasks collapsed)
           allSets.forEach(set => set.open = true);
           allTasks.forEach(task => task.open = false);
-          console.log('[StudentPage] Expanded all Sets (Level 1)');
         } else if (anyTaskOpen) {
           // Smart: If any task is open, expand all tasks
           allTasks.forEach(task => task.open = true);
-          console.log('[StudentPage] Expanded all Tasks (Level 2 - smart detection)');
         } else {
           // Level 2: Expand all tasks (show questions)
           allTasks.forEach(task => task.open = true);
-          console.log('[StudentPage] Expanded all Tasks (Level 2)');
         }
       });
     }
@@ -3493,14 +3482,11 @@
         if (anyTaskOpen) {
           // Tasks are expanded (showing questions) - collapse to task level (hide questions)
           allTasks.forEach(task => task.open = false);
-          console.log('[StudentPage] Collapsed to task level (hiding questions)');
         } else if (anySetsOpen) {
           // Sets are open but tasks are closed - collapse sets
           allSets.forEach(set => set.open = false);
-          console.log('[StudentPage] Collapsed all sets');
         } else {
           // Nothing is open - do nothing
-          console.log('[StudentPage] Nothing to collapse');
         }
       });
     }
@@ -3513,7 +3499,6 @@
     
     if (taskConfigButton && taskConfigModal) {
       taskConfigButton.addEventListener('click', () => {
-        console.log('[StudentPage] Task Config clicked - opening modal');
         taskConfigModal.classList.remove('hidden');
         taskConfigModal.classList.add('flex');
         populateTaskConfigModal();
@@ -3548,7 +3533,6 @@
     for (const btn of buttons) {
       if (btn.textContent.includes('Export')) {
         btn.addEventListener('click', exportStudentCache);
-        console.log('[StudentPage] Export button handler attached');
         break;
       }
     }
@@ -3557,12 +3541,9 @@
     const validateBtn = document.getElementById('validate-button');
     if (validateBtn) {
       validateBtn.addEventListener('click', async () => {
-        console.log('[StudentPage] Running cache validation...');
         
         // Debug: Check if CacheValidator is available
-        console.log('[StudentPage] CacheValidator available:', typeof window.CacheValidator !== 'undefined');
         if (window.CacheValidator) {
-          console.log('[StudentPage] CacheValidator methods:', Object.keys(window.CacheValidator));
         }
         
         // Get current grade from active button
@@ -3570,37 +3551,27 @@
         let grade = activeGradeBtn ? activeGradeBtn.dataset.grade : null;
         
         // Debug: Show what we're getting for grade
-        console.log('[StudentPage] Active grade button:', activeGradeBtn);
-        console.log('[StudentPage] Grade from button:', grade);
         
         // Get coreId from multiple sources with debugging
         let coreId = window.StudentPage?.currentStudent?.coreId || 
                      window.CheckingSystemStudentPage?.getStudentData()?.student?.coreId;
         
-        console.log('[StudentPage] CoreId extraction debug:');
-        console.log('  - window.StudentPage?.currentStudent?.coreId:', window.StudentPage?.currentStudent?.coreId);
-        console.log('  - window.CheckingSystemStudentPage?.getStudentData()?.student?.coreId:', 
-                    window.CheckingSystemStudentPage?.getStudentData()?.student?.coreId);
-        console.log('  - Final coreId:', coreId, '(type:', typeof coreId, ')');
         
         // Fallback: Get coreId from URL if still not found
         if (!coreId || typeof coreId !== 'string') {
           const urlParams = new URLSearchParams(window.location.search);
           coreId = urlParams.get('coreId');
-          console.log('[StudentPage] Fallback coreId from URL:', coreId);
         }
         
         // Ensure coreId is a string
         if (coreId && typeof coreId !== 'string') {
           coreId = String(coreId);
-          console.log('[StudentPage] Converted coreId to string:', coreId);
         }
         
         if (!grade) {
           // Last resort: try to extract from breadcrumb
           const breadcrumb = document.querySelector('.breadcrumb-class')?.textContent.trim();
           grade = breadcrumb?.match(/K[123]/)?.[0] || 'K3';
-          console.log('[StudentPage] Fallback grade from breadcrumb:', grade);
         }
         
         if (!coreId) {
@@ -3613,12 +3584,11 @@
           return;
         }
         
-        console.log(`[StudentPage] Validating: coreId=${coreId}, grade=${grade}`);
         
         try {
           validateBtn.disabled = true;
           validateBtn.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 flex-shrink-0 animate-spin"></i><span>Validating...</span>';
-          lucide.createIcons();
+          if (typeof lucide !== 'undefined') lucide.createIcons();
           
           // Check if CacheValidator is available
           if (typeof window.CacheValidator === 'undefined') {
@@ -3634,10 +3604,9 @@
         } finally {
           validateBtn.disabled = false;
           validateBtn.innerHTML = '<i data-lucide="shield-check" class="w-3.5 h-3.5 flex-shrink-0"></i><span>Validate</span>';
-          lucide.createIcons();
+          if (typeof lucide !== 'undefined') lucide.createIcons();
         }
       });
-      console.log('[StudentPage] Validate button handler attached');
     }
 
     // REMOVED: Refresh button no longer needed with IndexedDB cache system
@@ -3680,14 +3649,12 @@
    * Show loading overlay - DISABLED (no overlay in HTML)
    */
   function showLoadingOverlay(message = 'Loading...') {
-    console.log(`[Loading] (Disabled) ${message}`);
   }
 
   /**
    * Update loading status - DISABLED (no overlay in HTML)
    */
   function updateLoadingStatus(message) {
-    console.log(`[Loading] (Disabled) ${message}`);
   }
 
   /**
@@ -3725,7 +3692,6 @@
       return; // Grade not available or already selected
     }
 
-    console.log(`[StudentPage] Switching to grade ${grade}`);
     
     // Update URL parameter without reload
     const urlParams = new URLSearchParams(window.location.search);
@@ -3736,7 +3702,6 @@
     // Save grade preference
     if (window.CheckingSystemPreferences && coreId) {
       window.CheckingSystemPreferences.saveGradeSelection(coreId, grade);
-      console.log(`[StudentPage] Saved grade preference: ${grade}`);
     }
     
     // Reload student data for selected grade
@@ -3754,7 +3719,6 @@
    * Hide loading overlay - DISABLED (no overlay in HTML)
    */
   function hideLoadingOverlay() {
-    console.log(`[Loading] (Disabled) Hide overlay`);
   }
 
   /**
@@ -3769,7 +3733,6 @@
       // Initialize provenance tooltip handlers
       if (window.ProvenanceTooltip) {
         window.ProvenanceTooltip.initialize();
-        console.log('[StudentPage] Provenance tooltip initialized');
       }
       
       // Set up automatic section state tracking
@@ -3777,7 +3740,6 @@
       const coreId = urlParams.get('coreId');
       if (window.CheckingSystemPreferences && coreId) {
         window.CheckingSystemPreferences.autoTrackSectionStates(coreId);
-        console.log('[StudentPage] Enabled section state tracking');
       }
     } catch (error) {
       console.error('[StudentPage] Initialization failed:', error);

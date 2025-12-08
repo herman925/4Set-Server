@@ -1,4 +1,19 @@
 {
+  "hiddenTasks": ["MF"],
+  "eprime": {
+    "tasks": [
+      { "id": "NL", "name": "Number Line", "doneField": "EPrime_NL_Done", "computerField": "EPrime_NL_ComputerNo" },
+      { "id": "SimpleReactionTime", "name": "Simple Reaction Time", "doneField": "EPrime_SimpleReactionTime_Done", "computerField": "EPrime_SimpleReactionTime_ComputerNo" },
+      { "id": "AnimalNumber", "name": "Animal Number", "doneField": "EPrime_AnimalNumber_Done", "computerField": "EPrime_AnimalNumber_ComputerNo" },
+      { "id": "GoNoGo", "name": "Go/No-Go", "doneField": "EPrime_GoNoGo_Done", "computerField": "EPrime_GoNoGo_ComputerNo" },
+      { "id": "Simon", "name": "Simon Task", "doneField": "EPrime_Simon_Done", "computerField": "EPrime_Simon_ComputerNo" },
+      { "id": "CorsiForward", "name": "Corsi Forward", "doneField": "EPrime_CorsiForward_Done", "computerField": "EPrime_CorsiForward_ComputerNo" },
+      { "id": "CorsiBackward", "name": "Corsi Backward", "doneField": "EPrime_CorsiBackward_Done", "computerField": "EPrime_CorsiBackward_ComputerNo" }
+    ],
+    "totalTasks": 7,
+    "columnName": "E-Prime",
+    "setId": "set5"
+  },
   "ui": {
     "loadingStatusDelayMs": 800,
     "loadingMessages": {
@@ -51,6 +66,11 @@
     "taskColumnWidth": "60px",
     "studentNameColumnWidth": "250px",
     "coreIdColumnWidth": "80px",
+    "missingView": {
+      "studentNameColumnWidth": "250px",
+      "coreIdColumnWidth": "80px",
+      "missingColumnWidth": "auto"
+    },
     "taskColumnNames": {
       "ERV": "ERV",
       "SYM": "SYM",
@@ -78,6 +98,13 @@
     "coreIdColumnWidth": "60px",
     "classColumnWidth": "110px",
     "gradeColumnWidth": "55px",
+    "missingView": {
+      "studentNameColumnWidth": "160px",
+      "coreIdColumnWidth": "60px",
+      "classColumnWidth": "110px",
+      "gradeColumnWidth": "55px",
+      "missingColumnWidth": "auto"
+    },
     "taskColumnNames": {
       "ERV": "ERV",
       "SYM": "SYM",

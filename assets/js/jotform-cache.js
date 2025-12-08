@@ -149,7 +149,6 @@
       // Local dev (localhost/127.0.0.1) → Use proxy server to bypass CORS
       // Production (GitHub Pages) → Direct API call (no CORS issues)
       this.apiBaseUrl = this.detectApiBaseUrl();
-      console.log(`[JotFormCache] Using API endpoint: ${this.apiBaseUrl}`);
       
       // Adaptive batch sizing state (like processor_agent.ps1)
       this.config = null; // Will be loaded from config/jotform_config.json
@@ -219,7 +218,6 @@
           consecutiveSuccessesForIncrease: 2,
           timeoutSeconds: 60
         };
-        console.log(`[JotFormCache] Config loaded: batch ${this.config.initialBatchSize}, reductions ${this.config.batchSizeReductions.length} levels`);
         return this.config;
       } catch (error) {
         console.warn('[JotFormCache] Failed to load config, using defaults:', error);
@@ -312,10 +310,8 @@
       }
       
       if (fixedCount > 0) {
-        console.log(`[JotFormCache] ✅ Fixed ${fixedCount} untransformed submissions in cache`);
       }
       if (htksFixedCount > 0) {
-        console.log(`[JotFormCache] ✅ Fixed ${htksFixedCount} HTKS choice values in cache`);
       }
       
       return { submissions, totalFixed: fixedCount + htksFixedCount };
@@ -330,14 +326,12 @@
       // Return cached data if valid
       const cached = await this.loadFromCache();
       if (cached && this.isCacheValid(cached)) {
-        console.log('[JotFormCache] Using cached data (valid)');
         
         // Fix any untransformed submissions before returning
         const { submissions: fixedSubmissions, totalFixed } = this.fixUntransformedSubmissions(cached.submissions);
         
         // If we fixed any, save back to cache
         if (totalFixed > 0) {
-          console.log(`[JotFormCache] 💾 Saving ${totalFixed} fixes back to cache...`);
           await this.saveToCache(fixedSubmissions);
         }
         
@@ -346,7 +340,6 @@
 
       // If already loading, wait for existing promise
       if (this.isLoading && this.loadPromise) {
-        console.log('[JotFormCache] Waiting for existing load operation...');
         return this.loadPromise;
       }
 
@@ -354,22 +347,18 @@
   const normalizedCredentials = this.normalizeJotformCredentials(credentials);
 
   this.isLoading = true;
-  console.log('[JotFormCache] Starting fresh fetch...');
   this.loadPromise = this.fetchAllSubmissions(normalizedCredentials)
         .then(async submissions => {
-          console.log('[JotFormCache] Fetch complete, saving', submissions.length, 'submissions');
           
           // Fix any untransformed data (including HTKS) before saving
           const { submissions: fixedSubmissions, totalFixed } = this.fixUntransformedSubmissions(submissions);
           if (totalFixed > 0) {
-            console.log(`[JotFormCache] 💾 Applied ${totalFixed} fixes to fresh data before caching`);
           }
           
           await this.saveToCache(fixedSubmissions); // WAIT for IndexedDB write to complete
           this.cache = fixedSubmissions;
           this.isLoading = false;
           this.loadPromise = null;
-          console.log('[JotFormCache] getAllSubmissions complete - cache committed');
           return fixedSubmissions;
         })
         .catch(error => {
@@ -388,7 +377,6 @@
      * @returns {Promise<Array>} - All submissions
      */
     async fetchAllSubmissions(credentials) {
-      console.log('[JotFormCache] ========== FETCHING ALL SUBMISSIONS ==========');
       const formId = credentials?.formId;
       const apiKey = credentials?.apiKey;
 
@@ -396,7 +384,6 @@
         throw new Error('Missing JotForm credentials (formId/apiKey)');
       }
 
-      console.log('[JotFormCache] Form ID:', formId);
 
       // Load configuration
       await this.loadConfig();
@@ -432,7 +419,6 @@
               this.config.minBatchSize,
               Math.floor(baseBatchSize * this.config.batchSizeReductions[this.reductionIndex])
             );
-            console.log(`[JotFormCache] Using reduced batch size: ${currentBatchSize} (${Math.round(this.config.batchSizeReductions[this.reductionIndex] * 100)}% of ${baseBatchSize})`);
           }
           
           const url = `${this.apiBaseUrl}/form/${formId}/submissions?` +
@@ -554,7 +540,6 @@
               const newSize = this.reductionIndex === 0 ? baseBatchSize : Math.floor(baseBatchSize * this.config.batchSizeReductions[this.reductionIndex]);
               this.consecutiveSuccesses = 0; // Reset counter after increase
               currentBatchSize = newSize; // Apply the increase immediately
-              console.log(`[JotFormCache] ✓ After ${this.config.consecutiveSuccessesForIncrease} successes, increased batch size: ${oldSize} → ${newSize}`);
             }
             
             // Check if we got less than current batch size (last page)
@@ -578,8 +563,6 @@
           jotformMessage: 'Saving to local cache...',
           qualtricsMessage: 'Waiting to start...'
         });
-        console.log(`[JotFormCache] ========== FETCH COMPLETE ==========`);
-        console.log(`[JotFormCache] Total submissions: ${allSubmissions.length}`);
         
         // DEBUG: Check C10034 submissions in raw fetch
         const c10034Submissions = allSubmissions.filter(s => {
@@ -587,9 +570,7 @@
           return sessionkey && sessionkey.startsWith('10034_');
         });
         if (c10034Submissions.length > 0) {
-          console.log(`[JotFormCache] 🔍 DEBUG: Found ${c10034Submissions.length} C10034 submission(s) in fetch:`);
           c10034Submissions.forEach(s => {
-            console.log(`   ${s.answers['3'].answer} (ID: ${s.id}, created: ${s.created_at})`);
           });
         }
         
@@ -638,7 +619,6 @@
       }
       
       try {
-        console.log('[JotFormCache] saveToCache called with', submissions.length, 'submissions');
         
         // Validate that submissions have the expected structure
         if (submissions.length > 0) {
@@ -646,7 +626,6 @@
           if (!sampleSubmission.answers) {
             console.warn('[JotFormCache] WARNING: First submission is missing "answers" field. Structure:', Object.keys(sampleSubmission));
           } else {
-            console.log('[JotFormCache] First submission has', Object.keys(sampleSubmission.answers).length, 'answer fields');
           }
         }
         
@@ -657,10 +636,8 @@
         };
 
         const jsonString = JSON.stringify(cacheEntry);
-        console.log('[JotFormCache] Cache data size:', Math.round(jsonString.length / 1024), 'KB');
         
         await storage.setItem(MERGED_DATA_CACHE_KEY, cacheEntry);
-        console.log('[JotFormCache] ✅ Cached', submissions.length, 'submissions to IndexedDB');
       } catch (error) {
         console.error('[JotFormCache] Failed to save cache:', error);
       }
@@ -715,7 +692,6 @@
         await storage.removeItem(MERGED_DATA_CACHE_KEY);
       }
       this.cache = null;
-      console.log('[JotFormCache] Submissions cache cleared');
       
       // Also clear validation cache (which includes Qualtrics cache)
       await this.clearValidationCache();
@@ -723,7 +699,6 @@
       // Clear Qualtrics cache separately for completeness
       await this.clearQualtricsCache();
       
-      console.log('[JotFormCache] ✅ COMPREHENSIVE CACHE PURGE COMPLETE - All 3 stores cleared');
     }
 
     /**
@@ -762,7 +737,6 @@
         return false;
       }
       
-      console.log('[JotFormCache] ✅ Cache structure is valid');
       return true;
     }
 
@@ -790,7 +764,6 @@
       const timeValid = this.isCacheValid(cached);
       const isValid = timeValid && structureValid; // Both must be true
       
-      console.log('[JotFormCache] Cache check: count=', cached.count, 'age=', ageMinutes, 'min, timeValid=', timeValid, 'structureValid=', structureValid, 'VALID=', isValid);
       
       return {
         exists: true,
@@ -818,7 +791,6 @@
      * @returns {Promise<Map>} - Map of coreId -> validation cache
      */
     async buildStudentValidationCache(students, surveyStructure, credentials, forceRebuild = false) {
-      console.log('[JotFormCache] Building student validation cache...');
       
       if (!window.TaskValidator) {
         throw new Error('TaskValidator not loaded');
@@ -829,32 +801,53 @@
       const singleGrade = studentGrades.size === 1 ? Array.from(studentGrades)[0] : null;
       
       if (singleGrade) {
-        console.log(`[JotFormCache] Grade-aware mode: All students are ${singleGrade}, will filter submissions by grade`);
       } else if (studentGrades.size > 1) {
-        console.log(`[JotFormCache] Multi-grade mode: Students span ${studentGrades.size} grades (${Array.from(studentGrades).join(', ')})`);
       }
       
       // Check if validation cache exists and is valid
       if (!forceRebuild) {
         const cachedValidation = await this.loadValidationCache();
         if (cachedValidation && cachedValidation.size > 0) {
-          console.log(`[JotFormCache] ✅ Loaded validation cache from IndexedDB: ${cachedValidation.size} students`);
           
-          // Filter cache to only include students in the provided list
+          // GRADE-AWARE CACHE KEY: Filter cache using composite key (coreId_grade)
+          // This ensures K1/K2/K3 data for the same student are kept separate
+          // Build lookup maps with BOTH formats (with and without C prefix) for flexibility
+          const studentKeyMap = new Map(); // normalized key -> original student
+          students.forEach(s => {
+            const grade = s.year || 'Unknown';
+            // Store with C prefix
+            studentKeyMap.set(`${s.coreId}_${grade}`, s);
+            // Also store without C prefix for matching cache keys that may not have it
+            const numericId = s.coreId.startsWith('C') ? s.coreId.substring(1) : s.coreId;
+            studentKeyMap.set(`${numericId}_${grade}`, s);
+          });
+          
           const studentCoreIds = new Set(students.map(s => s.coreId));
           const filteredCache = new Map();
-          for (const [coreId, data] of cachedValidation.entries()) {
-            if (studentCoreIds.has(coreId)) {
-              filteredCache.set(coreId, data);
+          
+          for (const [cacheKey, data] of cachedValidation.entries()) {
+            // Support both old (coreId only) and new (coreId_grade) cache key formats
+            if (cacheKey.includes('_')) {
+              // New format: coreId_grade (e.g., "C10261_K3" or "10261_K3")
+              const matchedStudent = studentKeyMap.get(cacheKey);
+              if (matchedStudent) {
+                // Use the student's coreId format for the return key
+                const returnKey = `${matchedStudent.coreId}_${matchedStudent.year || 'Unknown'}`;
+                filteredCache.set(returnKey, data);
+              }
+            } else {
+              // Old format: just coreId (e.g., "C10261") - rebuild needed
+              const normalizedKey = cacheKey.startsWith('C') ? cacheKey : `C${cacheKey}`;
+              if (studentCoreIds.has(normalizedKey) || studentCoreIds.has(cacheKey)) {
+                return null; // Force rebuild with new format
+              }
             }
           }
           
-          console.log(`[JotFormCache] Filtered to ${filteredCache.size} students matching provided list`);
           return filteredCache;
         }
       }
       
-  console.log('[JotFormCache] Building fresh validation cache...');
   const validationCache = new Map();
   let submissions = await this.getAllSubmissions(credentials);
       
@@ -863,53 +856,69 @@
         return validationCache;
       }
       
-      // GRADE-AWARE FILTERING: If all students are same grade, filter submissions by that grade
-      // This prevents mixing K1+K2+K3 data when building cache for a single-grade class
-      if (singleGrade) {
-        const beforeFilter = submissions.length;
-        submissions = submissions.filter(s => s.grade === singleGrade);
-        console.log(`[JotFormCache] Grade filter (${singleGrade}): ${beforeFilter} → ${submissions.length} submissions`);
-      }
-      
-      // Group submissions by student
+      // Group submissions by student using the student's grade from coreid.csv
+      // The student list is already filtered by grade (class page filters by class grade)
+      // We match submissions to students by coreId, then use the student's grade for the cache key
       const studentSubmissions = new Map();
       const unmatchedSubmissions = [];
       
-      // Debug: Log class student Core IDs
-      console.log(`[JotFormCache] Class students expecting data:`, students.map(s => `${s.coreId} (${s.studentName || 'no name'})`).slice(0, 5));
+      // Debug: Log class student Core IDs with grades
+      
+      // Debug: Log submission grades distribution
+      const gradeDistribution = {};
+      submissions.forEach(s => {
+        const grade = s.grade || 'No Grade';
+        gradeDistribution[grade] = (gradeDistribution[grade] || 0) + 1;
+      });
+      
+      // Debug: Track matching stats
+      let matchedK1 = 0, matchedK2 = 0, matchedK3 = 0, unmatched = 0;
       
       for (const submission of submissions) {
+        // Check both root-level coreId (Qualtrics merged data) and answers field (JotForm)
         const studentIdAnswer = submission.answers?.[STUDENT_ID_QID];
-        const studentId = studentIdAnswer?.answer || studentIdAnswer?.text;
+        const studentId = submission.coreId || studentIdAnswer?.answer || studentIdAnswer?.text;
         if (!studentId) {
           unmatchedSubmissions.push({ reason: 'No student ID in submission', submissionId: submission.id });
           continue;
         }
         
-        // Find student by Core ID (and optionally verify grade match)
+        // Find student by Core ID - prefer grade match if submission has grade info
+        // Single-grade mode (class page): All students have same grade, just match by coreId
+        // Multi-grade mode (school page): Match by coreId AND grade to avoid cross-grade contamination
         const student = students.find(s => {
           const numericCoreId = s.coreId.startsWith('C') ? s.coreId.substring(1) : s.coreId;
           const numericStudentId = studentId.startsWith('C') ? studentId.substring(1) : studentId;
           const coreIdMatches = numericCoreId === numericStudentId;
           
-          // If we're in single-grade mode, the submission grade should already match
-          // If multi-grade mode, match student by both coreId AND grade
-          if (studentGrades.size > 1 && submission.grade) {
-            return coreIdMatches && s.year === submission.grade;
+          if (!coreIdMatches) return false;
+          
+          // In multi-grade mode, require grade match to prevent K3 data going to K1 student
+          if (studentGrades.size > 1 && submission.grade && s.year) {
+            return s.year === submission.grade;
           }
           
-          return coreIdMatches;
+          // Single-grade mode or no grade info: just match by coreId
+          return true;
         });
         
         if (student) {
-          if (!studentSubmissions.has(student.coreId)) {
-            studentSubmissions.set(student.coreId, {
+          // GRADE-AWARE CACHE KEY: Use composite key (coreId_grade) instead of just coreId
+          const cacheKey = `${student.coreId}_${student.year || 'Unknown'}`;
+          if (!studentSubmissions.has(cacheKey)) {
+            studentSubmissions.set(cacheKey, {
               student,
               submissions: []
             });
           }
-          studentSubmissions.get(student.coreId).submissions.push(submission);
+          studentSubmissions.get(cacheKey).submissions.push(submission);
+          
+          // Track match stats
+          if (student.year === 'K1') matchedK1++;
+          else if (student.year === 'K2') matchedK2++;
+          else if (student.year === 'K3') matchedK3++;
         } else {
+          unmatched++;
           unmatchedSubmissions.push({ 
             studentId, 
             grade: submission.grade, 
@@ -919,24 +928,20 @@
         }
       }
       
-      console.log(`[JotFormCache] Matched ${studentSubmissions.size}/${students.length} students with submissions`);
-      console.log(`[JotFormCache] Matched students:`, Array.from(studentSubmissions.keys()));
       
       if (unmatchedSubmissions.length > 0) {
-        console.log(`[JotFormCache] ⚠️ ${unmatchedSubmissions.length} submissions couldn't be matched to students`);
-        console.log(`[JotFormCache] First 10 unmatched:`, unmatchedSubmissions.slice(0, 10));
       }
       
-      console.log(`[JotFormCache] Validating ${studentSubmissions.size} students...`);
       
-      // Validate each student
+      // Validate each student-grade combination
       let processed = 0;
       const totalStudents = studentSubmissions.size;
       
-      for (const [coreId, data] of studentSubmissions.entries()) {
+      for (const [cacheKey, data] of studentSubmissions.entries()) {
         try {
           const cache = await this.validateStudent(data.student, data.submissions, surveyStructure);
-          validationCache.set(coreId, cache);
+          // Store with composite key (coreId_grade) in the full cache
+          validationCache.set(cacheKey, cache);
           
           processed++;
           
@@ -950,11 +955,11 @@
           });
           
           if (processed % 10 === 0) {
-            console.log(`[JotFormCache] Validated ${processed}/${totalStudents} students`);
           }
         } catch (error) {
-          console.error(`[JotFormCache] Failed to validate ${coreId}:`, error);
-          validationCache.set(coreId, {
+          const coreId = cacheKey.includes('_') ? cacheKey.split('_')[0] : cacheKey;
+          console.error(`[JotFormCache] Failed to validate ${cacheKey}:`, error);
+          validationCache.set(cacheKey, {
             coreId,
             error: error.message,
             lastValidated: Date.now()
@@ -963,17 +968,17 @@
         }
       }
       
-      console.log(`[JotFormCache] ✅ Student validation complete: ${validationCache.size} students`);
       
-      // Save to IndexedDB
+      // Save to IndexedDB with composite keys (coreId_grade)
       await this.saveValidationCache(validationCache);
       
+      // Return with composite keys (coreId_grade) for grade-aware lookups
       return validationCache;
     }
     
     /**
      * Save validation cache to IndexedDB
-     * @param {Map} validationCache - Map of coreId -> validation data
+     * @param {Map} validationCache - Map of coreId_grade -> validation data (grade-aware composite key)
      */
     async saveValidationCache(validationCache) {
       if (!validationStorage) {
@@ -982,7 +987,6 @@
       }
       
       try {
-        console.log('[JotFormCache] Saving validation cache to IndexedDB...');
         
         // Convert Map to object for storage
         const cacheObject = {};
@@ -998,11 +1002,9 @@
         };
         
         await validationStorage.setItem(VALIDATION_CACHE_KEY, cacheEntry);
-        console.log(`[JotFormCache] ✅ Saved validation cache: ${validationCache.size} students`);
         
         // Verify
         const verification = await validationStorage.getItem(VALIDATION_CACHE_KEY);
-        console.log('[JotFormCache] Validation cache verification:', verification ? 'SUCCESS' : 'FAILED');
       } catch (error) {
         console.error('[JotFormCache] Failed to save validation cache:', error);
       }
@@ -1010,7 +1012,7 @@
     
     /**
      * Load validation cache from IndexedDB
-     * @returns {Promise<Map|null>} - Map of coreId -> validation data or null
+     * @returns {Promise<Map|null>} - Map of coreId_grade -> validation data (grade-aware composite key) or null
      */
     async loadValidationCache() {
       if (!validationStorage) {
@@ -1022,14 +1024,12 @@
         const cacheEntry = await validationStorage.getItem(VALIDATION_CACHE_KEY);
         
         if (!cacheEntry || !cacheEntry.validations) {
-          console.log('[JotFormCache] No validation cache found');
           return null;
         }
         
         // Check if cache is stale (older than submissions cache)
         const submissionsCache = await this.loadFromCache();
         if (submissionsCache && cacheEntry.timestamp < submissionsCache.timestamp) {
-          console.log('[JotFormCache] Validation cache is stale, will rebuild');
           return null;
         }
         
@@ -1038,7 +1038,6 @@
         if (sampleKey) {
           const sampleData = cacheEntry.validations[sampleKey];
           if (!sampleData.taskValidation || !sampleData.setStatus) {
-            console.log('[JotFormCache] ℹ️  Validation cache has outdated structure (missing taskValidation or setStatus), rebuilding...');
             return null;
           }
           
@@ -1056,7 +1055,6 @@
           validationCache.set(coreId, data);
         }
         
-        console.log(`[JotFormCache] Loaded validation cache: ${validationCache.size} students, age: ${Math.round((Date.now() - cacheEntry.timestamp) / 1000 / 60)} min`);
         return validationCache;
       } catch (error) {
         console.error('[JotFormCache] Failed to load validation cache:', error);
@@ -1074,7 +1072,6 @@
     async clearValidationCache() {
       if (validationStorage) {
         await validationStorage.removeItem(VALIDATION_CACHE_KEY);
-        console.log('[JotFormCache] Validation cache cleared');
       }
     }
 
@@ -1119,6 +1116,13 @@
           for (const [qid, answerObj] of Object.entries(submission.answers)) {
             // Skip if no field name or no actual value (match student page logic)
             if (!answerObj.name || !answerObj.answer) continue;
+            
+            // E-PRIME VALIDATION: Skip corrupted placeholder values where answer equals field name
+            // This happens when JotForm fields are initialized with field name as default value
+            // e.g., EPrime_NL_Done: "EPrime_NL_Done" instead of "1"
+            if (answerObj.name.startsWith('EPrime_') && answerObj.answer === answerObj.name) {
+              continue;
+            }
             
             // HTKS VALUE MAPPING: PDF sends choice indices (1, 2, 3) but we need scores (2, 1, 0)
             // Apply same mapping as transformSubmissionsToRecords for consistency
@@ -1244,7 +1248,6 @@
         // Check if this task is applicable to this student (gender-conditional tasks)
         const taskApplicable = isTaskApplicableToStudent(taskId, student, surveyStructure);
         if (!taskApplicable) {
-          console.log(`[JotFormCache] Skipping ${taskId} - not applicable for ${student.gender} student`);
           continue; // Skip gender-inappropriate tasks
         }
         
@@ -1315,7 +1318,6 @@
             if (mfTask.complete) {
               effectiveTasksComplete--;
             }
-            console.log(`[JotFormCache] Set 4: Excluding MF from completion criteria (${effectiveTasksComplete}/${effectiveTasksTotal} required)`);
           }
         }
         
@@ -1416,7 +1418,6 @@
      * @returns {Array} Transformed records with coreId at root level
      */
     transformSubmissionsToRecords(submissions) {
-      console.log('[JotFormCache] Transforming submissions to records format...');
       const records = [];
       
       for (const submission of submissions) {
@@ -1436,7 +1437,6 @@
               const match = qid3Value.match(/^(\d+)_/);
               if (match) {
                 studentId = match[1];
-                console.log(`[JotFormCache] ℹ️  Extracted student-id from sessionkey format: ${qid3Value} → ${studentId}`);
               }
             }
           }
@@ -1455,7 +1455,6 @@
           const sessionkey = submission.sessionkey || submission.answers?.['3']?.answer || submission.answers?.['3']?.text;
           if (sessionkey && typeof window.GradeDetector !== 'undefined') {
             grade = window.GradeDetector.determineGradeFromSessionKey(sessionkey);
-            console.log(`[JotFormCache] Student ${coreId}: sessionkey=${sessionkey} → grade=${grade}`);
           }
           
           // Build flat record with all answer fields
@@ -1492,7 +1491,6 @@
               if (value && fieldName.startsWith('HTKS_Q')) {
                 const choiceToScore = { '1': '2', '2': '1', '3': '0' };
                 if (choiceToScore[value]) {
-                  console.log(`[JotFormCache] HTKS mapping: ${fieldName} choice ${value} → score ${choiceToScore[value]}`);
                   value = choiceToScore[value];
                 }
               }
@@ -1510,14 +1508,11 @@
         }
       }
       
-      console.log(`[JotFormCache] Transformed ${records.length} submissions to records (${submissions.length - records.length} skipped)`);
       
       // DEBUG: Check C10034 in transformed records
       const c10034Records = records.filter(r => r.coreId === 'C10034');
       if (c10034Records.length > 0) {
-        console.log(`[JotFormCache] 🔍 DEBUG: C10034 after transform: ${c10034Records.length} record(s)`);
         c10034Records.forEach(r => {
-          console.log(`   Grade: ${r.grade}, SessionKey: ${r._meta?.sessionkey}, Created: ${r._meta?.created_at}`);
         });
       }
       
@@ -1574,7 +1569,6 @@
      * @returns {Array} Submissions in JotForm format (orphaned records excluded)
      */
     async transformRecordsToSubmissions(records, originalSubmissions) {
-      console.log('[JotFormCache] Converting records back to submission format...');
       
       // Load JotForm QID mapping for Qualtrics-only submissions
       // This is critical because TaskValidator expects answers indexed by JotForm QID, not fieldName
@@ -1583,7 +1577,6 @@
         const response = await fetch('assets/jotformquestions.json');
         if (response.ok) {
           fieldNameToQid = await response.json();
-          console.log('[JotFormCache] Loaded fieldName → JotForm QID mapping for Qualtrics-only submissions');
         } else {
           console.warn('[JotFormCache] Could not load jotformquestions.json - Qualtrics-only submissions may not display correctly');
         }
@@ -1627,7 +1620,6 @@
             // This is expected for Qualtrics-only records (orphaned data)
             // It means the student has Qualtrics survey data but no JotForm submission yet
             if (record._orphaned) {
-              console.log(`[JotFormCache] ℹ️  Creating submission structure for Qualtrics-only record: ${record.coreId}`);
               orphanedCount++;
               
               // Create a minimal submission structure for Qualtrics-only data
@@ -1787,11 +1779,7 @@
         }
       }
       
-      console.log(`[JotFormCache] ========== TRANSFORMATION COMPLETE ==========`);
-      console.log(`[JotFormCache] Total input records: ${records.length}`);
-      console.log(`[JotFormCache] ✓ Successfully converted: ${submissions.length}`);
       if (orphanedCount > 0) {
-        console.log(`[JotFormCache] ℹ️  Skipped (Qualtrics-only): ${orphanedCount}`);
       }
       if (unexpectedMissingCount > 0) {
         console.warn(`[JotFormCache] ⚠️  Skipped (missing original): ${unexpectedMissingCount}`);
@@ -1799,7 +1787,6 @@
       if (failedConversions.length > 0) {
         console.warn(`[JotFormCache] ⚠️  ${failedConversions.length} records failed conversion:`, failedConversions);
       }
-      console.log(`[JotFormCache] ===============================================`);
       return submissions;
     }
 
@@ -1809,7 +1796,6 @@
      * @returns {Promise<Object>} Merge statistics
      */
     async refreshWithQualtrics(credentials) {
-      console.log('[JotFormCache] ========== STARTING QUALTRICS REFRESH ==========');
       
       // Validate required modules
       if (typeof window.QualtricsAPI === 'undefined') {
@@ -1905,7 +1891,6 @@
         });
         
         this.emitProgress('Starting parallel fetch: JotForm + Qualtrics...', 0);
-        console.log('[JotFormCache] ========== PARALLEL FETCH STARTED ==========');
         
         try {
           // STEP 1: Fetch JotForm and Qualtrics data in PARALLEL
@@ -1920,9 +1905,6 @@
             })()
           ]);
           
-          console.log('[JotFormCache] ========== PARALLEL FETCH COMPLETE ==========');
-          console.log(`[JotFormCache] JotForm: ${jotformSubmissions.length} submissions`);
-          console.log(`[JotFormCache] Qualtrics: ${rawResponses.length} responses`);
           
           // STEP 2: Transform both datasets (80-85%)
           this.emitProgress('Transforming JotForm data...', 78, {
@@ -1932,7 +1914,6 @@
             qualtricsMessage: 'Transforming data...'
           });
           const jotformData = this.transformSubmissionsToRecords(jotformSubmissions);
-          console.log('[JotFormCache] JotForm data transformed:', jotformData.length, 'records');
 
           this.emitProgress('Transforming Qualtrics data...', 80, {
             jotformProgress: 100,
@@ -1941,7 +1922,6 @@
             qualtricsMessage: 'Transforming data...'
           });
           const transformedData = transformer.transformBatch(rawResponses);
-          console.log('[JotFormCache] Qualtrics data transformed:', transformedData.length, 'records');
 
           // STEP 3: Merge datasets (85-88%)
           this.emitProgress('Merging JotForm and Qualtrics data...', 82, {
@@ -1951,7 +1931,6 @@
             qualtricsMessage: 'Merging data...'
           });
           const mergedData = merger.mergeDataSources(jotformData, transformedData);
-          console.log('[JotFormCache] Data merged:', mergedData.length, 'records');
 
           // STEP 4: Validate merge (88-90%)
           this.emitProgress('Validating merged data...', 85, {
@@ -1977,7 +1956,6 @@
               surveyId: credentials.qualtricsSurveyId,
               count: transformedData.length
             });
-            console.log('[JotFormCache] Qualtrics cache updated');
           }
 
           // STEP 6: Convert merged records back to submission format (92-95%)
@@ -1988,7 +1966,6 @@
             qualtricsMessage: 'Converting data...'
           });
           const mergedSubmissions = await this.transformRecordsToSubmissions(mergedData, jotformSubmissions);
-          console.log('[JotFormCache] Converted', mergedSubmissions.length, 'records back to submission format');
 
           // STEP 7: Update main cache with merged data (95-98%)
           this.emitProgress('Updating main cache...', 93, {
@@ -1999,7 +1976,6 @@
           });
           await this.saveToCache(mergedSubmissions);
           this.cache = mergedSubmissions;
-          console.log('[JotFormCache] Main cache updated with merged data');
 
           // STEP 8: Clear validation cache (98-100%)
           this.emitProgress('Clearing validation cache...', 97, {
@@ -2009,7 +1985,6 @@
             qualtricsMessage: 'Clearing validation cache...'
           });
           await this.clearValidationCache();
-          console.log('[JotFormCache] Validation cache cleared (will rebuild on demand)');
 
           this.emitProgress('Qualtrics integration complete!', 100, {
             jotformProgress: 100,
@@ -2017,7 +1992,6 @@
             jotformMessage: 'Complete!',
             qualtricsMessage: 'Complete!'
           });
-          console.log('[JotFormCache] ========== QUALTRICS REFRESH COMPLETE ==========');
 
           return {
             success: true,
@@ -2085,7 +2059,6 @@
       const qualtricsStorage = this.getQualtricsStorage();
       if (qualtricsStorage) {
         await qualtricsStorage.removeItem(QUALTRICS_RAW_CACHE_KEY);
-        console.log('[JotFormCache] Qualtrics cache cleared');
       }
     }
 
@@ -2114,7 +2087,6 @@
     async getStudentSubmissions(coreId, grade = null) {
       const cached = await this.loadFromCache();
       if (!cached || !cached.submissions) {
-        console.log('[JotFormCache] No cached data available for student lookup');
         return [];
       }
 
@@ -2137,10 +2109,8 @@
       if (grade) {
         const beforeGradeFilter = studentSubmissions.length;
         studentSubmissions = studentSubmissions.filter(s => s.grade === grade);
-        console.log(`[JotFormCache] Grade filter (${grade}): ${beforeGradeFilter} → ${studentSubmissions.length} submissions`);
       }
 
-      console.log(`[JotFormCache] Found ${studentSubmissions.length} submissions for ${coreId}${grade ? ` (grade ${grade})` : ''} in cache`);
       
       // Log data sources for debugging
       const jotformOnly = studentSubmissions.filter(s => s._sources && s._sources.length === 1 && s._sources[0] === 'jotform');
@@ -2148,13 +2118,10 @@
       const merged = studentSubmissions.filter(s => s._sources && s._sources.length > 1);
       
       if (jotformOnly.length > 0) {
-        console.log(`[JotFormCache] - ${jotformOnly.length} JotForm-only record(s)`);
       }
       if (qualtricsOnly.length > 0) {
-        console.log(`[JotFormCache] - ${qualtricsOnly.length} Qualtrics-only record(s)`);
       }
       if (merged.length > 0) {
-        console.log(`[JotFormCache] - ${merged.length} JotForm+Qualtrics merged record(s)`);
       }
       
       return studentSubmissions;
@@ -2167,5 +2134,4 @@
   // JotForm question structure changes.
   window.JotFormCache = new JotFormCache();
   window.JotFormCache.STUDENT_ID_QID = STUDENT_ID_QID;
-  console.log('[JotFormCache] Global cache manager initialized');
 })();

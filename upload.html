@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Upload - 4Set Pipeline</title>
+    <title>File Upload - 4Set Pipeline</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="assets/js/tailwind.config.js"></script>
     <link rel="stylesheet" href="assets/css/theme_pantone_light_1.css" />
@@ -39,13 +39,13 @@
                 <div>
                     <span class="hero-badge inline-flex items-center gap-2 px-4 py-2 text-xs uppercase tracking-wide mb-3">
                         <i data-lucide="upload-cloud" class="w-4 h-4"></i>
-                        PDF Upload Station
+                        File Upload Station
                     </span>
                     <h1 class="upload-title text-3xl font-bold text-[color:var(--primary)] sm:text-4xl lg:text-5xl">
                         Assessment Uploader
                     </h1>
                     <p class="upload-subtitle mt-2 text-base text-[color:var(--muted-foreground)] lg:text-lg">
-                        Drag and drop PDF files to add them to the processing queue
+                        Drag and drop PDF or E-Prime (.edat3) files to add them to the processing queue
                     </p>
                 </div>
                 <div class="flex items-center gap-3">
@@ -96,7 +96,7 @@
                                 </button>
                                 <div id="tooltip-upload-destination" class="feature-tooltip" style="display: none;">
                                     <div style="font-weight: 600; margin-bottom: 4px;">📁 Upload Destination</div>
-                                    <div style="font-size: 13px; opacity: 0.9;">Select the folder where PDFs will be saved for processing</div>
+                                    <div style="font-size: 13px; opacity: 0.9;">Select the folder where files will be saved for processing</div>
                                     <div style="position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 6px solid #1f2937;"></div>
                                 </div>
                             </div>
@@ -118,7 +118,7 @@
                 <div class="lg:col-span-2">
                     <div class="interactive-btn-wrapper" style="position: relative;">
                         <div class="upload-zone entry-card p-8 sm:p-12 lg:p-16 text-center cursor-pointer" id="upload-zone">
-                            <input type="file" id="file-input" accept=".pdf" multiple class="hidden" aria-label="Select PDF files to upload">
+                            <input type="file" id="file-input" accept=".pdf,.edat3" multiple class="hidden" aria-label="Select PDF or E-Prime files to upload">
                             
                             <div class="flex flex-col items-center gap-4">
                                 <div class="p-6 rounded-full bg-[color:var(--primary)]/10">
@@ -126,7 +126,7 @@
                                 </div>
                                 
                                 <div>
-                                    <h2 class="text-xl sm:text-2xl lg:text-3xl font-bold text-[color:var(--foreground)] mb-2">Drop PDF Files Here</h2>
+                                    <h2 class="text-xl sm:text-2xl lg:text-3xl font-bold text-[color:var(--foreground)] mb-2">Drop Files Here</h2>
                                     <p class="text-sm sm:text-base text-[color:var(--muted-foreground)] mb-4">or click anywhere to browse your computer</p>
                                 </div>
 
@@ -138,7 +138,7 @@
                             <div class="mt-4 space-y-1.5 text-[color:var(--muted-foreground)]">
                                 <p class="flex items-center gap-2 justify-center text-xs sm:text-sm">
                                     <i data-lucide="info" class="w-3 h-3 sm:w-4 sm:h-4"></i>
-                                    Only PDF files are supported
+                                    PDF and E-Prime (.edat3) files are supported
                                 </p>
                                 <p class="flex items-center gap-2 justify-center text-[10px] sm:text-xs">
                                     <i data-lucide="shield-alert" class="w-3 h-3"></i>
@@ -149,7 +149,7 @@
                     </div>
                     <div id="tooltip-upload-zone" class="feature-tooltip" style="display: none;">
                         <div style="font-weight: 600; margin-bottom: 4px;">📤 Upload Zone</div>
-                        <div style="font-size: 13px; opacity: 0.9;">Drag and drop PDF files here or click to browse. Files are saved directly to your selected destination folder.</div>
+                        <div style="font-size: 13px; opacity: 0.9;">Drag and drop PDF or E-Prime (.edat3) files here or click to browse. Files are saved directly to your selected destination folder.</div>
                         <div style="position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 6px solid transparent; border-right: 6px solid transparent; border-bottom: 6px solid #1f2937;"></div>
                     </div>
                 </div>
@@ -216,19 +216,11 @@
         // Detect PC number only (OneDrive detection removed - using File System Access API)
         async function detectSystemPaths() {
             try {
-                console.log('[PC Detection] Starting...');
-                
                 // Detect PC number from localStorage only
                 const manualPC = localStorage.getItem('pc_number');
                 const detectedPCNumber = (manualPC && manualPC !== '000') ? manualPC : null;
                 
                 state.pcNumber = detectedPCNumber;
-                
-                if (detectedPCNumber) {
-                    console.log('[PC Detection] PC number from localStorage:', detectedPCNumber);
-                } else {
-                    console.log('[PC Detection] No PC number configured');
-                }
                 
                 // Update UI
                 updatePCNumberDisplay(state.pcNumber);
@@ -325,7 +317,6 @@
             // Strategy 1: Check manually configured PC number
             const savedPCNumber = localStorage.getItem('pc_number');
             if (savedPCNumber) {
-                console.log('[PC Detection] Using configured PC number:', savedPCNumber);
                 return savedPCNumber;
             }
             
@@ -335,7 +326,6 @@
                 // Look for computer name patterns
                 const pathMatch = cachedPath.match(/(?:KS|LAPTOP|PC|WORKSTATION)(\d+)/i);
                 if (pathMatch) {
-                    console.log('[PC Detection] Found in cached path:', pathMatch[1]);
                     const pcNum = pathMatch[1].padStart(3, '0');
                     localStorage.setItem('pc_number', pcNum);
                     return pcNum;
@@ -347,7 +337,6 @@
                     const username = userMatch[1];
                     const numMatch = username.match(/(\d+)/);
                     if (numMatch) {
-                        console.log('[PC Detection] Extracted from username:', numMatch[1]);
                         const pcNum = numMatch[1].padStart(3, '0');
                         localStorage.setItem('pc_number', pcNum);
                         return pcNum;
@@ -359,7 +348,6 @@
             const path = window.location.pathname;
             const pathMatch = path.match(/(?:KS|LAPTOP|PC|WORKSTATION)(\d+)/i);
             if (pathMatch) {
-                console.log('[PC Detection] Found in URL:', pathMatch[1]);
                 const pcNum = pathMatch[1].padStart(3, '0');
                 localStorage.setItem('pc_number', pcNum);
                 return pcNum;
@@ -372,19 +360,15 @@
 
         // OneDrive path detection (browser-compatible only)
         async function detectOneDrivePath(config) {
-            console.log('[OneDrive Detection] Starting...');
-            
             // Strategy 1: Check localStorage cache (primary for HTTP deployments)
             const savedPath = localStorage.getItem('onedrive_base_path');
             if (savedPath) {
-                console.log('[OneDrive Detection] ✓ Using cached path:', savedPath);
+                return savedPath;
                 return savedPath;
             }
             
             // Strategy 2: Parse from file:// protocol (only works when opened directly)
             if (window.location.protocol === 'file:') {
-                console.log('[OneDrive Detection] Detecting from file:// protocol...');
-                
                 let fullPath = window.location.href;
                 fullPath = fullPath.replace('file:///', '');
                 fullPath = decodeURIComponent(fullPath);
@@ -399,17 +383,14 @@
                         basePath = basePath.charAt(0) + ':' + basePath.substring(1);
                     }
                     
-                    console.log('[OneDrive Detection] ✓ Extracted from file path:', basePath);
                     localStorage.setItem('onedrive_base_path', basePath);
                     return basePath;
                 }
             }
             
             // Strategy 3: Use config fallback (for HTTP deployments or when file:// fails)
-            console.log('[OneDrive Detection] Using config fallback...');
             if (config.oneDrive?.fallbackRoot && config.oneDrive?.relativePath) {
                 const fallbackPath = config.oneDrive.fallbackRoot + config.oneDrive.relativePath;
-                console.log('[OneDrive Detection] Config fallback:', fallbackPath);
                 // Don't save to localStorage - let first-run setup handle it
                 return fallbackPath;
             }
@@ -506,12 +487,10 @@
                 // PC number NOT set - error state
                 pcBadge.classList.add('badge-error');
                 pcBadge.title = 'PC number not set - Click to configure';
-                console.log('[UI] PC number badge set to ERROR state (not configured)');
             } else {
                 // PC number IS set - success state (green)
                 pcBadge.classList.add('badge-valid');
                 pcBadge.title = 'PC ' + pcNumber + ' - Click to change';
-                console.log('[UI] PC number badge set to VALID state:', pcNumber);
             }
             
             // Update system status based on both PC and OneDrive
@@ -629,7 +608,7 @@
             }
             
             if (needsDestination) {
-                message += '<li><strong>Upload Destination:</strong> Select the folder where PDFs will be saved</li>';
+                message += '<li><strong>Upload Destination:</strong> Select the folder where files will be saved</li>';
             }
             
             message += '</ul>';
@@ -711,11 +690,14 @@
                     return;
                 }
                 
-                const files = Array.from(e.dataTransfer.files).filter(f => f.name.toLowerCase().endsWith('.pdf'));
+                const files = Array.from(e.dataTransfer.files).filter(f => {
+                    const name = f.name.toLowerCase();
+                    return name.endsWith('.pdf') || name.endsWith('.edat3');
+                });
                 if (files.length > 0) {
                     handleFiles(files);
                 } else {
-                    alert('Please drop only PDF files.');
+                    alert('Please drop only PDF or E-Prime (.edat3) files.');
                 }
             });
         }
@@ -734,18 +716,19 @@
                 return;
             }
             
-            // Filter PDF files only
-            const pdfFiles = Array.from(files).filter(file => 
-                file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf')
-            );
+            // Filter supported files (PDF and EDAT3)
+            const supportedFiles = Array.from(files).filter(file => {
+                const name = file.name.toLowerCase();
+                return file.type === 'application/pdf' || name.endsWith('.pdf') || name.endsWith('.edat3');
+            });
             
-            if (pdfFiles.length === 0) {
-                alert('Please select PDF files only.');
+            if (supportedFiles.length === 0) {
+                alert('Please select PDF or E-Prime (.edat3) files only.');
                 return;
             }
             
             // Add to queue
-            pdfFiles.forEach(file => {
+            supportedFiles.forEach(file => {
                 const id = Date.now() + Math.random();
                 state.uploadQueue.push({ id, file, status: 'pending' });
                 addUploadItemToPanel(id, file);
@@ -824,7 +807,6 @@
                 await requestDirectoryAccess();
             } catch (error) {
                 // User cancelled or error occurred
-                console.log('[File Access] Folder selection cancelled or failed');
             }
         }
 
@@ -868,9 +850,6 @@
 
                 // Store in IndexedDB for future use
                 await storeDirectoryHandle(dirHandle);
-
-                console.log('[File Access] ✓ Directory access granted:', dirHandle.name);
-                console.log('[File Access] Parent folder stored. Will use subfolders as needed.');
                 
                 // Update UI
                 updateDestinationDisplay();
@@ -901,7 +880,6 @@
                 
                 return new Promise((resolve, reject) => {
                     request.onsuccess = () => {
-                        console.log('[IndexedDB] ✓ Handle stored');
                         resolve();
                     };
                     
@@ -921,7 +899,6 @@
                 
                 // Verify object store exists before creating transaction
                 if (!database.objectStoreNames.contains('handles')) {
-                    console.log('[File Access] No handles object store, skipping restore');
                     return null;
                 }
                 
@@ -939,27 +916,20 @@
                                 const permission = await handle.queryPermission({ mode: 'readwrite' });
                                 if (permission === 'granted') {
                                     state.directoryHandle = handle;
-                                    console.log('[File Access] ✓ Restored directory handle:', handle.name);
                                     resolve(handle);
                                     return;
                                 }
-                                console.log('[File Access] Permission no longer granted, will request again');
                             } catch (error) {
-                                console.log('[File Access] Handle no longer valid:', error.message);
                             }
-                        } else {
-                            console.log('[File Access] No stored handle found');
                         }
                         resolve(null);
                     };
                     
                     getRequest.onerror = () => {
-                        console.log('[File Access] Error reading handle:', getRequest.error);
                         resolve(null);
                     };
                 });
             } catch (error) {
-                console.log('[File Access] Could not restore handle:', error.message);
                 return null;
             }
         }
@@ -971,17 +941,14 @@
                 
                 request.onupgradeneeded = (event) => {
                     const db = event.target.result;
-                    console.log('[IndexedDB] Upgrading database schema...');
                     
                     // Create handles object store if it doesn't exist
                     if (!db.objectStoreNames.contains('handles')) {
                         db.createObjectStore('handles');
-                        console.log('[IndexedDB] ✓ Created handles object store');
                     }
                 };
                 
                 request.onsuccess = () => {
-                    console.log('[IndexedDB] ✓ Database opened successfully');
                     resolve(request.result);
                 };
                 
@@ -1001,7 +968,6 @@
             try {
                 // Ensure we have directory access (parent folder)
                 if (!state.directoryHandle) {
-                    console.log('[Upload] No directory handle, showing destination modal...');
                     showUploadDestinationDialog(); // Show destination modal first
                     throw new Error('Please set upload destination first');
                 }
@@ -1014,25 +980,22 @@
                     uploadedFrom: state.pcNumber
                 };
                 
-                // Write PDF file
-                const pdfHandle = await targetHandle.getFileHandle(file.name, { create: true });
-                const pdfWritable = await pdfHandle.createWritable();
-                await pdfWritable.write(file);
-                await pdfWritable.close();
+                // Write file
+                const fileHandle = await targetHandle.getFileHandle(file.name, { create: true });
+                const fileWritable = await fileHandle.createWritable();
+                await fileWritable.write(file);
+                await fileWritable.close();
                 
-                console.log(`[Upload] ✓ PDF written: ${file.name}`);
+                const isEdat3 = file.name.toLowerCase().endsWith('.edat3');
                 
-                // Write metadata JSON file
-                const metaFilename = file.name.replace('.pdf', '.meta.json');
-                const metaHandle = await targetHandle.getFileHandle(metaFilename, { create: true });
-                const metaWritable = await metaHandle.createWritable();
-                await metaWritable.write(JSON.stringify(metadata, null, 2));
-                await metaWritable.close();
-                
-                console.log(`[Upload] ✓ Metadata written: ${metaFilename}`);
-                console.log(`[Upload] → ${state.directoryHandle.name}/ folder`);
-                console.log('[Upload] Metadata:', metadata);
-                console.log('[Upload] 🎉 Files will sync via OneDrive to server!');
+                // Write metadata JSON file (only for PDFs - EDAT3 has PC number in filename)
+                if (!isEdat3) {
+                    const metaFilename = file.name.replace('.pdf', '.meta.json');
+                    const metaHandle = await targetHandle.getFileHandle(metaFilename, { create: true });
+                    const metaWritable = await metaHandle.createWritable();
+                    await metaWritable.write(JSON.stringify(metadata, null, 2));
+                    await metaWritable.close();
+                }
                 
                 return true;
                 

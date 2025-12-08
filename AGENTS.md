@@ -166,6 +166,13 @@ The 4Set System is a comprehensive web-based assessment data processing pipeline
   - Modal system with expandable previews
   - Tooltip system for contextual information
   - Comprehensive guideline documentation (PRDs/guideline_prd.md)
+- [x] **Log viewer E-Prime file type support (Dec 2025)**
+  - File type badges (PDF vs E-Prime .edat3) in file summary table
+  - Full filename display without extension for all file types
+  - Separate File Summary card from Log Entries card
+  - File type filter toggle (All / PDF / E-Prime)
+  - Compact UI with smaller fonts, reduced padding
+  - Scrollable summary table (max 200px height)
 
 ### 🔄 Phase 4: Production Deployment (In Progress)
 - [x] Upload interface with drag-and-drop support
@@ -636,6 +643,28 @@ Error (504/truncation) → Reduce to 50 (50%)
   ↓
 Success → Success → Try 100 again (gradual increase)
 ```
+
+#### JotForm API: orderby/direction Parameters Ignored
+**Discovery**: JotForm filter API ignores `orderby` and `direction` parameters  
+**Date**: December 5, 2025  
+**Impact**: E-Prime upsert was updating wrong submission (newest instead of earliest)
+
+**Test Results**:
+```
+direction=ASC  → Returns: Dec 2, Dec 1 (newest first)
+direction=DESC → Returns: Dec 2, Dec 1 (same order!)
+```
+
+**Solution**: Sort results client-side in PowerShell:
+```powershell
+# Don't trust JotForm's ordering - sort ourselves
+$sorted = $filterResponse.content | Sort-Object { [datetime]$_.created_at }
+$foundSubmission = $sorted | Select-Object -First 1
+```
+
+**Files Updated**:
+- `processor_agent.ps1` - `Invoke-JotformUpsertByStudentId` now sorts results locally
+- `PRDs/eprime_handling_prd.md` - Documented the quirk with warning
 
 #### Set 4 Completion Logic: MF Task Exclusion
 **Decision**: Exclude Math Fluency (MF) from Set 4 green light criteria  
@@ -1120,6 +1149,36 @@ All user guides moved to PRDs folder for centralized documentation:
   - Retained only essential test documentation (3 MD files vs 19 before)
   - Result: Cleaner TEMP folder with only active test files, improved documentation discoverability
 
+**Grade-Aware Data Display Fixes (December 5, 2025):**
+- ✅ **Student Page Grade Fallback Bug**: Fixed issue where K3 data was displayed when K1 was selected
+  - Root cause: When no K1 data existed in cache, page fell back to JotForm API which returned K3 data
+  - Fix: When a specific grade is selected but no data exists, show "No Data" instead of falling back to API
+  - File: `assets/js/checking-system-student-page.js` - Modified fallback logic in `fetchAndPopulateJotformData()`
+- ✅ **Validation Cache coreId Lookup**: Fixed matching for Qualtrics-merged submissions
+  - Root cause: Validation cache lookup used `answers['4']` for student ID, but Qualtrics data has `coreId` at root level
+  - Fix: Check `submission.coreId` first, then fall back to `answers['4']`
+  - File: `assets/js/jotform-cache.js` - Modified `buildStudentValidationCache()` matching logic
+- ✅ **Cache Key Format Normalization**: Fixed C-prefix handling in composite cache keys
+  - Added support for both `C10352_K3` and `10352_K3` formats in cache lookup
+  - Ensures consistent matching between student list and cached validation data
+
+**Console Logging Cleanup (December 5, 2025):**
+- ✅ **Removed Verbose Debug Logs**: Cleaned up excessive `console.log()` statements across checking system
+  - **Purpose**: Reduce browser console noise; improve production debugging experience
+  - **Files cleaned**:
+    - `assets/js/cache-validator.js` - Removed cache structure validation debug logs
+    - `assets/js/cache-manager-ui.js` - Removed sync modal and status update logs
+    - `assets/js/checking-system-class-page.js` - Removed initialization and view mode logs
+    - `assets/js/checking-system-data-loader.js` - Removed data loading debug output
+    - `assets/js/checking-system-district-page.js` - Removed district aggregation logs
+    - `assets/js/checking-system-group-page.js` - Removed group aggregation logs
+    - `assets/js/checking-system-preferences.js` - Removed preference save/restore logs
+    - `assets/js/data-merger.js` - Removed merge operation debug output
+    - `upload.html` - Removed PC detection and File System API logs
+    - `log.html` - Removed calendar render and Supabase query logs
+  - **Retained**: Essential `console.error()` and `console.warn()` for error reporting
+  - **Impact**: Cleaner browser console; easier to identify actual errors in production
+
 **Interactive User Guide System (October 27, 2025):**
 - ✅ **Guideline & Spotlight System**: Comprehensive interactive learning system for all user guide pages
   - Dynamic SVG-based spotlight masking for highlighting UI elements
@@ -1140,6 +1199,8 @@ All user guides moved to PRDs folder for centralized documentation:
 
 ### Future Updates
 This section will track major system updates, feature additions, and architectural changes as they occur.
+
+- **2025-12-08**: Fixed Checking System “By Missing” views to retain class and grade context when toggling missing-data filters.
 
 ---
 
