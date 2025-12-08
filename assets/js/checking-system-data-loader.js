@@ -224,6 +224,12 @@
           }
         });
       });
+      
+      // Log year statistics for debugging
+      console.log('[DataLoader] Year statistics from coreid.enc:');
+      console.log('  K1 (23/24):', yearStats.K1.total, 'with class IDs,', yearStats.K1.unassigned, 'assigned to 無班級 (K1)');
+      console.log('  K2 (24/25):', yearStats.K2.total, 'with class IDs,', yearStats.K2.unassigned, 'assigned to 無班級 (K2)');
+      console.log('  K3 (25/26):', yearStats.K3.total, 'with class IDs,', yearStats.K3.unassigned, 'assigned to 無班級 (K3)');
 
       // Create grade-specific class 99 (無班級) entries for schools with unassigned students
       // Collect unique school IDs and grades that need class 99 entries
@@ -364,6 +370,7 @@
       
       // Check cache version - invalidate if outdated
       if (data.version !== '1.4') {
+        console.log('Cache version mismatch, clearing old cache');
         sessionStorage.removeItem('checking_system_data');
         return null;
       }

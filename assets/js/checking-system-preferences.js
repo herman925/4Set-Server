@@ -217,4 +217,6 @@
     // Constants
     KEYS
   };
+  
+  console.log('[Preferences] User preferences manager initialized');
 })();

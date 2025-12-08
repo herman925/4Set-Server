@@ -189,7 +189,6 @@ window.TaskValidator = (() => {
     // Exclude date fields, memo fields, termination records, practice questions, and other non-question fields
     // NOTE: _TEXT fields are now INCLUDED for display purposes (handled separately in validation)
     // EXCEPT: ToM_Q3_TEXT and ToM_Q4a_ins1_TEXT are instruction questions (not assessment) and should be excluded
-    // EXCEPT: CM_Q*_TEXT fields are no longer collected in PDF forms and should be excluded
     return id.endsWith('_Date') || 
            id.includes('_Memo_') ||
            id.includes('_Ter') || // Exclude all termination records (ERV_Ter1, CM_Ter2, etc.)
@@ -198,8 +197,7 @@ window.TaskValidator = (() => {
            /^SYM_S[1-3]$/.test(id) || // Exclude SYM sample items (treated like practice questions)
            /^NONSYM_S[1-3]$/.test(id) || // Exclude NONSYM sample items (treated like practice questions)
            id === 'ToM_Q3_TEXT' || // Instruction question: "What do you think is in the box?" (before revealing)
-           id === 'ToM_Q4a_ins1_TEXT' || // Instruction question: "What do you think is in the band-aid box?" (before revealing)
-           /^CM_Q\d+_TEXT$/.test(id); // CM _TEXT fields no longer collected in PDF forms
+           id === 'ToM_Q4a_ins1_TEXT'; // Instruction question: "What do you think is in the band-aid box?" (before revealing)
   }
 
   /**

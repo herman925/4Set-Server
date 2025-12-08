@@ -838,45 +838,18 @@
       if (!forceRebuild) {
         const cachedValidation = await this.loadValidationCache();
         if (cachedValidation && cachedValidation.size > 0) {
-          console.log(`[JotFormCache] ✅ Loaded validation cache from IndexedDB: ${cachedValidation.size} entries`);
+          console.log(`[JotFormCache] ✅ Loaded validation cache from IndexedDB: ${cachedValidation.size} students`);
           
-          // GRADE-AWARE CACHE KEY: Filter cache using composite key (coreId_grade)
-          // This ensures K1/K2/K3 data for the same student are kept separate
-          // Build lookup maps with BOTH formats (with and without C prefix) for flexibility
-          const studentKeyMap = new Map(); // normalized key -> original student
-          students.forEach(s => {
-            const grade = s.year || 'Unknown';
-            // Store with C prefix
-            studentKeyMap.set(`${s.coreId}_${grade}`, s);
-            // Also store without C prefix for matching cache keys that may not have it
-            const numericId = s.coreId.startsWith('C') ? s.coreId.substring(1) : s.coreId;
-            studentKeyMap.set(`${numericId}_${grade}`, s);
-          });
-          
+          // Filter cache to only include students in the provided list
           const studentCoreIds = new Set(students.map(s => s.coreId));
           const filteredCache = new Map();
-          
-          for (const [cacheKey, data] of cachedValidation.entries()) {
-            // Support both old (coreId only) and new (coreId_grade) cache key formats
-            if (cacheKey.includes('_')) {
-              // New format: coreId_grade (e.g., "C10261_K3" or "10261_K3")
-              const matchedStudent = studentKeyMap.get(cacheKey);
-              if (matchedStudent) {
-                // Use the student's coreId format for the return key
-                const returnKey = `${matchedStudent.coreId}_${matchedStudent.year || 'Unknown'}`;
-                filteredCache.set(returnKey, data);
-              }
-            } else {
-              // Old format: just coreId (e.g., "C10261") - rebuild needed
-              const normalizedKey = cacheKey.startsWith('C') ? cacheKey : `C${cacheKey}`;
-              if (studentCoreIds.has(normalizedKey) || studentCoreIds.has(cacheKey)) {
-                console.log(`[JotFormCache] ⚠️ Found old cache format (coreId only), will rebuild for grade-awareness`);
-                return null; // Force rebuild with new format
-              }
+          for (const [coreId, data] of cachedValidation.entries()) {
+            if (studentCoreIds.has(coreId)) {
+              filteredCache.set(coreId, data);
             }
           }
           
-          console.log(`[JotFormCache] Filtered to ${filteredCache.size} student-grade combinations matching provided list`);
+          console.log(`[JotFormCache] Filtered to ${filteredCache.size} students matching provided list`);
           return filteredCache;
         }
       }
@@ -890,72 +863,53 @@
         return validationCache;
       }
       
-      // Group submissions by student using the student's grade from coreid.csv
-      // The student list is already filtered by grade (class page filters by class grade)
-      // We match submissions to students by coreId, then use the student's grade for the cache key
+      // GRADE-AWARE FILTERING: If all students are same grade, filter submissions by that grade
+      // This prevents mixing K1+K2+K3 data when building cache for a single-grade class
+      if (singleGrade) {
+        const beforeFilter = submissions.length;
+        submissions = submissions.filter(s => s.grade === singleGrade);
+        console.log(`[JotFormCache] Grade filter (${singleGrade}): ${beforeFilter} → ${submissions.length} submissions`);
+      }
+      
+      // Group submissions by student
       const studentSubmissions = new Map();
       const unmatchedSubmissions = [];
       
-      // Debug: Log class student Core IDs with grades
-      console.log(`[JotFormCache] Class students expecting data:`, students.map(s => `${s.coreId} (${s.year || 'Unknown'})`).slice(0, 5));
-      console.log(`[JotFormCache] Total submissions to process: ${submissions.length}`);
-      
-      // Debug: Log submission grades distribution
-      const gradeDistribution = {};
-      submissions.forEach(s => {
-        const grade = s.grade || 'No Grade';
-        gradeDistribution[grade] = (gradeDistribution[grade] || 0) + 1;
-      });
-      console.log(`[JotFormCache] Submission grade distribution:`, gradeDistribution);
-      
-      // Debug: Track matching stats
-      let matchedK1 = 0, matchedK2 = 0, matchedK3 = 0, unmatched = 0;
+      // Debug: Log class student Core IDs
+      console.log(`[JotFormCache] Class students expecting data:`, students.map(s => `${s.coreId} (${s.studentName || 'no name'})`).slice(0, 5));
       
       for (const submission of submissions) {
-        // Check both root-level coreId (Qualtrics merged data) and answers field (JotForm)
         const studentIdAnswer = submission.answers?.[STUDENT_ID_QID];
-        const studentId = submission.coreId || studentIdAnswer?.answer || studentIdAnswer?.text;
+        const studentId = studentIdAnswer?.answer || studentIdAnswer?.text;
         if (!studentId) {
           unmatchedSubmissions.push({ reason: 'No student ID in submission', submissionId: submission.id });
           continue;
         }
         
-        // Find student by Core ID - prefer grade match if submission has grade info
-        // Single-grade mode (class page): All students have same grade, just match by coreId
-        // Multi-grade mode (school page): Match by coreId AND grade to avoid cross-grade contamination
+        // Find student by Core ID (and optionally verify grade match)
         const student = students.find(s => {
           const numericCoreId = s.coreId.startsWith('C') ? s.coreId.substring(1) : s.coreId;
           const numericStudentId = studentId.startsWith('C') ? studentId.substring(1) : studentId;
           const coreIdMatches = numericCoreId === numericStudentId;
           
-          if (!coreIdMatches) return false;
-          
-          // In multi-grade mode, require grade match to prevent K3 data going to K1 student
-          if (studentGrades.size > 1 && submission.grade && s.year) {
-            return s.year === submission.grade;
+          // If we're in single-grade mode, the submission grade should already match
+          // If multi-grade mode, match student by both coreId AND grade
+          if (studentGrades.size > 1 && submission.grade) {
+            return coreIdMatches && s.year === submission.grade;
           }
           
-          // Single-grade mode or no grade info: just match by coreId
-          return true;
+          return coreIdMatches;
         });
         
         if (student) {
-          // GRADE-AWARE CACHE KEY: Use composite key (coreId_grade) instead of just coreId
-          const cacheKey = `${student.coreId}_${student.year || 'Unknown'}`;
-          if (!studentSubmissions.has(cacheKey)) {
-            studentSubmissions.set(cacheKey, {
+          if (!studentSubmissions.has(student.coreId)) {
+            studentSubmissions.set(student.coreId, {
               student,
               submissions: []
             });
           }
-          studentSubmissions.get(cacheKey).submissions.push(submission);
-          
-          // Track match stats
-          if (student.year === 'K1') matchedK1++;
-          else if (student.year === 'K2') matchedK2++;
-          else if (student.year === 'K3') matchedK3++;
+          studentSubmissions.get(student.coreId).submissions.push(submission);
         } else {
-          unmatched++;
           unmatchedSubmissions.push({ 
             studentId, 
             grade: submission.grade, 
@@ -965,7 +919,6 @@
         }
       }
       
-      console.log(`[JotFormCache] Match stats - K1: ${matchedK1}, K2: ${matchedK2}, K3: ${matchedK3}, Unmatched: ${unmatched}`);
       console.log(`[JotFormCache] Matched ${studentSubmissions.size}/${students.length} students with submissions`);
       console.log(`[JotFormCache] Matched students:`, Array.from(studentSubmissions.keys()));
       
@@ -974,17 +927,16 @@
         console.log(`[JotFormCache] First 10 unmatched:`, unmatchedSubmissions.slice(0, 10));
       }
       
-      console.log(`[JotFormCache] Validating ${studentSubmissions.size} student-grade combinations...`);
+      console.log(`[JotFormCache] Validating ${studentSubmissions.size} students...`);
       
-      // Validate each student-grade combination
+      // Validate each student
       let processed = 0;
       const totalStudents = studentSubmissions.size;
       
-      for (const [cacheKey, data] of studentSubmissions.entries()) {
+      for (const [coreId, data] of studentSubmissions.entries()) {
         try {
           const cache = await this.validateStudent(data.student, data.submissions, surveyStructure);
-          // Store with composite key (coreId_grade) in the full cache
-          validationCache.set(cacheKey, cache);
+          validationCache.set(coreId, cache);
           
           processed++;
           
@@ -1001,9 +953,8 @@
             console.log(`[JotFormCache] Validated ${processed}/${totalStudents} students`);
           }
         } catch (error) {
-          const coreId = cacheKey.includes('_') ? cacheKey.split('_')[0] : cacheKey;
-          console.error(`[JotFormCache] Failed to validate ${cacheKey}:`, error);
-          validationCache.set(cacheKey, {
+          console.error(`[JotFormCache] Failed to validate ${coreId}:`, error);
+          validationCache.set(coreId, {
             coreId,
             error: error.message,
             lastValidated: Date.now()
@@ -1012,18 +963,17 @@
         }
       }
       
-      console.log(`[JotFormCache] ✅ Student validation complete: ${validationCache.size} student-grade combinations`);
+      console.log(`[JotFormCache] ✅ Student validation complete: ${validationCache.size} students`);
       
-      // Save to IndexedDB with composite keys (coreId_grade)
+      // Save to IndexedDB
       await this.saveValidationCache(validationCache);
       
-      // Return with composite keys (coreId_grade) for grade-aware lookups
       return validationCache;
     }
     
     /**
      * Save validation cache to IndexedDB
-     * @param {Map} validationCache - Map of coreId_grade -> validation data (grade-aware composite key)
+     * @param {Map} validationCache - Map of coreId -> validation data
      */
     async saveValidationCache(validationCache) {
       if (!validationStorage) {
@@ -1060,7 +1010,7 @@
     
     /**
      * Load validation cache from IndexedDB
-     * @returns {Promise<Map|null>} - Map of coreId_grade -> validation data (grade-aware composite key) or null
+     * @returns {Promise<Map|null>} - Map of coreId -> validation data or null
      */
     async loadValidationCache() {
       if (!validationStorage) {
@@ -1169,14 +1119,6 @@
           for (const [qid, answerObj] of Object.entries(submission.answers)) {
             // Skip if no field name or no actual value (match student page logic)
             if (!answerObj.name || !answerObj.answer) continue;
-            
-            // E-PRIME VALIDATION: Skip corrupted placeholder values where answer equals field name
-            // This happens when JotForm fields are initialized with field name as default value
-            // e.g., EPrime_NL_Done: "EPrime_NL_Done" instead of "1"
-            if (answerObj.name.startsWith('EPrime_') && answerObj.answer === answerObj.name) {
-              console.log(`[JotFormCache] Skipping corrupted E-Prime value: ${answerObj.name} = "${answerObj.answer}"`);
-              continue;
-            }
             
             // HTKS VALUE MAPPING: PDF sends choice indices (1, 2, 3) but we need scores (2, 1, 0)
             // Apply same mapping as transformSubmissionsToRecords for consistency

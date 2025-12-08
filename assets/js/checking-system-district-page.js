@@ -15,29 +15,13 @@
   let taskToSetMap = new Map();
   let currentFilter = 'all'; // 'all', 'complete', 'incomplete', 'notstarted'
   let currentGradeFilter = []; // ['K1', 'K2', 'K3', 'Others']
-  let systemConfig = null; // Checking system config for hidden tasks
-
-  /**
-   * Load system configuration
-   */
-  async function loadSystemConfig() {
-    if (systemConfig) return systemConfig;
-    
-    try {
-      const response = await fetch('config/checking_system_config.json');
-      systemConfig = await response.json();
-      return systemConfig;
-    } catch (error) {
-      console.error('[DistrictPage] Failed to load system config:', error);
-      systemConfig = {};
-      return systemConfig;
-    }
-  }
 
   /**
    * Initialize the page
    */
   async function init() {
+    console.log('[DistrictPage] Initializing...');
+    
     // Get district from URL
     const urlParams = new URLSearchParams(window.location.search);
     district = urlParams.get('district');
@@ -48,9 +32,6 @@
       window.location.href = 'checking_system_home.html';
       return;
     }
-
-    // Load system config first
-    await loadSystemConfig();
 
     // Load cached data
   cachedData = window.CheckingSystemData?.getCachedData();
@@ -71,6 +52,8 @@
     classes = cachedData.classes.filter(c => schoolIds.has(c.schoolId));
     students = cachedData.students.filter(s => schoolIds.has(s.schoolId) && s.coreId && s.coreId.trim() !== '');
 
+    console.log(`[DistrictPage] District ${district}: ${schools.length} schools, ${classes.length} classes, ${students.length} students`);
+
     // Load survey structure
     await loadSurveyStructure();
 
@@ -90,6 +73,7 @@
     if (window.CheckingSystemPreferences) {
       const pageId = group ? `district_${district}_group_${group}` : `district_${district}`;
       window.CheckingSystemPreferences.autoTrackSectionStates(pageId);
+      console.log('[DistrictPage] Enabled section state tracking');
     }
 
     lucide.createIcons();
@@ -97,26 +81,11 @@
 
   /**
    * Load survey structure and build task-to-set mapping
-   * Filters out hidden tasks from systemConfig.hiddenTasks
    */
   async function loadSurveyStructure() {
     try {
       const response = await fetch('assets/tasks/survey-structure.json');
       surveyStructure = await response.json();
-      
-      // Get hidden tasks from config (case-insensitive)
-      const hiddenTasks = (systemConfig?.hiddenTasks || []).map(t => t.toLowerCase());
-      
-      // Filter out hidden tasks from survey structure
-      if (hiddenTasks.length > 0) {
-        surveyStructure.sets = surveyStructure.sets.map(set => ({
-          ...set,
-          sections: set.sections.filter(section => {
-            const taskName = section.file.replace('.json', '').toLowerCase();
-            return !hiddenTasks.includes(taskName);
-          })
-        }));
-      }
       
       // Build task-to-set mapping
       surveyStructure.sets.forEach(set => {
@@ -136,6 +105,8 @@
       });
       
       taskToSetMap.set('nonsym', 'set1');
+      
+      console.log('[DistrictPage] Task-to-set mapping loaded:', taskToSetMap.size, 'tasks');
     } catch (error) {
       console.error('[DistrictPage] Failed to load survey structure:', error);
       throw error;
@@ -147,10 +118,13 @@
    */
   async function fetchAndAggregateData() {
     if (!window.JotFormCache) {
+      console.warn('[DistrictPage] JotForm cache not available');
       return;
     }
 
     try {
+      console.log('[DistrictPage] Building validation cache for all students...');
+      
       const validationCache = await window.JotFormCache.buildStudentValidationCache(
         students,
         surveyStructure,
@@ -159,6 +133,8 @@
           apiKey: cachedData.credentials?.jotformApiKey
         }
       );
+      
+      console.log(`[DistrictPage] Validation cache built for ${validationCache.size} students`);
       
       // Aggregate by school
       for (const school of schools) {
@@ -230,6 +206,8 @@
 
         schoolMetrics.set(school.schoolId, schoolData);
       }
+
+      console.log('[DistrictPage] Aggregated data for', schools.length, 'schools');
     } catch (error) {
       console.error('[DistrictPage] Failed to fetch and aggregate data:', error);
     }
@@ -564,6 +542,8 @@
     const validateButton = document.getElementById('validate-button');
     if (validateButton) {
       validateButton.addEventListener('click', async () => {
+        console.log('[DistrictPage] Running cache validation...');
+        
         // Get district from URL
         const urlParams = new URLSearchParams(window.location.search);
         const districtParam = urlParams.get('district');
@@ -592,6 +572,7 @@
           lucide.createIcons();
         }
       });
+      console.log('[DistrictPage] Validate button handler attached');
     }
   }
 

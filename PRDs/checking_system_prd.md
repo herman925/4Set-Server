@@ -2648,42 +2648,6 @@ c10034Records.forEach(r => {
 
 **Related Documentation**: Full technical details in `jotform_qualtrics_integration_prd.md` § Bug Fixes and Resolutions
 
-### Hidden Tasks Configuration (December 2025)
-
-**Purpose**: Allow administrators to completely hide specific tasks from all checking system pages without removing them from the survey structure.
-
-**Configuration** (`config/checking_system_config.json`):
-```json
-{
-  "hiddenTasks": ["MF"],
-  ...
-}
-```
-
-**Behavior**:
-- Tasks listed in `hiddenTasks` array are filtered out from the survey structure at load time
-- Affects all checking system pages: district, group, school, class, and student views
-- Case-insensitive matching (e.g., "MF", "mf", "Mf" all work)
-- Task column names in `taskColumnNames` are preserved for easy re-enablement
-- Hidden tasks are excluded from:
-  - Task columns in "By Task" view tables
-  - Task Progress section on student detail page
-  - Set completion calculations
-  - Validation cache building
-
-**To re-enable a hidden task**: Simply remove it from the `hiddenTasks` array:
-```json
-"hiddenTasks": []  // All tasks visible
-```
-
-**Implementation Details**:
-- Each page's `loadSurveyStructure()` function filters `surveyStructure.sets[].sections[]`
-- Filtering happens before task-to-set mapping is built
-- Console logs indicate which tasks were filtered (e.g., `[ClassPage] Filtered out hidden tasks: mf`)
-
-**Current Hidden Tasks** (as of December 2025):
-- **MF** (Math Fluency) - Hidden per stakeholder feedback
-
 ## Open Questions
 - Preferred schedule (hourly, daily, manual trigger) for production.
 - Storage choice for historical snapshots (SQLite vs. JSON vs. external DB).

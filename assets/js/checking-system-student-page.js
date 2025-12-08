@@ -695,35 +695,21 @@
       }
 
       // ✅ FALLBACK: If no cached data, fetch from API
-      // BUT: Only fall back to API if no specific grade is selected
-      // If a grade IS selected (K1/K2/K3) and no data exists, show "No Data" instead
-      // This prevents showing K3 data when K1 is selected but has no data
       if (submissions.length === 0) {
-        if (selectedGrade) {
-          // Grade is selected but no data exists for this grade in cache
-          // Do NOT fall back to API - it would return wrong grade's data
-          console.log('[StudentPage] ========== NO DATA FOR SELECTED GRADE ==========');
-          console.log(`[StudentPage] No submissions found for grade ${selectedGrade}`);
-          console.log('[StudentPage] Will NOT fall back to API (would return wrong grade data)');
-          console.log('[StudentPage] ==========================================');
-          // submissions stays empty, will trigger showNoDataMessage below
-        } else {
-          // No grade selected - safe to fetch all from API
-          console.log('[StudentPage] ========== FETCHING JOTFORM DATA ==========');
-          console.log('[StudentPage] Using :matches filter on sessionkey field (QID ' + sessionKeyQid + ')');
-          console.log('[StudentPage] Fetching Jotform data for Core ID:', coreId);
-          
-          await updateLoadingStatus('Connecting to Jotform API with :matches filter...');
-          
-          // fetchStudentSubmissionsDirectly uses the working :matches operator
-          // Returns only submissions where sessionkey contains the student ID
-          submissions = await window.JotformAPI.fetchStudentSubmissionsDirectly(coreId, sessionKeyQid);
-          
-          console.log(`[StudentPage] ✅ API returned: ${submissions.length} validated submissions`);
-          console.log('[StudentPage] Filter accuracy: 100% (server-side :matches filter working!)');
-          await updateLoadingStatus(`Found ${submissions.length} matching submissions`);
-          console.log('[StudentPage] ==========================================');
-        }
+        console.log('[StudentPage] ========== FETCHING JOTFORM DATA ==========');
+        console.log('[StudentPage] Using :matches filter on sessionkey field (QID ' + sessionKeyQid + ')');
+        console.log('[StudentPage] Fetching Jotform data for Core ID:', coreId);
+        
+        await updateLoadingStatus('Connecting to Jotform API with :matches filter...');
+        
+        // fetchStudentSubmissionsDirectly uses the working :matches operator
+        // Returns only submissions where sessionkey contains the student ID
+        submissions = await window.JotformAPI.fetchStudentSubmissionsDirectly(coreId, sessionKeyQid);
+        
+        console.log(`[StudentPage] ✅ API returned: ${submissions.length} validated submissions`);
+        console.log('[StudentPage] Filter accuracy: 100% (server-side :matches filter working!)');
+        await updateLoadingStatus(`Found ${submissions.length} matching submissions`);
+        console.log('[StudentPage] ==========================================');
       }
 
       if (submissions.length === 0) {
@@ -1022,9 +1008,6 @@
       
       // Update task status overview
       updateTaskStatusOverview();
-      
-      // Re-render E-Prime section now that we have merged data
-      await updateEPrimeSection(data.mergedAnswers);
       
       console.log('[StudentPage] UI population complete');
       console.log('[StudentPage] ==========================================');
@@ -1923,7 +1906,6 @@
 
   /**
    * Build Task Progress section dynamically from survey-structure.json
-   * Filters out hidden tasks from systemConfig.hiddenTasks
    */
   async function buildTaskProgressSection() {
     console.log('[StudentPage] ========== BUILDING TASK PROGRESS ==========');
@@ -1932,21 +1914,6 @@
       // Load survey structure
       const structureResponse = await fetch('assets/tasks/survey-structure.json');
       const surveyStructure = await structureResponse.json();
-      
-      // Get hidden tasks from config (case-insensitive)
-      const hiddenTasks = (systemConfig?.hiddenTasks || []).map(t => t.toLowerCase());
-      
-      // Filter out hidden tasks from survey structure
-      if (hiddenTasks.length > 0) {
-        surveyStructure.sets = surveyStructure.sets.map(set => ({
-          ...set,
-          sections: set.sections.filter(section => {
-            const taskName = section.file.replace('.json', '').toLowerCase();
-            return !hiddenTasks.includes(taskName);
-          })
-        }));
-        console.log(`[StudentPage] Filtered out hidden tasks: ${hiddenTasks.join(', ')}`);
-      }
       
       // Sort sets by order
       const sortedSets = surveyStructure.sets.sort((a, b) => a.order - b.order);
@@ -2099,9 +2066,6 @@
         });
       }
       
-      // Add E-Prime section (Set 5)
-      await renderEPrimeSection(dynamicContainer);
-      
       console.log('[StudentPage] Task Progress structure built successfully');
       console.log('[StudentPage] ==========================================');
       
@@ -2112,210 +2076,6 @@
       
     } catch (error) {
       console.error('[StudentPage] Failed to build Task Progress:', error);
-    }
-  }
-
-  /**
-   * Render E-Prime section showing individual task completion status
-   */
-  async function renderEPrimeSection(container) {
-    try {
-      // Load E-Prime config from system config
-      const configResponse = await fetch('config/checking_system_config.json');
-      const config = await configResponse.json();
-      const eprimeTasks = config?.eprime?.tasks || [];
-      
-      if (eprimeTasks.length === 0) {
-        console.log('[StudentPage] No E-Prime tasks configured');
-        return;
-      }
-      
-      // Load jotform questions for field mapping
-      const questionsResponse = await fetch('assets/jotformquestions.json');
-      const jotformQuestions = await questionsResponse.json();
-      
-      // Get merged answers from sessionStorage cache (where student page stores them)
-      // The cache key format is: student_jotform_{coreId}
-      const urlParams = new URLSearchParams(window.location.search);
-      const coreId = urlParams.get('coreId');
-      const cacheKey = `${systemConfig?.cache?.sessionStorageKeyPrefix || 'student_jotform_'}${coreId}`;
-      let mergedAnswers = {};
-      
-      try {
-        const cachedData = sessionStorage.getItem(cacheKey);
-        if (cachedData) {
-          const parsed = JSON.parse(cachedData);
-          mergedAnswers = parsed.mergedAnswers || {};
-          console.log('[StudentPage] E-Prime: Loaded mergedAnswers from cache, fields:', Object.keys(mergedAnswers).length);
-        }
-      } catch (e) {
-        console.warn('[StudentPage] E-Prime: Failed to load from cache:', e);
-      }
-      
-      // Calculate E-Prime status for each task
-      let completedCount = 0;
-      const taskStatuses = eprimeTasks.map(task => {
-        const qid = jotformQuestions[task.doneField];
-        // mergedAnswers stores objects: { name: "EPrime_NL_Done", answer: "1" }
-        const answerObj = mergedAnswers[task.doneField] || (qid ? mergedAnswers[`q${qid}`] : null);
-        const value = answerObj?.answer || answerObj; // Handle both object and raw value formats
-        const done = value === '1' || value === 1 || value === true || value === 'true';
-        if (done) completedCount++;
-        return { ...task, done };
-      });
-      
-      // Create E-Prime set container
-      const setContainer = document.createElement('details');
-      setContainer.className = 'set-group border-b border-[color:var(--border)]';
-      setContainer.setAttribute('data-set-id', 'set5');
-      
-      // Determine status color
-      let statusColor = 'status-grey';
-      let statusText = 'Not Started';
-      if (completedCount === eprimeTasks.length) {
-        statusColor = 'status-green';
-        statusText = 'Complete';
-      } else if (completedCount > 0) {
-        statusColor = 'status-red';
-        statusText = 'Incomplete';
-      }
-      
-      // Create set header - match Set 1-4 styling with pink tint for E-Prime
-      const setHeader = document.createElement('summary');
-      setHeader.className = 'set-header px-4 py-3 bg-[color:var(--muted)]/40 cursor-pointer hover:bg-[color:var(--muted)]/60 transition-colors flex items-center justify-between';
-      setHeader.style.backgroundColor = 'rgba(236, 72, 153, 0.08)'; // Light pink for E-Prime
-      
-      setHeader.innerHTML = `
-        <div class="flex items-center gap-3">
-          <i data-lucide="chevron-right" class="w-4 h-4 text-[color:var(--muted-foreground)] transition-transform set-chevron"></i>
-          <h3 class="text-sm font-semibold text-[color:var(--foreground)]">E-Prime</h3>
-          <span class="set-task-count text-xs text-[color:var(--muted-foreground)] font-mono">${completedCount}/${eprimeTasks.length} tasks</span>
-        </div>
-      `;
-      setContainer.appendChild(setHeader);
-      
-      // Create tasks container
-      const tasksContainer = document.createElement('div');
-      tasksContainer.className = 'set-tasks divide-y divide-[color:var(--border)] bg-white';
-      
-      // Add each E-Prime task - match the 4-column grid layout of other tasks
-      for (const task of taskStatuses) {
-        const taskElement = document.createElement('div');
-        taskElement.className = 'eprime-task px-4 py-3 grid gap-2 sm:grid-cols-[minmax(0,220px)_minmax(0,200px)_minmax(0,120px)_minmax(0,1fr)] sm:items-center hover:bg-white/60 transition-colors';
-        
-        const taskStatusColor = task.done ? 'status-green' : 'status-grey';
-        const taskStatusText = task.done ? 'Complete' : 'Not Started';
-        
-        taskElement.innerHTML = `
-          <div class="flex items-center gap-2">
-            <span class="status-circle ${taskStatusColor}" title="${taskStatusText}"></span>
-            <strong class="text-[color:var(--foreground)] text-sm">${task.name}</strong>
-          </div>
-          <div class="flex flex-wrap items-center gap-1 text-xs">
-            <span class="badge-pill bg-[color:var(--muted)] text-[color:var(--muted-foreground)]">${task.id}</span>
-          </div>
-          <div class="text-xs text-[color:var(--muted-foreground)] font-mono">
-            ${task.done ? '✓ Done' : '—'}
-          </div>
-          <div class="flex justify-end">
-            <span class="badge-pill ${task.done ? 'bg-emerald-100 text-emerald-700' : 'bg-[color:var(--muted)] text-[color:var(--muted-foreground)]'}">${task.done ? 'Complete' : 'Not Started'}</span>
-          </div>
-        `;
-        
-        tasksContainer.appendChild(taskElement);
-      }
-      
-      setContainer.appendChild(tasksContainer);
-      container.appendChild(setContainer);
-      
-      // Add toggle listener for chevron
-      setContainer.addEventListener('toggle', () => {
-        const chevron = setHeader.querySelector('.set-chevron');
-        if (chevron) {
-          chevron.style.transform = setContainer.open ? 'rotate(90deg)' : 'rotate(0deg)';
-        }
-      });
-      
-      console.log(`[StudentPage] E-Prime section added: ${completedCount}/${eprimeTasks.length} complete`);
-    } catch (error) {
-      console.error('[StudentPage] Failed to render E-Prime section:', error);
-    }
-  }
-
-  /**
-   * Update E-Prime section with actual merged data (called after JotForm data loads)
-   */
-  async function updateEPrimeSection(mergedAnswers) {
-    try {
-      // Load E-Prime config
-      const configResponse = await fetch('config/checking_system_config.json');
-      const config = await configResponse.json();
-      const eprimeTasks = config?.eprime?.tasks || [];
-      
-      if (eprimeTasks.length === 0) return;
-      
-      // Load jotform questions for field mapping
-      const questionsResponse = await fetch('assets/jotformquestions.json');
-      const jotformQuestions = await questionsResponse.json();
-      
-      // Calculate completion status
-      let completedCount = 0;
-      const taskStatuses = eprimeTasks.map(task => {
-        const qid = jotformQuestions[task.doneField];
-        const answerObj = mergedAnswers[task.doneField] || (qid ? mergedAnswers[`q${qid}`] : null);
-        const value = answerObj?.answer || answerObj;
-        const done = value === '1' || value === 1 || value === true || value === 'true';
-        if (done) completedCount++;
-        return { ...task, done };
-      });
-      
-      console.log(`[StudentPage] E-Prime update: ${completedCount}/${eprimeTasks.length} complete`);
-      
-      // Find existing E-Prime section
-      const existingSection = document.querySelector('[data-set-id="set5"]');
-      if (!existingSection) {
-        console.warn('[StudentPage] E-Prime section not found for update');
-        return;
-      }
-      
-      // Update task count in header
-      const taskCountSpan = existingSection.querySelector('.set-task-count');
-      if (taskCountSpan) {
-        taskCountSpan.textContent = `${completedCount}/${eprimeTasks.length} tasks`;
-      }
-      
-      // Update individual task statuses
-      const taskItems = existingSection.querySelectorAll('.eprime-task');
-      taskItems.forEach((item, index) => {
-        if (index < taskStatuses.length) {
-          const task = taskStatuses[index];
-          
-          // Update status circle
-          const statusCircle = item.querySelector('.status-circle');
-          if (statusCircle) {
-            statusCircle.className = `status-circle ${task.done ? 'status-green' : 'status-grey'}`;
-            statusCircle.title = task.done ? 'Complete' : 'Not Started';
-          }
-          
-          // Update the done/not done text in column 3
-          const doneText = item.querySelector('.font-mono');
-          if (doneText) {
-            doneText.textContent = task.done ? '✓ Done' : '—';
-          }
-          
-          // Update badge in column 4
-          const badges = item.querySelectorAll('.badge-pill');
-          const statusBadge = badges[badges.length - 1]; // Last badge is the status
-          if (statusBadge) {
-            statusBadge.className = `badge-pill ${task.done ? 'bg-emerald-100 text-emerald-700' : 'bg-[color:var(--muted)] text-[color:var(--muted-foreground)]'}`;
-            statusBadge.textContent = task.done ? 'Complete' : 'Not Started';
-          }
-        }
-      });
-      
-      console.log(`[StudentPage] E-Prime section updated successfully`);
-    } catch (error) {
-      console.error('[StudentPage] Failed to update E-Prime section:', error);
     }
   }
   
@@ -2564,7 +2324,7 @@
         buildTimeoutCard('NONSYM (Non-symbolic)', nonsymAnalysis, validation.nonsymResult);
       
       checklistDiv.classList.remove('hidden');
-      if (typeof lucide !== 'undefined') lucide.createIcons(); // Re-render icons
+      lucide.createIcons(); // Re-render icons
       return; // Exit early for SYM
     }
     
@@ -2648,7 +2408,7 @@
       `;
       
       checklistDiv.classList.remove('hidden');
-      if (typeof lucide !== 'undefined') lucide.createIcons(); // Re-render icons
+      lucide.createIcons(); // Re-render icons
       return; // Exit early for CWR
     }
     
@@ -3412,14 +3172,6 @@
     const currentFilter = taskFilter ? taskFilter.value : 'all';
     
     allSets.forEach(setElement => {
-      // Skip E-Prime section (set5) - it uses .task-item not .task-expand
-      // and should always be visible
-      const setId = setElement.getAttribute('data-set-id');
-      if (setId === 'set5') {
-        setElement.style.display = ''; // Always show E-Prime
-        return;
-      }
-      
       const tasksInSet = setElement.querySelectorAll('.task-expand');
       const visibleTasks = Array.from(tasksInSet).filter(task => task.style.display !== 'none');
       
@@ -3866,7 +3618,7 @@
         try {
           validateBtn.disabled = true;
           validateBtn.innerHTML = '<i data-lucide="loader-2" class="w-3.5 h-3.5 flex-shrink-0 animate-spin"></i><span>Validating...</span>';
-          if (typeof lucide !== 'undefined') lucide.createIcons();
+          lucide.createIcons();
           
           // Check if CacheValidator is available
           if (typeof window.CacheValidator === 'undefined') {
@@ -3882,7 +3634,7 @@
         } finally {
           validateBtn.disabled = false;
           validateBtn.innerHTML = '<i data-lucide="shield-check" class="w-3.5 h-3.5 flex-shrink-0"></i><span>Validate</span>';
-          if (typeof lucide !== 'undefined') lucide.createIcons();
+          lucide.createIcons();
         }
       });
       console.log('[StudentPage] Validate button handler attached');

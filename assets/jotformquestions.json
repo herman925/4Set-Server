@@ -631,19 +631,5 @@
   "MF_48": "644",
   "MF_Date": "645",
   "MF_Com": "646",
-  "computerno": "647",
-  "EPrime_NL_Done": "648",
-  "EPrime_NL_ComputerNo": "649",
-  "EPrime_SimpleReactionTime_Done": "650",
-  "EPrime_SimpleReactionTime_ComputerNo": "651",
-  "EPrime_AnimalNumber_Done": "652",
-  "EPrime_AnimalNumber_ComputerNo": "653",
-  "EPrime_GoNoGo_Done": "654",
-  "EPrime_GoNoGo_ComputerNo": "655",
-  "EPrime_Simon_Done": "656",
-  "EPrime_Simon_ComputerNo": "657",
-  "EPrime_CorsiForward_Done": "658",
-  "EPrime_CorsiForward_ComputerNo": "659",
-  "EPrime_CorsiBackward_Done": "660",
-  "EPrime_CorsiBackward_ComputerNo": "661"
+  "computerno": "647"
 }

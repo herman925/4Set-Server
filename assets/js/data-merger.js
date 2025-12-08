@@ -92,11 +92,16 @@
      * @returns {Array} Merged records (one per coreId per grade)
      */
     mergeDataSources(jotformData, qualtricsData) {
+      console.log('[DataMerger] ========== MERGING DATA SOURCES (GRADE-AWARE) ==========');
+      console.log('[DataMerger] JotForm records:', jotformData.length);
+      console.log('[DataMerger] Qualtrics records:', qualtricsData.length);
+
       // Step 1: Determine grade for ALL records BEFORE merging
       // Group by (coreId, grade) to ensure we never mix different grade levels
       const recordsByStudent = new Map(); // coreId → { grades: Map<grade, {jotform: [], qualtrics: []}> }
       
       // Process Qualtrics records - determine grade and group
+      console.log('[DataMerger] Step 1: Determining grades for Qualtrics records...');
       for (const record of qualtricsData) {
         const coreId = record.coreId;
         if (!coreId) {
@@ -106,6 +111,7 @@
         
         // Use pre-determined grade from Qualtrics cache
         const grade = record.grade || 'Unknown';
+        console.log(`[DataMerger] Qualtrics record ${coreId}: grade=${grade}`);
         
         // Initialize student entry if needed
         if (!recordsByStudent.has(coreId)) {
@@ -121,6 +127,7 @@
       }
       
       // Process JotForm records - determine grade and group
+      console.log('[DataMerger] Step 2: Determining grades for JotForm records...');
       for (const record of jotformData) {
         const coreId = record.coreId;
         if (!coreId) {
@@ -130,6 +137,7 @@
         
         // Use pre-determined grade from JotForm cache
         const grade = record.grade || 'Unknown';
+        console.log(`[DataMerger] JotForm record ${coreId}: grade=${grade}`);
         
         // Initialize student entry if needed
         if (!recordsByStudent.has(coreId)) {
@@ -144,7 +152,10 @@
         student.grades.get(grade).jotform.push(record);
       }
       
+      console.log(`[DataMerger] Grouped data: ${recordsByStudent.size} students across multiple grades`);
+      
       // Merge data WITHIN each grade for each student
+      console.log('[DataMerger] Merging data within each grade...');
       const mergedRecords = [];
       let crossGradeWarnings = 0;
       let sameGradeMerges = 0;
@@ -200,6 +211,7 @@
             merged.grade = grade; // Explicitly set grade
             mergedRecords.push(merged);
             sameGradeMerges++;
+            console.log(`[DataMerger] ✓ Merged ${coreId} (${grade}): JotForm + Qualtrics`);
           } else if (mergedJotform) {
             // JotForm only for this grade
             const jotformOnly = {
@@ -219,8 +231,18 @@
             };
             mergedRecords.push(qualtricsOnly);
             qualtricsOnlyCount++;
+            console.log(`[DataMerger] ℹ️  Qualtrics-only record for ${coreId} (${grade})`);
           }
         }
+      }
+      
+      console.log(`[DataMerger] ========== MERGE COMPLETE ==========`);
+      console.log(`[DataMerger] Total records: ${mergedRecords.length}`);
+      console.log(`[DataMerger] - ${sameGradeMerges} merged (JotForm + Qualtrics, same grade)`);
+      console.log(`[DataMerger] - ${jotformOnlyCount} JotForm-only`);
+      console.log(`[DataMerger] - ${qualtricsOnlyCount} Qualtrics-only`);
+      if (crossGradeWarnings > 0) {
+        console.warn(`[DataMerger] ⚠️  ${crossGradeWarnings} students with cross-grade data (kept separate)`);
       }
 
       return mergedRecords;
@@ -292,6 +314,7 @@
         // Filter to only records from the earliest grade to prevent cross-grade contamination
         const firstGrade = jotformRecords[0].grade;
         workingRecords = jotformRecords.filter(r => r.grade === firstGrade);
+        console.log(`[DataMerger] Filtered to ${workingRecords.length} records from grade ${firstGrade}`);
       }
 
       // Start with base structure from earliest record
@@ -403,6 +426,12 @@
 
       if (conflicts.length > 0) {
         merged._qualtricsConflicts = conflicts;
+        
+        // Log merge details
+        const coreId = jotformRecord.coreId;
+        const qualtricsFieldCount = Object.keys(qualtricsRecord).filter(k => !this.excludeFields.has(k) && !k.startsWith('_')).length;
+        const earliestWins = conflicts.filter(c => c.resolution === 'jotform').length;
+        console.log(`[DataMerger] Merged data for student ${coreId}: ${conflicts.length} conflicts resolved (${earliestWins} from JotForm, ${conflicts.length - earliestWins} from Qualtrics based on timestamps), ${qualtricsFieldCount} fields from Qualtrics`);
       }
 
       // Preserve Qualtrics metadata
@@ -429,6 +458,8 @@
      * @returns {Object} Validation statistics
      */
     validateMergedData(mergedRecords) {
+      console.log('[DataMerger] Validating merged data...');
+
       const validation = {
         total: mergedRecords.length,
         withQualtricsData: 0,
@@ -467,6 +498,15 @@
           });
         }
       }
+
+      console.log('[DataMerger] Validation complete:', {
+        total: validation.total,
+        withQualtricsData: validation.withQualtricsData,
+        merged: validation.merged,
+        jotformOnly: validation.jotformOnly,
+        qualtricsOnly: validation.qualtricsOnly,
+        qualtricsConflicts: validation.qualtricsConflicts
+      });
 
       return validation;
     }
@@ -576,4 +616,5 @@
 
   // Expose globally
   window.DataMerger = DataMerger;
+  console.log('[DataMerger] Module loaded');
 })();

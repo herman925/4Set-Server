@@ -440,39 +440,11 @@
         updateViewModeButtons();
         renderStudentTable();
         
-        // Show "By Missing" toggle when in Task view
-        const missingToggle = document.getElementById('missing-view-toggle');
-        if (missingToggle) missingToggle.style.display = '';
-        
         // Save preference
         if (window.CheckingSystemPreferences && classId) {
           window.CheckingSystemPreferences.saveViewMode(classId, 'task');
           console.log('[ClassPage] Saved view mode preference: task');
         }
-      });
-      
-      viewBySetBtn.addEventListener('click', () => {
-        // Also hide "By Missing" toggle when switching to Set view
-        const missingToggle = document.getElementById('missing-view-toggle');
-        if (missingToggle) missingToggle.style.display = 'none';
-      });
-    }
-    
-    // Setup "By Missing" button handler
-    const viewByMissingBtn = document.getElementById('view-by-missing-btn');
-    if (viewByMissingBtn) {
-      viewByMissingBtn.addEventListener('click', () => {
-        if (currentViewMode === 'missing') {
-          currentViewMode = 'task';
-          viewByMissingBtn.classList.remove('bg-amber-500', 'text-white', 'shadow-sm');
-          viewByMissingBtn.classList.add('text-[color:var(--muted-foreground)]');
-        } else {
-          currentViewMode = 'missing';
-          viewByMissingBtn.classList.add('bg-amber-500', 'text-white', 'shadow-sm');
-          viewByMissingBtn.classList.remove('text-[color:var(--muted-foreground)]');
-        }
-        updateViewModeButtons();
-        renderStudentTable();
       });
     }
   }
@@ -502,14 +474,6 @@
           <span>Not Started</span>
         </span>
       `;
-    } else if (currentViewMode === 'missing') {
-      // By Missing view: simple text explanation
-      legendHtml = `
-        <span class="inline-flex items-center gap-1.5 text-amber-700">
-          <i data-lucide="list" class="w-3.5 h-3.5"></i>
-          <span>Showing missing question IDs for students with incomplete tasks</span>
-        </span>
-      `;
     } else {
       // By Task view: 4 colors (includes yellow for Warning)
       legendHtml += `
@@ -533,7 +497,6 @@
     }
     
     legendContainer.innerHTML = legendHtml;
-    if (typeof lucide !== 'undefined') lucide.createIcons();
   }
 
   /**
