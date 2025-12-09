@@ -123,7 +123,7 @@
                     <h2 class="text-sm font-semibold text-[color:var(--foreground)]">Class-level Task Status Overview</h2>
                     <span class="text-[11px] text-[color:var(--muted-foreground)]">Set completion percentages</span>
                 </summary>
-                <div class="px-6 pb-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3">
+                <div class="px-6 pb-4 grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-5 gap-3">
                     <div class="bg-gradient-to-br from-white to-blue-50 rounded-lg border border-blue-200 px-4 py-3 shadow-sm hover:shadow-md transition-shadow">
                         <div class="flex items-center justify-between mb-2">
                             <span class="text-xs font-medium text-blue-700">Set 1</span>
@@ -151,6 +151,13 @@
                             <span class="text-xs text-[color:var(--muted-foreground)]" id="set4-count">—</span>
                         </div>
                         <p class="text-2xl font-bold text-amber-900" id="set4-completion">—%</p>
+                    </div>
+                    <div class="bg-gradient-to-br from-white to-rose-50 rounded-lg border border-rose-200 px-4 py-3 shadow-sm hover:shadow-md transition-shadow">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-medium text-rose-700">E-Prime</span>
+                            <span class="text-xs text-[color:var(--muted-foreground)]" id="eprime-count">—</span>
+                        </div>
+                        <p class="text-2xl font-bold text-rose-900" id="eprime-completion">—%</p>
                     </div>
                 </div>
             </details>

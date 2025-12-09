@@ -152,6 +152,7 @@
       
       // Adaptive batch sizing state (like processor_agent.ps1)
       this.config = null; // Will be loaded from config/jotform_config.json
+      this.systemConfig = null; // Will be loaded from config/checking_system_config.json
       this.lastSuccessfulBatchSize = null;
       this.consecutiveSuccesses = 0;
       this.reductionIndex = 0; // Index into batchSizeReductions array
@@ -231,6 +232,37 @@
         };
         return this.config;
       }
+    }
+    
+    /**
+     * Load checking system configuration from config/checking_system_config.json
+     * Used for hidden tasks filtering
+     * @returns {Promise<Object>} Configuration object
+     */
+    async loadSystemConfig() {
+      if (this.systemConfig) {
+        return this.systemConfig; // Already loaded
+      }
+      
+      try {
+        const response = await fetch('config/checking_system_config.json');
+        this.systemConfig = await response.json();
+        return this.systemConfig;
+      } catch (error) {
+        console.warn('[JotFormCache] Failed to load checking system config, using defaults:', error);
+        this.systemConfig = { hiddenTasks: [] };
+        return this.systemConfig;
+      }
+    }
+    
+    /**
+     * Check if a task is hidden (should be excluded from calculations)
+     * @param {string} taskId - The task ID to check
+     * @returns {boolean} True if the task is hidden
+     */
+    isTaskHidden(taskId) {
+      const hiddenTasks = (this.systemConfig?.hiddenTasks || []).map(t => t.toLowerCase());
+      return hiddenTasks.includes((taskId || '').toLowerCase());
     }
     
     /**
@@ -1099,6 +1131,9 @@
      * @returns {Promise<Object>} - Validation cache entry
      */
     async validateStudent(student, submissions, surveyStructure) {
+      // Load system config for hidden tasks filtering
+      await this.loadSystemConfig();
+      
       // Merge all submission answers BY FIELD NAME (not QID)
       // JotForm stores answers with QID as key, but each answer has a 'name' field
       // TaskValidator looks up answers by field name (e.g., "ERV_P1")
@@ -1251,8 +1286,9 @@
           continue; // Skip gender-inappropriate tasks
         }
         
-        const normalizedTaskId = taskId.toLowerCase();
-        const isIgnoredForIncompleteChecks = setId === 'set4' && normalizedTaskId === 'mf';
+        // Check if this task is hidden (should be excluded from calculations)
+        // Uses hiddenTasks config from checking_system_config.json
+        const isIgnoredForIncompleteChecks = this.isTaskHidden(taskId);
         
         // Only count tasks that are applicable to this student and not ignored for completion
         if (!isIgnoredForIncompleteChecks) {
@@ -1304,19 +1340,19 @@
         const set = setStatus[setId];
         if (set.tasksTotal === 0) continue;
         
-        // Special handling for Set 4: Exclude MF (Math Fluency) from completion criteria
-        // Set 4 can be green if FineMotor and TGMD satisfy green light criteria, regardless of MF status
+        // Exclude hidden tasks from completion criteria
+        // Uses hiddenTasks config from checking_system_config.json
         let effectiveTasksTotal = set.tasksTotal;
         let effectiveTasksComplete = set.tasksComplete;
         
-        if (setId === 'set4') {
-          // Find MF task in set4
-          const mfTask = set.tasks.find(t => t.taskId === 'mf' || t.taskId?.toLowerCase() === 'mf');
-          if (mfTask && effectiveTasksTotal > 0) {
-            // Exclude MF from both total and complete counts
-            effectiveTasksTotal--;
-            if (mfTask.complete) {
-              effectiveTasksComplete--;
+        // Find and exclude any hidden tasks from this set
+        for (const task of set.tasks) {
+          if (this.isTaskHidden(task.taskId)) {
+            if (effectiveTasksTotal > 0) {
+              effectiveTasksTotal--;
+              if (task.complete) {
+                effectiveTasksComplete--;
+              }
             }
           }
         }

@@ -14,6 +14,31 @@
     "columnName": "E-Prime",
     "setId": "set5"
   },
+  "taskLabels": {
+    "ERV": "ERV",
+    "SYM": "SYM",
+    "TheoryofMind": "ToM",
+    "ChineseWordReading": "CWR",
+    "TEC": "TEC",
+    "TEC_Male": "TEC_M",
+    "TEC_Female": "TEC_F",
+    "MathPattern": "MP",
+    "CCM": "CCM",
+    "HeadToeKneeShoulder": "HTKS",
+    "EPN": "EPN",
+    "CM": "CM",
+    "FineMotor": "FM",
+    "TGMD": "TGMD",
+    "MF": "MF",
+
+    "NL": "NL",
+    "SimpleReactionTime": "SRT",
+    "AnimalNumber": "AN",
+    "GoNoGo": "GNG",
+    "Simon": "SIM",
+    "CorsiForward": "CF",
+    "CorsiBackward": "CB"
+  },
   "ui": {
     "loadingStatusDelayMs": 800,
     "loadingMessages": {
@@ -63,11 +88,11 @@
     "defaultFilter": "all",
     "defaultExpandState": false,
     "equalWidthColumns": true,
-    "taskColumnWidth": "60px",
-    "studentNameColumnWidth": "250px",
-    "coreIdColumnWidth": "80px",
+    "taskColumnWidth": "46px",
+    "studentNameColumnWidth": "190px",
+    "coreIdColumnWidth": "60px",
     "missingView": {
-      "studentNameColumnWidth": "250px",
+      "studentNameColumnWidth": "200px",
       "coreIdColumnWidth": "80px",
       "missingColumnWidth": "auto"
     },

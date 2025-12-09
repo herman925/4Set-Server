@@ -669,35 +669,50 @@ $foundSubmission = $sorted | Select-Object -First 1
 #### Set 4 Completion Logic: MF Task Exclusion
 **Decision**: Exclude Math Fluency (MF) from Set 4 green light criteria  
 **Date**: October 31, 2025  
+**Updated**: December 9, 2025 - Generalized to config-based `hiddenTasks` approach  
 **Rationale**:
 - **Practical Reality**: MF is frequently incomplete or not administered, blocking Set 4 completion status
 - **Core Motor Priority**: FineMotor and TGMD are the essential motor assessments in Set 4
 - **User Requirement**: Schools need Set 4 to show as complete when motor assessments are done, regardless of MF status
 
-**Implementation**:
-```javascript
-// Set 4 composition: FineMotor, TGMD, MF
-// Green light criteria: FineMotor + TGMD complete (MF excluded)
-
-if (setId === 'set4') {
-  const mfTask = set.tasks.find(t => t.taskId === 'mf');
-  if (mfTask) {
-    effectiveTasksTotal--;      // Exclude MF from total
-    if (mfTask.complete) {
-      effectiveTasksComplete--;  // Exclude MF from complete count
-    }
-  }
+**Implementation** (December 2025 - Config-based):
+```json
+// config/checking_system_config.json
+{
+  "hiddenTasks": ["MF"]  // Tasks to exclude from completion calculations
 }
+```
+
+```javascript
+// jotform-cache.js - Uses config-based filtering
+const isIgnoredForIncompleteChecks = this.isTaskHidden(taskId);
+
+// All pages filter hidden tasks from survey structure at load time
+const hiddenTasks = (systemConfig?.hiddenTasks || []).map(t => t.toLowerCase());
+surveyStructure.sets = surveyStructure.sets.map(set => ({
+  ...set,
+  sections: set.sections.filter(section => {
+    const taskName = section.file.replace('.json', '').toLowerCase();
+    return !hiddenTasks.includes(taskName);
+  })
+}));
 ```
 
 **Impact**:
 - Set 4 shows **green** when FineMotor + TGMD are complete, even if MF is incomplete/not started
 - Applies to all drilldown pages: district, group, school, class, student
-- MF still appears in task lists and individual validation, just doesn't affect set status
-- Documented in `PRDs/task_completion_calculation_logic_prd.md` v1.3
+- MF is completely hidden from task columns and set completion calculations
+- Configuration-driven: Add/remove tasks from `hiddenTasks` array without code changes
+- Documented in `PRDs/task_completion_calculation_logic_prd.md`
 
 **Files Modified**:
-- `assets/js/jotform-cache.js` (lines 1257-1295) - Set status calculation loop
+- `config/checking_system_config.json` - `hiddenTasks` array configuration
+- `assets/js/jotform-cache.js` - `loadSystemConfig()`, `isTaskHidden()` methods and set status calculation
+- `assets/js/checking-system-class-page.js` - Added `hiddenTasks` filtering (was missing)
+- `assets/js/checking-system-school-page.js` - Uses `hiddenTasks` filtering
+- `assets/js/checking-system-district-page.js` - Uses `hiddenTasks` filtering
+- `assets/js/checking-system-group-page.js` - Uses `hiddenTasks` filtering
+- `assets/js/checking-system-student-page.js` - Uses `hiddenTasks` filtering
 
 ### Data Flow Principles
 

@@ -13,6 +13,7 @@
   let taskToSetMap = new Map(); // taskKey -> setId
   let currentViewMode = 'set'; // 'set' or 'task'
   let systemConfig = null; // Checking system config for column names
+  let jotformQuestions = null; // JotForm field name -> QID mapping for E-Prime detection
 
   /**
    * Initialize the page
@@ -36,11 +37,12 @@
       }
     }
 
-    // Load system config
+    // Load system config and JotForm questions mapping
     await loadSystemConfig();
+    await loadJotformQuestions();
     
     // Load cached data
-  cachedData = window.CheckingSystemData?.getCachedData();
+    cachedData = window.CheckingSystemData?.getCachedData();
     if (!cachedData) {
       alert('Please go through home page first');
       window.location.href = 'checking_system_home.html';
@@ -110,13 +112,86 @@
   }
 
   /**
+   * Load JotForm questions mapping (field name -> QID)
+   */
+  async function loadJotformQuestions() {
+    if (jotformQuestions) return jotformQuestions;
+    
+    try {
+      const response = await fetch('assets/jotformquestions.json');
+      jotformQuestions = await response.json();
+      return jotformQuestions;
+    } catch (error) {
+      console.error('[ClassPage] Failed to load JotForm questions:', error);
+      jotformQuestions = {};
+      return jotformQuestions;
+    }
+  }
+
+  /**
+   * Get E-Prime completion status for a student
+   * Returns { completed: number, total: number, tasks: Array<{id, name, done}> }
+   */
+  function getEPrimeStatus(studentData) {
+    const eprimeTasks = systemConfig?.eprime?.tasks || [];
+    const total = eprimeTasks.length;
+    
+    if (!studentData?.validationCache?.mergedAnswers || !jotformQuestions) {
+      return { completed: 0, total, tasks: eprimeTasks.map(t => ({ ...t, done: false })) };
+    }
+    
+    const mergedAnswers = studentData.validationCache.mergedAnswers;
+    let completed = 0;
+    const tasks = [];
+    
+    for (const task of eprimeTasks) {
+      const qid = jotformQuestions[task.doneField];
+      // mergedAnswers stores objects: { name: "EPrime_NL_Done", answer: "1" }
+      const answerObj = mergedAnswers[task.doneField] || (qid ? mergedAnswers[`q${qid}`] : null);
+      const value = answerObj?.answer || answerObj; // Handle both object and raw value formats
+      const done = value === '1' || value === 1 || value === true || value === 'true';
+      
+      if (done) completed++;
+      tasks.push({ ...task, done });
+    }
+    
+    return { completed, total, tasks };
+  }
+
+  /**
+   * Get E-Prime status color based on completion
+   * Green = all done, Red = some done, Grey = none done
+   */
+  function getEPrimeStatusColor(eprimeStatus) {
+    if (!eprimeStatus || eprimeStatus.total === 0) return 'grey';
+    if (eprimeStatus.completed === eprimeStatus.total) return 'green';
+    if (eprimeStatus.completed > 0) return 'red';
+    return 'grey';
+  }
+
+  /**
    * Load survey structure from tasks/survey-structure.json
    * Builds a map of task IDs to set IDs
+   * Filters out hidden tasks from systemConfig.hiddenTasks
    */
   async function loadSurveyStructure() {
     try {
       const response = await fetch('assets/tasks/survey-structure.json');
       surveyStructure = await response.json();
+      
+      // Get hidden tasks from config (case-insensitive)
+      const hiddenTasks = (systemConfig?.hiddenTasks || []).map(t => t.toLowerCase());
+      
+      // Filter out hidden tasks from survey structure
+      if (hiddenTasks.length > 0) {
+        surveyStructure.sets = surveyStructure.sets.map(set => ({
+          ...set,
+          sections: set.sections.filter(section => {
+            const taskName = section.file.replace('.json', '').toLowerCase();
+            return !hiddenTasks.includes(taskName);
+          })
+        }));
+      }
       
       // Build task-to-set mapping
       surveyStructure.sets.forEach(set => {
@@ -180,13 +255,15 @@
       );
       
       // Convert validation cache to studentSubmissionData format
-      for (const [coreId, cache] of validationCache.entries()) {
+      // Cache uses composite keys like "C1234_K3" (coreId_grade).
+      // Store with the SAME composite key so lookups match.
+      for (const [cacheKey, cache] of validationCache.entries()) {
         if (cache.error) {
-          console.warn(`[ClassPage] Validation error for ${coreId}:`, cache.error);
+          console.warn(`[ClassPage] Validation error for ${cacheKey}:`, cache.error);
           continue;
         }
         
-        studentSubmissionData.set(coreId, {
+        studentSubmissionData.set(cacheKey, {
           submissions: cache.submissions,
           setStatus: convertSetStatus(cache.setStatus),
           outstanding: calculateOutstanding(cache.setStatus),
@@ -219,30 +296,19 @@
   }
 
   /**
-   * Calculate outstanding count from set status
-   * Returns the number of incomplete TASKS, not sets
+   * Calculate outstanding task count from set status
    */
   function calculateOutstanding(setStatus) {
-    let outstanding = 0;
-    for (const setId in setStatus) {
-      const set = setStatus[setId];
-      if (!set) continue;
-
-      if (Array.isArray(set.tasks) && set.tasks.length > 0) {
-        set.tasks.forEach(task => {
-          if (task?.ignoredForIncompleteChecks) return;
-          if (!task.complete) {
-            outstanding++;
-          }
-        });
-        continue;
+    if (!setStatus) return 0;
+    
+    let count = 0;
+    ['set1', 'set2', 'set3', 'set4', 'set5'].forEach(setId => {
+      if (setStatus[setId]?.status === 'incomplete') {
+        count += setStatus[setId].outstandingTasks?.length || 0;
       }
-
-      if (typeof set.tasksTotal === 'number' && typeof set.tasksComplete === 'number') {
-        outstanding += Math.max(0, set.tasksTotal - set.tasksComplete);
-      }
-    }
-    return outstanding;
+    });
+    
+    return count;
   }
 
   /**
@@ -339,7 +405,8 @@
 
     // Aggregate completion status from student submission data
     for (const student of students) {
-      const data = studentSubmissionData.get(student.coreId);
+      const cacheKey = `${student.coreId}_${student.year || 'Unknown'}`;
+      const data = studentSubmissionData.get(cacheKey);
       if (!data || data.validationCache?.error) continue;
 
       // Count set completion for each student
@@ -381,6 +448,38 @@
       document.getElementById(`${setId}-completion`).textContent = `${percentage}%`;
       document.getElementById(`${setId}-count`).textContent = `${metric.complete}/${metric.total}`;
     }
+    
+    // Calculate and display E-Prime completion metrics
+    const eprimeMetrics = calculateEPrimeClassMetrics();
+    const eprimePercentage = eprimeMetrics.total > 0 ? Math.round((eprimeMetrics.complete / eprimeMetrics.total) * 100) : 0;
+    const eprimeCompletionEl = document.getElementById('eprime-completion');
+    const eprimeCountEl = document.getElementById('eprime-count');
+    if (eprimeCompletionEl) eprimeCompletionEl.textContent = `${eprimePercentage}%`;
+    if (eprimeCountEl) eprimeCountEl.textContent = `${eprimeMetrics.complete}/${eprimeMetrics.total}`;
+  }
+  
+  /**
+   * Calculate E-Prime completion metrics for the class
+   * @returns {{ complete: number, total: number }} Number of students with all E-Prime tasks complete
+   */
+  function calculateEPrimeClassMetrics() {
+    let complete = 0;
+    let total = 0;
+    
+    for (const student of students) {
+      // Use composite key matching studentSubmissionData format (coreId_year)
+      const cacheKey = `${student.coreId}_${student.year || 'Unknown'}`;
+      const data = studentSubmissionData.get(cacheKey);
+      if (!data) continue;
+      
+      total++;
+      const eprimeStatus = getEPrimeStatus(data);
+      if (eprimeStatus.completed === eprimeStatus.total && eprimeStatus.total > 0) {
+        complete++;
+      }
+    }
+    
+    return { complete, total };
   }
 
   /**
@@ -438,6 +537,9 @@
         });
       }
     }
+    
+    // Apply initial button styles based on restored view mode
+    updateViewModeButtons();
   }
   
   /**
@@ -570,13 +672,17 @@
     switch (filterValue) {
       case 'with-data':
         // Only show students with submission data
-        filteredStudents = filteredStudents.filter(s => studentSubmissionData.has(s.coreId));
+        filteredStudents = filteredStudents.filter(s => {
+          const cacheKey = `${s.coreId}_${s.year || 'Unknown'}`;
+          return studentSubmissionData.has(cacheKey);
+        });
         break;
       case 'incomplete':
         // Show ALL students that don't have Complete status across all 5 sets (1-4 + E-Prime)
         // This includes: students without data (not started) AND students with incomplete data
         filteredStudents = filteredStudents.filter(s => {
-          const data = studentSubmissionData.get(s.coreId);
+          const cacheKey = `${s.coreId}_${s.year || 'Unknown'}`;
+          const data = studentSubmissionData.get(cacheKey);
           
           // No data = incomplete (not started = incomplete)
           if (!data) return true;
@@ -665,8 +771,14 @@
       `;
     } else {
       filteredStudents.forEach(student => {
-        const data = studentSubmissionData.get(student.coreId);
+        const cacheKey = `${student.coreId}_${student.year || 'Unknown'}`;
+        const data = studentSubmissionData.get(cacheKey);
         const setStatus = data?.validationCache?.setStatus;
+        
+        // Use E-Prime specific detection (reads EPrime_*_Done fields)
+        const eprimeStatus = getEPrimeStatus(data);
+        const eprimeColor = getEPrimeStatusColor(eprimeStatus);
+        const eprimeTooltip = eprimeStatus.tasks.map(t => `${t.name}: ${t.done ? '✓' : '✗'}`).join('\\n');
         
         html += `
           <tr class="hover:bg-[color:var(--muted)]/20 transition-colors">
@@ -682,7 +794,12 @@
             ${renderSetStatus(getSetStatusColor(setStatus, 'set2'))}
             ${renderSetStatus(getSetStatusColor(setStatus, 'set3'))}
             ${renderSetStatus(getSetStatusColor(setStatus, 'set4'))}
-            ${renderSetStatus(getSetStatusColor(setStatus, 'set5'))}
+            <td class="px-4 py-3">
+              <span class="inline-flex items-center gap-2 text-xs" title="${eprimeTooltip}">
+                <span class="status-circle status-${eprimeColor}"></span>
+                <span class="font-mono">${eprimeStatus.completed}/${eprimeStatus.total}</span>
+              </span>
+            </td>
           </tr>
         `;
       });
@@ -749,12 +866,14 @@
 
     // Add E-Prime tasks if configured
     if (systemConfig && systemConfig.eprime && systemConfig.eprime.tasks) {
-      const eprimeSetId = 'set5';
+      const eprimeSetId = systemConfig.eprime.setId || 'set5';
       systemConfig.eprime.tasks.forEach((task, index) => {
         allTasks.push({
-          name: task.id, // e.g. "NL", "SRT"
+          // Use task.id as the internal key; this is what taskColumnNames should map
+          name: task.id,
           originalNames: [task.id],
-          displayName: task.name, // Full name for tooltip
+          // Keep full name for tooltip; header label will come from taskColumnNames if provided
+          displayName: task.name,
           setId: eprimeSetId,
           order: 1000 + index, // High order to put at end
           isGenderConditional: false,
@@ -768,7 +887,8 @@
     const studentNameColumnWidth = systemConfig?.classPageTaskView?.studentNameColumnWidth || '200px';
     const coreIdColumnWidth = systemConfig?.classPageTaskView?.coreIdColumnWidth || '120px';
     const useEqualWidth = systemConfig?.classPageTaskView?.equalWidthColumns !== false;
-    const columnNames = systemConfig?.classPageTaskView?.taskColumnNames || {};
+    // Prefer centralized taskLabels; fall back to legacy per-page map for backward compatibility
+    const columnNames = systemConfig?.taskLabels || systemConfig?.classPageTaskView?.taskColumnNames || {};
     
     // Group tasks by set for the set header row
     const setGroups = {};
@@ -798,10 +918,14 @@
     `;
     
     // Add set headers with merged cells and background colors
-    ['set1', 'set2', 'set3', 'set4'].forEach(setId => {
+    ['set1', 'set2', 'set3', 'set4', 'set5'].forEach(setId => {
       const tasksInSet = setGroups[setId] || [];
       if (tasksInSet.length > 0) {
-        const setLabel = setId.replace('set', 'Set ');
+        // For Set 5 (E-Prime), use configured column name when available
+        const isEPrimeSet = setId === (systemConfig.eprime?.setId || 'set5');
+        const setLabel = isEPrimeSet
+          ? (systemConfig.eprime?.columnName || 'E-Prime')
+          : setId.replace('set', 'Set ');
         const bgColor = setColors[setId];
         html += `<th colspan="${tasksInSet.length}" class="px-2 py-2 text-center font-semibold text-[color:var(--foreground)]" style="background-color: ${bgColor};">${setLabel}</th>`;
       }
@@ -815,6 +939,7 @@
     
     // Add column headers for each task with set background colors
     allTasks.forEach(task => {
+      // Prefer custom label from config; fall back to task.name
       const displayName = columnNames[task.name] || task.name;
       const bgColor = setColors[task.setId];
       const widthStyle = useEqualWidth ? `width: ${taskColumnWidth}; min-width: ${taskColumnWidth}; max-width: ${taskColumnWidth}; ` : '';
@@ -837,7 +962,8 @@
       `;
     } else {
       filteredStudents.forEach(student => {
-        const data = studentSubmissionData.get(student.coreId);
+        const cacheKey = `${student.coreId}_${student.year || 'Unknown'}`;
+        const data = studentSubmissionData.get(cacheKey);
         const setStatus = data?.validationCache?.setStatus;
         
         html += `
@@ -853,7 +979,7 @@
         
         // Add status for each task with set background colors
         allTasks.forEach(task => {
-          const taskStatus = getTaskStatus(setStatus, task, student);
+          const taskStatus = getTaskStatus(setStatus, task, student, data);
           const bgColor = setColors[task.setId];
           html += `
             <td class="px-4 py-3 text-center" style="background-color: ${bgColor};">
@@ -879,8 +1005,31 @@
   /**
    * Get task status for a specific task
    * Handles gender-conditional tasks (TEC) by checking student gender
+   * Handles E-Prime tasks by reading EPrime_*_Done fields from mergedAnswers
+   * @param {Object} setStatus - The status object
+   * @param {Object} task - The task object
+   * @param {Object} student - The student object
+   * @param {Object} studentData - The student data object
+   * @returns {string} The task status
    */
-  function getTaskStatus(setStatus, task, student) {
+  function getTaskStatus(setStatus, task, student, studentData) {
+    // Handle E-Prime tasks specially - they use EPrime_*_Done fields, not setStatus.tasks
+    if (task.isEPrime) {
+      // Find the E-Prime task config to get the doneField
+      const eprimeTaskConfig = systemConfig?.eprime?.tasks?.find(t => t.id === task.name);
+      if (!eprimeTaskConfig) return 'status-grey';
+      
+      const mergedAnswers = studentData?.validationCache?.mergedAnswers;
+      if (!mergedAnswers || !jotformQuestions) return 'status-grey';
+      
+      const qid = jotformQuestions[eprimeTaskConfig.doneField];
+      const answerObj = mergedAnswers[eprimeTaskConfig.doneField] || (qid ? mergedAnswers[`q${qid}`] : null);
+      const value = answerObj?.answer || answerObj;
+      const done = value === '1' || value === 1 || value === true || value === 'true';
+      
+      return done ? 'status-green' : 'status-grey';
+    }
+    
     if (!setStatus) return 'status-grey';
     
     // For gender-conditional tasks, determine which version to look for based on student gender

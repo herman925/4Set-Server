@@ -153,6 +153,18 @@
     // Fetch and aggregate submission data
     await fetchAndAggregateData();
 
+    // Restore saved view mode preferences
+    if (window.CheckingSystemPreferences) {
+      const savedMainViewMode = window.CheckingSystemPreferences.getViewMode(`${schoolId}_main`);
+      const savedStudentViewMode = window.CheckingSystemPreferences.getViewMode(`${schoolId}_student`);
+      if (savedMainViewMode) {
+        currentViewMode = savedMainViewMode;
+      }
+      if (savedStudentViewMode) {
+        currentStudentViewMode = savedStudentViewMode;
+      }
+    }
+
     // Render the page
     renderPage();
 
@@ -382,6 +394,27 @@
   }
 
   /**
+   * Calculate E-Prime completion metrics for the school
+   * @returns {{ complete: number, total: number }} Number of students with all E-Prime tasks complete
+   */
+  function calculateEPrimeSchoolMetrics() {
+    let complete = 0;
+    let total = 0;
+    
+    for (const [coreId, data] of studentSubmissionData.entries()) {
+      if (!data) continue;
+      
+      total++;
+      const eprimeStatus = getEPrimeStatus(data);
+      if (eprimeStatus.completed === eprimeStatus.total && eprimeStatus.total > 0) {
+        complete++;
+      }
+    }
+    
+    return { complete, total };
+  }
+
+  /**
    * Render the page
    */
   function renderPage() {
@@ -427,6 +460,14 @@
       document.getElementById(`${setId}-completion`).textContent = `${percentage}%`;
       document.getElementById(`${setId}-count`).textContent = `${metric.complete}/${metric.total}`;
     }
+    
+    // Calculate and display E-Prime completion metrics
+    const eprimeMetrics = calculateEPrimeSchoolMetrics();
+    const eprimePercentage = eprimeMetrics.total > 0 ? Math.round((eprimeMetrics.complete / eprimeMetrics.total) * 100) : 0;
+    const eprimeCompletionEl = document.getElementById('eprime-completion');
+    const eprimeCountEl = document.getElementById('eprime-count');
+    if (eprimeCompletionEl) eprimeCompletionEl.textContent = `${eprimePercentage}%`;
+    if (eprimeCountEl) eprimeCountEl.textContent = `${eprimeMetrics.complete}/${eprimeMetrics.total}`;
 
     // Initialize view mode buttons
     updateMainViewMode();
@@ -668,7 +709,7 @@
             <th class="px-4 py-3 text-left font-medium">Set 2</th>
             <th class="px-4 py-3 text-left font-medium">Set 3</th>
             <th class="px-4 py-3 text-left font-medium">Set 4</th>
-            <th class="px-4 py-3 text-left font-medium" style="background-color: rgba(236, 72, 153, 0.08);">${eprimeColumnName}</th>
+            <th class="px-4 py-3 text-left font-medium">${eprimeColumnName}</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-[color:var(--border)]">
@@ -768,6 +809,23 @@
       });
     }
     
+    // Add E-Prime tasks if configured (Set 5), similar to class page
+    if (systemConfig && systemConfig.eprime && systemConfig.eprime.tasks) {
+      const eprimeSetId = systemConfig.eprime.setId || 'set5';
+      systemConfig.eprime.tasks.forEach((task, index) => {
+        allTasks.push({
+          // Use task.id as the key; labels come from systemConfig.taskLabels[task.id]
+          name: task.id,
+          originalNames: [task.id],
+          displayName: task.name, // full name for tooltip
+          setId: eprimeSetId,
+          order: 1000 + index,
+          isGenderConditional: false,
+          isEPrime: true
+        });
+      });
+    }
+    
     // Get column width settings from config
     const taskColumnWidth = systemConfig?.schoolPageTaskView?.taskColumnWidth || '120px';
     const studentNameColumnWidth = systemConfig?.schoolPageTaskView?.studentNameColumnWidth || '200px';
@@ -775,7 +833,8 @@
     const classColumnWidth = systemConfig?.schoolPageTaskView?.classColumnWidth || '150px';
     const gradeColumnWidth = systemConfig?.schoolPageTaskView?.gradeColumnWidth || '80px';
     const useEqualWidth = systemConfig?.schoolPageTaskView?.equalWidthColumns !== false;
-    const columnNames = systemConfig?.schoolPageTaskView?.taskColumnNames || {};
+    // Prefer centralized taskLabels; fall back to legacy per-page map for backward compatibility
+    const columnNames = systemConfig?.taskLabels || systemConfig?.schoolPageTaskView?.taskColumnNames || {};
     
     // Group tasks by set for the set header row
     const setGroups = {};
@@ -786,12 +845,13 @@
       setGroups[task.setId].push(task);
     });
     
-    // Define light background colors for each set
+    // Define light background colors for each set (including Set 5 / E-Prime)
     const setColors = {
       'set1': 'rgba(43, 57, 144, 0.06)',
       'set2': 'rgba(141, 190, 80, 0.08)',
       'set3': 'rgba(147, 51, 234, 0.06)',
-      'set4': 'rgba(249, 157, 51, 0.08)'
+      'set4': 'rgba(249, 157, 51, 0.08)',
+      'set5': 'rgba(236, 72, 153, 0.08)'
     };
     
     let html = `
@@ -806,10 +866,14 @@
     `;
     
     // Add set headers with merged cells and background colors
-    ['set1', 'set2', 'set3', 'set4'].forEach(setId => {
+    ['set1', 'set2', 'set3', 'set4', 'set5'].forEach(setId => {
       const tasksInSet = setGroups[setId] || [];
       if (tasksInSet.length > 0) {
-        const setLabel = setId.replace('set', 'Set ');
+        // For Set 5 (E-Prime), use configured column name when available
+        const isEPrimeSet = setId === (systemConfig.eprime?.setId || 'set5');
+        const setLabel = isEPrimeSet
+          ? (systemConfig.eprime?.columnName || 'E-Prime')
+          : setId.replace('set', 'Set ');
         const bgColor = setColors[setId];
         html += `<th colspan="${tasksInSet.length}" class="px-2 py-2 text-center font-semibold text-[color:var(--foreground)]" style="background-color: ${bgColor};">${setLabel}</th>`;
       }
@@ -1235,7 +1299,7 @@
     const tooltipText = eprimeStatus.tasks.map(t => `${t.name}: ${t.done ? '✓' : '✗'}`).join('\n');
     
     return `
-      <td class="px-4 py-3" style="background-color: rgba(236, 72, 153, 0.08);">
+      <td class="px-4 py-3">
         <span class="inline-flex items-center gap-2 text-xs ${config.textClass}" title="${tooltipText}">
           <span class="status-circle ${config.class}"></span>
           <span class="font-mono">${countText}</span>
@@ -1305,6 +1369,10 @@
    * Setup view filters and mode toggles
    */
   function setupFilters() {
+    // Extract schoolId for preference saving
+    const urlParams = new URLSearchParams(window.location.search);
+    const schoolId = urlParams.get('schoolId');
+    
     // Setup main view mode toggle (By Class / By Student)
     const viewByClassBtn = document.getElementById('view-by-class-btn');
     const viewByStudentBtn = document.getElementById('view-by-student-btn');
@@ -1314,12 +1382,20 @@
         currentViewMode = 'class';
         updateMainViewMode();
         renderMainView();
+        // Save preference
+        if (window.CheckingSystemPreferences && schoolId) {
+          window.CheckingSystemPreferences.saveViewMode(`${schoolId}_main`, 'class');
+        }
       });
       
       viewByStudentBtn.addEventListener('click', () => {
         currentViewMode = 'student';
         updateMainViewMode();
         renderMainView();
+        // Save preference
+        if (window.CheckingSystemPreferences && schoolId) {
+          window.CheckingSystemPreferences.saveViewMode(`${schoolId}_main`, 'student');
+        }
       });
     }
 
@@ -1332,12 +1408,20 @@
         currentStudentViewMode = 'set';
         updateStudentViewMode();
         renderMainView();
+        // Save preference
+        if (window.CheckingSystemPreferences && schoolId) {
+          window.CheckingSystemPreferences.saveViewMode(`${schoolId}_student`, 'set');
+        }
       });
       
       studentViewByTaskBtn.addEventListener('click', () => {
         currentStudentViewMode = 'task';
         updateStudentViewMode();
         renderMainView();
+        // Save preference
+        if (window.CheckingSystemPreferences && schoolId) {
+          window.CheckingSystemPreferences.saveViewMode(`${schoolId}_student`, 'task');
+        }
       });
     }
     
@@ -1348,8 +1432,16 @@
         currentStudentViewMode = 'missing';
         updateStudentViewMode();
         renderMainView();
+        // Save preference
+        if (window.CheckingSystemPreferences && schoolId) {
+          window.CheckingSystemPreferences.saveViewMode(`${schoolId}_student`, 'missing');
+        }
       });
     }
+    
+    // Apply initial button styles based on restored view modes
+    updateMainViewMode();
+    updateStudentViewMode();
 
     // Setup data filter
     const dataFilter = document.getElementById('data-view-filter');
