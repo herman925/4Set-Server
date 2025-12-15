@@ -118,7 +118,7 @@
     "defaultFilter": "all",
     "defaultExpandState": false,
     "equalWidthColumns": true,
-    "taskColumnWidth": "50px",
+    "taskColumnWidth": "46px",
     "studentNameColumnWidth": "160px",
     "coreIdColumnWidth": "60px",
     "classColumnWidth": "110px",

@@ -929,7 +929,7 @@
         
         // Add status for each task with set background colors
         allTasks.forEach(task => {
-          const taskStatus = getTaskStatus(setStatus, task, student);
+          const taskStatus = getTaskStatus(setStatus, task, student, data);
           const bgColor = setColors[task.setId];
           html += `
             <td class="px-4 py-3 text-center" style="background-color: ${bgColor};">
@@ -955,8 +955,26 @@
   /**
    * Get task status for a specific task
    * Handles gender-conditional tasks (TEC) by checking student gender
+   * Handles E-Prime tasks by checking EPrime_*_Done fields from mergedAnswers
    */
-  function getTaskStatus(setStatus, task, student) {
+  function getTaskStatus(setStatus, task, student, studentData) {
+    // Handle E-Prime tasks specially - they use EPrime_*_Done fields, not setStatus.tasks
+    if (task.isEPrime) {
+      // Find the E-Prime task config to get the doneField
+      const eprimeTaskConfig = systemConfig?.eprime?.tasks?.find(t => t.id === task.name);
+      if (!eprimeTaskConfig) return 'status-grey';
+      
+      const mergedAnswers = studentData?.validationCache?.mergedAnswers;
+      if (!mergedAnswers || !jotformQuestions) return 'status-grey';
+      
+      const qid = jotformQuestions[eprimeTaskConfig.doneField];
+      const answerObj = mergedAnswers[eprimeTaskConfig.doneField] || (qid ? mergedAnswers[`q${qid}`] : null);
+      const value = answerObj?.answer || answerObj;
+      const done = value === '1' || value === 1 || value === true || value === 'true';
+      
+      return done ? 'status-green' : 'status-grey';
+    }
+    
     if (!setStatus) return 'status-grey';
     
     // For gender-conditional tasks, determine which version to look for based on student gender
@@ -982,7 +1000,7 @@
     }
     
     // Search through all sets for this task
-    for (const setId of ['set1', 'set2', 'set3', 'set4']) {
+    for (const setId of ['set1', 'set2', 'set3', 'set4', 'set5']) {
       const set = setStatus[setId];
       if (!set || !set.tasks) continue;
       
