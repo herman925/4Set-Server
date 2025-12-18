@@ -1070,6 +1070,39 @@ Documented in `PRDs/processor_agent_runbook_prd.md`:
 - `calculation_bible.md` - Complete calculation and validation reference
 - `guideline_prd.md` - User guide system design specification (spotlight, modals, tooltips)
 
+### Codebook (Statistical Analysis Reference)
+Located in `assets/tasks/`, the codebook CSV files provide comprehensive variable documentation for statistical analysis:
+
+- `codebook_ERV.csv` - English Reading Vocabulary (ERV) variable reference
+
+**Codebook Structure** (18 columns):
+| Column | Description |
+|--------|-------------|
+| `variable_code` | Variable name as uploaded to JotForm (e.g., `ERV_Q1`) |
+| `jotform_qid` | JotForm Question ID number |
+| `task` | Task abbreviation (e.g., `ERV`, `CM`, `CWR`) |
+| `set` | Assessment set number (1-4) |
+| `question_type` | Technical type (image-choice, radio, text, etc.) |
+| `item_type` | Semantic type (vocabulary, practice, termination_flag, score, metadata) |
+| `question_label_en` | English question text or vocabulary word |
+| `valid_values` | Allowed response values (e.g., "1,2,3,4" or "0,1") |
+| `correct_answer` | Correct response value for scored items |
+| `data_type` | Data type (categorical, numeric, datetime, boolean) |
+| `scale_level` | Measurement scale (nominal, ordinal, interval, ratio) |
+| `termination_stage` | Stage number if part of termination logic (1-4) |
+| `termination_type` | Termination rule type (stage-based, consecutive, threshold, timeout, none) |
+| `termination_field` | Associated termination variable (e.g., `ERV_Ter1`) |
+| `termination_threshold` | Pass threshold (e.g., 5 = need ≥5 correct to pass) |
+| `is_practice` | TRUE if practice item (not scored) |
+| `is_scored` | TRUE if contributes to task score |
+| `notes` | Additional context and rules |
+
+**Usage**:
+- Import into SPSS, R, or Python for variable labeling
+- Reference for valid value ranges and data types
+- Documentation of termination rules per question
+- Cross-reference JotForm QIDs with variable names
+
 ### User Guides (Consolidated October 2025)
 All user guides moved to PRDs folder for centralized documentation:
 - `guideline_prd.md` - User guide system design and implementation patterns
