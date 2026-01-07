@@ -338,6 +338,18 @@
                                 </select>
                             </div>
 
+                            <!-- School ID Filter -->
+                            <div class="flex items-center gap-1.5">
+                                <label class="text-[0.65rem] font-medium text-[color:var(--muted-foreground)]">School:</label>
+                                <select 
+                                    id="schoolFilter"
+                                    class="px-2 py-1 text-xs border rounded focus:ring-1 focus:ring-[color:var(--primary)]"
+                                    style="border-color: var(--border);"
+                                >
+                                    <option value="">All Schools</option>
+                                </select>
+                            </div>
+
                             <!-- Quick Filters -->
                             <div class="flex gap-1">
                                 <button onclick="showOnlyErrors()" class="px-2 py-1 text-[0.65rem] font-medium rounded transition-all" style="background-color: rgba(240, 78, 105, 0.1); color: var(--destructive);">Errors</button>
@@ -442,6 +454,71 @@
         let supabaseConfig = null;
         let supabaseDayCache = new Map();
         let currentFileTypeFilter = 'all'; // 'all', 'pdf', 'edat3'
+        let fileToSchoolMap = new Map(); // Maps filename to school ID (e.g., "11751_20251209_09_19.pdf" -> "S075")
+
+        // Helper: Extract school ID from log messages for a file
+        // Looks for patterns like "→ S075/" in FILED messages or "school-id: 75 → S075" in INFO messages
+        function extractSchoolIdFromLogs(logs, filename) {
+            for (const log of logs) {
+                if (log.file !== filename) continue;
+                
+                // Pattern 1: FILED messages have "filename → S###/"
+                if (log.level === 'FILED') {
+                    const match = log.message.match(/→\s*(S\d{3})\/?/);
+                    if (match) return match[1];
+                }
+                
+                // Pattern 2: INFO messages have "Formatted school-id: ## → S###"
+                if (log.level === 'INFO' && log.message.includes('school-id')) {
+                    const match = log.message.match(/→\s*(S\d{3})/);
+                    if (match) return match[1];
+                }
+                
+                // Pattern 3: INFO messages have "Added District: ... (from S###)"
+                if (log.level === 'INFO' && log.message.includes('Added District')) {
+                    const match = log.message.match(/\(from\s+(S\d{3})\)/);
+                    if (match) return match[1];
+                }
+            }
+            return null;
+        }
+
+        // Build file-to-school mapping from all logs
+        function buildFileToSchoolMap() {
+            fileToSchoolMap.clear();
+            const uniqueFiles = new Set(allLogs.filter(log => log.file).map(log => log.file));
+            
+            uniqueFiles.forEach(filename => {
+                const schoolId = extractSchoolIdFromLogs(allLogs, filename);
+                if (schoolId) {
+                    fileToSchoolMap.set(filename, schoolId);
+                }
+            });
+        }
+
+        // Update school filter dropdown with available schools
+        function updateSchoolFilterOptions() {
+            const schoolFilter = document.getElementById('schoolFilter');
+            const currentValue = schoolFilter.value;
+            
+            // Get unique schools from the map
+            const schools = new Set(fileToSchoolMap.values());
+            const sortedSchools = Array.from(schools).sort();
+            
+            // Rebuild options
+            schoolFilter.innerHTML = '<option value="">All Schools</option>';
+            sortedSchools.forEach(schoolId => {
+                const option = document.createElement('option');
+                option.value = schoolId;
+                option.textContent = schoolId;
+                schoolFilter.appendChild(option);
+            });
+            
+            // Restore selection if still valid
+            if (currentValue && sortedSchools.includes(currentValue)) {
+                schoolFilter.value = currentValue;
+            }
+        }
 
         // Helper: Detect file type from filename
         function getFileType(filename) {
@@ -1130,6 +1207,9 @@
 
                 if (!forceReload && supabaseDayCache.has(dateStr)) {
                     allLogs = supabaseDayCache.get(dateStr);
+                    // Build file-to-school mapping and update dropdown from cached logs
+                    buildFileToSchoolMap();
+                    updateSchoolFilterOptions();
                     filteredLogs = [...allLogs];
                     applyFilters();
                     return;
@@ -1196,6 +1276,10 @@
 
                 supabaseDayCache.set(dateStr, allLogs);
 
+                // Build file-to-school mapping and update dropdown
+                buildFileToSchoolMap();
+                updateSchoolFilterOptions();
+
                 filteredLogs = [...allLogs];
                 applyFilters();
             } catch (error) {
@@ -1242,6 +1326,10 @@
                 });
             }
             
+            // Build file-to-school mapping and update dropdown
+            buildFileToSchoolMap();
+            updateSchoolFilterOptions();
+            
             filteredLogs = [...allLogs];
         }
 
@@ -1249,6 +1337,7 @@
         function applyFilters() {
             const fileFilter = document.getElementById('fileFilter').value.toLowerCase();
             const levelFilter = document.getElementById('levelFilter').value;
+            const schoolFilter = document.getElementById('schoolFilter').value;
             
             filteredLogs = allLogs.filter(log => {
                 // File/session key filter
@@ -1259,6 +1348,16 @@
                 // Level filter
                 if (levelFilter && log.level !== levelFilter) {
                     return false;
+                }
+                
+                // School ID filter - only filter out logs whose files have a DIFFERENT school
+                // Include logs without files or files without school mapping
+                if (schoolFilter && log.file) {
+                    const fileSchool = fileToSchoolMap.get(log.file);
+                    // Only exclude if the file has a known school that doesn't match
+                    if (fileSchool && fileSchool !== schoolFilter) {
+                        return false;
+                    }
                 }
                 
                 // File type filter
@@ -1344,6 +1443,7 @@
         function calculateProcessingTimes() {
             const fileTimings = {};
             const fileFilter = document.getElementById('fileFilter').value.toLowerCase();
+            const schoolFilter = document.getElementById('schoolFilter').value;
             
             // Group logs by file
             allLogs.forEach(log => {
@@ -1386,12 +1486,19 @@
                 }
             });
             
-            // Calculate durations and apply file filter
+            // Calculate durations and apply file filter + school filter
             const timings = Object.values(fileTimings)
                 .filter(timing => {
                     // Apply file filter to timings table
                     if (fileFilter && !timing.filename.toLowerCase().includes(fileFilter)) {
                         return false;
+                    }
+                    // Apply school filter to timings table - only exclude if file has a DIFFERENT school
+                    if (schoolFilter) {
+                        const fileSchool = fileToSchoolMap.get(timing.filename);
+                        if (fileSchool && fileSchool !== schoolFilter) {
+                            return false;
+                        }
                     }
                     return true;
                 })
@@ -1466,6 +1573,7 @@
                             <tr>
                                 <th class="px-1.5 py-1 text-left text-[0.6rem] font-medium text-gray-500 uppercase w-5"></th>
                                 <th class="px-1.5 py-1 text-left text-[0.6rem] font-medium text-gray-500 uppercase">File</th>
+                                <th class="px-1.5 py-1 text-left text-[0.6rem] font-medium text-gray-500 uppercase w-12">School</th>
                                 <th class="px-1.5 py-1 text-left text-[0.6rem] font-medium text-gray-500 uppercase w-16">Latest Update</th>
                                 <th class="px-1.5 py-1 text-left text-[0.6rem] font-medium text-gray-500 uppercase w-12">Time</th>
                                 <th class="px-1.5 py-1 text-center text-[0.6rem] font-medium text-gray-500 uppercase w-6">OK</th>
@@ -1476,12 +1584,14 @@
                             ${timings.map(timing => {
                                 const displayName = getDisplayFilename(timing.filename);
                                 const typeBadge = getFileTypeBadge(timing.filename);
+                                const schoolId = fileToSchoolMap.get(timing.filename) || '—';
                                 const latestTimeStr = timing.latestTime ? timing.latestTime.toLocaleTimeString('en-GB', {hour: '2-digit', minute: '2-digit', second: '2-digit'}) : '-';
                                 
                                 return `
                                 <tr class="hover:bg-gray-50">
                                     <td class="px-1.5 py-0.5">${typeBadge}</td>
                                     <td class="px-1.5 py-0.5 font-mono text-gray-900 truncate max-w-[180px]" title="${escapeHtml(timing.filename)}">${escapeHtml(displayName)}</td>
+                                    <td class="px-1.5 py-0.5 text-[0.6rem] font-semibold" style="color: var(--primary);">${schoolId}</td>
                                     <td class="px-1.5 py-0.5 text-gray-500 text-[0.6rem] font-mono">${latestTimeStr}</td>
                                     <td class="px-1.5 py-0.5">
                                         <span class="duration-badge text-white px-1 py-0 rounded text-[0.6rem]">${timing.duration.toFixed(1)}s</span>
@@ -1532,10 +1642,17 @@
         function showOnlyErrors() {
             document.getElementById('levelFilter').value = '';
             const fileFilter = document.getElementById('fileFilter').value.toLowerCase();
+            const schoolFilter = document.getElementById('schoolFilter').value;
             
             filteredLogs = allLogs.filter(log => {
                 const isError = ['ERROR', 'REJECT', 'WARN', 'DATA_OVERWRITE_DIFF'].includes(log.level);
                 const matchesFile = !fileFilter || log.file.toLowerCase().includes(fileFilter);
+                
+                // School ID filter - only exclude if file has a DIFFERENT school
+                if (schoolFilter && log.file) {
+                    const fileSchool = fileToSchoolMap.get(log.file);
+                    if (fileSchool && fileSchool !== schoolFilter) return false;
+                }
                 
                 // Also apply file type filter
                 if (currentFileTypeFilter !== 'all' && log.file) {
@@ -1554,10 +1671,17 @@
         function showOnlySuccess() {
             document.getElementById('levelFilter').value = '';
             const fileFilter = document.getElementById('fileFilter').value.toLowerCase();
+            const schoolFilter = document.getElementById('schoolFilter').value;
             
             filteredLogs = allLogs.filter(log => {
                 const isSuccess = log.message.includes('Jotform upload completed successfully');
                 const matchesFile = !fileFilter || log.file.toLowerCase().includes(fileFilter);
+                
+                // School ID filter - only exclude if file has a DIFFERENT school
+                if (schoolFilter && log.file) {
+                    const fileSchool = fileToSchoolMap.get(log.file);
+                    if (fileSchool && fileSchool !== schoolFilter) return false;
+                }
                 
                 // Also apply file type filter
                 if (currentFileTypeFilter !== 'all' && log.file) {
@@ -1576,6 +1700,7 @@
         function clearFilters() {
             document.getElementById('fileFilter').value = '';
             document.getElementById('levelFilter').value = '';
+            document.getElementById('schoolFilter').value = '';
             setFileTypeFilter('all'); // Also reset file type filter
         }
 
@@ -1598,6 +1723,7 @@
         // Event listeners
         document.getElementById('fileFilter').addEventListener('input', applyFilters);
         document.getElementById('levelFilter').addEventListener('change', applyFilters);
+        document.getElementById('schoolFilter').addEventListener('change', applyFilters);
 
         // Refresh on F5
         window.addEventListener('beforeunload', function() {
