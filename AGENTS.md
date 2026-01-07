@@ -175,7 +175,8 @@ The 4Set System is a comprehensive web-based assessment data processing pipeline
   - Scrollable summary table (max 200px height)
 - [x] **Log viewer School ID filter (Jan 2026)**
   - School ID filter dropdown dynamically populated from log entries
-  - Extracts school ID from FILED/INFO messages (e.g., "→ S075/" or "Added District: ... (from S075)")
+  - Extracts school ID from FILED/INFO messages for PDFs (e.g., "→ S075/" or "Added District: ... (from S075)")
+  - Extracts school ID from E-Prime FILED messages (e.g., "Filed EDAT3 to S059/")
   - File-to-school mapping built on log load for efficient filtering
   - Filter applies to log entries, file summary table, and processing times
   - Works with both local CSV logs and Supabase log source

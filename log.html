@@ -462,10 +462,14 @@
             for (const log of logs) {
                 if (log.file !== filename) continue;
                 
-                // Pattern 1: FILED messages have "filename → S###/"
+                // Pattern 1a: PDF FILED messages have "filename → S###/"
                 if (log.level === 'FILED') {
-                    const match = log.message.match(/→\s*(S\d{3})\/?/);
-                    if (match) return match[1];
+                    const pdfMatch = log.message.match(/→\s*(S\d{3})\/?/);
+                    if (pdfMatch) return pdfMatch[1];
+                    
+                    // Pattern 1b: E-Prime FILED messages have "Filed EDAT3 to S###/"
+                    const eprimeMatch = log.message.match(/Filed EDAT3 to (S\d{3})\/?/);
+                    if (eprimeMatch) return eprimeMatch[1];
                 }
                 
                 // Pattern 2: INFO messages have "Formatted school-id: ## → S###"
