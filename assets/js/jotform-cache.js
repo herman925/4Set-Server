@@ -1056,12 +1056,20 @@
         const cacheEntry = await validationStorage.getItem(VALIDATION_CACHE_KEY);
         
         if (!cacheEntry || !cacheEntry.validations) {
+          console.warn('[JotFormCache] Validation cache empty or missing validations field');
           return null;
         }
         
         // Check if cache is stale (older than submissions cache)
+        // Add 5-second tolerance to account for timestamp race conditions during build
         const submissionsCache = await this.loadFromCache();
-        if (submissionsCache && cacheEntry.timestamp < submissionsCache.timestamp) {
+        const STALE_TOLERANCE_MS = 5000; // 5 seconds
+        if (submissionsCache && (cacheEntry.timestamp + STALE_TOLERANCE_MS) < submissionsCache.timestamp) {
+          console.warn('[JotFormCache] Validation cache is stale:', {
+            validationTimestamp: cacheEntry.timestamp,
+            submissionsTimestamp: submissionsCache.timestamp,
+            diff: submissionsCache.timestamp - cacheEntry.timestamp
+          });
           return null;
         }
         
@@ -1070,15 +1078,12 @@
         if (sampleKey) {
           const sampleData = cacheEntry.validations[sampleKey];
           if (!sampleData.taskValidation || !sampleData.setStatus) {
+            console.warn('[JotFormCache] Validation cache has invalid structure:', Object.keys(sampleData));
             return null;
           }
-          
-          // Check if all sets are "notstarted" which indicates bad data
-          const allNotStarted = Object.values(sampleData.setStatus || {}).every(set => set.status === 'notstarted');
-          if (allNotStarted && sampleData.submissions && sampleData.submissions.length > 0) {
-            console.warn('[JotFormCache] Validation cache shows all sets as notstarted despite having submissions, will rebuild');
-            return null;
-          }
+          // Note: Removed aggressive "all sets notstarted" check - it was triggering false positives
+          // when the first sample student legitimately had no task data started yet.
+          // The structural validation above is sufficient.
         }
         
         // Convert object back to Map

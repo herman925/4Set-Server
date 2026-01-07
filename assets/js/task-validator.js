@@ -40,6 +40,14 @@
  * NO OTHER FILE should implement validation logic - all pages must use TaskValidator.
  */
 window.TaskValidator = (() => {
+  // Debug flag - set to true for verbose logging, false for production
+  const DEBUG = false;
+  
+  // Debug log helper - only logs when DEBUG is true
+  function debugLog(...args) {
+    if (DEBUG) console.log(...args);
+  }
+  
   // Task metadata loaded from survey-structure.json
   let taskMetadata = null;
   let taskFiles = {}; // Will be built from taskMetadata
@@ -72,7 +80,7 @@ window.TaskValidator = (() => {
         }
       }
       
-      console.log('[TaskValidator] Task metadata loaded:', Object.keys(taskMetadata).length, 'tasks');
+      debugLog('[TaskValidator] Task metadata loaded:', Object.keys(taskMetadata).length, 'tasks');
       return taskMetadata;
     } catch (error) {
       console.error('[TaskValidator] Failed to load task metadata:', error);
@@ -110,7 +118,7 @@ window.TaskValidator = (() => {
       const taskDef = await response.json();
       taskCache[normalizedTaskId] = taskDef;
       
-      console.log(`[TaskValidator] Loaded task definition: ${taskId}`, {
+      debugLog(`[TaskValidator] Loaded task definition: ${taskId}`, {
         id: taskDef.id,
         title: taskDef.title,
         questionCount: extractQuestions(taskDef).length
@@ -581,7 +589,7 @@ window.TaskValidator = (() => {
    * @returns {Object} Enhanced validation result with TGMD scoring structure
    */
   function processTGMDScoring(validationResult, taskDef) {
-    console.log('[TaskValidator] Processing TGMD matrix-radio scoring');
+    debugLog('[TaskValidator] Processing TGMD matrix-radio scoring');
     
     // Group questions by row ID (e.g., TGMD_111_Hop_t1 and TGMD_111_Hop_t2 → TGMD_111_Hop)
     const rowMap = new Map();
@@ -691,7 +699,7 @@ window.TaskValidator = (() => {
     const totalScore = tgmdRows.reduce((sum, row) => sum + row.rowScore, 0);
     const maxScore = tgmdRows.length * 2;
     
-    console.log(`[TaskValidator] TGMD scoring complete: ${totalScore}/${maxScore} (${Object.keys(taskGroups).length} tasks)`);
+    debugLog(`[TaskValidator] TGMD scoring complete: ${totalScore}/${maxScore} (${Object.keys(taskGroups).length} tasks)`);
     
     return {
       ...validationResult,
@@ -793,7 +801,7 @@ window.TaskValidator = (() => {
       if (maxPossible < stage.threshold) {
         terminationIndex = endIdx;
         terminationStage = stage.stageNum;
-        console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()} terminated at Stage ${terminationStage} (${stage.endId}): ${correctCount} correct, need ≥${stage.threshold}`);
+        debugLog(`[TaskValidator] ${taskResult.taskId.toUpperCase()} terminated at Stage ${terminationStage} (${stage.endId}): ${correctCount} correct, need ≥${stage.threshold}`);
         break;
       }
       
@@ -802,7 +810,7 @@ window.TaskValidator = (() => {
         if (correctCount < stage.threshold && unansweredCount === 0) {
           terminationIndex = endIdx;
           terminationStage = stage.stageNum;
-          console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()} terminated at Stage ${terminationStage} (${stage.endId}): ${correctCount} correct, need ≥${stage.threshold}`);
+          debugLog(`[TaskValidator] ${taskResult.taskId.toUpperCase()} terminated at Stage ${terminationStage} (${stage.endId}): ${correctCount} correct, need ≥${stage.threshold}`);
           break;
         }
         // Otherwise, can't determine termination yet
@@ -813,7 +821,7 @@ window.TaskValidator = (() => {
       if (correctCount < stage.threshold) {
         terminationIndex = endIdx;
         terminationStage = stage.stageNum;
-        console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()} terminated at Stage ${terminationStage} (${stage.endId}): ${correctCount} correct, need ≥${stage.threshold}`);
+        debugLog(`[TaskValidator] ${taskResult.taskId.toUpperCase()} terminated at Stage ${terminationStage} (${stage.endId}): ${correctCount} correct, need ≥${stage.threshold}`);
         break;
       }
     }
@@ -853,7 +861,7 @@ window.TaskValidator = (() => {
         
         if (consecutiveIncorrect >= config.consecutiveThreshold && terminationIndex === -1) {
           terminationIndex = i;
-          console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()} terminated at question ${i + 1} (${q.id}) after ${config.consecutiveThreshold} consecutive incorrect`);
+          debugLog(`[TaskValidator] ${taskResult.taskId.toUpperCase()} terminated at question ${i + 1} (${q.id}) after ${config.consecutiveThreshold} consecutive incorrect`);
           break;
         }
       }
@@ -890,24 +898,24 @@ window.TaskValidator = (() => {
     // Check if all are answered
     const allAnswered = targetQuestions.every(q => q.studentAnswer !== null);
     if (!allAnswered) {
-      console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()}: Not all threshold questions answered yet - no termination`);
+      debugLog(`[TaskValidator] ${taskResult.taskId.toUpperCase()}: Not all threshold questions answered yet - no termination`);
       return { terminationIndex: -1 };
     }
     
     // Count correct (score > 0)
     const correctCount = targetQuestions.filter(q => q.isCorrect).length;
     
-    console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()} threshold check: ${correctCount} correct out of ${targetQuestions.length}, threshold=${config.threshold}`);
+    debugLog(`[TaskValidator] ${taskResult.taskId.toUpperCase()} threshold check: ${correctCount} correct out of ${targetQuestions.length}, threshold=${config.threshold}`);
     
     // If below threshold, terminate at last question in the set
     if (correctCount < config.threshold) {
       const lastQuestion = targetQuestions[targetQuestions.length - 1];
       const terminationIndex = taskResult.questions.findIndex(q => q.id === lastQuestion.id);
-      console.log(`[TaskValidator] ✂️ ${taskResult.taskId.toUpperCase()} TERMINATED: ${correctCount} < ${config.threshold} (need ≥${config.threshold})`);
+      debugLog(`[TaskValidator] ✂️ ${taskResult.taskId.toUpperCase()} TERMINATED: ${correctCount} < ${config.threshold} (need ≥${config.threshold})`);
       return { terminationIndex };
     }
     
-    console.log(`[TaskValidator] ✅ ${taskResult.taskId.toUpperCase()} PASSED: ${correctCount} ≥ ${config.threshold} - NO termination`);
+    debugLog(`[TaskValidator] ✅ ${taskResult.taskId.toUpperCase()} PASSED: ${correctCount} ≥ ${config.threshold} - NO termination`);
     return { terminationIndex: -1 };
   }
 
@@ -953,7 +961,7 @@ window.TaskValidator = (() => {
     let hasPostTerminationAnswers = false;
     let hasTerminationMismatch = false;
     
-    console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()} terminationIndex=${terminationIndex}`);
+    debugLog(`[TaskValidator] ${taskResult.taskId.toUpperCase()} terminationIndex=${terminationIndex}`);
     
     // TERMINATION MISMATCH DETECTION
     // Compare JotForm recorded termination vs system calculated termination
@@ -984,7 +992,7 @@ window.TaskValidator = (() => {
           // CRITICAL FIX: Skip stages that were never reached (no answered questions)
           // This prevents false mismatches for unreached stages where CM_Ter3/CM_Ter4 are not recorded
           if (answeredInStage === 0) {
-            console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()} Stage ${stage.stageNum} not reached (0 answers) - skipping mismatch check`);
+            debugLog(`[TaskValidator] ${taskResult.taskId.toUpperCase()} Stage ${stage.stageNum} not reached (0 answers) - skipping mismatch check`);
             break; // Stop checking further stages
           }
           
@@ -994,13 +1002,13 @@ window.TaskValidator = (() => {
           // Detect mismatch: JotForm says terminated BUT system says should pass (or vice versa)
           if (recordedTriggered !== systemShouldTerminate) {
             hasTerminationMismatch = true;
-            console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()} TERMINATION MISMATCH at ${terminationFieldId}: JotForm=${recordedTriggered}, System=${systemShouldTerminate}`);
+            debugLog(`[TaskValidator] ${taskResult.taskId.toUpperCase()} TERMINATION MISMATCH at ${terminationFieldId}: JotForm=${recordedTriggered}, System=${systemShouldTerminate}`);
             break; // One mismatch is enough
           }
           
           // If this stage terminated, stop checking further stages
           if (recordedTriggered) {
-            console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()} Stage ${stage.stageNum} terminated - stopping mismatch checks`);
+            debugLog(`[TaskValidator] ${taskResult.taskId.toUpperCase()} Stage ${stage.stageNum} terminated - stopping mismatch checks`);
             break;
           }
         }
@@ -1010,7 +1018,7 @@ window.TaskValidator = (() => {
       // Therefore, we SKIP termination mismatch detection for CWR
       // Yellow/Orange status will ONLY be triggered by post-termination answers (hasPostTerminationAnswers)
       // This allows proper terminations to show GREEN
-      console.log(`[TaskValidator] CWR termination mismatch check skipped (CWR_10Incorrect is legacy field, never recorded)`);
+      debugLog(`[TaskValidator] CWR termination mismatch check skipped (CWR_10Incorrect is legacy field, never recorded)`);
       
       // Note: Mis-termination (stopped early without hitting 10 consecutive wrongs) will be detected
       // by the incomplete status logic (answered > 0 but not complete and not terminated)
@@ -1022,7 +1030,7 @@ window.TaskValidator = (() => {
       
       if (recordedTriggered !== calculatedTerminated) {
         hasTerminationMismatch = true;
-        console.log(`[TaskValidator] FM TERMINATION MISMATCH: JotForm=${recordedTriggered}, System=${calculatedTerminated}`);
+        debugLog(`[TaskValidator] FM TERMINATION MISMATCH: JotForm=${recordedTriggered}, System=${calculatedTerminated}`);
       }
       
       // INCOMPLETE DATA DETECTION for Fine Motor:
@@ -1046,7 +1054,7 @@ window.TaskValidator = (() => {
         
         if (anySideSuccessful && allSquUnsuccessful) {
           hasTerminationMismatch = true; // Use termination mismatch flag to trigger yellow status
-          console.log(`[TaskValidator] FM INCOMPLETE DATA: side_1-3 has successful but ALL squ_1-3 are unsuccessful`);
+          debugLog(`[TaskValidator] FM INCOMPLETE DATA: side_1-3 has successful but ALL squ_1-3 are unsuccessful`);
           
           // Mark the squ questions for special display
           squQuestions.forEach(qid => {
@@ -1082,7 +1090,7 @@ window.TaskValidator = (() => {
         
         if (sideViolation) {
           hasTerminationMismatch = true; // Trigger yellow warning
-          console.log(`[TaskValidator] FM HIERARCHICAL VIOLATION: side thresholds [${side1Val},${side2Val},${side3Val}] - higher threshold marked without lower ones`);
+          debugLog(`[TaskValidator] FM HIERARCHICAL VIOLATION: side thresholds [${side1Val},${side2Val},${side3Val}] - higher threshold marked without lower ones`);
           
           // Mark all side questions with violation flag
           sideQuestions.forEach(qid => {
@@ -1112,7 +1120,7 @@ window.TaskValidator = (() => {
         
         if (squViolation) {
           hasTerminationMismatch = true; // Trigger yellow warning
-          console.log(`[TaskValidator] FM HIERARCHICAL VIOLATION: square thresholds [${squ1Val},${squ2Val},${squ3Val}] - higher threshold marked without lower ones`);
+          debugLog(`[TaskValidator] FM HIERARCHICAL VIOLATION: square thresholds [${squ1Val},${squ2Val},${squ3Val}] - higher threshold marked without lower ones`);
           
           // Mark all squ questions with violation flag
           squQuestions.forEach(qid => {
@@ -1140,7 +1148,7 @@ window.TaskValidator = (() => {
         // Case 1: squ_3 = 1 (90-100% square) - VERY HIGH confidence
         if (squ3Val === 1 && allSideUnanswered) {
           hasTerminationMismatch = true;
-          console.log(`[TaskValidator] FM CROSS-SECTION VIOLATION (HIGH): squ_3=1 but ALL sides unanswered`);
+          debugLog(`[TaskValidator] FM CROSS-SECTION VIOLATION (HIGH): squ_3=1 but ALL sides unanswered`);
           
           // Flag side_1, side_2, side_3 with HIGH confidence (RED pills)
           [side1, side2, side3].forEach(q => {
@@ -1155,7 +1163,7 @@ window.TaskValidator = (() => {
         else if (squ2Val === 1) {
           if (allSideUnanswered) {
             hasTerminationMismatch = true;
-            console.log(`[TaskValidator] FM CROSS-SECTION VIOLATION (HIGH): squ_2=1 but ALL sides unanswered`);
+            debugLog(`[TaskValidator] FM CROSS-SECTION VIOLATION (HIGH): squ_2=1 but ALL sides unanswered`);
             
             // Flag side_1, side_2 with HIGH confidence (RED pills)
             [side1, side2].forEach(q => {
@@ -1167,7 +1175,7 @@ window.TaskValidator = (() => {
           } else if (!side1Null && side2Null) {
             // Partial answer: side_1 answered but side_2 missing
             hasTerminationMismatch = true;
-            console.log(`[TaskValidator] FM CROSS-SECTION VIOLATION (MEDIUM): squ_2=1, side_1 answered, but side_2 unanswered`);
+            debugLog(`[TaskValidator] FM CROSS-SECTION VIOLATION (MEDIUM): squ_2=1, side_1 answered, but side_2 unanswered`);
             
             // Flag side_2 only with MEDIUM confidence (YELLOW pill)
             if (side2) {
@@ -1180,7 +1188,7 @@ window.TaskValidator = (() => {
         // Case 3: squ_1 = 1 (10-49% square) - MEDIUM confidence
         else if (squ1Val === 1 && allSideUnanswered) {
           hasTerminationMismatch = true;
-          console.log(`[TaskValidator] FM CROSS-SECTION VIOLATION (MEDIUM): squ_1=1 but ALL sides unanswered`);
+          debugLog(`[TaskValidator] FM CROSS-SECTION VIOLATION (MEDIUM): squ_1=1 but ALL sides unanswered`);
           
           // Flag side_1 only with MEDIUM confidence (YELLOW pill)
           if (side1) {
@@ -1196,22 +1204,22 @@ window.TaskValidator = (() => {
       adjustedTotal = terminationIndex + 1;
       adjustedAnswered = taskResult.questions.slice(0, terminationIndex + 1).filter(q => q.studentAnswer !== null).length;
       
-      console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()} checking post-termination answers (questions ${terminationIndex + 1} to ${taskResult.questions.length - 1})...`);
+      debugLog(`[TaskValidator] ${taskResult.taskId.toUpperCase()} checking post-termination answers (questions ${terminationIndex + 1} to ${taskResult.questions.length - 1})...`);
       
       // Check for post-termination answers
       for (let i = terminationIndex + 1; i < taskResult.questions.length; i++) {
         if (taskResult.questions[i].studentAnswer !== null) {
           hasPostTerminationAnswers = true;
-          console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()} POST-TERMINATION ANSWER detected at question ${i}: ${taskResult.questions[i].id} = ${taskResult.questions[i].studentAnswer}`);
+          debugLog(`[TaskValidator] ${taskResult.taskId.toUpperCase()} POST-TERMINATION ANSWER detected at question ${i}: ${taskResult.questions[i].id} = ${taskResult.questions[i].studentAnswer}`);
           break;
         }
       }
       
       if (!hasPostTerminationAnswers) {
-        console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()} no post-termination answers found`);
+        debugLog(`[TaskValidator] ${taskResult.taskId.toUpperCase()} no post-termination answers found`);
       }
     } else {
-      console.log(`[TaskValidator] ${taskResult.taskId.toUpperCase()} no termination - hasPostTerminationAnswers stays false`);
+      debugLog(`[TaskValidator] ${taskResult.taskId.toUpperCase()} no termination - hasPostTerminationAnswers stays false`);
     }
     
     return {
@@ -1242,7 +1250,7 @@ window.TaskValidator = (() => {
     for (const [filename, metadata] of Object.entries(taskMetadata)) {
       // Skip tasks that should be merged with others
       if (metadata.displayWith) {
-        console.log(`[TaskValidator] Skipping ${metadata.id} - will be merged with ${metadata.displayWith}`);
+        debugLog(`[TaskValidator] Skipping ${metadata.id} - will be merged with ${metadata.displayWith}`);
         continue;
       }
       taskIds.add(metadata.id);
@@ -1379,8 +1387,8 @@ window.TaskValidator = (() => {
           hasMissingData: symAnalysis.hasMissingData || nonsymAnalysis.hasMissingData
         };
         
-        console.log(`[TaskValidator] SYM: timeout=${symAnalysis.timedOut}, missingData=${symAnalysis.hasMissingData}`);
-        console.log(`[TaskValidator] NONSYM: timeout=${nonsymAnalysis.timedOut}, missingData=${nonsymAnalysis.hasMissingData}`);
+        debugLog(`[TaskValidator] SYM: timeout=${symAnalysis.timedOut}, missingData=${symAnalysis.hasMissingData}`);
+        debugLog(`[TaskValidator] NONSYM: timeout=${nonsymAnalysis.timedOut}, missingData=${nonsymAnalysis.hasMissingData}`);
       } else if (TERMINATION_RULES[taskId]) {
         // Apply centralized termination rules
         const taskResult = await validateTask(taskId, mergedAnswers);

@@ -1255,6 +1255,7 @@ All user guides moved to PRDs folder for centralized documentation:
 ### Future Updates
 This section will track major system updates, feature additions, and architectural changes as they occur.
 
+- **2025-12-10**: Fixed "Database Not Fetched" error appearing after successful sync; Added debug flag to TaskValidator logs.
 - **2025-12-08**: Fixed Checking System “By Missing” views to retain class and grade context when toggling missing-data filters.
 
 ---

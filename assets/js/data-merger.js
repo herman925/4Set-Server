@@ -6,6 +6,14 @@
  */
 
 (() => {
+  // Debug flag - set to true for verbose logging, false for production
+  const DEBUG = false;
+  
+  // Debug log helper - only logs when DEBUG is true
+  function debugLog(...args) {
+    if (DEBUG) console.log(...args);
+  }
+
   /**
    * Data Merger
    */
@@ -155,7 +163,7 @@
         // Check for cross-grade data (validation warning)
         if (student.grades.size > 1) {
           const grades = Array.from(student.grades.keys()).join(', ');
-          console.warn(`[DataMerger] ⚠️  Student ${coreId} has data from multiple grades: ${grades} - NOT merging across grades`);
+          debugLog(`[DataMerger] ⚠️  Student ${coreId} has data from multiple grades: ${grades} - NOT merging across grades`);
           crossGradeWarnings++;
         }
         
