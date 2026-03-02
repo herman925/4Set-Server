@@ -2524,6 +2524,30 @@ function Invoke-JotformUpsertByStudentId {
                 
                 $submissionId = $createResponse.content.submissionID
                 Write-Log -Message "Created new submission $submissionId with E-Prime task '$TaskName' for $studentIdDigits" -Level "UPLOAD" -File $FileName
+                
+                # SYNTHETIC SESSIONKEY: Write a synthetic sessionkey so the client-side grade detector
+                # can derive the correct grade (K1/K2/K3) from the submission date.
+                # Without a sessionkey, grade stays 'Unknown' and this submission is grouped separately
+                # from the PDF submission, preventing them from merging in the checking system.
+                # Format: {studentId}_{YYYYMMDD}_{HH}_{MM} — matches the real sessionkey pattern.
+                # The PDF upsert's :matches filter (pattern = studentId) will also find this submission.
+                try {
+                    $sessionkeyQid = $JotformQuestions['sessionkey']
+                    if ($sessionkeyQid) {
+                        $now = [datetime]::UtcNow.ToLocalTime()
+                        $syntheticSessionKey = "${studentIdDigits}_$($now.ToString('yyyyMMdd'))_$($now.ToString('HH'))_$($now.ToString('mm'))"
+                        $sessionkeyBody = @{
+                            "submission[$sessionkeyQid]" = $syntheticSessionKey
+                        }
+                        $updateUri = "https://api.jotform.com/submission/$submissionId`?apiKey=$apiKey"
+                        Invoke-RestMethod -Uri $updateUri -Method Post -Body $sessionkeyBody -ContentType "application/x-www-form-urlencoded" -TimeoutSec $script:JotformConfig.updateTimeoutSec | Out-Null
+                        Write-Log -Message "Wrote synthetic sessionkey '$syntheticSessionKey' to submission $submissionId" -Level "INFO" -File $FileName
+                    } else {
+                        Write-Log -Message "sessionkey QID not found in jotformquestions.json — synthetic sessionkey skipped" -Level "WARN" -File $FileName
+                    }
+                } catch {
+                    Write-Log -Message "Failed to write synthetic sessionkey to $submissionId (non-fatal): $($_.Exception.Message)" -Level "WARN" -File $FileName
+                }
             }
             
             return @{

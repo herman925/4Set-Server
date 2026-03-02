@@ -180,6 +180,13 @@ The 4Set System is a comprehensive web-based assessment data processing pipeline
   - File-to-school mapping built on log load for efficient filtering
   - Filter applies to log entries, file summary table, and processing times
   - Works with both local CSV logs and Supabase log source
+- [x] **E-Prime before PDF race condition fix (Mar 2026)**
+  - Root cause: when EDAT3 arrives before PDF, `Invoke-JotformUpsertByStudentId` creates a new JotForm submission with only `student-id` + EPrime fields but no `sessionkey`
+  - Client-side `transformSubmissionsToRecords` correctly derives `coreId` from `student-id` (QID 20), but `grade` stays `'Unknown'` because `GradeDetector` needs a sessionkey to calculate the school year
+  - Result: E-Prime submission groups as `(C10626, Unknown)` while PDF submission groups as `(C10626, K3)` — different merge buckets, never merged
+  - Fix: after creating new E-Prime submission, immediately POST a synthetic sessionkey in format `{studentId}_{YYYYMMDD}_{HH}_{MM}` (local time) to the same submission
+  - This lets `GradeDetector` derive the correct grade on next cache build, enabling correct merge
+  - Secondary benefit: PDF upsert's `:matches` filter on student ID prefix now finds the E-Prime submission, allowing it to update rather than create a duplicate
 
 ### 🔄 Phase 4: Production Deployment (In Progress)
 - [x] Upload interface with drag-and-drop support
