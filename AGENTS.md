@@ -680,6 +680,33 @@ $foundSubmission = $sorted | Select-Object -First 1
 - `processor_agent.ps1` - `Invoke-JotformUpsertByStudentId` now sorts results locally
 - `PRDs/eprime_handling_prd.md` - Documented the quirk with warning
 
+#### OneDrive Path Resolution: `extraFallbackPaths` Array
+**Decision**: Add an ordered array of additional relative paths tried alongside `relativePath` in every detection strategy  
+**Date**: March 10, 2026  
+**Rationale**:
+- The existing `relativePath` (`...\o365grp_KeySteps@JC - General\...`) does not match all deployment layouts — some machines have an extra `Documents\General` nesting (`o365grp_KeySteps@JC - Documents\General\...`)
+- The fix must work at the auto-detection layer (strategies 1-5), not just at the final fallback, because each strategy detects a different root and the relative segment is what differs
+- Storing additional relative paths lets every strategy try both layouts against its detected root
+
+**Implementation**:
+```json
+// config/agent.json
+{
+  "oneDrive": {
+    "extraFallbackPaths": [
+      "\\The Education University of Hong Kong\\o365grp_KeySteps@JC - Documents\\General\\97 - Project RAW Data\\PDF Form Data"
+    ],
+    "fallbackRoot": "C:\\Users\\KeySteps"
+  }
+}
+```
+
+`Get-OneDriveBasePath` builds `$relativePathsToTry = [@(relativePath)] + extraFallbackPaths` at startup, then every strategy loops through all entries instead of just `relativePath`. Strategy 3 (user profile root) will match the hkkchan machine: `C:\Users\hkkchan` + extra relative = correct path. Adding more layouts requires only appending entries to the array — no code changes needed.
+
+**Files Updated**:
+- `config/agent.json` — `extraFallbackPaths` array added before `fallbackRoot`
+- `processor_agent.ps1` — `Get-OneDriveBasePath` refactored to iterate all relative paths in every strategy
+
 #### Set 4 Completion Logic: MF Task Exclusion
 **Decision**: Exclude Math Fluency (MF) from Set 4 green light criteria  
 **Date**: October 31, 2025  

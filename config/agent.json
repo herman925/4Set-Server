@@ -3,6 +3,9 @@
   "oneDrive": {
     "autoDetect": true,
     "relativePath": "\\The Education University of Hong Kong\\o365grp_KeySteps@JC - General\\97 - Project RAW Data\\PDF Form Data",
+    "extraFallbackPaths": [
+      "\\The Education University of Hong Kong\\o365grp_KeySteps@JC - Documents\\General\\97 - Project RAW Data\\PDF Form Data"
+    ],
     "fallbackRoot": "C:\\Users\\KeySteps"
   },
   "watchPath": "./incoming",

@@ -40,8 +40,11 @@ if %ERRORLEVEL% NEQ 0 (
     )
 )
 
-REM Get the directory where this batch file is located
+REM Get the directory where this batch file is located and change to it
+REM so Flask's static_folder='.' and ./logs/ resolve correctly regardless
+REM of where this bat file is invoked from (shortcut, different drive, etc.)
 set "SCRIPT_DIR=%~dp0"
+pushd "%SCRIPT_DIR%"
 
 echo Starting local server...
 echo.
@@ -53,7 +56,9 @@ echo.
 
 REM Start server and open browser
 start http://localhost:3000/log.html
-python "%SCRIPT_DIR%proxy_server.py" --port 3000 --host 127.0.0.1
+python proxy_server.py --port 3000 --host 127.0.0.1
+
+popd
 
 REM This line is reached when server is stopped
 echo.

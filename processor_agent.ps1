@@ -41,26 +41,38 @@ function Get-OneDriveBasePath {
         }
     }
     
+    # Build list of all relative paths to try (primary relativePath + any extraFallbackPaths)
+    # extraFallbackPaths entries are treated as additional relative paths tried against every
+    # strategy root, allowing different SharePoint folder layouts across machines.
+    $relativePathsToTry = @($Config.oneDrive.relativePath)
+    if ($Config.oneDrive.extraFallbackPaths) {
+        $relativePathsToTry += @($Config.oneDrive.extraFallbackPaths)
+    }
+    $relativePathsToTry = $relativePathsToTry | Where-Object { $_ }
+    
     # Strategy 1: Environment variables (per PRD line 13)
     Write-Host "[OneDrive] Strategy 1: Environment variables" -ForegroundColor Gray
     
     # OneDriveCommercial (business account - highest priority)
     if ($env:OneDriveCommercial) {
-        $testPath = Join-Path $env:OneDriveCommercial $Config.oneDrive.relativePath
-        if (Test-Path $testPath) {
-            Write-Host "[OneDrive] ✓ Found via OneDriveCommercial: $testPath" -ForegroundColor Green
-            return $testPath
-        } else {
-            Write-Host "[OneDrive] OneDriveCommercial exists but path invalid: $testPath" -ForegroundColor Yellow
+        foreach ($relPath in $relativePathsToTry) {
+            $testPath = Join-Path $env:OneDriveCommercial $relPath
+            if (Test-Path $testPath) {
+                Write-Host "[OneDrive] ✓ Found via OneDriveCommercial: $testPath" -ForegroundColor Green
+                return $testPath
+            }
         }
+        Write-Host "[OneDrive] OneDriveCommercial exists but no relative path matched" -ForegroundColor Yellow
     }
     
     # OneDrive (personal account)
     if ($env:OneDrive) {
-        $testPath = Join-Path $env:OneDrive $Config.oneDrive.relativePath
-        if (Test-Path $testPath) {
-            Write-Host "[OneDrive] ✓ Found via OneDrive: $testPath" -ForegroundColor Green
-            return $testPath
+        foreach ($relPath in $relativePathsToTry) {
+            $testPath = Join-Path $env:OneDrive $relPath
+            if (Test-Path $testPath) {
+                Write-Host "[OneDrive] ✓ Found via OneDrive: $testPath" -ForegroundColor Green
+                return $testPath
+            }
         }
     }
     
@@ -83,10 +95,12 @@ function Get-OneDriveBasePath {
                     
                     # Try direct use first (in case it's already the project root)
                     if (Test-Path $regRoot) {
-                        $testPath = Join-Path $regRoot $Config.oneDrive.relativePath
-                        if (Test-Path $testPath) {
-                            Write-Host "[OneDrive] ✓ Found via registry ($($reg.Path)): $testPath" -ForegroundColor Green
-                            return $testPath
+                        foreach ($relPath in $relativePathsToTry) {
+                            $testPath = Join-Path $regRoot $relPath
+                            if (Test-Path $testPath) {
+                                Write-Host "[OneDrive] ✓ Found via registry ($($reg.Path)): $testPath" -ForegroundColor Green
+                                return $testPath
+                            }
                         }
                     }
                 }
@@ -100,10 +114,12 @@ function Get-OneDriveBasePath {
     Write-Host "[OneDrive] Strategy 3: User profile root" -ForegroundColor Gray
     $userProfile = [Environment]::GetFolderPath('UserProfile')
     if ($userProfile) {
-        $testPath = Join-Path $userProfile $Config.oneDrive.relativePath
-        if (Test-Path $testPath) {
-            Write-Host "[OneDrive] ✓ Found via user profile: $testPath" -ForegroundColor Green
-            return $testPath
+        foreach ($relPath in $relativePathsToTry) {
+            $testPath = Join-Path $userProfile $relPath
+            if (Test-Path $testPath) {
+                Write-Host "[OneDrive] ✓ Found via user profile: $testPath" -ForegroundColor Green
+                return $testPath
+            }
         }
     }
     
@@ -116,10 +132,12 @@ function Get-OneDriveBasePath {
     
     foreach ($commonPath in $commonPaths) {
         if (Test-Path $commonPath -ErrorAction SilentlyContinue) {
-            $testPath = Join-Path $commonPath $Config.oneDrive.relativePath
-            if (Test-Path $testPath) {
-                Write-Host "[OneDrive] ✓ Found via common location: $testPath" -ForegroundColor Green
-                return $testPath
+            foreach ($relPath in $relativePathsToTry) {
+                $testPath = Join-Path $commonPath $relPath
+                if (Test-Path $testPath) {
+                    Write-Host "[OneDrive] ✓ Found via common location: $testPath" -ForegroundColor Green
+                    return $testPath
+                }
             }
         }
     }
@@ -134,19 +152,24 @@ function Get-OneDriveBasePath {
     # Try to extract root from script path
     if ($scriptPath -match '(.*?)(\\The Education University of Hong Kong.*)') {
         $extractedRoot = $Matches[1]
-        $testPath = Join-Path $extractedRoot $Config.oneDrive.relativePath
-        if (Test-Path $testPath) {
-            Write-Host "[OneDrive] ✓ Found via script path analysis: $testPath" -ForegroundColor Green
-            return $testPath
+        foreach ($relPath in $relativePathsToTry) {
+            $testPath = Join-Path $extractedRoot $relPath
+            if (Test-Path $testPath) {
+                Write-Host "[OneDrive] ✓ Found via script path analysis: $testPath" -ForegroundColor Green
+                return $testPath
+            }
         }
     }
     
     # Strategy 6: Configured fallback (final resort)
+    # Tries every relative path against fallbackRoot
     Write-Host "[OneDrive] Strategy 6: Configured fallback" -ForegroundColor Yellow
-    if ($Config.oneDrive -and $Config.oneDrive.fallbackRoot -and $Config.oneDrive.relativePath) {
-        $fullPath = Join-Path $Config.oneDrive.fallbackRoot $Config.oneDrive.relativePath
-        Write-Host "[OneDrive] Using fallback path: $fullPath" -ForegroundColor Yellow
-        return $fullPath
+    if ($Config.oneDrive -and $Config.oneDrive.fallbackRoot) {
+        foreach ($relPath in $relativePathsToTry) {
+            $fullPath = Join-Path $Config.oneDrive.fallbackRoot $relPath
+            Write-Host "[OneDrive] Using fallback path: $fullPath" -ForegroundColor Yellow
+            return $fullPath
+        }
     }
     
     # Absolute final fallback: script directory
@@ -2028,11 +2051,11 @@ function Set-ManifestStatus {
             status = $Status
             updated = (Get-Date).ToString("o")
         }
-        $manifest.files = @($entries + $match)
+        $manifest | Add-Member -NotePropertyName files -NotePropertyValue @($entries + $match) -Force
     } else {
         $match.status = $Status
         $match.updated = (Get-Date).ToString("o")
-        $manifest.files = $entries
+        $manifest | Add-Member -NotePropertyName files -NotePropertyValue $entries -Force
     }
     Save-QueueManifest -Path $Path -Manifest $manifest
 }
@@ -2051,7 +2074,7 @@ function Remove-ManifestEntry {
             }
         }
     }
-    $manifest.files = $filtered
+    $manifest | Add-Member -NotePropertyName files -NotePropertyValue $filtered -Force
     Save-QueueManifest -Path $Path -Manifest $manifest
 }
 
