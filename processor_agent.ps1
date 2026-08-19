@@ -200,6 +200,55 @@ function Convert-SecureStringToPlainText {
     }
 }
 
+$script:FileLockMutexes = @{}
+
+function Invoke-WithFileLock {
+    <#
+    .SYNOPSIS
+    Runs a scriptblock while holding a named cross-process lock.
+
+    .DESCRIPTION
+    Workers run as separate processes, so any read-modify-write or append against a shared
+    file needs coordination beyond FileShare flags - two processes can both open a file in
+    Append mode, seek to the same end, and overwrite each other's record.
+
+    Locks are keyed by Name; callers that touch different files should use different names.
+    Nesting different locks is safe as long as the order is consistent (the log lock is
+    always taken innermost).
+
+    .PARAMETER Name
+    Identifier for the lock, e.g. "QueueManifest" or "ProcessingLog".
+
+    .PARAMETER Action
+    Scriptblock to run while the lock is held.
+    #>
+    param(
+        [string]$Name,
+        [scriptblock]$Action
+    )
+
+    $mutex = $script:FileLockMutexes[$Name]
+    if (-not $mutex) {
+        $mutex = New-Object System.Threading.Mutex($false, "Local\4Set$Name")
+        $script:FileLockMutexes[$Name] = $mutex
+    }
+
+    $held = $false
+    try {
+        try {
+            $held = $mutex.WaitOne(5000)
+        } catch [System.Threading.AbandonedMutexException] {
+            # Previous holder died before releasing; we now own the mutex.
+            $held = $true
+        }
+        & $Action
+    } finally {
+        if ($held) {
+            $mutex.ReleaseMutex()
+        }
+    }
+}
+
 function Write-Log {
     <#
     .SYNOPSIS
@@ -251,21 +300,30 @@ function Write-Log {
     $retryDelayMs = 50
     $attempt = 0
     
+    $written = $false
+
     while ($attempt -lt $maxRetries) {
         try {
-            # Use StreamWriter with FileShare.ReadWrite to allow concurrent reads
-            $fileStream = [System.IO.File]::Open(
-                $script:LogFile,
-                [System.IO.FileMode]::Append,
-                [System.IO.FileAccess]::Write,
-                [System.IO.FileShare]::ReadWrite
-            )
-            $streamWriter = New-Object System.IO.StreamWriter($fileStream, [System.Text.Encoding]::UTF8)
-            $streamWriter.WriteLine($logEntry)
-            $streamWriter.Flush()
-            $streamWriter.Close()
-            $fileStream.Close()
-            Write-SupabaseLog -Timestamp $timestamp -Level $Level -File $File -Message $cleanMessage
+            # FileShare.ReadWrite keeps the log readable while open (Excel, log viewer), but
+            # it also lets a second worker append at the same offset and clobber this record,
+            # so serialise the append across processes.
+            Invoke-WithFileLock -Name "ProcessingLog" -Action {
+                $fileStream = [System.IO.File]::Open(
+                    $script:LogFile,
+                    [System.IO.FileMode]::Append,
+                    [System.IO.FileAccess]::Write,
+                    [System.IO.FileShare]::ReadWrite
+                )
+                try {
+                    $streamWriter = New-Object System.IO.StreamWriter($fileStream, [System.Text.Encoding]::UTF8)
+                    $streamWriter.WriteLine($logEntry)
+                    $streamWriter.Flush()
+                    $streamWriter.Close()
+                } finally {
+                    $fileStream.Close()
+                }
+            }
+            $written = $true
             break  # Success, exit retry loop
         }
         catch {
@@ -279,6 +337,11 @@ function Write-Log {
             # Wait before retry with exponential backoff
             Start-Sleep -Milliseconds ($retryDelayMs * $attempt)
         }
+    }
+
+    if ($written) {
+        # Outside the lock - this is a network call and must not serialise other writers.
+        Write-SupabaseLog -Timestamp $timestamp -Level $Level -File $File -Message $cleanMessage
     }
 }
 
@@ -578,22 +641,36 @@ function Invoke-PdfParser {
         $processInfo.UseShellExecute = $false
         $processInfo.CreateNoWindow = $true
         
-        $process = New-Object System.Diagnostics.Process
-        $process.StartInfo = $processInfo
-        
-        $process.Start() | Out-Null
-        $stderr = $process.StandardError.ReadToEnd()
-        $process.WaitForExit()
-        
-        if ($process.ExitCode -eq 0) {
-            $result.success = $true
-            $result.jsonPath = $OutputJsonPath
-            # Parser succeeded - no log (too verbose)
-        } else {
+        # Staging lives inside the OneDrive tree, so a file that was just moved there can
+        # still be mid-sync. Reading it then fails with [Errno 22] Invalid argument even
+        # though the PDF is perfectly valid. Retry before treating the parse as a reject.
+        $maxAttempts = 3
+        for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+            $process = New-Object System.Diagnostics.Process
+            $process.StartInfo = $processInfo
+
+            $process.Start() | Out-Null
+            $stderr = $process.StandardError.ReadToEnd()
+            $process.WaitForExit()
+
+            if ($process.ExitCode -eq 0) {
+                $result.success = $true
+                $result.jsonPath = $OutputJsonPath
+                $result.error = ""
+                # Parser succeeded - no log (too verbose)
+                return $result
+            }
+
             $result.error = "Python parser failed (exit code $($process.ExitCode)): $stderr"
-            Write-Log -Message "Python parser failed: $stderr" -Level "ERROR" -File ([System.IO.Path]::GetFileName($PdfPath))
+
+            if ($attempt -lt $maxAttempts) {
+                Write-Log -Message "Parser attempt $attempt/$maxAttempts failed, retrying in ${attempt}s" -Level "WARN" -File ([System.IO.Path]::GetFileName($PdfPath))
+                Start-Sleep -Seconds $attempt
+            } else {
+                Write-Log -Message "Python parser failed after $maxAttempts attempt(s): $stderr" -Level "ERROR" -File ([System.IO.Path]::GetFileName($PdfPath))
+            }
         }
-        
+
         return $result
     } catch {
         $result.error = $_.Exception.Message
@@ -2032,32 +2109,34 @@ function Set-ManifestStatus {
         [string]$FileName,
         [string]$Status
     )
-    $manifest = Get-QueueManifest -Path $Path
-    $entries = @()
-    if ($manifest.files) {
-        $entries = @($manifest.files)
-    }
-    $match = $null
-    foreach ($item in $entries) {
-        if ($item.id -eq $Id) {
-            $match = $item
-            break
+    Invoke-WithFileLock -Name "QueueManifest" -Action {
+        $manifest = Get-QueueManifest -Path $Path
+        $entries = @()
+        if ($manifest.files) {
+            $entries = @($manifest.files)
         }
-    }
-    if (-not $match) {
-        $match = [pscustomobject]@{
-            id = $Id
-            fileName = $FileName
-            status = $Status
-            updated = (Get-Date).ToString("o")
+        $match = $null
+        foreach ($item in $entries) {
+            if ($item.id -eq $Id) {
+                $match = $item
+                break
+            }
         }
-        $manifest | Add-Member -NotePropertyName files -NotePropertyValue @($entries + $match) -Force
-    } else {
-        $match.status = $Status
-        $match.updated = (Get-Date).ToString("o")
-        $manifest | Add-Member -NotePropertyName files -NotePropertyValue $entries -Force
+        if (-not $match) {
+            $match = [pscustomobject]@{
+                id = $Id
+                fileName = $FileName
+                status = $Status
+                updated = (Get-Date).ToString("o")
+            }
+            $manifest | Add-Member -NotePropertyName files -NotePropertyValue @($entries + $match) -Force
+        } else {
+            $match.status = $Status
+            $match.updated = (Get-Date).ToString("o")
+            $manifest | Add-Member -NotePropertyName files -NotePropertyValue $entries -Force
+        }
+        Save-QueueManifest -Path $Path -Manifest $manifest
     }
-    Save-QueueManifest -Path $Path -Manifest $manifest
 }
 
 function Remove-ManifestEntry {
@@ -2065,17 +2144,19 @@ function Remove-ManifestEntry {
         [string]$Path,
         [string]$Id
     )
-    $manifest = Get-QueueManifest -Path $Path
-    $filtered = @()
-    if ($manifest.files) {
-        foreach ($item in $manifest.files) {
-            if ($item.id -ne $Id) {
-                $filtered += $item
+    Invoke-WithFileLock -Name "QueueManifest" -Action {
+        $manifest = Get-QueueManifest -Path $Path
+        $filtered = @()
+        if ($manifest.files) {
+            foreach ($item in $manifest.files) {
+                if ($item.id -ne $Id) {
+                    $filtered += $item
+                }
             }
         }
+        $manifest | Add-Member -NotePropertyName files -NotePropertyValue $filtered -Force
+        Save-QueueManifest -Path $Path -Manifest $manifest
     }
-    $manifest | Add-Member -NotePropertyName files -NotePropertyValue $filtered -Force
-    Save-QueueManifest -Path $Path -Manifest $manifest
 }
 
 function Test-IsFileReady {
@@ -3283,15 +3364,20 @@ do {
             Write-Host "Processing $($pending.Count) file(s) with $maxConcurrent parallel workers..." -ForegroundColor Cyan
             
             $workerScript = Join-Path $PSScriptRoot "worker.ps1"
-            $activeProcesses = @{}  # Dictionary: process -> filename
+            $activeProcesses = @{}  # Dictionary: process -> @{ Name; Slot }
             $fileIndex = 0
-            
+            # Files already handed to a worker. A worker spends its debounce window before
+            # moving the file out of incoming/, so without this the re-scan below finds the
+            # file still sitting there and starts a second worker on it.
+            $dispatched = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::OrdinalIgnoreCase)
+
             while ($fileIndex -lt $pending.Count -or $activeProcesses.Count -gt 0) {
                 # Re-scan for new files if we've exhausted the current list but have idle workers
                 if ($fileIndex -ge $pending.Count -and $activeProcesses.Count -lt $maxConcurrent) {
                     $newFiles = @()
                     if (Test-Path $script:WatchPath) {
-                        $newFiles = Get-ChildItem -Path $script:WatchPath -File -Filter "*.pdf" -ErrorAction SilentlyContinue
+                        $newFiles = @(Get-ChildItem -Path $script:WatchPath -File -Filter "*.pdf" -ErrorAction SilentlyContinue |
+                            Where-Object { -not $dispatched.Contains($_.FullName) })
                     }
                     if ($newFiles.Count -gt 0) {
                         # Found new files - add to pending list
@@ -3299,20 +3385,31 @@ do {
                         $fileIndex = 0
                     }
                 }
-                
+
                 # Start new workers up to maxConcurrent
                 while ($fileIndex -lt $pending.Count -and $activeProcesses.Count -lt $maxConcurrent) {
                     $item = $pending[$fileIndex]
                     $fileIndex++
-                    
+
+                    if ($dispatched.Contains($item.FullName)) {
+                        continue
+                    }
+
                     # CRITICAL: Check if file still exists (might have been picked up by another scan)
                     if (-not (Test-Path $item.FullName)) {
                         Write-Host "  [Skipped] $($item.Name) - already being processed" -ForegroundColor Yellow
                         continue
                     }
-                    
-                    Write-Host "  [Worker $($activeProcesses.Count + 1)] Processing $($item.Name)..." -ForegroundColor Gray
-                    
+
+                    # Lowest slot number not currently occupied, so the label identifies the
+                    # worker rather than counting how many happen to be running.
+                    $usedSlots = @($activeProcesses.Values | ForEach-Object { $_.Slot })
+                    $slot = 1
+                    while ($usedSlots -contains $slot) { $slot++ }
+
+                    [void]$dispatched.Add($item.FullName)
+                    Write-Host "  [Worker $slot] Processing $($item.Name)..." -ForegroundColor Gray
+
                     # Start independent PowerShell process running worker.ps1
                     $psi = New-Object System.Diagnostics.ProcessStartInfo
                     $psi.FileName = "pwsh"
@@ -3326,7 +3423,7 @@ do {
                     $process.StartInfo = $psi
                     $process.Start() | Out-Null
                     
-                    $activeProcesses[$process] = $item.Name
+                    $activeProcesses[$process] = @{ Name = $item.Name; Slot = $slot }
                 }
                 
                 # Check for completed processes
@@ -3340,12 +3437,13 @@ do {
                     }
                     
                     foreach ($proc in $completedProcesses) {
-                        $fileName = $activeProcesses[$proc]
-                        
+                        $fileName = $activeProcesses[$proc].Name
+                        $slot = $activeProcesses[$proc].Slot
+
                         if ($proc.ExitCode -eq 0) {
-                            Write-Host "  ✓ Worker completed: $fileName" -ForegroundColor Green
+                            Write-Host "  ✓ [Worker $slot] completed: $fileName" -ForegroundColor Green
                         } else {
-                            Write-Host "  ✗ Worker failed: $fileName (exit code: $($proc.ExitCode))" -ForegroundColor Red
+                            Write-Host "  ✗ [Worker $slot] failed: $fileName (exit code: $($proc.ExitCode))" -ForegroundColor Red
                             $stderr = $proc.StandardError.ReadToEnd()
                             if ($stderr) {
                                 Write-Host "    Error: $stderr" -ForegroundColor Red
@@ -3363,7 +3461,7 @@ do {
                 }
             }
             
-            Write-Host "All $($pending.Count) file(s) processed" -ForegroundColor Green
+            Write-Host "All $($dispatched.Count) file(s) processed" -ForegroundColor Green
         }
     }
     if ($SingleRun) {
